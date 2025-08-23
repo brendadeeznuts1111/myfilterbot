@@ -291,7 +291,7 @@
     }
   },
   "settings": {
-    "last_backup": "2025-08-23T16:02:41.577235",
+    "last_backup": "2025-08-23T17:53:09.685944",
     "version": "2.0"
   },
   "members": {
@@ -379,10 +379,29 @@
         "notes": ""
       },
       "customer_id": null
+    },
+    "-1001234567890_888888": {
+      "member_id": "M20250823171339",
+      "telegram_id": 888888,
+      "username": "test_api_user",
+      "group_id": -1001234567890,
+      "group_name": "Test Trading Group",
+      "join_date": "2025-08-23T17:13:39.835550",
+      "status": "pending",
+      "permissions": {
+        "can_view": false,
+        "can_trade": false,
+        "can_withdraw": false,
+        "daily_limit": 0,
+        "notes": ""
+      },
+      "customer_id": null
     }
   },
   "permissions": {
-    "pending": [],
+    "pending": [
+      "-1001234567890_888888"
+    ],
     "approved": [
       "-1001234567890_542117",
       "-1001234567890_123456",

@@ -6,6 +6,7 @@
     <title>Customer Portal - Fantdev Trading</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -408,7 +409,10 @@
         const API_BASE = window.location.origin + '/api';
         
         let currentCustomer = null;
+        let authToken = null;
         let chart = null;
+        let socket = null;
+        let reconnectInterval = null;
         
         async function login() {
             const customerId = document.getElementById('customerId').value.toUpperCase();
@@ -448,9 +452,18 @@
                 
                 if (data.success) {
                     currentCustomer = customerId;
+                    authToken = data.token;
+                    
+                    // Store authentication data
                     localStorage.setItem('customerId', customerId);
+                    localStorage.setItem('authToken', authToken);
+                    
                     successDiv.textContent = 'Login successful! Loading dashboard...';
                     successDiv.style.display = 'block';
+                    
+                    // Initialize WebSocket connection
+                    initializeWebSocket();
+                    
                     setTimeout(() => showDashboard(customerId), 1000);
                 } else {
                     errorDiv.textContent = data.error || 'Login failed';
@@ -474,52 +487,67 @@
             document.getElementById('customerInfo').textContent = `Customer: ${customerId}`;
             
             try {
-                // Fetch customer data from API
+                // Fetch customer data from API with JWT token
                 const response = await fetch(`${API_BASE}/customer/${customerId}`, {
                     headers: {
+                        'Authorization': `Bearer ${authToken}`,
                         'ngrok-skip-browser-warning': 'true'
                     }
                 });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Token expired or invalid, logout
+                        logout();
+                        return;
+                    }
+                    throw new Error('Failed to fetch customer data');
+                }
+                
                 const data = await response.json();
                 
                 // Update balance
                 const balanceEl = document.getElementById('balance');
-                balanceEl.textContent = `$${data.balance.toLocaleString()}`;
+                const balance = data.customer?.balance || data.balance || 0;
+                balanceEl.textContent = `$${balance.toLocaleString()}`;
                 
                 // Update weekly P&L
                 const pnlEl = document.getElementById('weeklyPnl');
-                pnlEl.textContent = `$${data.weekly_pnl > 0 ? '+' : ''}${data.weekly_pnl.toLocaleString()}`;
-                pnlEl.className = data.weekly_pnl >= 0 ? 'stat-value positive' : 'stat-value negative';
+                const weeklyPnl = data.customer?.weekly_pnl || data.weekly_pnl || 0;
+                pnlEl.textContent = `$${weeklyPnl > 0 ? '+' : ''}${weeklyPnl.toLocaleString()}`;
+                pnlEl.className = weeklyPnl >= 0 ? 'stat-value positive' : 'stat-value negative';
                 
                 // Calculate percentage
-                if (data.balance > 0) {
-                    const percentage = (data.weekly_pnl / data.balance * 100).toFixed(1);
+                if (balance > 0) {
+                    const percentage = (weeklyPnl / balance * 100).toFixed(1);
                     document.getElementById('pnlPercentage').textContent = `${percentage > 0 ? '+' : ''}${percentage}% this week`;
                     document.getElementById('pnlPercentage').className = percentage >= 0 ? 'stat-change positive' : 'stat-change negative';
                 }
                 
                 // Update status
-                document.getElementById('accountStatus').textContent = data.active ? 'Active' : 'Inactive';
-                document.getElementById('accountStatusDetail').textContent = data.registered ? '✓ Telegram Connected' : '⚠️ Not Connected';
-                document.getElementById('accountStatusDetail').className = data.registered ? 'stat-change positive' : 'stat-change';
+                const isActive = data.customer?.active !== undefined ? data.customer.active : data.active;
+                const isRegistered = data.customer?.registered !== undefined ? data.customer.registered : data.registered;
+                document.getElementById('accountStatus').textContent = isActive ? 'Active' : 'Inactive';
+                document.getElementById('accountStatusDetail').textContent = isRegistered ? '✓ Telegram Connected' : '⚠️ Not Connected';
+                document.getElementById('accountStatusDetail').className = isRegistered ? 'stat-change positive' : 'stat-change';
                 
                 // Show alerts if needed
-                if (data.alerts.low_balance) {
+                if (data.alerts?.low_balance) {
                     document.getElementById('alertBanner').style.display = 'block';
-                    document.getElementById('alertMessage').textContent = `Your balance is low. Current balance: $${data.balance}`;
-                } else if (data.alerts.inactive) {
+                    document.getElementById('alertMessage').textContent = `Your balance is low. Current balance: $${balance}`;
+                } else if (data.alerts?.inactive) {
                     document.getElementById('alertBanner').style.display = 'block';
                     document.getElementById('alertMessage').textContent = 'Your account has been inactive for more than 3 days';
                 }
                 
-                // Today's activity
-                document.getElementById('todayActivity').textContent = data.today_activity || 0;
+                // Today's activity from statistics
+                document.getElementById('todayActivity').textContent = data.statistics?.total_trades || data.today_activity || 0;
                 
                 // Create chart with real data
                 createChart(data);
                 
                 // Load transactions
-                loadTransactions(data.transactions);
+                loadTransactions(data.recent_transactions || data.transactions || []);
                 
             } catch (error) {
                 console.error('Error loading dashboard:', error);
@@ -619,7 +647,22 @@
         
         function logout() {
             localStorage.removeItem('customerId');
+            localStorage.removeItem('authToken');
             currentCustomer = null;
+            authToken = null;
+            
+            // Disconnect WebSocket
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+            
+            // Clear reconnect interval
+            if (reconnectInterval) {
+                clearInterval(reconnectInterval);
+                reconnectInterval = null;
+            }
+            
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('customerId').value = '';
@@ -634,17 +677,224 @@
             }
         }
         
-        // Auto-refresh dashboard every 30 seconds
+        // WebSocket functions
+        function initializeWebSocket() {
+            if (!authToken) return;
+            
+            // Connect to WebSocket server
+            socket = io(window.location.origin, {
+                transports: ['websocket', 'polling']
+            });
+            
+            // Connection events
+            socket.on('connect', () => {
+                console.log('WebSocket connected');
+                // Authenticate the connection
+                socket.emit('authenticate', { token: authToken });
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+                attemptReconnect();
+            });
+            
+            socket.on('auth_success', (data) => {
+                console.log('WebSocket authenticated:', data.message);
+                // Subscribe to updates
+                socket.emit('subscribe_updates', { type: 'all' });
+            });
+            
+            socket.on('auth_error', (data) => {
+                console.error('WebSocket auth error:', data.error);
+                logout();
+            });
+            
+            // Real-time updates
+            socket.on('transaction_update', (data) => {
+                console.log('New transaction:', data);
+                handleTransactionUpdate(data);
+            });
+            
+            socket.on('balance_update', (data) => {
+                console.log('Balance update:', data);
+                handleBalanceUpdate(data);
+            });
+            
+            socket.on('initial_data', (data) => {
+                console.log('Initial data received:', data);
+                if (data.balance !== undefined) {
+                    document.getElementById('balance').textContent = `$${data.balance.toLocaleString()}`;
+                }
+                if (data.weekly_pnl !== undefined) {
+                    const pnlEl = document.getElementById('weeklyPnl');
+                    pnlEl.textContent = `$${data.weekly_pnl > 0 ? '+' : ''}${data.weekly_pnl.toLocaleString()}`;
+                    pnlEl.className = data.weekly_pnl >= 0 ? 'stat-value positive' : 'stat-value negative';
+                }
+            });
+        }
+        
+        function attemptReconnect() {
+            if (reconnectInterval) return;
+            
+            let attempts = 0;
+            reconnectInterval = setInterval(() => {
+                attempts++;
+                console.log(`Reconnection attempt ${attempts}...`);
+                
+                if (socket && !socket.connected && authToken) {
+                    socket.connect();
+                } else if (attempts > 5) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                    console.log('Max reconnection attempts reached');
+                }
+            }, 3000);
+        }
+        
+        function handleTransactionUpdate(transaction) {
+            // Update transaction list
+            const listEl = document.getElementById('transactionsList');
+            const txEl = document.createElement('div');
+            txEl.className = 'transaction';
+            
+            const amountClass = transaction.type === 'deposit' ? 'deposit' : 
+                               transaction.type === 'withdrawal' ? 'withdrawal' : '';
+            
+            const statusIcon = transaction.status === 'completed' ? '✅' : 
+                              transaction.status === 'denied' ? '❌' : '⏳';
+            
+            const amountDisplay = transaction.amount ? 
+                `${transaction.type === 'deposit' ? '+' : transaction.type === 'withdrawal' ? '-' : ''}$${transaction.amount}` : 
+                'N/A';
+            
+            const time = new Date(transaction.timestamp).toLocaleString();
+            
+            txEl.innerHTML = `
+                <div class="transaction-info">
+                    <div class="transaction-type">${statusIcon} ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}</div>
+                    <div class="transaction-time">${time}</div>
+                </div>
+                <div class="transaction-amount ${amountClass}">
+                    ${amountDisplay}
+                </div>
+            `;
+            
+            // Prepend to list (newest first)
+            if (listEl.firstChild) {
+                listEl.insertBefore(txEl, listEl.firstChild);
+            } else {
+                listEl.appendChild(txEl);
+            }
+            
+            // Update activity counter
+            const activityEl = document.getElementById('todayActivity');
+            const currentActivity = parseInt(activityEl.textContent) || 0;
+            activityEl.textContent = currentActivity + 1;
+            
+            // Show notification
+            if (transaction.type === 'deposit') {
+                showNotification('Transaction Completed', `Deposit of $${transaction.amount} successful`, 'success');
+            } else if (transaction.type === 'withdrawal') {
+                showNotification('Transaction Completed', `Withdrawal of $${transaction.amount} processed`, 'info');
+            } else if (transaction.status === 'denied') {
+                showNotification('Transaction Denied', 'Your transaction was denied', 'error');
+            }
+        }
+        
+        function handleBalanceUpdate(data) {
+            // Update balance display
+            const balanceEl = document.getElementById('balance');
+            balanceEl.textContent = `$${data.balance.toLocaleString()}`;
+            
+            // Update balance change indicator
+            const changeEl = document.getElementById('balanceChange');
+            if (changeEl && data.change !== undefined) {
+                changeEl.textContent = `${data.change > 0 ? '+' : ''}$${data.change.toLocaleString()} (${data.percentage}%)`;
+                changeEl.className = data.change >= 0 ? 'stat-change positive' : 'stat-change negative';
+            }
+            
+            // Flash animation
+            balanceEl.style.animation = 'pulse 0.5s';
+            setTimeout(() => {
+                balanceEl.style.animation = '';
+            }, 500);
+        }
+        
+        function showNotification(title, message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                padding: 16px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 9999;
+                min-width: 300px;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 4px; color: #333;">${title}</div>
+                <div style="color: #666; font-size: 14px;">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
+        }
+        
+        // Auto-refresh dashboard every 30 seconds (reduced frequency with WebSocket)
         setInterval(() => {
-            if (currentCustomer) {
+            if (currentCustomer && (!socket || !socket.connected)) {
                 showDashboard(currentCustomer);
             }
         }, 30000);
         
-        // Check for saved login
+        // Check for saved login and auto-login
         window.onload = function() {
             const savedCustomer = localStorage.getItem('customerId');
-            if (savedCustomer) {
+            const savedToken = localStorage.getItem('authToken');
+            
+            if (savedCustomer && savedToken) {
+                // Try auto-login with saved token
+                currentCustomer = savedCustomer;
+                authToken = savedToken;
+                
+                // Verify token is still valid
+                fetch(`${API_BASE}/customer/${savedCustomer}`, {
+                    headers: {
+                        'Authorization': `Bearer ${savedToken}`,
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Token is valid, proceed to dashboard
+                        initializeWebSocket();
+                        showDashboard(savedCustomer);
+                    } else {
+                        // Token expired, show login
+                        localStorage.removeItem('authToken');
+                        authToken = null;
+                        currentCustomer = null;
+                        document.getElementById('customerId').value = savedCustomer;
+                    }
+                })
+                .catch(error => {
+                    console.error('Auto-login failed:', error);
+                    document.getElementById('customerId').value = savedCustomer;
+                });
+            } else if (savedCustomer) {
                 document.getElementById('customerId').value = savedCustomer;
             }
             
@@ -661,6 +911,39 @@
                 }
             });
         };
+        
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            
+            .notification-success {
+                border-left: 4px solid #4caf50;
+            }
+            
+            .notification-error {
+                border-left: 4px solid #f44336;
+            }
+            
+            .notification-info {
+                border-left: 4px solid #2196f3;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

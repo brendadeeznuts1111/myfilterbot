@@ -869,6 +869,9 @@
         
         // Search functionality
         document.addEventListener('DOMContentLoaded', () => {
+            // Load dashboard data
+            loadDashboard();
+            
             const searchInput = document.getElementById('memberSearch');
             const statusFilter = document.getElementById('statusFilter');
             
