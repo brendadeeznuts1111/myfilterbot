@@ -1,0 +1,35 @@
+# Core Bot Framework
+python-telegram-bot>=20.0
+
+# Web Server & API
+flask>=2.3.0
+flask-cors>=4.0.0
+flask-socketio>=5.3.0
+
+# WebSocket Support
+python-socketio>=5.9.0
+python-engineio>=4.7.0
+eventlet>=0.33.0  # For async WebSocket support
+
+# Authentication & Security
+pyjwt>=2.8.0
+cryptography>=41.0.0
+
+# Task Scheduling
+schedule>=1.2.0
+
+# Database & Data Handling
+python-dateutil>=2.8.0
+
+# Async Support
+asyncio>=3.4.3
+aiohttp>=3.8.0
+
+# Development & Testing (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0  # Code formatter
+flake8>=6.0.0  # Linter
+
+# Monitoring (optional)
+prometheus-client>=0.17.0  # For metrics
