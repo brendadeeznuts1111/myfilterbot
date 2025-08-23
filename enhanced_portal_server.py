@@ -104,11 +104,14 @@ def serve_portal():
 def serve_admin_portal():
     """Serve the enhanced admin portal"""
     try:
-        # Try enhanced version first, fallback to basic
+        # Try ultimate version first, then enhanced, then basic
         try:
-            response = make_response(send_file('enhanced_admin_portal.html'))
+            response = make_response(send_file('admin_portal_ultimate.html'))
         except:
-            response = make_response(send_file('admin_portal.html'))
+            try:
+                response = make_response(send_file('enhanced_admin_portal.html'))
+            except:
+                response = make_response(send_file('admin_portal.html'))
         return add_ngrok_headers(response)
     except Exception as e:
         return jsonify({'error': str(e)}), 404
