@@ -16,7 +16,7 @@ with open('customer_config.json', 'r') as f:
     config = json.load(f)
 
 # Bot configuration
-BOT_TOKEN = "7555654864:AAGKxGxHGXDwJfP25le-ZGD-qhS9vDytttM"
+BOT_TOKEN = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0"
 ADMIN_CHAT_ID = "-2714719687"  # Your main monitoring chat
 
 # Message storage for analytics

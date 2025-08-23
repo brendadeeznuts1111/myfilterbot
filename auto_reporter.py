@@ -8,7 +8,7 @@ import schedule
 import time
 
 # Configuration
-BOT_TOKEN = "7555654864:AAGKxGxHGXDwJfP25le-ZGD-qhS9vDytttM"
+BOT_TOKEN = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0"
 ADMIN_CHAT_ID = "-2714719687"
 
 # Initialize bot

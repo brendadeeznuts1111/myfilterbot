@@ -10,7 +10,7 @@ logging.basicConfig(
 
 # ============== CONFIGURATION ==============
 # STEP 1: Replace with your bot token from @BotFather
-BOT_TOKEN = "7555654864:AAGKxGxHGXDwJfP25le-ZGD-qhS9vDytttM"
+BOT_TOKEN = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0"
 
 # STEP 2: Replace with your personal chat ID (get it from @userinfobot)
 YOUR_CHAT_ID = "-2714719687"

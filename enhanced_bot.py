@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 # Bot configuration
-BOT_TOKEN = "7555654864:AAGKxGxHGXDwJfP25le-ZGD-qhS9vDytttM"
+BOT_TOKEN = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0"
 ADMIN_CHAT_ID = "-2714719687"
 
 # Load database
@@ -32,7 +32,7 @@ db = load_database()
 # Transaction patterns to detect
 TRANSACTION_PATTERNS = {
     'deposit': [r'\[credited!\]', r'credited', r'deposit.*success', r'received.*\$?\d+'],
-    'withdrawal': [r'withdrawn', r'sent.*\$?\d+', r'withdrawal.*success'],
+    'withdrawal': [r'withdraw', r'withdrawn', r'sent.*\$?\d+', r'withdrawal'],
     'denied': [r'denied', r'rejected', r'failed', r'insufficient'],
     'expired': [r'expired', r'timeout', r'10 minutes.*expired'],
     'pending': [r'pending', r'processing', r'confirming']
