@@ -53,6 +53,38 @@ class Transaction:
         """Create from dictionary"""
         return cls(**data)
 
+@dataclass
+class GroupMember:
+    """Group member data model"""
+    member_id: str
+    telegram_id: int
+    username: str
+    group_id: int
+    group_name: str
+    join_date: str
+    status: str = "pending"  # pending, approved, denied, restricted
+    permissions: Dict = None
+    customer_id: Optional[str] = None
+    
+    def __post_init__(self):
+        if self.permissions is None:
+            self.permissions = {
+                "can_view": False,
+                "can_trade": False,
+                "can_withdraw": False,
+                "daily_limit": 0,
+                "notes": ""
+            }
+    
+    def to_dict(self) -> Dict:
+        """Convert to dictionary"""
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, data: Dict) -> 'GroupMember':
+        """Create from dictionary"""
+        return cls(**data)
+
 class Database:
     """Database manager with proper error handling and validation"""
     
@@ -86,6 +118,12 @@ class Database:
                 "inactive_days": 3
             },
             "groups": {},
+            "members": {},
+            "permissions": {
+                "pending": [],
+                "approved": [],
+                "denied": []
+            },
             "settings": {
                 "last_backup": None,
                 "version": "2.0"
@@ -308,6 +346,141 @@ class Database:
                 inactive.append(customer)
         
         return inactive
+    
+    # Group Member operations
+    def add_member(self, member: GroupMember) -> bool:
+        """Add a new group member"""
+        try:
+            member_key = f"{member.group_id}_{member.telegram_id}"
+            self.data['members'][member_key] = member.to_dict()
+            
+            # Add to pending permissions
+            if member.status == "pending":
+                if member_key not in self.data['permissions']['pending']:
+                    self.data['permissions']['pending'].append(member_key)
+            
+            return self.save()
+        except Exception as e:
+            logger.error(f"Error adding member: {e}")
+            return False
+    
+    def get_member(self, group_id: int, telegram_id: int) -> Optional[GroupMember]:
+        """Get a specific group member"""
+        try:
+            member_key = f"{group_id}_{telegram_id}"
+            data = self.data['members'].get(member_key)
+            if data:
+                return GroupMember.from_dict(data)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting member: {e}")
+            return None
+    
+    def get_group_members(self, group_id: int = None) -> List[GroupMember]:
+        """Get all members, optionally filtered by group"""
+        members = []
+        for key, data in self.data['members'].items():
+            try:
+                member = GroupMember.from_dict(data)
+                if group_id is None or member.group_id == group_id:
+                    members.append(member)
+            except Exception as e:
+                logger.error(f"Error loading member {key}: {e}")
+        return members
+    
+    def get_pending_members(self) -> List[GroupMember]:
+        """Get all pending members awaiting approval"""
+        pending = []
+        for member_key in self.data['permissions'].get('pending', []):
+            member_data = self.data['members'].get(member_key)
+            if member_data:
+                try:
+                    pending.append(GroupMember.from_dict(member_data))
+                except Exception as e:
+                    logger.error(f"Error loading pending member: {e}")
+        return pending
+    
+    def approve_member(self, group_id: int, telegram_id: int, 
+                      permissions: Dict = None) -> bool:
+        """Approve a member with specific permissions"""
+        try:
+            member = self.get_member(group_id, telegram_id)
+            if not member:
+                return False
+            
+            member.status = "approved"
+            if permissions:
+                member.permissions.update(permissions)
+            
+            member_key = f"{group_id}_{telegram_id}"
+            self.data['members'][member_key] = member.to_dict()
+            
+            # Update permission lists
+            if member_key in self.data['permissions']['pending']:
+                self.data['permissions']['pending'].remove(member_key)
+            if member_key not in self.data['permissions']['approved']:
+                self.data['permissions']['approved'].append(member_key)
+            
+            return self.save()
+        except Exception as e:
+            logger.error(f"Error approving member: {e}")
+            return False
+    
+    def deny_member(self, group_id: int, telegram_id: int, reason: str = "") -> bool:
+        """Deny a member access"""
+        try:
+            member = self.get_member(group_id, telegram_id)
+            if not member:
+                return False
+            
+            member.status = "denied"
+            member.permissions['notes'] = reason
+            
+            member_key = f"{group_id}_{telegram_id}"
+            self.data['members'][member_key] = member.to_dict()
+            
+            # Update permission lists
+            if member_key in self.data['permissions']['pending']:
+                self.data['permissions']['pending'].remove(member_key)
+            if member_key not in self.data['permissions']['denied']:
+                self.data['permissions']['denied'].append(member_key)
+            
+            return self.save()
+        except Exception as e:
+            logger.error(f"Error denying member: {e}")
+            return False
+    
+    def update_member_permissions(self, group_id: int, telegram_id: int,
+                                 permissions: Dict) -> bool:
+        """Update member permissions"""
+        try:
+            member = self.get_member(group_id, telegram_id)
+            if not member:
+                return False
+            
+            member.permissions.update(permissions)
+            member_key = f"{group_id}_{telegram_id}"
+            self.data['members'][member_key] = member.to_dict()
+            
+            return self.save()
+        except Exception as e:
+            logger.error(f"Error updating permissions: {e}")
+            return False
+    
+    def get_member_stats(self) -> Dict[str, Any]:
+        """Get member statistics"""
+        try:
+            members = self.get_group_members()
+            return {
+                'total_members': len(members),
+                'pending': len(self.data['permissions'].get('pending', [])),
+                'approved': len(self.data['permissions'].get('approved', [])),
+                'denied': len(self.data['permissions'].get('denied', [])),
+                'groups': len(set(m.group_id for m in members))
+            }
+        except Exception as e:
+            logger.error(f"Error getting member stats: {e}")
+            return {}
 
 # Global database instance
 db = Database()
