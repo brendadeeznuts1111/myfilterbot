@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test Results</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Test members endpoint
+                const membersResponse = await fetch('http://localhost:5000/api/members');
+                const membersData = await membersResponse.json();
+                
+                results.innerHTML += '<h2>Members API:</h2>';
+                results.innerHTML += '<pre>' + JSON.stringify(membersData, null, 2) + '</pre>';
+                
+                // Test stats endpoint
+                const statsResponse = await fetch('http://localhost:5000/api/stats');
+                const statsData = await statsResponse.json();
+                
+                results.innerHTML += '<h2>Stats API:</h2>';
+                results.innerHTML += '<pre>' + JSON.stringify(statsData, null, 2) + '</pre>';
+                
+            } catch (error) {
+                results.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+        
+        testAPI();
+    </script>
+</body>
+</html>
