@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Settings{% endblock %}
+{% block page_description %}{% if user_role == 'admin' %}System configuration and preferences{% else %}Your account settings and preferences{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-layout {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .settings-nav {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-4);
+        height: fit-content;
+        position: sticky;
+        top: var(--space-4);
+    }
+    
+    .settings-nav-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--border-radius);
+        text-decoration: none;
+        color: var(--text-secondary);
+        transition: var(--transition);
+        margin-bottom: var(--space-1);
+        cursor: pointer;
+    }
+    
+    .settings-nav-item:hover,
+    .settings-nav-item.active {
+        background: var(--bg-surface);
+        color: var(--primary);
+    }
+    
+    .settings-section {
+        display: none;
+    }
+    
+    .settings-section.active {
+        display: block;
+    }
+    
+    .settings-form-group {
+        margin-bottom: var(--space-6);
+    }
+    
+    .settings-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+    
+    @media (max-width: 1024px) {
+        .settings-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .settings-nav {
+            position: static;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .settings-form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-layout">
+    <!-- Settings Navigation -->
+    <div class="settings-nav">
+        <div class="settings-nav-item active" data-section="general">
+            <i class="fas fa-cog"></i>
+            <span>General</span>
+        </div>
+        <div class="settings-nav-item" data-section="security">
+            <i class="fas fa-shield-alt"></i>
+            <span>Security</span>
+        </div>
+        <div class="settings-nav-item" data-section="notifications">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+        </div>
+        {% if user_role == 'admin' %}
+        <div class="settings-nav-item" data-section="system">
+            <i class="fas fa-server"></i>
+            <span>System</span>
+        </div>
+        <div class="settings-nav-item" data-section="api">
+            <i class="fas fa-code"></i>
+            <span>API Settings</span>
+        </div>
+        {% endif %}
+        <div class="settings-nav-item" data-section="preferences">
+            <i class="fas fa-palette"></i>
+            <span>Preferences</span>
+        </div>
+    </div>
+    
+    <!-- Settings Content -->
+    <div>
+        <!-- General Settings -->
+        <div id="general-section" class="settings-section active">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h3 class="fantdev-card-title">
+                        <i class="fas fa-cog"></i>
+                        General Settings
+                    </h3>
+                </div>
+                <div class="fantdev-card-body">
+                    <form id="generalSettingsForm">
+                        <div class="settings-form-group">
+                            <h4>Account Information</h4>
+                            <div class="settings-form-row">
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">{% if user_role == 'admin' %}Username{% else %}Customer ID{% endif %}</label>
+                                    <input type="text" class="fantdev-input" value="{{ user_id }}" disabled>
+                                </div>
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Email</label>
+                                    <input type="email" class="fantdev-input" value="{{ user_email }}" placeholder="Enter email" autocomplete="email" name="email" id="userEmail">
+                                </div>
+                            </div>
+                            <div class="settings-form-row">
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Phone Number</label>
+                                    <input type="tel" class="fantdev-input" placeholder="Enter phone number" autocomplete="tel" name="phone" id="userPhone">
+                                </div>
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Time Zone</label>
+                                    <select class="fantdev-select">
+                                        <option>UTC</option>
+                                        <option>EST</option>
+                                        <option>PST</option>
+                                        <option>GMT</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-form-group">
+                            <h4>Display Settings</h4>
+                            <div class="settings-form-row">
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Language</label>
+                                    <select class="fantdev-select">
+                                        <option>English</option>
+                                        <option>Spanish</option>
+                                        <option>French</option>
+                                    </select>
+                                </div>
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Date Format</label>
+                                    <select class="fantdev-select">
+                                        <option>MM/DD/YYYY</option>
+                                        <option>DD/MM/YYYY</option>
+                                        <option>YYYY-MM-DD</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="fantdev-flex" style="gap: var(--space-3);">
+                            <button type="submit" class="fantdev-btn fantdev-btn-primary">Save Changes</button>
+                            <button type="reset" class="fantdev-btn fantdev-btn-outline">Reset</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Security Settings -->
+        <div id="security-section" class="settings-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h3 class="fantdev-card-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Security Settings
+                    </h3>
+                </div>
+                <div class="fantdev-card-body">
+                    <form id="securitySettingsForm">
+                        <div class="settings-form-group">
+                            <h4>Change Password</h4>
+                            <div class="fantdev-form-group">
+                                <label class="fantdev-label">Current Password</label>
+                                <input type="password" class="fantdev-input" placeholder="Enter current password" autocomplete="current-password" name="current_password" id="currentPassword">
+                            </div>
+                            <div class="settings-form-row">
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">New Password</label>
+                                    <input type="password" class="fantdev-input" placeholder="Enter new password" autocomplete="new-password" name="new_password" id="newPassword">
+                                </div>
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Confirm New Password</label>
+                                    <input type="password" class="fantdev-input" placeholder="Confirm new password" autocomplete="new-password" name="confirm_password" id="confirmPassword">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-form-group">
+                            <h4>Two-Factor Authentication</h4>
+                            <label class="fantdev-checkbox">
+                                <input type="checkbox">
+                                <span>Enable two-factor authentication</span>
+                            </label>
+                        </div>
+                        
+                        <div class="settings-form-group">
+                            <h4>Session Management</h4>
+                            <p class="fantdev-text-secondary">You are currently logged in from: {{ request.remote_addr if request else 'Unknown' }}</p>
+                            <button type="button" class="fantdev-btn fantdev-btn-warning fantdev-btn-sm">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Log Out All Other Sessions
+                            </button>
+                        </div>
+                        
+                        <div class="fantdev-flex" style="gap: var(--space-3);">
+                            <button type="submit" class="fantdev-btn fantdev-btn-primary">Update Security Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification Settings -->
+        <div id="notifications-section" class="settings-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h3 class="fantdev-card-title">
+                        <i class="fas fa-bell"></i>
+                        Notification Settings
+                    </h3>
+                </div>
+                <div class="fantdev-card-body">
+                    <form id="notificationSettingsForm">
+                        <div class="settings-form-group">
+                            <h4>Email Notifications</h4>
+                            <label class="fantdev-checkbox">
+                                <input type="checkbox" checked>
+                                <span>Transaction alerts</span>
+                            </label>
+                            <label class="fantdev-checkbox">
+                                <input type="checkbox" checked>
+                                <span>Daily summary</span>
+                            </label>
+                            <label class="fantdev-checkbox">
+                                <input type="checkbox">
+                                <span>Weekly reports</span>
+                            </label>
+                            <label class="fantdev-checkbox">
+                                <input type="checkbox" checked>
+                                <span>Security alerts</span>
+                            </label>
+                        </div>
+                        
+                        <div class="settings-form-group">
+                            <h4>Push Notifications</h4>
+                            <label class="fantdev-checkbox">
+                                <input type="checkbox" checked>
+                                <span>Real-time alerts</span>
+                            </label>
+                            <label class="fantdev-checkbox">
+                                <input type="checkbox">
+                                <span>Marketing updates</span>
+                            </label>
+                        </div>
+                        
+                        <div class="fantdev-flex" style="gap: var(--space-3);">
+                            <button type="submit" class="fantdev-btn fantdev-btn-primary">Save Preferences</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        {% if user_role == 'admin' %}
+        <!-- System Settings -->
+        <div id="system-section" class="settings-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h3 class="fantdev-card-title">
+                        <i class="fas fa-server"></i>
+                        System Settings
+                    </h3>
+                </div>
+                <div class="fantdev-card-body">
+                    <form id="systemSettingsForm">
+                        <div class="settings-form-group">
+                            <h4>Trading Configuration</h4>
+                            <div class="settings-form-row">
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Auto Balance Update</label>
+                                    <select class="fantdev-select">
+                                        <option value="true">Enabled</option>
+                                        <option value="false">Disabled</option>
+                                    </select>
+                                </div>
+                                <div class="fantdev-form-group">
+                                    <label class="fantdev-label">Alert Threshold ($)</label>
+                                    <input type="number" class="fantdev-input" value="1000" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-form-group">
+                            <h4>Database Settings</h4>
+                            <div class="fantdev-form-group">
+                                <label class="fantdev-label">Backup Frequency</label>
+                                <select class="fantdev-select">
+                                    <option>Every transaction</option>
+                                    <option>Hourly</option>
+                                    <option>Daily</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="fantdev-flex" style="gap: var(--space-3);">
+                            <button type="submit" class="fantdev-btn fantdev-btn-primary">Save System Settings</button>
+                            <button type="button" class="fantdev-btn fantdev-btn-warning">
+                                <i class="fas fa-database"></i>
+                                Backup Now
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- API Settings -->
+        <div id="api-section" class="settings-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h3 class="fantdev-card-title">
+                        <i class="fas fa-code"></i>
+                        API Settings
+                    </h3>
+                </div>
+                <div class="fantdev-card-body">
+                    <div class="settings-form-group">
+                        <h4>API Keys</h4>
+                        <div class="fantdev-form-group">
+                            <label class="fantdev-label">Telegram Bot Token</label>
+                            <div class="fantdev-flex" style="gap: var(--space-3);">
+                                <input type="password" class="fantdev-input" value="••••••••••••••••" disabled>
+                                <button class="fantdev-btn fantdev-btn-outline">
+                                    <i class="fas fa-eye"></i>
+                                    Show
+                                </button>
+                            </div>
+                        </div>
+                        <div class="fantdev-form-group">
+                            <label class="fantdev-label">Admin Chat ID</label>
+                            <input type="text" class="fantdev-input" value="-2714719687" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-form-group">
+                        <h4>Webhook Settings</h4>
+                        <div class="fantdev-form-group">
+                            <label class="fantdev-label">Webhook URL</label>
+                            <input type="url" class="fantdev-input" placeholder="https://your-domain.com/webhook">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Preferences -->
+        <div id="preferences-section" class="settings-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h3 class="fantdev-card-title">
+                        <i class="fas fa-palette"></i>
+                        Preferences
+                    </h3>
+                </div>
+                <div class="fantdev-card-body">
+                    <div class="settings-form-group">
+                        <h4>Theme</h4>
+                        <div class="fantdev-flex" style="gap: var(--space-3);">
+                            <button onclick="app.setTheme('light')" class="fantdev-btn fantdev-btn-outline">
+                                <i class="fas fa-sun"></i>
+                                Light
+                            </button>
+                            <button onclick="app.setTheme('dark')" class="fantdev-btn fantdev-btn-outline">
+                                <i class="fas fa-moon"></i>
+                                Dark
+                            </button>
+                            <button onclick="app.setTheme('auto')" class="fantdev-btn fantdev-btn-outline">
+                                <i class="fas fa-adjust"></i>
+                                Auto
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-form-group">
+                        <h4>Display Options</h4>
+                        <label class="fantdev-checkbox">
+                            <input type="checkbox" checked>
+                            <span>Show animations</span>
+                        </label>
+                        <label class="fantdev-checkbox">
+                            <input type="checkbox" checked>
+                            <span>Compact view</span>
+                        </label>
+                        <label class="fantdev-checkbox">
+                            <input type="checkbox">
+                            <span>Show tooltips</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup navigation
+        document.querySelectorAll('.settings-nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // Update nav active state
+                document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show corresponding section
+                const section = this.dataset.section;
+                document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+                document.getElementById(section + '-section').classList.add('active');
+            });
+        });
+        
+        // Handle form submissions
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Simulate saving settings
+                app.showLoading();
+                
+                setTimeout(() => {
+                    app.hideLoading();
+                    app.showNotification('Settings saved successfully', 'success');
+                }, 1000);
+            });
+        });
+    });
+</script>
+{% endblock %}

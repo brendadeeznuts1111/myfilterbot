@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}My Profile{% endblock %}
+{% block page_description %}Manage your account information and preferences{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    <button onclick="editProfile()" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-edit"></i>
+        Edit Profile
+    </button>
+    <button onclick="exportData()" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-download"></i>
+        Export My Data
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .profile-sidebar {
+        height: fit-content;
+    }
+    
+    .profile-avatar-section {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto var(--space-4);
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: 600;
+    }
+    
+    .profile-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: var(--space-2);
+    }
+    
+    .profile-id {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-4);
+    }
+    
+    .profile-status {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-4);
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--success);
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .profile-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
+        margin-top: var(--space-6);
+        padding-top: var(--space-6);
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .profile-stat {
+        text-align: center;
+    }
+    
+    .profile-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: var(--space-1);
+    }
+    
+    .profile-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .profile-section {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        margin-bottom: var(--space-4);
+    }
+    
+    .profile-section-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: var(--space-4);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+    
+    .profile-info-row {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: var(--space-4);
+        padding: var(--space-3) 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .profile-info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .profile-info-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .profile-info-value {
+        font-size: 0.875rem;
+        color: var(--text-primary);
+    }
+    
+    .profile-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: var(--space-1) var(--space-2);
+        background: var(--bg-surface);
+        border-radius: var(--border-radius);
+        font-size: 0.75rem;
+        margin-right: var(--space-2);
+    }
+    
+    @media (max-width: 1024px) {
+        .profile-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-layout">
+    <!-- Sidebar -->
+    <div class="profile-sidebar">
+        <!-- Avatar Section -->
+        <div class="profile-avatar-section">
+            <div class="profile-avatar">
+                {{ user_initials if user_initials else user_id[:2] if user_id else "?" }}
+            </div>
+            <div class="profile-name">{{ user_name if user_name else user_id }}</div>
+            <div class="profile-id">ID: {{ user_id }}</div>
+            <div class="profile-status">
+                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                Active Account
+            </div>
+            
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="profile-stat-value">{{ customer.balance if customer else "$0" }}</div>
+                    <div class="profile-stat-label">Balance</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value">{{ customer.weekly_pnl if customer else "$0" }}</div>
+                    <div class="profile-stat-label">Weekly P&L</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="fantdev-card" style="margin-top: var(--space-4);">
+            <div class="fantdev-card-body">
+                <button onclick="changePassword()" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm" style="width: 100%; margin-bottom: var(--space-2);">
+                    <i class="fas fa-key"></i>
+                    Change Password
+                </button>
+                <button onclick="linkTelegram()" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm" style="width: 100%; margin-bottom: var(--space-2);">
+                    <i class="fab fa-telegram"></i>
+                    {% if customer and customer.telegram_id %}Update{% else %}Link{% endif %} Telegram
+                </button>
+                <button onclick="downloadStatement()" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm" style="width: 100%;">
+                    <i class="fas fa-file-pdf"></i>
+                    Download Statement
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div>
+        <!-- Account Information -->
+        <div class="profile-section">
+            <h3 class="profile-section-title">
+                <i class="fas fa-user"></i>
+                Account Information
+            </h3>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Customer ID</div>
+                <div class="profile-info-value">{{ user_id }}</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Email Address</div>
+                <div class="profile-info-value">{{ user_email if user_email else "Not set" }}</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Phone Number</div>
+                <div class="profile-info-value">{{ customer.phone if customer and customer.phone else "Not set" }}</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Member Since</div>
+                <div class="profile-info-value">{{ customer.registration_date[:10] if customer and customer.registration_date else "Unknown" }}</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Last Activity</div>
+                <div class="profile-info-value">{{ customer.last_activity if customer and customer.last_activity else "Never" }}</div>
+            </div>
+        </div>
+        
+        <!-- Connected Services -->
+        <div class="profile-section">
+            <h3 class="profile-section-title">
+                <i class="fas fa-link"></i>
+                Connected Services
+            </h3>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Telegram</div>
+                <div class="profile-info-value">
+                    {% if customer and customer.telegram_id %}
+                        <span class="fantdev-badge fantdev-badge-success">
+                            <i class="fab fa-telegram"></i>
+                            Connected
+                        </span>
+                        <span class="fantdev-text-muted">{{ customer.telegram_username if customer.telegram_username else "@unknown" }}</span>
+                    {% else %}
+                        <span class="fantdev-badge fantdev-badge-outline">
+                            Not Connected
+                        </span>
+                        <a href="#" onclick="linkTelegram()" class="fantdev-text-primary">Connect Now</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Two-Factor Auth</div>
+                <div class="profile-info-value">
+                    <span class="fantdev-badge fantdev-badge-outline">Disabled</span>
+                    <a href="/settings" class="fantdev-text-primary">Enable</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trading Statistics -->
+        <div class="profile-section">
+            <h3 class="profile-section-title">
+                <i class="fas fa-chart-line"></i>
+                Trading Statistics
+            </h3>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Total Trades</div>
+                <div class="profile-info-value">{{ stats.total_trades if stats else 0 }}</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Win Rate</div>
+                <div class="profile-info-value">
+                    <span class="{{ 'fantdev-text-success' if stats and stats.win_rate > 50 else 'fantdev-text-warning' }}">
+                        {{ stats.win_rate if stats else 0 }}%
+                    </span>
+                </div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Total Volume</div>
+                <div class="profile-info-value">${{ "{:,.2f}".format(stats.total_volume) if stats else "0.00" }}</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Best Day</div>
+                <div class="profile-info-value fantdev-text-success">+${{ "{:,.2f}".format(stats.best_day) if stats else "0.00" }}</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">Worst Day</div>
+                <div class="profile-info-value fantdev-text-error">-${{ "{:,.2f}".format(stats.worst_day) if stats else "0.00" }}</div>
+            </div>
+        </div>
+        
+        <!-- Account Badges -->
+        <div class="profile-section">
+            <h3 class="profile-section-title">
+                <i class="fas fa-award"></i>
+                Achievements & Badges
+            </h3>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+                <div class="profile-badge">
+                    <i class="fas fa-check-circle fantdev-text-success"></i>
+                    Verified Account
+                </div>
+                {% if customer and customer.telegram_id %}
+                <div class="profile-badge">
+                    <i class="fab fa-telegram fantdev-text-info"></i>
+                    Telegram Connected
+                </div>
+                {% endif %}
+                {% if stats and stats.total_trades > 100 %}
+                <div class="profile-badge">
+                    <i class="fas fa-fire fantdev-text-warning"></i>
+                    Active Trader
+                </div>
+                {% endif %}
+                {% if stats and stats.win_rate > 60 %}
+                <div class="profile-badge">
+                    <i class="fas fa-trophy fantdev-text-warning"></i>
+                    High Win Rate
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div class="profile-section" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+            <h3 class="profile-section-title" style="color: var(--error);">
+                <i class="fas fa-exclamation-triangle"></i>
+                Danger Zone
+            </h3>
+            <p class="fantdev-text-secondary" style="margin-bottom: var(--space-4);">
+                These actions are irreversible. Please proceed with caution.
+            </p>
+            <div class="fantdev-flex" style="gap: var(--space-3);">
+                <button onclick="exportAllData()" class="fantdev-btn fantdev-btn-outline">
+                    <i class="fas fa-download"></i>
+                    Export All Data
+                </button>
+                <button onclick="deactivateAccount()" class="fantdev-btn fantdev-btn-error">
+                    <i class="fas fa-user-slash"></i>
+                    Deactivate Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="fantdev-modal" style="display: none;">
+    <div class="fantdev-modal-content">
+        <div class="fantdev-modal-header">
+            <h3>Edit Profile</h3>
+            <button class="fantdev-modal-close" onclick="closeEditModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="fantdev-modal-body">
+            <form id="editProfileForm">
+                <div class="fantdev-form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="fantdev-input" id="editEmail" placeholder="Enter email">
+                </div>
+                <div class="fantdev-form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" class="fantdev-input" id="editPhone" placeholder="Enter phone number">
+                </div>
+                <div class="fantdev-form-group">
+                    <label>Time Zone</label>
+                    <select class="fantdev-select" id="editTimezone">
+                        <option>UTC</option>
+                        <option>EST</option>
+                        <option>PST</option>
+                        <option>GMT</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="fantdev-modal-footer">
+            <button onclick="closeEditModal()" class="fantdev-btn fantdev-btn-outline">Cancel</button>
+            <button onclick="saveProfile()" class="fantdev-btn fantdev-btn-primary">Save Changes</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function editProfile() {
+        document.getElementById('editProfileModal').style.display = 'flex';
+    }
+    
+    function closeEditModal() {
+        document.getElementById('editProfileModal').style.display = 'none';
+    }
+    
+    async function saveProfile() {
+        const email = document.getElementById('editEmail').value;
+        const phone = document.getElementById('editPhone').value;
+        const timezone = document.getElementById('editTimezone').value;
+        
+        try {
+            app.showLoading();
+            
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            app.showNotification('Profile updated successfully', 'success');
+            closeEditModal();
+            
+            // Reload page to show updated data
+            setTimeout(() => window.location.reload(), 1000);
+            
+        } catch (error) {
+            app.showNotification('Error updating profile', 'error');
+        } finally {
+            app.hideLoading();
+        }
+    }
+    
+    function changePassword() {
+        window.location.href = '/settings#security';
+    }
+    
+    function linkTelegram() {
+        app.showNotification('Opening Telegram bot...', 'info');
+        window.open('https://t.me/your_bot?start=' + '{{ user_id }}', '_blank');
+    }
+    
+    async function downloadStatement() {
+        try {
+            const response = await fetch('/api/customer/{{ user_id }}/statement', {
+                headers: {
+                    'Authorization': `Bearer ${app.getToken()}`
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `statement_${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                app.showNotification('Statement downloaded successfully', 'success');
+            } else {
+                throw new Error('Download failed');
+            }
+        } catch (error) {
+            app.showNotification('Error downloading statement', 'error');
+        }
+    }
+    
+    async function exportData() {
+        try {
+            const response = await fetch('/api/customer/{{ user_id }}/export', {
+                headers: {
+                    'Authorization': `Bearer ${app.getToken()}`
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my_data_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                app.showNotification('Data exported successfully', 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            app.showNotification('Error exporting data', 'error');
+        }
+    }
+    
+    function exportAllData() {
+        if (confirm('This will export all your data including personal information and trading history. Continue?')) {
+            exportData();
+        }
+    }
+    
+    function deactivateAccount() {
+        if (confirm('Are you sure you want to deactivate your account? This action cannot be undone.')) {
+            if (confirm('This is your final warning. Your account will be permanently deactivated. Continue?')) {
+                app.showNotification('Account deactivation requested. Please contact support to complete this process.', 'warning');
+            }
+        }
+    }
+</script>
+{% endblock %}

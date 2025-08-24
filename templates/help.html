@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}Help & Support - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Help & Support{% endblock %}
+{% block page_description %}Get help with using the FantDev Trading Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-search {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-8);
+        text-align: center;
+        margin-bottom: var(--space-8);
+    }
+    
+    .help-search h2 {
+        font-size: 1.875rem;
+        margin-bottom: var(--space-4);
+        color: var(--text-primary);
+    }
+    
+    .help-search-input {
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    .help-search-input input {
+        width: 100%;
+        padding: var(--space-4) var(--space-12) var(--space-4) var(--space-4);
+        font-size: 1rem;
+    }
+    
+    .help-search-input button {
+        position: absolute;
+        right: var(--space-2);
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    .help-categories {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .help-category {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        text-align: center;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+    
+    .help-category:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .help-category-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto var(--space-4);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+    
+    .help-category-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: var(--space-2);
+    }
+    
+    .help-category-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    .faq-section {
+        margin-bottom: var(--space-8);
+    }
+    
+    .faq-item {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        margin-bottom: var(--space-3);
+        overflow: hidden;
+    }
+    
+    .faq-question {
+        padding: var(--space-4) var(--space-5);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+        transition: var(--transition);
+    }
+    
+    .faq-question:hover {
+        background: var(--bg-surface);
+    }
+    
+    .faq-answer {
+        padding: 0 var(--space-5) var(--space-4);
+        display: none;
+        color: var(--text-secondary);
+    }
+    
+    .faq-item.active .faq-answer {
+        display: block;
+    }
+    
+    .faq-item.active .faq-icon {
+        transform: rotate(180deg);
+    }
+    
+    .contact-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .contact-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        text-align: center;
+    }
+    
+    .contact-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto var(--space-4);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    @media (max-width: 1024px) {
+        .help-categories {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .contact-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .help-categories {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Search Section -->
+<div class="help-search">
+    <h2>How can we help you?</h2>
+    <p class="fantdev-text-secondary" style="margin-bottom: var(--space-6);">
+        Search our knowledge base or browse categories below
+    </p>
+    <div class="help-search-input">
+        <input type="search" id="helpSearch" class="fantdev-input fantdev-input-lg" placeholder="Search for help...">
+        <button onclick="searchHelp()" class="fantdev-btn fantdev-btn-primary">
+            <i class="fas fa-search"></i>
+            Search
+        </button>
+    </div>
+</div>
+
+<!-- Help Categories -->
+<div class="help-categories">
+    <div class="help-category" onclick="showCategory('getting-started')">
+        <div class="help-category-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">
+            <i class="fas fa-rocket"></i>
+        </div>
+        <div class="help-category-title">Getting Started</div>
+        <div class="help-category-description">New to FantDev? Start here</div>
+    </div>
+    
+    <div class="help-category" onclick="showCategory('trading')">
+        <div class="help-category-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="help-category-title">Trading Guide</div>
+        <div class="help-category-description">Learn about trading features</div>
+    </div>
+    
+    <div class="help-category" onclick="showCategory('account')">
+        <div class="help-category-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--secondary);">
+            <i class="fas fa-user-cog"></i>
+        </div>
+        <div class="help-category-title">Account Management</div>
+        <div class="help-category-description">Manage your account settings</div>
+    </div>
+    
+    <div class="help-category" onclick="showCategory('security')">
+        <div class="help-category-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="help-category-title">Security</div>
+        <div class="help-category-description">Keep your account safe</div>
+    </div>
+    
+    <div class="help-category" onclick="showCategory('telegram')">
+        <div class="help-category-icon" style="background: rgba(0, 136, 204, 0.1); color: #0088cc;">
+            <i class="fab fa-telegram"></i>
+        </div>
+        <div class="help-category-title">Telegram Bot</div>
+        <div class="help-category-description">Connect and use our bot</div>
+    </div>
+    
+    <div class="help-category" onclick="showCategory('troubleshooting')">
+        <div class="help-category-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--error);">
+            <i class="fas fa-tools"></i>
+        </div>
+        <div class="help-category-title">Troubleshooting</div>
+        <div class="help-category-description">Fix common issues</div>
+    </div>
+</div>
+
+<!-- FAQ Section -->
+<div class="faq-section">
+    <div class="fantdev-card">
+        <div class="fantdev-card-header">
+            <h3 class="fantdev-card-title">
+                <i class="fas fa-question-circle"></i>
+                Frequently Asked Questions
+            </h3>
+        </div>
+        <div class="fantdev-card-body">
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How do I register for an account?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    To register for an account, you need to use our Telegram bot. Send /register command followed by your customer ID and password. Once registered, you can login to this web portal using the same credentials.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How do I connect my Telegram account?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Open Telegram and search for @YourBotName. Start a conversation with the bot and use the /register command with your customer ID and password. The bot will automatically link your Telegram account to your trading account.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>What are the available bot commands?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Available commands include:
+                    <ul style="margin-top: var(--space-2); padding-left: var(--space-6);">
+                        <li>/start - Start interaction with the bot</li>
+                        <li>/register - Register your account</li>
+                        <li>/balance - Check your current balance</li>
+                        <li>/history - View transaction history</li>
+                        <li>/help - Get help and support</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How do I reset my password?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    For security reasons, password resets must be done through our support team. Contact support via Telegram or email with your customer ID and verification information to reset your password.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How are transactions processed?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Transactions are automatically detected and processed by our bot when you send messages in the designated trading groups. The bot uses pattern recognition to identify deposits, withdrawals, and other transaction types. Your balance is updated in real-time.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>What is the minimum deposit/withdrawal amount?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    The minimum deposit amount is $100, and the minimum withdrawal amount is $50. These limits are in place to ensure efficient processing of transactions and reduce operational overhead.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Section -->
+<div class="contact-section">
+    <h2 style="text-align: center; margin-bottom: var(--space-6);">Still need help?</h2>
+    <div class="contact-cards">
+        <div class="contact-card">
+            <div class="contact-icon" style="background: rgba(0, 136, 204, 0.1); color: #0088cc;">
+                <i class="fab fa-telegram"></i>
+            </div>
+            <h3 style="margin-bottom: var(--space-2);">Telegram Support</h3>
+            <p class="fantdev-text-secondary" style="margin-bottom: var(--space-4);">
+                Get instant help from our support team
+            </p>
+            <a href="https://t.me/support" target="_blank" class="fantdev-btn fantdev-btn-primary fantdev-btn-sm">
+                <i class="fab fa-telegram"></i>
+                Open Telegram
+            </a>
+        </div>
+        
+        <div class="contact-card">
+            <div class="contact-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <h3 style="margin-bottom: var(--space-2);">Email Support</h3>
+            <p class="fantdev-text-secondary" style="margin-bottom: var(--space-4);">
+                Send us an email for detailed inquiries
+            </p>
+            <a href="mailto:support@fantdev.com" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm">
+                <i class="fas fa-envelope"></i>
+                Send Email
+            </a>
+        </div>
+        
+        <div class="contact-card">
+            <div class="contact-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">
+                <i class="fas fa-book"></i>
+            </div>
+            <h3 style="margin-bottom: var(--space-2);">Documentation</h3>
+            <p class="fantdev-text-secondary" style="margin-bottom: var(--space-4);">
+                Browse our comprehensive guides
+            </p>
+            <a href="/docs" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm">
+                <i class="fas fa-book"></i>
+                View Docs
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="fantdev-card">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-link"></i>
+            Quick Links
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4);">
+            <a href="/terms" class="fantdev-btn fantdev-btn-ghost">Terms of Service</a>
+            <a href="/privacy" class="fantdev-btn fantdev-btn-ghost">Privacy Policy</a>
+            <a href="/security" class="fantdev-btn fantdev-btn-ghost">Security</a>
+            <a href="/api" class="fantdev-btn fantdev-btn-ghost">API Documentation</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleFAQ(element) {
+        const faqItem = element.parentElement;
+        faqItem.classList.toggle('active');
+    }
+    
+    function searchHelp() {
+        const searchTerm = document.getElementById('helpSearch').value.toLowerCase();
+        
+        if (!searchTerm) {
+            app.showNotification('Please enter a search term', 'warning');
+            return;
+        }
+        
+        // In a real implementation, this would search the knowledge base
+        app.showNotification(`Searching for "${searchTerm}"...`, 'info');
+        
+        // Simulate search results
+        setTimeout(() => {
+            app.showNotification(`Found 5 results for "${searchTerm}"`, 'success');
+        }, 1000);
+    }
+    
+    function showCategory(category) {
+        // In a real implementation, this would navigate to category-specific help
+        window.location.href = `/help/${category}`;
+    }
+    
+    // Handle Enter key in search
+    document.getElementById('helpSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchHelp();
+        }
+    });
+</script>
+{% endblock %}

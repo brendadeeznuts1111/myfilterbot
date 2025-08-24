@@ -1,0 +1,784 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Trading Analytics{% endblock %}
+{% block page_description %}{% if user_role == 'admin' %}System-wide performance metrics and insights{% else %}Your trading performance and insights{% endif %}{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    <select id="timeRange" class="fantdev-input" style="width: 150px;">
+        <option value="7">Last 7 Days</option>
+        <option value="30" selected>Last 30 Days</option>
+        <option value="90">Last 90 Days</option>
+        <option value="365">Last Year</option>
+    </select>
+    <button onclick="exportAnalytics()" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-download"></i>
+        Export Report
+    </button>
+    <button onclick="refreshAnalytics()" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-sync"></i>
+        Refresh
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-4);
+    }
+    
+    .chart-container canvas {
+        max-height: 100%;
+    }
+    
+    .performance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .performance-table th,
+    .performance-table td {
+        padding: var(--space-3);
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .performance-table th {
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .performance-table tbody tr:hover {
+        background: var(--bg-surface);
+    }
+    
+    .metric-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-5);
+        text-align: center;
+        transition: var(--transition);
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto var(--space-3);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: var(--space-1);
+    }
+    
+    .metric-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-2);
+    }
+    
+    .metric-change {
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+    
+    .metric-change.positive {
+        color: var(--success);
+    }
+    
+    .metric-change.negative {
+        color: var(--error);
+    }
+    
+    .insights-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .insight-item {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        border-radius: var(--border-radius);
+        margin-bottom: var(--space-3);
+        transition: var(--transition);
+    }
+    
+    .insight-item:hover {
+        background: var(--bg-surface);
+    }
+    
+    .insight-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .insight-content {
+        flex: 1;
+    }
+    
+    .insight-title {
+        font-weight: 500;
+        margin-bottom: var(--space-1);
+        color: var(--text-primary);
+    }
+    
+    .insight-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    @media (max-width: 1024px) {
+        .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .chart-container {
+            height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Key Metrics -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="metric-value" id="totalPnL">$0.00</div>
+        <div class="metric-label">Total P&L</div>
+        <div class="metric-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>+12.5%</span>
+        </div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="metric-value" id="winRate">0%</div>
+        <div class="metric-label">Win Rate</div>
+        <div class="metric-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>+5.2%</span>
+        </div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="metric-value" id="totalTrades">0</div>
+        <div class="metric-label">Total Trades</div>
+        <div class="metric-change">
+            <span>This period</span>
+        </div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--secondary);">
+            <i class="fas fa-balance-scale"></i>
+        </div>
+        <div class="metric-value" id="avgTrade">$0.00</div>
+        <div class="metric-label">Avg Trade Size</div>
+        <div class="metric-change negative">
+            <i class="fas fa-arrow-down"></i>
+            <span>-3.1%</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main Analytics Content -->
+<div class="analytics-grid">
+    <!-- Charts Section -->
+    <div>
+        <!-- P&L Chart -->
+        <div class="fantdev-card">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-chart-area"></i>
+                    P&L Performance
+                </h3>
+                <div class="fantdev-flex" style="gap: var(--space-3);">
+                    <button onclick="switchChart('pnl', 'line')" class="fantdev-btn fantdev-btn-sm fantdev-btn-ghost">Line</button>
+                    <button onclick="switchChart('pnl', 'bar')" class="fantdev-btn fantdev-btn-sm fantdev-btn-ghost">Bar</button>
+                    <button onclick="switchChart('pnl', 'area')" class="fantdev-btn fantdev-btn-sm fantdev-btn-ghost">Area</button>
+                </div>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="chart-container">
+                    <canvas id="pnlChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Volume Chart -->
+        <div class="fantdev-card" style="margin-top: var(--space-6);">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Trading Volume
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="chart-container">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Performers Table -->
+        {% if user_role == 'admin' %}
+        <div class="fantdev-card" style="margin-top: var(--space-6);">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-trophy"></i>
+                    Top Performers
+                </h3>
+            </div>
+            <div class="fantdev-card-body" style="padding: 0;">
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Customer</th>
+                            <th>P&L</th>
+                            <th>Win Rate</th>
+                            <th>Trades</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topPerformersTable">
+                        <tr>
+                            <td colspan="5" class="fantdev-text-center" style="padding: var(--space-6);">
+                                <div class="fantdev-text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Loading...
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar -->
+    <div>
+        <!-- Insights Panel -->
+        <div class="fantdev-card">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-lightbulb"></i>
+                    Key Insights
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <ul class="insights-list" id="insightsList">
+                    <li class="insight-item">
+                        <div class="insight-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="insight-content">
+                            <div class="insight-title">Positive Trend</div>
+                            <div class="insight-description">Your win rate has improved by 5.2% this week</div>
+                        </div>
+                    </li>
+                    
+                    <li class="insight-item">
+                        <div class="insight-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="insight-content">
+                            <div class="insight-title">High Volume Alert</div>
+                            <div class="insight-description">Trading volume is 30% above average</div>
+                        </div>
+                    </li>
+                    
+                    <li class="insight-item">
+                        <div class="insight-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="insight-content">
+                            <div class="insight-title">Best Trading Day</div>
+                            <div class="insight-description">Tuesday shows the highest success rate</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Distribution Chart -->
+        <div class="fantdev-card" style="margin-top: var(--space-6);">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Trade Distribution
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="fantdev-card" style="margin-top: var(--space-6);">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Quick Stats
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="fantdev-flex-between" style="margin-bottom: var(--space-3);">
+                    <span class="fantdev-text-secondary">Best Day P&L</span>
+                    <span class="fantdev-font-semibold fantdev-text-success">+$5,234</span>
+                </div>
+                <div class="fantdev-flex-between" style="margin-bottom: var(--space-3);">
+                    <span class="fantdev-text-secondary">Worst Day P&L</span>
+                    <span class="fantdev-font-semibold fantdev-text-error">-$1,892</span>
+                </div>
+                <div class="fantdev-flex-between" style="margin-bottom: var(--space-3);">
+                    <span class="fantdev-text-secondary">Avg Daily P&L</span>
+                    <span class="fantdev-font-semibold">$892</span>
+                </div>
+                <div class="fantdev-flex-between" style="margin-bottom: var(--space-3);">
+                    <span class="fantdev-text-secondary">Max Drawdown</span>
+                    <span class="fantdev-font-semibold">-12.3%</span>
+                </div>
+                <div class="fantdev-flex-between">
+                    <span class="fantdev-text-secondary">Sharpe Ratio</span>
+                    <span class="fantdev-font-semibold">1.45</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Period Comparison -->
+<div class="fantdev-card">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-calendar-alt"></i>
+            Period Comparison
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="comparisonChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let charts = {};
+    let analyticsData = {};
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAnalyticsData();
+        setupEventListeners();
+    });
+    
+    function setupEventListeners() {
+        document.getElementById('timeRange').addEventListener('change', function() {
+            loadAnalyticsData();
+        });
+    }
+    
+    async function loadAnalyticsData() {
+        try {
+            app.showLoading();
+            const timeRange = document.getElementById('timeRange').value;
+            
+            {% if user_role == 'admin' %}
+            const response = await app.apiRequest(`/api/admin/analytics?days=${timeRange}`);
+            {% else %}
+            const response = await app.apiRequest(`/api/customer/{{ user_id }}/analytics?days=${timeRange}`);
+            {% endif %}
+            
+            analyticsData = response || generateMockData();
+            
+            updateMetrics();
+            renderCharts();
+            {% if user_role == 'admin' %}
+            renderTopPerformers();
+            {% endif %}
+            renderInsights();
+            
+        } catch (error) {
+            console.error('Error loading analytics:', error);
+            // Use mock data if API fails
+            analyticsData = generateMockData();
+            updateMetrics();
+            renderCharts();
+        } finally {
+            app.hideLoading();
+        }
+    }
+    
+    function generateMockData() {
+        const days = parseInt(document.getElementById('timeRange').value);
+        const dates = [];
+        const pnlData = [];
+        const volumeData = [];
+        
+        for (let i = days - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            dates.push(date.toLocaleDateString());
+            pnlData.push(Math.random() * 2000 - 500);
+            volumeData.push(Math.random() * 50000 + 10000);
+        }
+        
+        return {
+            dates: dates,
+            pnl: pnlData,
+            volume: volumeData,
+            totalPnL: pnlData.reduce((a, b) => a + b, 0),
+            winRate: 65 + Math.random() * 20,
+            totalTrades: Math.floor(Math.random() * 500 + 100),
+            avgTradeSize: Math.random() * 5000 + 1000,
+            topPerformers: [
+                { customer_id: 'BB1042', pnl: 5234, winRate: 72, trades: 45 },
+                { customer_id: 'BB1043', pnl: 4892, winRate: 68, trades: 38 },
+                { customer_id: 'BB1044', pnl: 3567, winRate: 65, trades: 52 }
+            ]
+        };
+    }
+    
+    function updateMetrics() {
+        document.getElementById('totalPnL').textContent = '$' + app.formatNumber(analyticsData.totalPnL || 0);
+        document.getElementById('winRate').textContent = (analyticsData.winRate || 0).toFixed(1) + '%';
+        document.getElementById('totalTrades').textContent = analyticsData.totalTrades || 0;
+        document.getElementById('avgTrade').textContent = '$' + app.formatNumber(analyticsData.avgTradeSize || 0);
+    }
+    
+    function renderCharts() {
+        // P&L Chart
+        renderPnLChart();
+        
+        // Volume Chart
+        renderVolumeChart();
+        
+        // Distribution Chart
+        renderDistributionChart();
+        
+        // Comparison Chart
+        renderComparisonChart();
+    }
+    
+    function renderPnLChart() {
+        const ctx = document.getElementById('pnlChart');
+        
+        if (charts.pnl) {
+            charts.pnl.destroy();
+        }
+        
+        charts.pnl = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: analyticsData.dates || [],
+                datasets: [{
+                    label: 'P&L',
+                    data: analyticsData.pnl || [],
+                    borderColor: 'rgb(37, 99, 235)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + app.formatNumber(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderVolumeChart() {
+        const ctx = document.getElementById('volumeChart');
+        
+        if (charts.volume) {
+            charts.volume.destroy();
+        }
+        
+        charts.volume = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: analyticsData.dates || [],
+                datasets: [{
+                    label: 'Volume',
+                    data: analyticsData.volume || [],
+                    backgroundColor: 'rgba(124, 58, 237, 0.5)',
+                    borderColor: 'rgb(124, 58, 237)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + app.formatNumber(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderDistributionChart() {
+        const ctx = document.getElementById('distributionChart');
+        
+        if (charts.distribution) {
+            charts.distribution.destroy();
+        }
+        
+        charts.distribution = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Deposits', 'Withdrawals', 'Pending'],
+                datasets: [{
+                    data: [65, 25, 10],
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(156, 163, 175, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderComparisonChart() {
+        const ctx = document.getElementById('comparisonChart');
+        
+        if (charts.comparison) {
+            charts.comparison.destroy();
+        }
+        
+        charts.comparison = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [
+                    {
+                        label: 'This Period',
+                        data: [12000, 15000, 18000, 22000],
+                        backgroundColor: 'rgba(37, 99, 235, 0.8)'
+                    },
+                    {
+                        label: 'Last Period',
+                        data: [10000, 12000, 14000, 16000],
+                        backgroundColor: 'rgba(156, 163, 175, 0.8)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + app.formatNumber(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    {% if user_role == 'admin' %}
+    function renderTopPerformers() {
+        const tbody = document.getElementById('topPerformersTable');
+        const performers = analyticsData.topPerformers || [];
+        
+        if (performers.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="fantdev-text-center" style="padding: var(--space-6);">
+                        <div class="fantdev-text-muted">No data available</div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = performers.map((performer, index) => `
+            <tr>
+                <td>
+                    <span class="fantdev-badge fantdev-badge-${index === 0 ? 'warning' : 'outline'}">
+                        #${index + 1}
+                    </span>
+                </td>
+                <td>
+                    <div class="fantdev-flex" style="gap: var(--space-2);">
+                        <div class="fantdev-avatar fantdev-avatar-sm">
+                            ${performer.customer_id.substring(0, 2)}
+                        </div>
+                        <span>${performer.customer_id}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="fantdev-font-semibold ${performer.pnl > 0 ? 'fantdev-text-success' : 'fantdev-text-error'}">
+                        $${app.formatNumber(performer.pnl)}
+                    </span>
+                </td>
+                <td>${performer.winRate}%</td>
+                <td>${performer.trades}</td>
+            </tr>
+        `).join('');
+    }
+    {% endif %}
+    
+    function renderInsights() {
+        // Insights are currently static but would be generated based on data analysis
+        // This is where you'd add logic to generate dynamic insights
+    }
+    
+    function switchChart(chartId, type) {
+        if (chartId === 'pnl' && charts.pnl) {
+            charts.pnl.config.type = type;
+            charts.pnl.update();
+        }
+    }
+    
+    async function exportAnalytics() {
+        try {
+            const timeRange = document.getElementById('timeRange').value;
+            const response = await fetch(`/api/analytics/export?days=${timeRange}`, {
+                headers: {
+                    'Authorization': `Bearer ${app.getToken()}`
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `analytics_report_${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                app.showNotification('Analytics report exported successfully', 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            app.showNotification('Error exporting analytics: ' + error.message, 'error');
+        }
+    }
+    
+    async function refreshAnalytics() {
+        await loadAnalyticsData();
+        app.showNotification('Analytics data refreshed', 'success');
+    }
+</script>
+{% endblock %}
