@@ -32,10 +32,16 @@ class FantDevApp {
         this.updateThemeIcon();
         
         // Animate theme transition
-        document.body.style.transition = 'background-color 0.3s, color 0.3s';
+        document.body.style.transition = 'background-color 0.3s ease-in-out, color 0.3s ease-in-out';
         setTimeout(() => {
             document.body.style.transition = '';
         }, 300);
+        
+        // Update charts if they exist
+        this.updateChartsTheme();
+        
+        // Dispatch theme change event for other components
+        window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: this.theme } }));
         
         this.showToast('Theme switched to ' + this.theme + ' mode', 'info');
     }
@@ -43,7 +49,9 @@ class FantDevApp {
     updateThemeIcon() {
         const icon = document.getElementById('theme-icon');
         if (icon) {
+            // Update icon based on current theme
             icon.className = this.theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+            icon.title = this.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
         }
     }
     
@@ -230,6 +238,30 @@ class FantDevApp {
         this.updateNotificationBadge();
         this.renderNotifications();
         this.showToast('All notifications marked as read', 'success');
+    }
+    
+    // Loading State Management
+    showLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+    }
+    
+    hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+    
+    showNotification(message, type = 'info') {
+        this.showToast(message, type);
+    }
+    
+    getToken() {
+        // This would get the auth token from cookies or localStorage
+        return localStorage.getItem('fantdev-token') || '';
     }
     
     // Toast Messages
@@ -483,6 +515,9 @@ class FantDevApp {
     // Chart Utilities (if Chart.js is available)
     createChart(ctx, config) {
         if (typeof Chart !== 'undefined') {
+            // Apply theme-aware colors
+            const themeColors = this.getChartColors();
+            
             return new Chart(ctx, {
                 ...config,
                 options: {
@@ -490,8 +525,30 @@ class FantDevApp {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: config.options?.plugins?.legend?.display !== false
+                            display: config.options?.plugins?.legend?.display !== false,
+                            labels: {
+                                color: themeColors.text
+                            }
                         }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: themeColors.text
+                            },
+                            grid: {
+                                color: themeColors.grid
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: themeColors.text
+                            },
+                            grid: {
+                                color: themeColors.grid
+                            }
+                        },
+                        ...config.options?.scales
                     },
                     ...config.options
                 }
@@ -499,6 +556,56 @@ class FantDevApp {
         } else {
             console.warn('Chart.js not loaded');
             return null;
+        }
+    }
+    
+    getChartColors() {
+        const computedStyle = getComputedStyle(document.documentElement);
+        return {
+            grid: computedStyle.getPropertyValue('--chart-grid').trim(),
+            text: computedStyle.getPropertyValue('--chart-text').trim(),
+            line1: computedStyle.getPropertyValue('--chart-line-1').trim(),
+            line2: computedStyle.getPropertyValue('--chart-line-2').trim(),
+            line3: computedStyle.getPropertyValue('--chart-line-3').trim(),
+            area1: computedStyle.getPropertyValue('--chart-area-1').trim(),
+            area2: computedStyle.getPropertyValue('--chart-area-2').trim(),
+            area3: computedStyle.getPropertyValue('--chart-area-3').trim()
+        };
+    }
+    
+    updateChartsTheme() {
+        // Update all Chart.js instances with new theme colors
+        if (typeof Chart !== 'undefined' && Chart.instances) {
+            const themeColors = this.getChartColors();
+            
+            Object.values(Chart.instances).forEach(chart => {
+                if (chart && chart.options) {
+                    // Update legend colors
+                    if (chart.options.plugins?.legend?.labels) {
+                        chart.options.plugins.legend.labels.color = themeColors.text;
+                    }
+                    
+                    // Update scales colors
+                    if (chart.options.scales) {
+                        Object.values(chart.options.scales).forEach(scale => {
+                            if (scale.ticks) scale.ticks.color = themeColors.text;
+                            if (scale.grid) scale.grid.color = themeColors.grid;
+                        });
+                    }
+                    
+                    // Update dataset colors if using theme variables
+                    chart.data.datasets.forEach((dataset, index) => {
+                        if (dataset.borderColor && typeof dataset.borderColor === 'string') {
+                            dataset.borderColor = themeColors[`line${index + 1}`] || themeColors.line1;
+                        }
+                        if (dataset.backgroundColor && typeof dataset.backgroundColor === 'string') {
+                            dataset.backgroundColor = themeColors[`area${index + 1}`] || themeColors.area1;
+                        }
+                    });
+                    
+                    chart.update('none'); // Update without animation
+                }
+            });
         }
     }
     

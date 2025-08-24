@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Documentation{% endblock %}
+{% block page_description %}Complete platform documentation and API reference{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .docs-sidebar {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-4);
+        height: fit-content;
+        position: sticky;
+        top: var(--space-4);
+    }
+    
+    .docs-section-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        margin: var(--space-4) 0 var(--space-2) 0;
+        padding-left: var(--space-2);
+    }
+    
+    .docs-nav-item {
+        display: block;
+        padding: var(--space-2) var(--space-3);
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+        margin-bottom: var(--space-1);
+    }
+    
+    .docs-nav-item:hover,
+    .docs-nav-item.active {
+        background: var(--bg-surface);
+        color: var(--primary);
+    }
+    
+    .docs-content h2 {
+        color: var(--text-primary);
+        margin-top: var(--space-8);
+        margin-bottom: var(--space-4);
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .docs-content h3 {
+        color: var(--text-primary);
+        margin-top: var(--space-6);
+        margin-bottom: var(--space-3);
+    }
+    
+    .docs-content code {
+        background: var(--bg-surface);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--border-radius-sm);
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 0.875rem;
+    }
+    
+    .docs-content pre {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: var(--space-4);
+        overflow-x: auto;
+    }
+    
+    .api-endpoint {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: var(--space-4);
+        margin: var(--space-4) 0;
+    }
+    
+    .api-method {
+        display: inline-block;
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-right: var(--space-2);
+    }
+    
+    .api-method.get { background: #10b981; color: white; }
+    .api-method.post { background: #3b82f6; color: white; }
+    .api-method.put { background: #f59e0b; color: white; }
+    .api-method.delete { background: #ef4444; color: white; }
+    
+    @media (max-width: 1024px) {
+        .docs-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .docs-sidebar {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-layout">
+    <!-- Documentation Sidebar -->
+    <div class="docs-sidebar">
+        <div class="docs-section-title">Getting Started</div>
+        <a href="#overview" class="docs-nav-item active">Overview</a>
+        <a href="#quickstart" class="docs-nav-item">Quick Start</a>
+        <a href="#installation" class="docs-nav-item">Installation</a>
+        <a href="#configuration" class="docs-nav-item">Configuration</a>
+        
+        <div class="docs-section-title">Bot Commands</div>
+        <a href="#customer-commands" class="docs-nav-item">Customer Commands</a>
+        <a href="#admin-commands" class="docs-nav-item">Admin Commands</a>
+        
+        <div class="docs-section-title">API Reference</div>
+        <a href="#authentication" class="docs-nav-item">Authentication</a>
+        <a href="#customers-api" class="docs-nav-item">Customers</a>
+        <a href="#transactions-api" class="docs-nav-item">Transactions</a>
+        <a href="#stats-api" class="docs-nav-item">Statistics</a>
+        
+        <div class="docs-section-title">Advanced</div>
+        <a href="#webhooks" class="docs-nav-item">Webhooks</a>
+        <a href="#websockets" class="docs-nav-item">WebSockets</a>
+        <a href="#deployment" class="docs-nav-item">Deployment</a>
+    </div>
+    
+    <!-- Documentation Content -->
+    <div class="docs-content">
+        <div class="fantdev-card">
+            <div class="fantdev-card-body">
+                <h2 id="overview">Overview</h2>
+                <p>FantDev Trading Platform is a comprehensive trading bot management system featuring Telegram integration, web portals, and automated reporting.</p>
+                
+                <h3>Key Features</h3>
+                <ul>
+                    <li>Real-time transaction monitoring</li>
+                    <li>Customer balance tracking</li>
+                    <li>Automated alerts and notifications</li>
+                    <li>Web-based admin and customer portals</li>
+                    <li>RESTful API for integrations</li>
+                </ul>
+                
+                <h2 id="quickstart">Quick Start</h2>
+                <pre><code># Clone the repository
+git clone https://github.com/brendadeeznuts1111/myfilterbot.git
+cd myfilterbot
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the bot
+python3 main_bot.py
+
+# Start the web portal
+python3 unified_server.py</code></pre>
+                
+                <h2 id="customer-commands">Customer Commands</h2>
+                <div class="api-endpoint">
+                    <h4>/start</h4>
+                    <p>Initialize the bot and display the welcome message.</p>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h4>/register [customer_id] [password]</h4>
+                    <p>Register your account with the bot.</p>
+                    <pre><code>Example: /register BB1042 N9H9</code></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h4>/balance</h4>
+                    <p>Check your current balance and P&L.</p>
+                </div>
+                
+                <h2 id="authentication">API Authentication</h2>
+                <div class="api-endpoint">
+                    <span class="api-method post">POST</span>
+                    <code>/api/login</code>
+                    <p>Authenticate and receive a JWT token.</p>
+                    <pre><code>{
+  "customer_id": "BB1042",
+  "password": "N9H9"
+}</code></pre>
+                </div>
+                
+                <h2 id="customers-api">Customers API</h2>
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <code>/api/customer/{customer_id}</code>
+                    <p>Retrieve customer information and balance.</p>
+                </div>
+                
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <code>/api/stats</code>
+                    <p>Get global platform statistics.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Smooth scroll to sections
+    document.querySelectorAll('.docs-nav-item').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+                
+                // Update active state
+                document.querySelectorAll('.docs-nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                this.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -27,10 +27,12 @@ python3 auto_reporter.py  # Scheduled reports (requires 'schedule' package)
 
 ### Running Tests
 ```bash
-python3 smoke_test.py           # Basic smoke tests
-python3 test_integration.py     # Integration tests 
-python3 test_enhanced_portal.py # Portal functionality tests
-python3 test_error_handling.py  # Error handling and debugging tests
+python3 smoke_test.py                 # Basic smoke tests
+python3 test_integration.py           # Integration tests 
+python3 test_enhanced_portal.py       # Portal functionality tests
+python3 test_error_handling.py        # Error handling and debugging tests
+python3 test_telegram_dashboard.py    # Telegram dashboard integration tests
+python3 test_telegram_dashboard_simple.py # Simple component tests
 
 # Worker system tests (requires Bun runtime)
 bun test src/report_worker.test.ts       # Test report generation worker
@@ -49,11 +51,14 @@ pip install flask flask-cors
 # Scheduled reporting dependency (not in requirements.txt)
 pip install schedule
 
-# Optional: WebSocket support for real-time updates
-pip install python-socketio
+# WebSocket support for real-time updates
+pip install python-socketio flask-socketio
 
-# Optional: System monitoring for debug interface
+# System monitoring for bot health tracking
 pip install psutil
+
+# React/TypeScript dependencies (requires Bun or npm)
+bun install  # or npm install
 ```
 
 ## Dependencies
@@ -113,9 +118,27 @@ This is a Telegram trading bot with web portals and automated reporting. The pro
    - **enhanced_admin_server.ts** - Enhanced admin functionality
    - Compile/run with Bun runtime (see bun commands in root)
 
-9. **High-Performance Worker System** (NEW in v1.2.21+)
-   - **src/report_worker.ts** - Background report generation with 500x faster postMessage()
-   - **src/admin_portal_worker.ts** - Real-time admin dashboard data processing
+9. **Telegram Dashboard Integration** (NEW in v2.0.0)
+   - **src/telegram_dashboard/** - Complete Telegram bot management system
+   - **message_streamer.py** - Real-time message streaming
+   - **group_monitor.py** - Group/channel monitoring with SQLite
+   - **bot_status.py** - Bot health and performance monitoring
+   - **admin_interface.py** - Administrative controls and bulk operations
+   - WebSocket integration for real-time updates
+   - 10 new API endpoints for Telegram management
+
+10. **React Component System** (NEW in v2.0.0)
+   - **src/components/** - 23 production-ready React components
+   - **AdminPanel.tsx** - Main admin dashboard
+   - **Dashboard.tsx** - Primary dashboard view
+   - **NotificationSystem.tsx** - Real-time notifications
+   - **MemberManagement.tsx** - Member administration
+   - Dark/light theme support
+   - Mobile responsive design
+
+11. **High-Performance Worker System** (NEW in v1.2.21+)
+   - **src/admin_portal_worker_thread.ts** - Admin operations with 500x faster postMessage()
+   - **src/report_worker.ts** - Background report generation
    - **src/websocket_worker.ts** - WebSocket message queue processing
    - **src/*_worker_thread.ts** - Worker thread implementations
    - Leverages Bun's optimized string transfer for large JSON payloads

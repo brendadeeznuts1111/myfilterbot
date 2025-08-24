@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Support - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Support Center{% endblock %}
+{% block page_description %}Get help with your account and platform features{% endblock %}
+
+{% block extra_css %}
+<style>
+    .support-hero {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: var(--space-12) var(--space-4);
+        border-radius: var(--border-radius-lg);
+        text-align: center;
+        margin-bottom: var(--space-8);
+    }
+    
+    .support-search {
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    .support-search input {
+        width: 100%;
+        padding: var(--space-4);
+        padding-left: var(--space-12);
+        font-size: 1.125rem;
+        border: none;
+        border-radius: var(--border-radius-full);
+    }
+    
+    .support-search i {
+        position: absolute;
+        left: var(--space-4);
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+    }
+    
+    .support-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--space-4);
+        margin-bottom: var(--space-8);
+    }
+    
+    .support-category {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        text-align: center;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+    
+    .support-category:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .support-category-icon {
+        font-size: 2.5rem;
+        margin-bottom: var(--space-3);
+    }
+    
+    .contact-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-4);
+    }
+    
+    .contact-method {
+        text-align: center;
+        padding: var(--space-4);
+    }
+    
+    .contact-method i {
+        font-size: 2rem;
+        color: var(--primary);
+        margin-bottom: var(--space-2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Support Hero -->
+<div class="support-hero">
+    <h1 class="fantdev-text-4xl fantdev-font-bold">How can we help you?</h1>
+    <p class="fantdev-text-lg" style="margin: var(--space-4) 0;">Search our knowledge base or contact our support team</p>
+    
+    <div class="support-search">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search for help..." id="supportSearch">
+    </div>
+</div>
+
+<!-- Support Categories -->
+<div class="support-categories">
+    <div class="support-category" onclick="window.location.href='/docs'">
+        <div class="support-category-icon">📚</div>
+        <h3>Documentation</h3>
+        <p class="fantdev-text-secondary">Browse complete platform docs</p>
+    </div>
+    
+    <div class="support-category" onclick="window.location.href='/help'">
+        <div class="support-category-icon">❓</div>
+        <h3>FAQs</h3>
+        <p class="fantdev-text-secondary">Find answers to common questions</p>
+    </div>
+    
+    <div class="support-category" onclick="showContactForm()">
+        <div class="support-category-icon">💬</div>
+        <h3>Contact Support</h3>
+        <p class="fantdev-text-secondary">Get help from our team</p>
+    </div>
+    
+    <div class="support-category" onclick="window.location.href='/status'">
+        <div class="support-category-icon">🚦</div>
+        <h3>System Status</h3>
+        <p class="fantdev-text-secondary">Check platform availability</p>
+    </div>
+</div>
+
+<!-- Common Issues -->
+<div class="fantdev-card">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-exclamation-circle"></i>
+            Common Issues & Solutions
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <div class="fantdev-accordion">
+            <div class="fantdev-accordion-item">
+                <h4>How do I register my account?</h4>
+                <p>Use the /register command in Telegram with your customer ID and password.</p>
+            </div>
+            
+            <div class="fantdev-accordion-item">
+                <h4>Why is my balance not updating?</h4>
+                <p>Balance updates may take a few minutes. If the issue persists, contact support.</p>
+            </div>
+            
+            <div class="fantdev-accordion-item">
+                <h4>How do I reset my password?</h4>
+                <p>Contact your administrator to reset your password.</p>
+            </div>
+            
+            <div class="fantdev-accordion-item">
+                <h4>Can I access the platform from multiple devices?</h4>
+                <p>Yes, you can log in from any device using your credentials.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Form -->
+<div class="fantdev-card" id="contactForm" style="display: none;">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-envelope"></i>
+            Contact Support
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <form id="supportForm">
+            <div class="fantdev-grid fantdev-grid-2">
+                <div class="fantdev-form-group">
+                    <label class="fantdev-label">Name</label>
+                    <input type="text" class="fantdev-input" required>
+                </div>
+                
+                <div class="fantdev-form-group">
+                    <label class="fantdev-label">Email</label>
+                    <input type="email" class="fantdev-input" required>
+                </div>
+            </div>
+            
+            <div class="fantdev-form-group">
+                <label class="fantdev-label">Subject</label>
+                <input type="text" class="fantdev-input" required>
+            </div>
+            
+            <div class="fantdev-form-group">
+                <label class="fantdev-label">Category</label>
+                <select class="fantdev-select">
+                    <option>Technical Issue</option>
+                    <option>Account Problem</option>
+                    <option>Billing Question</option>
+                    <option>Feature Request</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            
+            <div class="fantdev-form-group">
+                <label class="fantdev-label">Message</label>
+                <textarea class="fantdev-input" rows="5" required></textarea>
+            </div>
+            
+            <button type="submit" class="fantdev-btn fantdev-btn-primary">
+                <i class="fas fa-paper-plane"></i>
+                Send Message
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Contact Methods -->
+<div class="fantdev-card">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-phone"></i>
+            Other Ways to Reach Us
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <div class="contact-methods">
+            <div class="contact-method">
+                <i class="fab fa-telegram"></i>
+                <h4>Telegram</h4>
+                <p class="fantdev-text-secondary">@fantdev_support</p>
+            </div>
+            
+            <div class="contact-method">
+                <i class="fas fa-envelope"></i>
+                <h4>Email</h4>
+                <p class="fantdev-text-secondary">support@fantdev.com</p>
+            </div>
+            
+            <div class="contact-method">
+                <i class="fas fa-clock"></i>
+                <h4>Response Time</h4>
+                <p class="fantdev-text-secondary">Within 24 hours</p>
+            </div>
+            
+            <div class="contact-method">
+                <i class="fas fa-globe"></i>
+                <h4>Available</h4>
+                <p class="fantdev-text-secondary">24/7 Support</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showContactForm() {
+        document.getElementById('contactForm').style.display = 'block';
+        document.getElementById('contactForm').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    document.getElementById('supportForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        app.showNotification('Support ticket submitted successfully!', 'success');
+        this.reset();
+    });
+    
+    // Search functionality
+    document.getElementById('supportSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            // Implement search logic
+            app.showNotification('Searching for: ' + this.value, 'info');
+        }
+    });
+</script>
+{% endblock %}

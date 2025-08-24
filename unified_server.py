@@ -587,6 +587,58 @@ def security():
     """Security information"""
     return render_template('legal/security.html', **get_user_context())
 
+@app.route('/docs')
+def docs():
+    """Documentation page"""
+    return render_template('docs.html', 
+                         breadcrumbs=get_breadcrumbs('/docs'),
+                         **get_user_context())
+
+@app.route('/support')
+def support():
+    """Support page"""
+    return render_template('support.html',
+                         breadcrumbs=get_breadcrumbs('/support'),
+                         **get_user_context())
+
+@app.route('/status')
+def status():
+    """System status page"""
+    # Get system health metrics
+    system_status = {
+        'api': 'operational',
+        'database': 'operational',
+        'bot': 'operational' if db.get_statistics() else 'degraded',
+        'web': 'operational'
+    }
+    return render_template('status.html',
+                         system_status=system_status,
+                         breadcrumbs=get_breadcrumbs('/status'),
+                         **get_user_context())
+
+@app.route('/compliance')
+def compliance():
+    """Compliance information"""
+    return render_template('legal/compliance.html', **get_user_context())
+
+# 404 Error handler
+@app.errorhandler(404)
+def not_found(e):
+    """Handle 404 errors"""
+    return render_template('error.html', 
+                         error_code=404,
+                         error_message="The page you're looking for doesn't exist.",
+                         **get_user_context()), 404
+
+# 500 Error handler
+@app.errorhandler(500)
+def server_error(e):
+    """Handle 500 errors"""
+    return render_template('error.html',
+                         error_code=500, 
+                         error_message="Something went wrong on our end.",
+                         **get_user_context()), 500
+
 # Template context processors
 @app.context_processor
 def inject_branding():

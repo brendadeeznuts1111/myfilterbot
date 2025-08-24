@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}System Status - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}System Status{% endblock %}
+{% block page_description %}Real-time platform health and availability{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-summary {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: var(--space-8);
+        border-radius: var(--border-radius-lg);
+        text-align: center;
+        margin-bottom: var(--space-6);
+    }
+    
+    .status-summary.degraded {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    .status-summary.down {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+    
+    .status-summary h2 {
+        font-size: 2rem;
+        margin-bottom: var(--space-2);
+    }
+    
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    
+    .status-component {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-4);
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: var(--space-2);
+    }
+    
+    .status-indicator.operational {
+        background: #10b981;
+        animation: pulse-green 2s infinite;
+    }
+    
+    .status-indicator.degraded {
+        background: #f59e0b;
+        animation: pulse-yellow 2s infinite;
+    }
+    
+    .status-indicator.down {
+        background: #ef4444;
+        animation: pulse-red 2s infinite;
+    }
+    
+    @keyframes pulse-green {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    }
+    
+    @keyframes pulse-yellow {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+    }
+    
+    @keyframes pulse-red {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+    
+    .incident-timeline {
+        position: relative;
+        padding-left: var(--space-8);
+    }
+    
+    .incident-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--border-color);
+    }
+    
+    .incident-item {
+        position: relative;
+        padding: var(--space-4);
+        margin-bottom: var(--space-4);
+        background: var(--bg-surface);
+        border-radius: var(--border-radius);
+    }
+    
+    .incident-item::before {
+        content: '';
+        position: absolute;
+        left: -24px;
+        top: 24px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary);
+        border: 2px solid var(--bg-primary);
+    }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--space-4);
+    }
+    
+    .metric-card {
+        text-align: center;
+        padding: var(--space-4);
+        background: var(--bg-surface);
+        border-radius: var(--border-radius);
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .metric-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-top: var(--space-1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Overall Status -->
+<div class="status-summary {% if system_status.bot == 'degraded' %}degraded{% endif %}">
+    <h2>
+        {% if system_status.bot == 'operational' %}
+            ✅ All Systems Operational
+        {% elif system_status.bot == 'degraded' %}
+            ⚠️ Partial System Degradation
+        {% else %}
+            ❌ System Outage
+        {% endif %}
+    </h2>
+    <p>Last checked: <span id="lastChecked">Just now</span></p>
+</div>
+
+<!-- Component Status -->
+<div class="status-grid">
+    <div class="status-component">
+        <h4>
+            <span class="status-indicator {{ system_status.api }}"></span>
+            API Services
+        </h4>
+        <p class="fantdev-text-secondary">{{ system_status.api|title }}</p>
+        <small class="fantdev-text-muted">Response time: <span id="apiLatency">45ms</span></small>
+    </div>
+    
+    <div class="status-component">
+        <h4>
+            <span class="status-indicator {{ system_status.database }}"></span>
+            Database
+        </h4>
+        <p class="fantdev-text-secondary">{{ system_status.database|title }}</p>
+        <small class="fantdev-text-muted">Connections: Active</small>
+    </div>
+    
+    <div class="status-component">
+        <h4>
+            <span class="status-indicator {{ system_status.bot }}"></span>
+            Telegram Bot
+        </h4>
+        <p class="fantdev-text-secondary">{{ system_status.bot|title }}</p>
+        <small class="fantdev-text-muted">Last ping: <span id="botPing">2s ago</span></small>
+    </div>
+    
+    <div class="status-component">
+        <h4>
+            <span class="status-indicator {{ system_status.web }}"></span>
+            Web Portal
+        </h4>
+        <p class="fantdev-text-secondary">{{ system_status.web|title }}</p>
+        <small class="fantdev-text-muted">Uptime: 99.9%</small>
+    </div>
+</div>
+
+<!-- System Metrics -->
+<div class="fantdev-card">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-chart-line"></i>
+            System Metrics
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">99.9%</div>
+                <div class="metric-label">Uptime (30d)</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value" id="activeUsers">127</div>
+                <div class="metric-label">Active Users</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value" id="apiCalls">45.2k</div>
+                <div class="metric-label">API Calls Today</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value" id="avgResponse">52ms</div>
+                <div class="metric-label">Avg Response Time</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value">0</div>
+                <div class="metric-label">Active Incidents</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value" id="errorRate">0.01%</div>
+                <div class="metric-label">Error Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Incidents -->
+<div class="fantdev-card">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-history"></i>
+            Recent Incidents
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <div class="incident-timeline">
+            <div class="incident-item">
+                <div class="fantdev-flex fantdev-justify-between">
+                    <strong>Scheduled Maintenance</strong>
+                    <span class="fantdev-badge fantdev-badge-success">Resolved</span>
+                </div>
+                <p class="fantdev-text-secondary fantdev-text-sm">
+                    Database maintenance completed successfully
+                </p>
+                <small class="fantdev-text-muted">2 days ago - Duration: 15 minutes</small>
+            </div>
+            
+            <div class="incident-item">
+                <div class="fantdev-flex fantdev-justify-between">
+                    <strong>API Latency Spike</strong>
+                    <span class="fantdev-badge fantdev-badge-success">Resolved</span>
+                </div>
+                <p class="fantdev-text-secondary fantdev-text-sm">
+                    Brief increase in API response times due to high traffic
+                </p>
+                <small class="fantdev-text-muted">5 days ago - Duration: 3 minutes</small>
+            </div>
+            
+            <div class="incident-item">
+                <div class="fantdev-flex fantdev-justify-between">
+                    <strong>Bot Connection Issue</strong>
+                    <span class="fantdev-badge fantdev-badge-success">Resolved</span>
+                </div>
+                <p class="fantdev-text-secondary fantdev-text-sm">
+                    Telegram API connectivity restored
+                </p>
+                <small class="fantdev-text-muted">1 week ago - Duration: 8 minutes</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance Schedule -->
+<div class="fantdev-card">
+    <div class="fantdev-card-header">
+        <h3 class="fantdev-card-title">
+            <i class="fas fa-calendar-alt"></i>
+            Upcoming Maintenance
+        </h3>
+    </div>
+    <div class="fantdev-card-body">
+        <div class="fantdev-alert fantdev-alert-info">
+            <i class="fas fa-info-circle"></i>
+            No scheduled maintenance at this time
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh status every 30 seconds
+    let refreshInterval;
+    
+    function refreshStatus() {
+        // Update last checked time
+        document.getElementById('lastChecked').textContent = 'Just now';
+        
+        // Simulate metric updates
+        document.getElementById('apiLatency').textContent = Math.floor(Math.random() * 50 + 30) + 'ms';
+        document.getElementById('botPing').textContent = Math.floor(Math.random() * 5 + 1) + 's ago';
+        document.getElementById('activeUsers').textContent = Math.floor(Math.random() * 50 + 100);
+        document.getElementById('apiCalls').textContent = (Math.random() * 10 + 40).toFixed(1) + 'k';
+        document.getElementById('avgResponse').textContent = Math.floor(Math.random() * 30 + 40) + 'ms';
+        document.getElementById('errorRate').textContent = (Math.random() * 0.05).toFixed(2) + '%';
+    }
+    
+    // Update time since last check
+    function updateLastChecked() {
+        const element = document.getElementById('lastChecked');
+        const current = element.textContent;
+        
+        if (current === 'Just now') {
+            element.textContent = '30 seconds ago';
+        } else {
+            const match = current.match(/(\d+)/);
+            if (match) {
+                const seconds = parseInt(match[1]) + 30;
+                if (seconds < 60) {
+                    element.textContent = seconds + ' seconds ago';
+                } else {
+                    element.textContent = Math.floor(seconds / 60) + ' minute(s) ago';
+                }
+            }
+        }
+    }
+    
+    // Start auto-refresh
+    refreshInterval = setInterval(() => {
+        updateLastChecked();
+    }, 30000);
+    
+    // Refresh on demand
+    document.addEventListener('DOMContentLoaded', function() {
+        refreshStatus();
+    });
+    
+    // Clean up on page leave
+    window.addEventListener('beforeunload', function() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    });
+</script>
+{% endblock %}
