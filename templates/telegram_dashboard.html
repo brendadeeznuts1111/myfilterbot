@@ -19,7 +19,7 @@
             --light-color: #f8f9fa;
             --border-radius: 8px;
             --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            --transition: all 0.15s ease-in-out;
+            --transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         body {
@@ -85,10 +85,11 @@
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             transition: var(--transition);
+            backface-visibility: hidden;
         }
 
         .card:hover {
-            transform: translateY(-2px);
+            transform: translate3d(0, -2px, 0);
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
 
@@ -139,10 +140,11 @@
         .group-card {
             transition: var(--transition);
             cursor: pointer;
+            backface-visibility: hidden;
         }
 
         .group-card:hover {
-            transform: scale(1.02);
+            transform: scale3d(1.02, 1.02, 1);
         }
 
         .metric-value {
@@ -214,7 +216,7 @@
 
         .btn-telegram:hover {
             background: linear-gradient(45deg, #1976d2, #1e88e5);
-            transform: translateY(-1px);
+            transform: translate3d(0, -1px, 0);
             color: white;
         }
 
@@ -262,8 +264,8 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translate3d(0, 10px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
     </style>
 </head>
@@ -685,6 +687,27 @@
         let isConnected = false;
         let isStreamPaused = false;
         let messageStats = { total: 0, transactions: 0, alerts: 0, commands: 0 };
+        
+        // Performance monitoring for Telegram Dashboard
+        let frameCount = 0;
+        let lastFrameTime = performance.now();
+        
+        function monitorFrameRate() {
+            frameCount++;
+            const now = performance.now();
+            if (now - lastFrameTime >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+                if (fps < 30) {
+                    console.warn(`⚡ Telegram Dashboard - Low FPS: ${fps} fps`);
+                }
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+            requestAnimationFrame(monitorFrameRate);
+        }
+        
+        // Start performance monitoring
+        requestAnimationFrame(monitorFrameRate);
         let performanceChart;
 
         // Initialize dashboard
@@ -1139,12 +1162,21 @@
             }
         }
 
-        // Auto-refresh data every 30 seconds
-        setInterval(() => {
-            if (isConnected) {
-                loadInitialData();
+        // Auto-refresh data every 30 seconds with requestAnimationFrame optimization
+        let lastRefreshTime = 0;
+        const refreshInterval = 30000; // 30 seconds
+        
+        function throttledRefresh() {
+            const now = Date.now();
+            if (now - lastRefreshTime >= refreshInterval && isConnected) {
+                lastRefreshTime = now;
+                requestAnimationFrame(() => {
+                    loadInitialData();
+                });
             }
-        }, 30000);
+        }
+        
+        setInterval(throttledRefresh, refreshInterval);
     </script>
 </body>
 </html>
