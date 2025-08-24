@@ -1520,10 +1520,188 @@
         </div>
     </div>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.4/socket.io.js"></script>
     <script>
         const API_BASE = window.location.origin + '/api';
+        const SOCKET_URL = window.location.origin;
         let currentMember = null;
+        let socket = null;
+        let isConnected = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
         
+        // WebSocket connection management
+        function initializeWebSocket() {
+            try {
+                socket = io(SOCKET_URL, {
+                    transports: ['websocket', 'polling'],
+                    timeout: 5000,
+                    forceNew: true
+                });
+
+                socket.on('connect', () => {
+                    console.log('✅ WebSocket connected to admin portal');
+                    isConnected = true;
+                    reconnectAttempts = 0;
+                    updateConnectionStatus(true);
+                    
+                    // Join admin room for privileged updates
+                    socket.emit('join-admin');
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('❌ WebSocket disconnected');
+                    isConnected = false;
+                    updateConnectionStatus(false);
+                });
+
+                socket.on('connect_error', (error) => {
+                    console.error('WebSocket connection error:', error);
+                    isConnected = false;
+                    updateConnectionStatus(false);
+                    attemptReconnect();
+                });
+
+                // Real-time event listeners
+                socket.on('member_pending', (data) => {
+                    console.log('🔔 New pending member:', data);
+                    showRealTimeNotification('New member request', `${data.username} wants to join ${data.group_name}`, 'info');
+                    loadPendingMembers(); // Refresh pending members
+                });
+
+                socket.on('member_approved', (data) => {
+                    console.log('✅ Member approved:', data);
+                    showRealTimeNotification('Member Approved', `${data.username} has been approved`, 'success');
+                    loadData(); // Refresh all data
+                });
+
+                socket.on('member_denied', (data) => {
+                    console.log('❌ Member denied:', data);
+                    showRealTimeNotification('Member Denied', `${data.username} has been denied`, 'warning');
+                    loadData(); // Refresh all data
+                });
+
+                socket.on('transaction_alert', (data) => {
+                    console.log('💰 Transaction alert:', data);
+                    showRealTimeNotification('Transaction Alert', `${data.type}: $${data.amount} - ${data.customer}`, 'info');
+                    loadReportsData(); // Refresh financial data
+                });
+
+                socket.on('customer_update', (data) => {
+                    console.log('👤 Customer update:', data);
+                    loadCustomers(); // Refresh customer stats
+                });
+
+                socket.on('system_alert', (data) => {
+                    console.log('🚨 System alert:', data);
+                    showRealTimeNotification('System Alert', data.message, data.severity || 'warning');
+                });
+
+            } catch (error) {
+                console.error('Failed to initialize WebSocket:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                
+                setTimeout(() => {
+                    initializeWebSocket();
+                }, Math.pow(2, reconnectAttempts) * 1000); // Exponential backoff
+            } else {
+                console.error('Max reconnection attempts reached');
+                showRealTimeNotification('Connection Lost', 'Unable to maintain real-time connection', 'error');
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            // Create or update connection status indicator
+            let statusIndicator = document.getElementById('connectionStatus');
+            if (!statusIndicator) {
+                statusIndicator = document.createElement('div');
+                statusIndicator.id = 'connectionStatus';
+                statusIndicator.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    z-index: 1000;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(statusIndicator);
+            }
+
+            if (connected) {
+                statusIndicator.textContent = '🟢 Real-time Connected';
+                statusIndicator.style.backgroundColor = '#22c55e';
+                statusIndicator.style.color = 'white';
+            } else {
+                statusIndicator.textContent = '🔴 Disconnected';
+                statusIndicator.style.backgroundColor = '#ef4444';
+                statusIndicator.style.color = 'white';
+            }
+        }
+
+        function showRealTimeNotification(title, message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `real-time-notification ${type}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 70px;
+                right: 20px;
+                max-width: 350px;
+                padding: 16px;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                z-index: 999;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                margin-bottom: 10px;
+            `;
+
+            // Set colors based on type
+            const colors = {
+                success: { bg: '#22c55e', text: 'white' },
+                error: { bg: '#ef4444', text: 'white' },
+                warning: { bg: '#f59e0b', text: 'white' },
+                info: { bg: '#3b82f6', text: 'white' }
+            };
+
+            const color = colors[type] || colors.info;
+            notification.style.backgroundColor = color.bg;
+            notification.style.color = color.text;
+
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 4px;">${title}</div>
+                <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+                <div style="font-size: 12px; opacity: 0.7; margin-top: 4px;">${new Date().toLocaleTimeString()}</div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
         // Load initial data
         async function loadData() {
             await loadMembers();
@@ -1531,11 +1709,20 @@
             await loadCustomers();
         }
         
-        async function loadMembers() {
+        async function loadMembers(retryCount = 0) {
+            const maxRetries = 3;
+            const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+            
             try {
-                const response = await fetch(`${API_BASE}/members`, {
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
-                });
+                // Show loading state
+                showLoadingPlaceholder('allMembers', 'members');
+                
+                const response = await Promise.race([
+                    fetch(`${API_BASE}/members`, {
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
+                ]);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -1547,20 +1734,30 @@
                     throw new Error(data.message || 'Failed to load members');
                 }
                 
-                // Update stats
-                document.getElementById('totalMembers').textContent = data.stats?.total_members || 0;
-                document.getElementById('pendingCount').textContent = data.stats?.pending || 0;
-                document.getElementById('approvedCount').textContent = data.stats?.approved || 0;
-                document.getElementById('deniedCount').textContent = data.stats?.denied || 0;
-                document.getElementById('groupCount').textContent = data.stats?.groups || 0;
+                // Update stats with real-time visual feedback
+                updateStatWithAnimation('totalMembers', data.stats?.total_members || 0);
+                updateStatWithAnimation('pendingCount', data.stats?.pending || 0);
+                updateStatWithAnimation('approvedCount', data.stats?.approved || 0);
+                updateStatWithAnimation('deniedCount', data.stats?.denied || 0);
+                updateStatWithAnimation('groupCount', data.stats?.groups || 0);
                 
                 // Display all members
                 displayMembers(data.members || []);
                 
+                console.log(`✅ Loaded ${(data.members || []).length} members successfully`);
+                
             } catch (error) {
-                console.error('Error loading members:', error);
-                showErrorPlaceholder('allMembers', 'members', error.message);
-                // Set stats to loading state
+                console.error(`Error loading members (attempt ${retryCount + 1}):`, error);
+                
+                if (retryCount < maxRetries && !error.message.includes('timeout')) {
+                    console.log(`Retrying members load in ${retryDelay}ms...`);
+                    setTimeout(() => loadMembers(retryCount + 1), retryDelay);
+                } else {
+                    showErrorPlaceholder('allMembers', 'members', error.message);
+                    if (isConnected) {
+                        showRealTimeNotification('Data Load Failed', 'Failed to load members data', 'error');
+                    }
+                    // Set stats to error state
                 setStatsLoading();
             }
         }
@@ -1854,6 +2051,62 @@
             alert('Settings saved!');
         }
         
+        // Helper functions for enhanced UI feedback
+        function updateStatWithAnimation(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const currentValue = parseInt(element.textContent) || 0;
+            if (currentValue === newValue) return;
+            
+            // Add visual feedback for changes
+            element.style.transition = 'all 0.3s ease';
+            if (newValue > currentValue) {
+                element.style.color = '#22c55e'; // Green for increase
+                element.style.transform = 'scale(1.1)';
+            } else if (newValue < currentValue) {
+                element.style.color = '#ef4444'; // Red for decrease
+                element.style.transform = 'scale(1.1)';
+            }
+            
+            // Animate the number change
+            let current = currentValue;
+            const increment = (newValue - currentValue) / 10;
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= newValue) || (increment < 0 && current <= newValue)) {
+                    element.textContent = newValue;
+                    clearInterval(timer);
+                    
+                    // Reset styles
+                    setTimeout(() => {
+                        element.style.color = '';
+                        element.style.transform = 'scale(1)';
+                    }, 1000);
+                } else {
+                    element.textContent = Math.round(current);
+                }
+            }, 30);
+        }
+
+        function enableRealTimeMode() {
+            // Reduce refresh interval when WebSocket is connected
+            if (isConnected) {
+                console.log('🔄 Real-time mode enabled - reducing polling interval');
+                // Still poll occasionally as backup, but less frequently
+                setInterval(() => {
+                    if (!isConnected) {
+                        console.log('🔄 WebSocket disconnected, falling back to polling');
+                        loadData();
+                    }
+                }, 120000); // Every 2 minutes as backup
+            } else {
+                // Fallback to regular polling
+                console.log('🔄 Real-time unavailable - using regular polling');
+                setInterval(loadData, 30000); // Every 30 seconds
+            }
+        }
+
         // Search functionality
         document.addEventListener('DOMContentLoaded', () => {
             // Show initial loading states
@@ -1874,13 +2127,37 @@
                 statusFilter.addEventListener('change', filterMembers);
             }
             
+            // Initialize WebSocket for real-time updates
+            initializeWebSocket();
+            
             // Load initial data
             loadData();
-            loadReportsData(); // Load real reports data from API
-            loadBrandingConfig(); // Load branding configuration
+            loadReportsData();
+            loadBrandingConfig();
             
-            // Refresh every 30 seconds
-            setInterval(loadData, 30000);
+            // Set up intelligent refresh based on connection status
+            setTimeout(() => {
+                enableRealTimeMode();
+            }, 2000); // Give WebSocket time to connect
+            
+            // Add performance monitoring integration
+            let lastUpdateTime = performance.now();
+            const originalLoadData = loadData;
+            window.loadData = async function() {
+                const startTime = performance.now();
+                await originalLoadData();
+                const endTime = performance.now();
+                const loadTime = endTime - startTime;
+                
+                if (loadTime > 2000) {
+                    console.warn(`⚡ Admin Portal - Slow data load: ${loadTime.toFixed(2)}ms`);
+                    if (isConnected) {
+                        showRealTimeNotification('Performance Alert', `Data load took ${(loadTime/1000).toFixed(1)}s`, 'warning');
+                    }
+                }
+                
+                lastUpdateTime = endTime;
+            };
         });
         
         function filterMembers() {
