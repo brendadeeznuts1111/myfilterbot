@@ -137,6 +137,14 @@
         <a href="#transactions-api" class="docs-nav-item">Transactions</a>
         <a href="#stats-api" class="docs-nav-item">Statistics</a>
         
+        <div class="docs-section-title">Intelligence & Analytics</div>
+        <a href="#web-analysis-system" class="docs-nav-item">Web Analysis System</a>
+        <a href="#market-intelligence" class="docs-nav-item">Market Intelligence</a>
+        <a href="#competitor-monitoring" class="docs-nav-item">Competitor Monitoring</a>
+        <a href="#signal-detection" class="docs-nav-item">Signal Detection</a>
+        <a href="#web-analysis-config" class="docs-nav-item">Configuration & Setup</a>
+        <a href="#analysis-api" class="docs-nav-item">Analysis API</a>
+        
         <div class="docs-section-title">Advanced</div>
         <a href="#webhooks" class="docs-nav-item">Webhooks</a>
         <a href="#websockets" class="docs-nav-item">WebSockets</a>
@@ -157,6 +165,9 @@
                     <li>Automated alerts and notifications</li>
                     <li>Web-based admin and customer portals</li>
                     <li>RESTful API for integrations</li>
+                    <li><strong>Web Analysis System</strong>: Intelligent market monitoring with competitor analysis and trading signal detection</li>
+                    <li><strong>Market Intelligence</strong>: Real-time sentiment analysis from cryptocurrency news sources</li>
+                    <li><strong>Business Intelligence</strong>: Automated competitor tracking and partnership opportunity identification</li>
                 </ul>
                 
                 <h2 id="quickstart">Quick Start</h2>
@@ -164,14 +175,21 @@
 git clone https://github.com/brendadeeznuts1111/myfilterbot.git
 cd myfilterbot
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Install Bun runtime for Web Analysis System (required)
+curl -fsSL https://bun.sh/install | bash
+bun install
 
 # Start the bot
 python3 main_bot.py
 
 # Start the web portal
-python3 unified_server.py</code></pre>
+python3 unified_server.py
+
+# Demo the Web Analysis System
+bun demo_web_analysis.ts</code></pre>
                 
                 <h2 id="customer-commands">Customer Commands</h2>
                 <div class="api-endpoint">
@@ -212,6 +230,432 @@ python3 unified_server.py</code></pre>
                     <span class="api-method get">GET</span>
                     <code>/api/stats</code>
                     <p>Get global platform statistics.</p>
+                </div>
+                
+                <h2 id="web-analysis-system">Web Analysis System</h2>
+                <p>The Web Analysis System is a powerful intelligence platform that leverages Bun's HTMLRewriter API for efficient web content monitoring, trading signal detection, and competitor analysis. It provides real-time market intelligence to enhance your trading bot's decision-making capabilities.</p>
+                
+                <h3>Core Architecture</h3>
+                <div class="api-endpoint">
+                    <h4>HTMLAnalyzer Engine</h4>
+                    <p>High-performance content extraction using Bun's HTMLRewriter API</p>
+                    <ul>
+                        <li><strong>Link Analysis</strong>: Categorizes links into trading, news, and social media</li>
+                        <li><strong>Content Processing</strong>: Real-time sentiment analysis and keyword detection</li>
+                        <li><strong>Data Extraction</strong>: Structured extraction of prices, signals, and indicators</li>
+                        <li><strong>Contact Intelligence</strong>: Business development opportunity identification</li>
+                    </ul>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h4>Worker Management System</h4>
+                    <p>Multi-threaded processing with Bun's optimized worker threads (500x faster postMessage)</p>
+                    <ul>
+                        <li><strong>Concurrent Analysis</strong>: Process multiple websites simultaneously</li>
+                        <li><strong>Priority Queuing</strong>: High-priority signals processed first</li>
+                        <li><strong>Error Handling</strong>: Robust retry mechanisms and error recovery</li>
+                        <li><strong>Performance Monitoring</strong>: Real-time metrics and benchmarking</li>
+                    </ul>
+                </div>
+                
+                <h3>Key Features</h3>
+                <ul>
+                    <li><strong>Real-time Market Intelligence</strong>: Monitor news sources for trading-relevant information</li>
+                    <li><strong>Competitor Monitoring</strong>: Track competitor websites for feature changes and announcements</li>
+                    <li><strong>Signal Detection</strong>: Automated trading signal recognition with confidence scoring</li>
+                    <li><strong>Sentiment Analysis</strong>: Market sentiment classification (positive/negative/neutral)</li>
+                    <li><strong>Business Intelligence</strong>: Contact extraction for partnership opportunities</li>
+                    <li><strong>Portal Integration</strong>: Real-time updates to customer and admin portals</li>
+                </ul>
+                
+                <h3>Performance Benefits</h3>
+                <pre><code>// Bun HTMLRewriter Performance Benchmarks
+1KB content: ~0.084ms processing time
+10KB content: ~0.014ms processing time  
+100KB content: ~0.052ms processing time
+
+// Worker Thread Optimization
+500x faster postMessage for large JSON payloads
+Concurrent analysis of 10+ websites simultaneously
+Real-time processing with < 100ms latency</code></pre>
+                
+                <h2 id="market-intelligence">Market Intelligence</h2>
+                <p>Automated monitoring and analysis of cryptocurrency news sources to provide real-time market sentiment and trading insights.</p>
+                
+                <h3>News Source Monitoring</h3>
+                <div class="api-endpoint">
+                    <h4>Supported Sources</h4>
+                    <p>Pre-configured monitoring for major crypto news platforms:</p>
+                    <ul>
+                        <li><strong>CoinDesk</strong>: Market analysis and breaking news (30-minute intervals)</li>
+                        <li><strong>CoinTelegraph</strong>: Technical analysis and industry insights (30-minute intervals)</li>
+                        <li><strong>Binance News</strong>: Exchange-specific announcements (15-minute intervals)</li>
+                        <li><strong>Custom Sources</strong>: Configurable monitoring for any website</li>
+                    </ul>
+                </div>
+                
+                <h3>Sentiment Analysis</h3>
+                <pre><code>// Automatic sentiment classification
+const sentimentData = {
+    overall: 'positive',  // positive, negative, neutral
+    sources: [
+        {
+            url: 'https://www.coindesk.com',
+            sentiment: 'positive',
+            tradingKeywords: 15,
+            confidence: 0.87
+        }
+    ],
+    lastUpdated: '2025-08-24T21:42:17.362Z'
+};</code></pre>
+                
+                <h3>Alert System</h3>
+                <div class="api-endpoint">
+                    <h4>Automatic Notifications</h4>
+                    <p>Intelligent alert system for significant market events:</p>
+                    <ul>
+                        <li><strong>High-Impact News</strong>: Breaking news with high trading keyword density</li>
+                        <li><strong>Sentiment Shifts</strong>: Significant changes in market sentiment</li>
+                        <li><strong>Social Activity</strong>: Increased social media engagement on trading topics</li>
+                        <li><strong>Custom Triggers</strong>: User-defined keywords and thresholds</li>
+                    </ul>
+                </div>
+                
+                <h2 id="competitor-monitoring">Competitor Monitoring</h2>
+                <p>Automated tracking of competitor websites to identify new features, pricing changes, and business opportunities.</p>
+                
+                <h3>Monitoring Capabilities</h3>
+                <div class="api-endpoint">
+                    <h4>Feature Detection</h4>
+                    <p>Automatic identification of new platform features and capabilities:</p>
+                    <pre><code>// Example competitor analysis result
+{
+    "url": "https://competitor.com",
+    "features": [
+        "Advanced charting tools",
+        "Social trading platform",
+        "Mobile app integration"
+    ],
+    "pricing": {
+        "basic": "$9.99/month",
+        "premium": "$19.99/month",
+        "enterprise": "Contact sales"
+    },
+    "announcements": [
+        "New partnership with major exchange",
+        "Beta launch of AI trading signals"
+    ],
+    "timestamp": "2025-08-24T21:42:17.562Z"
+}</code></pre>
+                </div>
+                
+                <h3>Change Detection</h3>
+                <ul>
+                    <li><strong>Pricing Updates</strong>: Monitor subscription plan changes and promotions</li>
+                    <li><strong>Feature Launches</strong>: Track new product releases and updates</li>
+                    <li><strong>Announcements</strong>: Capture press releases and company news</li>
+                    <li><strong>Contact Changes</strong>: Updated team information and business contacts</li>
+                </ul>
+                
+                <h3>Business Intelligence Dashboard</h3>
+                <div class="api-endpoint">
+                    <h4>Admin Portal Integration</h4>
+                    <p>Comprehensive competitor intelligence in the admin dashboard:</p>
+                    <ul>
+                        <li>Real-time competitor comparison matrix</li>
+                        <li>Feature gap analysis and opportunities</li>
+                        <li>Pricing strategy recommendations</li>
+                        <li>Partnership opportunity identification</li>
+                    </ul>
+                </div>
+                
+                <h2 id="signal-detection">Signal Detection</h2>
+                <p>Advanced pattern recognition system for identifying and scoring trading signals from multiple sources.</p>
+                
+                <h3>Signal Recognition</h3>
+                <div class="api-endpoint">
+                    <h4>Supported Patterns</h4>
+                    <p>Configurable trading signal patterns with confidence scoring:</p>
+                    <pre><code>// High-confidence signal patterns
+const signalPatterns = {
+    'strong buy': { confidence: 0.9, action: 'buy' },
+    'confirmed breakout': { confidence: 0.8, action: 'buy' },
+    'major support': { confidence: 0.7, action: 'hold' },
+    'clear resistance': { confidence: 0.7, action: 'sell' }
+};</code></pre>
+                </div>
+                
+                <h3>Multi-Source Aggregation</h3>
+                <ul>
+                    <li><strong>TradingView Integration</strong>: Technical analysis and chart patterns</li>
+                    <li><strong>Exchange Data</strong>: Price movements and volume indicators</li>
+                    <li><strong>Social Sentiment</strong>: Twitter and Reddit trading discussions</li>
+                    <li><strong>News Analysis</strong>: Fundamental analysis from news content</li>
+                </ul>
+                
+                <h3>Signal Processing</h3>
+                <pre><code>// Signal notification to customers
+const signalNotification = {
+    id: 'signal-1756071737365',
+    type: 'trading-signal',
+    title: 'High-Confidence Buy Signal',
+    message: 'Strong Buy Signal for BTC/USD (Confidence: 87.3%)',
+    source: 'https://tradingview.com/symbols/BTCUSD/',
+    confidence: 0.873,
+    timestamp: '2025-08-24T21:42:17.365Z',
+    action: 'buy',
+    symbol: 'BTCUSD'
+};</code></pre>
+                
+                <h2 id="web-analysis-config">Configuration & Setup</h2>
+                <p>Complete guide to setting up and configuring the Web Analysis System.</p>
+                
+                <h3>Installation Requirements</h3>
+                <div class="api-endpoint">
+                    <h4>Bun Runtime (Required)</h4>
+                    <p>The Web Analysis System requires Bun v1.2.21+ for optimal performance:</p>
+                    <pre><code># Install Bun runtime
+curl -fsSL https://bun.sh/install | bash
+
+# Verify installation
+bun --version  # Should be 1.2.21 or higher
+
+# Install project dependencies
+bun install</code></pre>
+                </div>
+                
+                <h3>Environment Configuration</h3>
+                <pre><code># Web Analysis Environment Variables
+WEB_ANALYSIS_ENABLED=true
+WEB_ANALYSIS_WORKERS=4
+WEB_ANALYSIS_BATCH_SIZE=20
+WEB_ANALYSIS_TIMEOUT=45000
+
+# Monitoring Configuration
+MONITOR_NEWS_SOURCES=true
+MONITOR_COMPETITORS=true
+SIGNAL_DETECTION_ENABLED=true
+
+# Performance Settings
+ENABLE_WORKER_THREADS=true
+ENABLE_BATCHIN_PROCESSING=true</code></pre>
+                
+                <h3>Monitoring Targets Configuration</h3>
+                <pre><code>// Configure monitoring targets
+const monitoringTargets = [
+    {
+        id: 'coindesk-news',
+        url: 'https://www.coindesk.com',
+        type: 'news',
+        interval: 30, // minutes
+        analysisTypes: ['content', 'links'],
+        active: true
+    },
+    {
+        id: 'competitor-platform',
+        url: 'https://competitor.com',
+        type: 'competitor',
+        interval: 60, // minutes
+        analysisTypes: ['competitor', 'contacts'],
+        active: true
+    }
+];</code></pre>
+                
+                <h3>Performance Optimization</h3>
+                <div class="api-endpoint">
+                    <h4>Worker Thread Settings</h4>
+                    <ul>
+                        <li><strong>Max Workers</strong>: Recommended 4 workers for optimal performance</li>
+                        <li><strong>Batch Size</strong>: Process 20 URLs per batch for best throughput</li>
+                        <li><strong>Timeout Settings</strong>: 45-second timeout for complex websites</li>
+                        <li><strong>Memory Management</strong>: Automatic cleanup of old analysis results</li>
+                    </ul>
+                </div>
+                
+                <h2 id="analysis-api">Analysis API</h2>
+                <p>RESTful API endpoints for interacting with the Web Analysis System.</p>
+                
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <code>/api/analysis/competitors</code>
+                    <p>Retrieve competitor intelligence data and insights.</p>
+                    <pre><code>// Response
+{
+    "competitors": [
+        {
+            "url": "https://competitor.com",
+            "features": ["Feature 1", "Feature 2"],
+            "pricing": {"basic": "$9.99"},
+            "lastUpdated": "2025-08-24T21:42:17.562Z"
+        }
+    ],
+    "total": 5,
+    "lastAnalysis": "2025-08-24T21:42:17.562Z"
+}</code></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <code>/api/analysis/sentiment</code>
+                    <p>Get current market sentiment analysis from monitored news sources.</p>
+                    <pre><code>// Response
+{
+    "overall": "positive",
+    "confidence": 0.847,
+    "sources": [
+        {
+            "url": "https://www.coindesk.com",
+            "sentiment": "positive",
+            "tradingKeywords": 15,
+            "lastAnalyzed": "2025-08-24T21:42:17.365Z"
+        }
+    ],
+    "trendDirection": "improving"
+}</code></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <code>/api/analysis/signals</code>
+                    <p>Retrieve recent trading signals with confidence scores.</p>
+                    <pre><code>// Response
+{
+    "signals": [
+        {
+            "id": "signal-1756071737365",
+            "signal": "Strong Buy Signal for BTC/USD",
+            "confidence": 0.873,
+            "source": "https://tradingview.com/symbols/BTCUSD/",
+            "timestamp": "2025-08-24T21:42:17.365Z",
+            "action": "buy",
+            "symbol": "BTCUSD"
+        }
+    ],
+    "totalActive": 12,
+    "highConfidenceCount": 3
+}</code></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <span class="api-method post">POST</span>
+                    <code>/api/analysis/configure</code>
+                    <p>Add or update monitoring targets and analysis settings.</p>
+                    <pre><code>// Request body
+{
+    "target": {
+        "id": "new-competitor",
+        "url": "https://newcompetitor.com",
+        "type": "competitor",
+        "interval": 60,
+        "analysisTypes": ["competitor", "contacts"],
+        "active": true
+    }
+}</code></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <code>/api/analysis/status</code>
+                    <p>Get Web Analysis System status and performance metrics.</p>
+                    <pre><code>// Response
+{
+    "status": "healthy",
+    "workers": {
+        "total": 4,
+        "active": 4,
+        "processing": 12
+    },
+    "monitoring": {
+        "totalTargets": 15,
+        "activeTargets": 12,
+        "targetsByType": {
+            "news": 5,
+            "competitor": 4,
+            "signals": 3
+        }
+    },
+    "performance": {
+        "averageProcessingTime": "0.084ms",
+        "successRate": 98.7,
+        "lastAnalysis": "2025-08-24T21:42:17.365Z"
+    }
+}</code></pre>
+                </div>
+                
+                <h3>WebSocket Integration</h3>
+                <div class="api-endpoint">
+                    <h4>Real-time Updates</h4>
+                    <p>Subscribe to live analysis results and system events:</p>
+                    <pre><code>// WebSocket event subscription
+socket.on('webAnalysis.result', (data) => {
+    console.log('New analysis result:', data);
+    updateDashboard(data);
+});
+
+socket.on('webAnalysis.signal', (signal) => {
+    if (signal.confidence > 0.8) {
+        notifyCustomers(signal);
+    }
+});
+
+socket.on('webAnalysis.competitor', (competitor) => {
+    updateCompetitorIntelligence(competitor);
+});</code></pre>
+                </div>
+                
+                <h3>Integration Examples</h3>
+                <div class="api-endpoint">
+                    <h4>Customer Portal Integration</h4>
+                    <pre><code>// Enhanced customer portal with live market data
+import { WebAnalysisManager } from './src/web_analysis_manager';
+
+const analysisManager = new WebAnalysisManager();
+
+// Get market sentiment for dashboard
+const sentiment = await analysisManager.getMarketSentiment();
+updateCustomerDashboard({
+    marketSentiment: sentiment.overall,
+    lastUpdated: sentiment.lastUpdated,
+    confidence: sentiment.confidence
+});
+
+// Subscribe to high-confidence signals
+analysisManager.on('highConfidenceSignal', (signal) => {
+    notifyCustomer(customerId, {
+        type: 'trading-opportunity',
+        message: `${signal.action.toUpperCase()} signal detected for ${signal.symbol}`,
+        confidence: (signal.confidence * 100).toFixed(1) + '%'
+    });
+});</code></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h4>Telegram Bot Integration</h4>
+                    <pre><code>// Automated signal notifications via Telegram
+import { TradingBotWebIntegration } from './trading_bot_web_integration';
+
+const webIntegration = new TradingBotWebIntegration();
+
+// Automatic customer notifications for high-confidence signals
+webIntegration.on('tradingSignal', async (signal) => {
+    if (signal.confidence >= 0.7) {
+        const message = `🚨 *Trading Signal Alert*\n\n` +
+                       `Signal: ${signal.signal}\n` +
+                       `Confidence: ${(signal.confidence * 100).toFixed(1)}%\n` +
+                       `Source: ${signal.source}\n` +
+                       `Time: ${new Date(signal.timestamp).toLocaleString()}`;
+        
+        await bot.sendMessage(adminChatId, message, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '📊 View Analysis', url: `${portalUrl}/analysis/${signal.id}` },
+                    { text: '📢 Notify Customers', callback_data: `notify_signal_${signal.id}` }
+                ]]
+            }
+        });
+    }
+});</code></pre>
                 </div>
             </div>
         </div>

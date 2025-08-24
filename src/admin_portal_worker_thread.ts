@@ -2,13 +2,16 @@
  * Admin Portal Worker Thread
  * High-performance background processing for admin dashboard
  * Leverages Bun's 500x faster postMessage() for large data transfers
+ * Enhanced with Bun v1.2.21+ ReadableStream features
  */
 
 import { parentPort, workerData } from 'worker_threads';
+import { SystemOperations, DatabaseOperations, BotOperations } from '../utils/spawn-utils';
 
 interface AdminTask {
   id: string;
-  type: 'CUSTOMER_STATS' | 'TRANSACTION_ANALYTICS' | 'MEMBER_PROCESSING' | 'REALTIME_UPDATE' | 'BULK_OPERATION';
+  type: 'CUSTOMER_STATS' | 'TRANSACTION_ANALYTICS' | 'MEMBER_PROCESSING' | 'REALTIME_UPDATE' | 'BULK_OPERATION' | 
+        'SYSTEM_HEALTH' | 'DATABASE_STATS' | 'BOT_STATUS' | 'RUN_TESTS' | 'BACKUP_DATABASE';
   data: any;
   priority: 'high' | 'medium' | 'low';
   timestamp: number;
@@ -122,6 +125,22 @@ class AdminPortalWorker {
       
       case 'BULK_OPERATION':
         return this.processBulkOperation(task.data);
+        
+      // New spawn-based operations using Bun's enhanced streams
+      case 'SYSTEM_HEALTH':
+        return this.processSystemHealth(task.data);
+        
+      case 'DATABASE_STATS':
+        return this.processDatabaseStats(task.data);
+        
+      case 'BOT_STATUS':
+        return this.processBotStatus(task.data);
+        
+      case 'RUN_TESTS':
+        return this.processRunTests(task.data);
+        
+      case 'BACKUP_DATABASE':
+        return this.processBackupDatabase(task.data);
       
       default:
         throw new Error(`Unknown task type: ${task.type}`);
@@ -508,6 +527,139 @@ class AdminPortalWorker {
       },
       processingTime: 0
     });
+  }
+
+  // New spawn-based operations using Bun v1.2.21+ ReadableStream features
+  private async processSystemHealth(data: any) {
+    try {
+      const result = await SystemOperations.getHealthStatus();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Health check failed');
+      }
+      
+      return {
+        timestamp: Date.now(),
+        system_health: result.data,
+        status: 'healthy',
+        processing_time: result.duration,
+        checks: result.data?.checks || []
+      };
+    } catch (error: any) {
+      return {
+        timestamp: Date.now(),
+        system_health: null,
+        status: 'unhealthy',
+        error: error.message,
+        checks: []
+      };
+    }
+  }
+
+  private async processDatabaseStats(data: any) {
+    try {
+      const result = await DatabaseOperations.getDatabaseStats();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Database stats failed');
+      }
+      
+      return {
+        timestamp: Date.now(),
+        database_stats: result.data,
+        processing_time: result.duration,
+        backup_status: 'available'
+      };
+    } catch (error: any) {
+      return {
+        timestamp: Date.now(),
+        database_stats: null,
+        error: error.message,
+        backup_status: 'unknown'
+      };
+    }
+  }
+
+  private async processBotStatus(data: any) {
+    try {
+      const result = await BotOperations.getBotStatus();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Bot status check failed');
+      }
+      
+      return {
+        timestamp: Date.now(),
+        bot_status: result.data,
+        processing_time: result.duration,
+        connection_status: 'connected'
+      };
+    } catch (error: any) {
+      return {
+        timestamp: Date.now(),
+        bot_status: null,
+        error: error.message,
+        connection_status: 'disconnected'
+      };
+    }
+  }
+
+  private async processRunTests(data: any) {
+    try {
+      const testType = data.testType || 'integration';
+      
+      let result;
+      if (testType === 'integration') {
+        result = await SystemOperations.runIntegrationTests();
+      } else if (testType === 'error_handling') {
+        result = await SystemOperations.runErrorHandlingTests();
+      } else {
+        throw new Error(`Unknown test type: ${testType}`);
+      }
+      
+      return {
+        timestamp: Date.now(),
+        test_type: testType,
+        test_results: result.data || result.stdout,
+        success: result.success,
+        processing_time: result.duration,
+        exit_code: result.exitCode
+      };
+    } catch (error: any) {
+      return {
+        timestamp: Date.now(),
+        test_type: data.testType || 'unknown',
+        test_results: null,
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  private async processBackupDatabase(data: any) {
+    try {
+      const result = await DatabaseOperations.backupDatabase();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Database backup failed');
+      }
+      
+      return {
+        timestamp: Date.now(),
+        backup_result: result.data,
+        processing_time: result.duration,
+        backup_size: result.data?.backup_size || 0,
+        backup_location: result.data?.backup_path || 'unknown'
+      };
+    } catch (error: any) {
+      return {
+        timestamp: Date.now(),
+        backup_result: null,
+        error: error.message,
+        backup_size: 0,
+        backup_location: null
+      };
+    }
   }
 }
 

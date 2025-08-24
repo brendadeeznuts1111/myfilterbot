@@ -4,7 +4,87 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the Fantdev Trading Bot - an enterprise-grade Telegram trading platform with web portals, real-time monitoring, and automated reporting capabilities. The system uses Python for the bot core and TypeScript/Bun for high-performance web services.
+This is the Fantdev Trading Bot - an enterprise-grade Telegram trading platform with web portals, real-time monitoring, and automated reporting. The system uses Python for the bot core and TypeScript/Bun for high-performance web services.
+
+## 🚀 Bun Runtime (Required)
+
+### Why Bun?
+This project leverages Bun v1.2.21+ for critical performance optimizations:
+- **500x faster postMessage()** for worker threads handling large JSON payloads
+- **Built-in TypeScript** execution without transpilation
+- **Native JSX/TSX** support for React components
+- **Automatic ETag** generation for HTTP caching (v1.2.20+)
+- **40x faster AbortSignal** for improved timeout handling
+- **Built-in test runner** with watch mode
+- **Package manager** that's 10-100x faster than npm
+
+### Installing Bun
+```bash
+# macOS/Linux
+curl -fsSL https://bun.sh/install | bash
+
+# Windows (WSL required)
+curl -fsSL https://bun.sh/install | bash
+
+# Verify installation
+bun --version  # Should be 1.2.21 or higher
+```
+
+### Bun-Specific Features Used
+
+#### 1. Bun.serve() for HTTP Servers
+```typescript
+// Native HTTP server with automatic ETag support
+const server = Bun.serve({
+  port: 3003,
+  development: true,  // Enables hot reload
+  fetch(req) { /* handler */ }
+});
+```
+
+#### 2. Bun.env for Environment Variables
+```typescript
+// Type-safe environment variables
+import { config } from './src/env.config';
+const token = Bun.env.BOT_TOKEN;  // Direct access
+```
+
+#### 3. Worker Threads with Optimized postMessage()
+```typescript
+// 500x faster for large JSON transfers
+new Worker('./src/admin_portal_worker_thread.ts');
+```
+
+#### 4. Built-in Testing
+```bash
+bun test                    # Run all tests
+bun test --watch           # Watch mode
+bun test --coverage        # Coverage report
+```
+
+#### 5. Bun-Specific Configuration (bunfig.toml)
+- Tailwind CSS plugin integration
+- Test coverage settings
+- Worker environment variables
+- Static file serving with plugins
+
+#### 6. Enhanced ReadableStream (v1.2.21+)
+```typescript
+// Direct stream consumption (NEW)
+const {stdout} = Bun.spawn({cmd: ["python3", "script.py"], stdout: "pipe"});
+const data = await stdout.json();  // No Response wrapper needed
+
+// Old pattern (replaced)
+const data = await new Response(stdout).json();
+const text = await Bun.readableStreamToText(stdout);
+```
+
+## ⚠️ Critical Security Notes
+
+- **Bot Token**: Currently hardcoded in `src/config.py:12` - use environment variable in production
+- **JWT Secrets**: Default secrets in portal servers need changing before deployment
+- **Security Module**: `SECURITY_FIX_duplicate_passwords.py` handles registration security
+- **Admin Chat ID**: `-2714719687` hardcoded - should be environment variable
 
 ## Commands
 
@@ -13,202 +93,387 @@ This is the Fantdev Trading Bot - an enterprise-grade Telegram trading platform 
 # Main bot (requires BOT_TOKEN in config or env)
 python3 main_bot.py
 
-# Integrated system (bot + portal)
+# Integrated system (bot + portal together)
 python3 run_integrated_system.py
 
 # Auto-reporter for scheduled tasks
 python3 auto_reporter.py
 ```
 
-### Portal Servers
-```bash
-# Python Flask servers
-python3 portal_server.py                  # Basic portal (port 5000)
-python3 enhanced_portal_server.py         # Enhanced portal (port 5001)
-python3 enhanced_portal_server_integrated.py  # Integrated portal
+### Portal Servers (Multiple Implementations)
 
-# TypeScript/Bun servers (requires Bun runtime)
-bun run admin_portal_server.ts           # Admin server (port 3003)
-bun run enhanced_admin_server.ts         # Enhanced admin server
-bun run enhanced_admin_server_v2.ts      # V2 with improvements
+#### Python Flask Servers
+```bash
+python3 portal_server.py                      # Basic portal (port 5000)
+python3 enhanced_portal_server.py             # Enhanced with WebSocket (port 5001)
+python3 enhanced_portal_server_integrated.py  # Full integration version
+```
+
+#### TypeScript/Bun Servers
+```bash
+bun run admin_portal_server.ts               # Admin server (port 3002)
+bun run enhanced_admin_server.ts             # Enhanced admin (port 3003)
+bun run enhanced_admin_server_v2.ts          # V2 improvements
 ```
 
 ### Development & Building
+
+#### Bun Commands
 ```bash
-# Install dependencies
-pip install -r requirements_portal_integration.txt
+# Install dependencies (10-100x faster than npm)
 bun install
+bun add package-name         # Add new package
+bun remove package-name      # Remove package
+bun update                   # Update all packages
 
 # Development mode
-bun dev                    # React dev server with hot reload
-bun --hot src/index.tsx   # Direct hot reload
+bun dev                      # React dev server with hot reload
+bun --hot src/index.tsx     # Direct hot reload (watches file changes)
+bun --watch src/server.ts   # Auto-restart on changes
+
+# Run TypeScript directly (no build needed)
+bun run admin_portal_server.ts
+bun run src/any-file.ts
 
 # Build production
-bun run build             # Build React app
-bun run build.ts          # Build with options (use --help for details)
+bun run build               # Build React app
+bun run build.ts --help     # See all build options
+bun build ./src/index.tsx --outdir=./dist --minify
 
-# Cloudflare Worker commands
-bun run worker:dev        # Development mode
-bun run worker:deploy     # Deploy to production
-bun run worker:tail       # View logs
+# Cloudflare Worker
+bun run worker:dev          # Development mode
+bun run worker:deploy       # Deploy to production
+bun run worker:tail         # View logs
+bun run worker:build        # Build for Cloudflare
+
+# Bundle analyzer
+bun build src/index.tsx --analyze
+```
+
+#### Python Setup
+```bash
+# Install Python dependencies
+pip install -r requirements_portal_integration.txt
 ```
 
 ### Testing
+
+#### Bun Testing (Built-in Test Runner)
 ```bash
-# Python tests
+# Run all tests (native runner, no jest needed)
+bun test                                  # All tests
+bun test --watch                         # Watch mode
+bun test --coverage                      # Coverage report
+bun test src/web_analysis.test.ts       # Specific test file
+bun test --timeout 10000                # Custom timeout
+
+# Test with specific patterns
+bun test --match "API"                   # Run tests matching pattern
+bun test --bail                          # Stop on first failure
+```
+
+#### Python Tests
+```bash
 python3 test_integration.py               # Core integration tests
 python3 test_enhanced_integration.py      # Enhanced system tests
 python3 test_error_handling.py           # Error handling system
 python3 test_telegram_dashboard.py       # Dashboard integration
 python3 test_chat_system.py              # Chat management tests
-
-# TypeScript tests
-bun test                                  # Run all tests
-bun test src/web_analysis.test.ts       # Specific test file
 ```
 
-### Utilities & Scripts
+#### Performance Testing
 ```bash
+bash run_and_benchmark.sh                # Run performance benchmarks
+```
+
+### Debugging & Monitoring
+```bash
+# Interactive debugging (in Telegram)
+/debug                    # Admin-only debug interface
+
+# Health checks
+python3 health_check.py                  # System status check
+python3 show_all_clients.py             # Display all clients
+
 # Generate test data
-python3 generate_2000_customers.py       # Create test customer data
-
-# System health checks
-python3 health_check.py                  # Check system status
-python3 show_all_clients.py             # Display client information
-
-# Performance testing
-bash run_and_benchmark.sh                # Run benchmarks
+python3 generate_2000_customers.py      # Create test customers
 ```
 
 ## Architecture
+
+### Multi-Server Architecture
+
+| Server | Port | Purpose | Technology |
+|--------|------|---------|------------|
+| portal_server.py | 5000 | Basic API | Flask |
+| enhanced_portal_server.py | 5001 | WebSocket + API | Flask-SocketIO |
+| admin_portal_server.ts | 3002 | Admin UI | Bun + Static HTML |
+| enhanced_admin_server.ts | 3003 | Enhanced Admin | Bun + Mock Data |
+| WebSocket Server | 3004 | Real-time updates | SocketIO |
 
 ### Core Components
 
 1. **Bot Core** (`main_bot.py` + `src/`)
    - Entry point with modular handler system
-   - Transaction detection via regex patterns
-   - Customer management with JSON database
-   - Real-time forwarding to admin chat
-   - Error tracking and debug interface
+   - Transaction detection via configurable regex patterns
+   - Error handling decorators on all handlers
+   - Debug interface via `/debug` command
+   - Rate limiting built into message processing
 
-2. **Data Layer**
-   - `customer_database.json` - Primary customer data (balance, P&L, groups)
-   - `chat_tracker.db` - SQLite for chat tracking
-   - `group_monitor.db` - SQLite for group monitoring
-   - Automatic backups before saves
+2. **Database Layer** (Dual System)
+   - **JSON Database** (`customer_database.json`)
+     - Customer data, balances, P&L tracking
+     - Automatic backup before saves
+     - In-memory with file persistence
+   - **SQLite Databases**
+     - `chat_tracker.db` - All chats/groups with shortlinks
+     - `group_monitor.db` - Group monitoring data
+     - Durable storage with row factories
 
-3. **Web Services**
-   - Flask API servers for portal backends
-   - TypeScript/Bun admin servers with worker threads
-   - WebSocket support for real-time updates
-   - React components with Tailwind CSS
+3. **Handler System** (`src/handlers.py`)
+   - Decorator pattern: `@error_handler_decorator(category, severity)`
+   - InlineKeyboard menus for user interaction
+   - Secure registration via `SecureRegistrationSystem`
+   - Portal integration for real-time updates
 
-4. **Worker System** (Bun v1.2.21+ optimized)
-   - `src/admin_portal_worker_thread.ts` - Admin operations
-   - `src/report_worker.ts` - Report generation
-   - `src/websocket_worker.ts` - WebSocket handling
-   - 500x faster postMessage() for large JSON payloads
+4. **Error Handling System**
+   - **Categories**: DATABASE, TELEGRAM, API, NETWORK, VALIDATION, PERMISSION, CONFIGURATION, TRANSACTION
+   - **Severities**: CRITICAL, HIGH, MEDIUM, LOW, INFO
+   - **Features**: Unique error IDs, admin notifications, history persistence
+   - **Debug Commands**: `/debug` opens interactive debugging interface
 
-### Key Patterns
+5. **Worker System** (Bun v1.2.21+ optimized)
+   - `admin_portal_worker_thread.ts` - Priority queue processing
+   - `report_worker.ts` - Background report generation
+   - `websocket_worker.ts` - Message batching
+   - 500x faster postMessage() for JSON payloads
 
-- **Handler Decorators**: Error tracking wrapper for all bot handlers
-- **Rate Limiting**: Built-in spam protection
-- **Transaction Patterns**: Configurable regex in `src/config.py`
-- **Worker Threads**: CPU-intensive tasks in background
-- **Real-time Processing**: WebSocket + worker threads for instant updates
+6. **Telegram Dashboard** (`src/telegram_dashboard/`)
+   - `message_streamer.py` - Real-time message callbacks
+   - `group_monitor.py` - SQLite-backed group tracking
+   - `bot_status.py` - Health metrics and monitoring
+   - `admin_interface.py` - Bulk operations interface
+
+7. **React Components** (`src/components/`)
+   - 21 production components with TypeScript
+   - Dark/light theme support
+   - Mobile responsive design
+   - Components: AdminPanel, Dashboard, CustomerPortal, MemberManagement, NotificationSystem, etc.
+
+### Data Models
+
+#### Customer Model
+```python
+@dataclass
+class Customer:
+    customer_id: str
+    password: str
+    balance: float
+    weekly_pnl: float
+    telegram_id: Optional[int]
+    telegram_username: Optional[str]
+    active: bool
+    last_activity: Optional[str]
+```
+
+#### GroupMember Model
+```python
+@dataclass
+class GroupMember:
+    member_id: str
+    telegram_id: int
+    username: str
+    group_id: int
+    status: str  # pending, approved, denied, restricted
+    permissions: Dict  # can_view, can_trade, can_withdraw, daily_limit
+```
 
 ## Configuration
 
-### Environment Variables
-Create `.env` from `.env.example`:
+### Environment Variables (.env)
 ```bash
+# Critical - Must Set
 BOT_TOKEN=your_telegram_bot_token
 ADMIN_CHAT_ID=your_admin_chat_id
+JWT_SECRET=change_this_in_production
+SESSION_SECRET=change_this_in_production
+
+# Database Paths
 DATABASE_PATH=customer_database.json
+CHAT_TRACKER_DB=chat_tracker.db
+GROUP_MONITOR_DB=group_monitor.db
+
+# Server Ports
 PORTAL_SERVER_PORT=5000
 ADMIN_SERVER_PORT=3003
+WS_PORT=3004
+
+# Feature Flags
+ENABLE_WEBSOCKET=true
+ENABLE_AUTO_REPORTER=true
+ENABLE_ERROR_TRACKING=true
+ENABLE_WORKER_THREADS=true
 ```
 
-### Key Config Files
-- `src/config.py` - Bot configuration and patterns
-- `bunfig.toml` - Bun runtime configuration
-- `tsconfig.json` - TypeScript configuration
-- `.env` - Environment variables (create from .env.example)
+### Bot Configuration (`src/config.py`)
+```python
+# Transaction Detection Patterns
+PATTERNS = {
+    'deposit': {
+        'patterns': [r'\[credited!\]', r'\bcredited\b', ...],
+        'confidence': 0.8
+    },
+    'withdrawal': {...},
+    'denial': {...}
+}
 
-### Bot Settings (src/config.py)
-- Token: BOT_TOKEN env var or hardcoded
-- Admin Chat: ADMIN_CHAT_ID env var or `-2714719687`
-- Thresholds: Low balance, large transactions, inactive days
-- Feature flags: Auto-balance, alerts, analytics
+# Thresholds
+low_balance_threshold = 100
+large_deposit_threshold = 1000
+inactive_days_threshold = 3
+```
 
-## Key Implementation Details
+## Stream Utilities (Bun v1.2.21+)
+
+### Stream Helpers (`src/utils/stream-helpers.ts`)
+- **Enhanced fetch operations** with direct stream consumption
+- **Performance monitoring** with built-in timing
+- **Error handling** with structured results
+- **Benchmark utilities** for performance comparison
+
+```typescript
+// Enhanced fetch with stream optimization
+import { fetchJSON } from '../utils/stream-helpers';
+
+const result = await fetchJSON<APIResponse>('/api/data');
+if (result.success) {
+  console.log(`Fetched in ${result.duration}ms:`, result.data);
+}
+```
+
+### Spawn Utilities (`src/utils/spawn-utils.ts`)
+- **Python script execution** with JSON/text output
+- **System operations** (health checks, database stats)
+- **Batch operations** for multiple commands
+- **Performance tracking** for all operations
+
+```typescript
+// Execute Python scripts with direct stream consumption
+import { SystemOperations } from '../utils/spawn-utils';
+
+const health = await SystemOperations.getHealthStatus();
+const clients = await SystemOperations.getAllClients();
+```
+
+### Worker Thread Integration
+- **Enhanced admin portal worker** with spawn capabilities
+- **New task types**: SYSTEM_HEALTH, DATABASE_STATS, BOT_STATUS, RUN_TESTS
+- **Background operations** without blocking main thread
+- **Performance optimization** with 500x faster postMessage
+
+## Key Implementation Patterns
 
 ### Transaction Detection Flow
 1. Message received → `handlers.process_message()`
-2. Pattern matching via `utils.detect_transaction()`
-3. Customer lookup in database
-4. Balance update if enabled
-5. Alert forwarding to admin
+2. Transaction detection via `utils.detect_transaction()`
+   - Regex pattern matching (configurable)
+   - Confidence scoring based on matches
+   - Amount extraction from text
+3. Customer identification through database
+4. Balance update if `auto_balance_update` enabled
+5. Portal notification via `portal_integration.send_transaction_update()`
+6. WebSocket emit for real-time updates
+7. Admin chat forwarding with formatted alert
 
-### Customer Management
-- Registration: `/register <id> <password>`
-- Data: ID, password, balance, P&L, telegram_id
-- Group members tracked per customer
-- Admin portal for management
+### Error Handling Pattern
+```python
+@error_handler_decorator(ErrorCategory.DATABASE, ErrorSeverity.MEDIUM)
+async def database_operation(self, update, context):
+    try:
+        # Operation code
+    except Exception as e:
+        # Automatically logged, categorized, and admin notified if severe
+        raise
+```
 
-### Error Handling System
-- Centralized tracking in `src/error_handler.py`
-- Debug interface via `/debug` command
-- Structured logging in `logs/`
-- Admin notifications for critical errors
-- Error categorization and severity levels
+### WebSocket Integration
+```python
+# Server side (Flask-SocketIO)
+def on_new_message(message_data):
+    socketio.emit('telegram_message', message_data, namespace='/telegram')
 
-### Performance Optimizations
-- Bun worker threads for heavy operations
-- 500x faster string transfer for JSON
-- WebSocket batching for updates
-- SQLite for persistent tracking
-- Priority queuing for tasks
+telegram_streamer.subscribe(on_new_message)
+
+# Client side (React)
+socket.on('telegram_message', (data) => {
+    updateMessageFeed(data);
+});
+```
+
+### Worker Thread Pattern
+```typescript
+// High-performance data transfer
+parentPort.on('message', (task: AdminTask) => {
+    // Process large JSON with 500x faster postMessage
+    const result = processLargeDataset(task.data);
+    parentPort.postMessage(result); // Optimized in Bun v1.2.21+
+});
+```
 
 ## Development Workflow
 
 ### Adding New Features
 1. Check existing patterns in similar files
-2. Follow the handler pattern for bot commands
-3. Use error decorators for automatic tracking
-4. Add tests for new functionality
-5. Update documentation if needed
+2. Follow handler decorator pattern for bot commands
+3. Add to appropriate server (Python for bot logic, TypeScript for UI)
+4. Use error decorators for automatic tracking
+5. Add tests matching existing patterns
+6. Update portal integration if needed
 
-### Testing Changes
-1. Run relevant test files
-2. Check error logs in `logs/`
-3. Test with real Telegram messages
-4. Verify portal integration
-5. Monitor worker thread performance
+### Common Tasks
 
-### Debugging
-- Use `/debug` command for interactive debugging
-- Check `logs/error.log` for issues
-- Monitor `logs/debug.log` for detailed traces
-- Use `test_error_handling.py` for error simulation
+#### Adding a New Bot Command
+1. Add handler in `src/handlers.py`
+2. Use decorator: `@error_handler_decorator(category, severity)`
+3. Register in `main_bot.py` setup
+4. Add portal integration if needed
+
+#### Adding API Endpoint
+1. Choose server based on purpose
+2. Add CORS headers for cross-origin
+3. Integrate with database layer
+4. Emit WebSocket events for real-time updates
+
+#### Debugging Issues
+1. Check `/debug` command output
+2. Review `logs/error_*.log` files
+3. Check `logs/debug_*.log` for traces
+4. Use `test_error_handling.py` for simulation
 
 ## Important Notes
 
-### Current State
-- Multiple server implementations (Python Flask + TypeScript/Bun)
-- Worker system leverages Bun's optimized postMessage()
-- Comprehensive error handling and debugging tools
-- Real-time WebSocket integration for instant updates
+### Current Limitations
+- Multiple server implementations can conflict on ports
+- Mock data in TypeScript servers (not connected to real DB)
+- Some endpoints return static responses
+- WebSocket integration incomplete in some servers
 
-### Dependencies
-- Core: `python-telegram-bot>=20.0`
-- Web: `flask`, `flask-cors`, `flask-socketio`
-- Scheduling: `schedule`
-- TypeScript: Bun runtime required
-- See `requirements_portal_integration.txt` for full Python deps
+### Performance Considerations
+- Bun worker threads handle large JSON efficiently
+- SQLite for persistent data, JSON for in-memory
+- Rate limiting prevents spam
+- Automatic backups impact save performance
+
+### Security Considerations
+- Change all default secrets before production
+- Use environment variables for sensitive data
+- Implement proper authentication on all endpoints
+- Validate all user inputs
+- Never log sensitive information
 
 ### Testing Approach
-- Python tests use standard unittest/pytest patterns
-- TypeScript tests run with `bun test`
-- Integration tests cover bot + portal interaction
-- Error handling has dedicated test suite
+- Python tests use unittest patterns
+- TypeScript tests use Bun's test runner
+- Integration tests cover bot + portal
+- Mock data for isolated testing
+- Error simulation for edge cases
