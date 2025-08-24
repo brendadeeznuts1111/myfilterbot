@@ -12,6 +12,10 @@
     <meta name="author" content="Fantdev Trading Systems">
     <meta name="robots" content="noindex, nofollow">
     
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="application">
     <meta property="og:url" content="https://fantdev.trading/admin">
@@ -63,6 +67,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .notification-container {
+            position: relative;
         }
         
         .header-title {
@@ -767,8 +781,13 @@
     <div class="header">
         <div class="header-content">
             <h1 class="header-title" id="platformTitle">🚀 Group Management Portal</h1>
-            <div class="nav-tabs">
-                <button class="nav-tab active" onclick="switchTab('pending', this)">Pending</button>
+            <div class="header-actions">
+                <!-- Notification Bell -->
+                <div class="notification-container" id="notification-container">
+                    <!-- Notification system will be injected here -->
+                </div>
+                <div class="nav-tabs">
+                    <button class="nav-tab active" onclick="switchTab('pending', this)">Pending</button>
                 <button class="nav-tab" onclick="switchTab('members', this)">All Members</button>
                 <button class="nav-tab" onclick="switchTab('customers', this)">Customers</button>
                 <button class="nav-tab" onclick="switchTab('reports', this)">Reports</button>
@@ -2592,6 +2611,225 @@
                 console.error('Error loading branding config:', error);
             }
         }
+        
+        // Notification System Integration
+        let notificationSystem;
+        
+        function initializeNotificationSystem() {
+            // Initialize the notification system
+            notificationSystem = new NotificationSystem({
+                userId: 'admin_001', // This would come from session/auth
+                userType: 'admin',
+                apiBase: '/api/notifications',
+                socket: socket, // Use existing WebSocket connection
+                container: document.getElementById('notification-container')
+            });
+            
+            console.log('✅ Notification system initialized for admin');
+        }
+        
+        // Load notification system script and initialize
+        function loadNotificationSystem() {
+            const script = document.createElement('script');
+            script.src = '/src/components/NotificationSystem.js';
+            script.onload = () => {
+                initializeNotificationSystem();
+            };
+            script.onerror = () => {
+                console.error('Failed to load notification system');
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Enhanced WebSocket handlers for notifications
+        const originalSocketHandlers = {
+            onConnection: function() {
+                console.log('🔗 WebSocket connected - Enhanced with notifications');
+                isConnected = true;
+                updateConnectionStatus('connected');
+                
+                // Join admin notification room
+                socket.emit('join_notifications', {
+                    user_id: 'admin_001',
+                    user_type: 'admin'
+                });
+            },
+            
+            onDisconnection: function() {
+                console.log('🔗 WebSocket disconnected - Notifications offline');
+                isConnected = false;
+                updateConnectionStatus('disconnected');
+            }
+        };
+        
+        // Override the original WebSocket initialization to include notifications
+        const originalInitializeWebSocket = initializeWebSocket;
+        window.initializeWebSocket = function() {
+            // Call original initialization
+            originalInitializeWebSocket();
+            
+            // Add notification-specific handlers
+            if (socket) {
+                socket.on('connect', originalSocketHandlers.onConnection);
+                socket.on('disconnect', originalSocketHandlers.onDisconnection);
+                
+                // Enhanced notification handlers
+                socket.on('notification', (data) => {
+                    if (notificationSystem) {
+                        notificationSystem.handleNewNotification(data);
+                    } else {
+                        console.log('📬 Notification received (system not ready):', data);
+                    }
+                });
+                
+                socket.on('member_pending', (data) => {
+                    showRealTimeNotification(
+                        'New Member Request',
+                        `${data.username} wants to join ${data.group_name}`,
+                        'info'
+                    );
+                    
+                    // Create notification via system if available
+                    if (notificationSystem) {
+                        fetch('/api/notifications/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-User-ID': 'admin_001',
+                                'X-User-Type': 'admin',
+                                'ngrok-skip-browser-warning': 'true'
+                            },
+                            body: JSON.stringify({
+                                target_user_id: 'admin_001',
+                                target_user_type: 'admin',
+                                type: 'member_request',
+                                priority: 'medium',
+                                title: 'New Member Request',
+                                message: `${data.username} wants to join ${data.group_name}`,
+                                metadata: data
+                            })
+                        }).catch(err => console.error('Failed to create notification:', err));
+                    }
+                    
+                    loadPendingMembers();
+                });
+                
+                socket.on('transaction_alert', (data) => {
+                    showRealTimeNotification(
+                        'Transaction Alert',
+                        `${data.type} of $${data.amount} for ${data.customer_id}`,
+                        data.amount > 10000 ? 'warning' : 'info'
+                    );
+                    
+                    // Create notification via system if available
+                    if (notificationSystem) {
+                        fetch('/api/notifications/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-User-ID': 'admin_001',
+                                'X-User-Type': 'admin',
+                                'ngrok-skip-browser-warning': 'true'
+                            },
+                            body: JSON.stringify({
+                                target_user_id: 'admin_001',
+                                target_user_type: 'admin',
+                                type: 'transaction',
+                                priority: data.amount > 10000 ? 'high' : 'medium',
+                                title: 'Transaction Alert',
+                                message: `${data.type} of $${data.amount} for ${data.customer_id}`,
+                                metadata: data
+                            })
+                        }).catch(err => console.error('Failed to create notification:', err));
+                    }
+                });
+                
+                socket.on('security_alert', (data) => {
+                    showRealTimeNotification(
+                        '🔒 Security Alert',
+                        data.message,
+                        'error'
+                    );
+                    
+                    // Create critical notification
+                    if (notificationSystem) {
+                        fetch('/api/notifications/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-User-ID': 'admin_001',
+                                'X-User-Type': 'admin',
+                                'ngrok-skip-browser-warning': 'true'
+                            },
+                            body: JSON.stringify({
+                                target_user_id: 'admin_001',
+                                target_user_type: 'admin',
+                                type: 'security_alert',
+                                priority: 'critical',
+                                title: '🔒 Security Alert',
+                                message: data.message,
+                                metadata: data
+                            })
+                        }).catch(err => console.error('Failed to create notification:', err));
+                    }
+                });
+                
+                socket.on('system_update', (data) => {
+                    showRealTimeNotification(
+                        'System Update',
+                        data.message,
+                        'info'
+                    );
+                    
+                    if (notificationSystem) {
+                        fetch('/api/notifications/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-User-ID': 'admin_001',
+                                'X-User-Type': 'admin',
+                                'ngrok-skip-browser-warning': 'true'
+                            },
+                            body: JSON.stringify({
+                                target_user_id: 'admin_001',
+                                target_user_type: 'admin',
+                                type: 'system_update',
+                                priority: 'low',
+                                title: 'System Update',
+                                message: data.message,
+                                metadata: data
+                            })
+                        }).catch(err => console.error('Failed to create notification:', err));
+                    }
+                });
+            }
+        };
+        
+        // Initialize notification system when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load notification system after a short delay to ensure WebSocket is ready
+            setTimeout(() => {
+                loadNotificationSystem();
+            }, 1000);
+        });
+        
+        // Global function to create test notifications
+        window.createTestNotification = function() {
+            if (notificationSystem) {
+                notificationSystem.createTestNotification();
+            } else {
+                console.error('Notification system not initialized');
+            }
+        };
+        
+        // Global function to access notification preferences
+        window.openNotificationPreferences = function() {
+            if (notificationSystem) {
+                notificationSystem.showPreferences();
+            } else {
+                console.error('Notification system not initialized');
+            }
+        };
     </script>
 </body>
 </html>

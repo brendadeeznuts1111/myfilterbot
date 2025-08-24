@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.database import db, GroupMember
 from src.config import config
 from src.error_handler import error_tracker, ErrorCategory, ErrorSeverity
+from src.api.notification_api import register_notification_api
 
 # Setup logging
 import logging
@@ -961,48 +962,226 @@ def liveness_probe():
 
 @app.route('/health/ready')
 def readiness_probe():
-    """Kubernetes-style readiness probe"""
+    """Kubernetes-style readiness probe with error tracking"""
     try:
         # Check if database is accessible
         customers = db.get_all_customers()
+        
+        # Check error tracking system
+        error_stats = error_tracker.get_error_stats()
+        critical_errors = error_tracker.get_recent_errors(limit=1, severity=ErrorSeverity.CRITICAL)
+        
+        # System is not ready if there are recent critical errors
+        if len(critical_errors) > 0:
+            error_tracker.log_error(
+                error=Exception("System not ready due to critical errors"),
+                category=ErrorCategory.API,
+                severity=ErrorSeverity.MEDIUM,
+                context={'endpoint': '/health/ready', 'critical_errors': len(critical_errors)},
+                recoverable=True
+            )
+            return jsonify({
+                'status': 'not_ready', 
+                'error': 'Critical errors detected',
+                'critical_error_count': len(critical_errors)
+            }), 503
+        
         if customers is not None:
-            return jsonify({'status': 'ready', 'timestamp': datetime.now().isoformat()}), 200
+            return jsonify({
+                'status': 'ready',
+                'timestamp': datetime.now().isoformat(),
+                'error_stats': {
+                    'last_24h': error_stats.get('last_24h', 0),
+                    'resolved': error_stats.get('resolved', 0)
+                }
+            }), 200
         else:
+            error_tracker.log_error(
+                error=Exception("Database not loaded"),
+                category=ErrorCategory.DATABASE,
+                severity=ErrorSeverity.HIGH,
+                context={'endpoint': '/health/ready'},
+                recoverable=True
+            )
             return jsonify({'status': 'not_ready', 'error': 'Database not loaded'}), 503
+            
     except Exception as e:
+        error_tracker.log_error(
+            error=e,
+            category=ErrorCategory.API,
+            severity=ErrorSeverity.HIGH,
+            context={'endpoint': '/health/ready', 'action': 'readiness_check'},
+            recoverable=True
+        )
         return jsonify({'status': 'not_ready', 'error': str(e)}), 503
 
 @app.route('/health/metrics')
 def health_metrics():
-    """Prometheus-style metrics endpoint"""
-    metrics = []
-    
-    # Database metrics
-    customers = db.get_all_customers()
-    members = db.get_group_members()
-    stats = db.get_statistics()
-    
-    metrics.append(f'# HELP portal_customers_total Total number of customers')
-    metrics.append(f'# TYPE portal_customers_total gauge')
-    metrics.append(f'portal_customers_total {len(customers)}')
-    
-    metrics.append(f'# HELP portal_members_total Total number of group members')
-    metrics.append(f'# TYPE portal_members_total gauge')
-    metrics.append(f'portal_members_total {len(members)}')
-    
-    metrics.append(f'# HELP portal_balance_total Total balance across all customers')
-    metrics.append(f'# TYPE portal_balance_total gauge')
-    metrics.append(f'portal_balance_total {stats.get("total_balance", 0)}')
-    
-    metrics.append(f'# HELP portal_active_customers Active customers count')
-    metrics.append(f'# TYPE portal_active_customers gauge')
-    metrics.append(f'portal_active_customers {stats.get("active_customers", 0)}')
-    
-    metrics.append(f'# HELP portal_health_status Portal health status (1=healthy, 0=unhealthy)')
-    metrics.append(f'# TYPE portal_health_status gauge')
-    metrics.append(f'portal_health_status 1')
-    
-    return '\n'.join(metrics), 200, {'Content-Type': 'text/plain; version=0.0.4'}
+    """Prometheus-style metrics endpoint with error tracking integration"""
+    try:
+        metrics = []
+        
+        # Database metrics
+        customers = db.get_all_customers()
+        members = db.get_group_members()
+        stats = db.get_statistics()
+        
+        # Error tracking metrics
+        error_stats = error_tracker.get_error_stats()
+        critical_errors = error_tracker.get_recent_errors(limit=10, severity=ErrorSeverity.CRITICAL)
+        
+        # Determine health status based on errors
+        health_status = 1  # healthy
+        if error_stats.get('last_24h', 0) > 100:
+            health_status = 0  # unhealthy
+        if len(critical_errors) > 0:
+            health_status = 0  # unhealthy
+        
+        # Database metrics
+        metrics.append(f'# HELP portal_customers_total Total number of customers')
+        metrics.append(f'# TYPE portal_customers_total gauge')
+        metrics.append(f'portal_customers_total {len(customers)}')
+        
+        metrics.append(f'# HELP portal_members_total Total number of group members')
+        metrics.append(f'# TYPE portal_members_total gauge')
+        metrics.append(f'portal_members_total {len(members)}')
+        
+        metrics.append(f'# HELP portal_balance_total Total balance across all customers')
+        metrics.append(f'# TYPE portal_balance_total gauge')
+        metrics.append(f'portal_balance_total {stats.get("total_balance", 0)}')
+        
+        metrics.append(f'# HELP portal_active_customers Active customers count')
+        metrics.append(f'# TYPE portal_active_customers gauge')
+        metrics.append(f'portal_active_customers {stats.get("active_customers", 0)}')
+        
+        # Error tracking metrics
+        metrics.append(f'# HELP portal_errors_total Total number of errors')
+        metrics.append(f'# TYPE portal_errors_total counter')
+        metrics.append(f'portal_errors_total {error_stats.get("total", 0)}')
+        
+        metrics.append(f'# HELP portal_errors_last_24h Errors in last 24 hours')
+        metrics.append(f'# TYPE portal_errors_last_24h gauge')
+        metrics.append(f'portal_errors_last_24h {error_stats.get("last_24h", 0)}')
+        
+        metrics.append(f'# HELP portal_errors_resolved Total resolved errors')
+        metrics.append(f'# TYPE portal_errors_resolved counter')
+        metrics.append(f'portal_errors_resolved {error_stats.get("resolved", 0)}')
+        
+        metrics.append(f'# HELP portal_critical_errors_active Active critical errors')
+        metrics.append(f'# TYPE portal_critical_errors_active gauge')
+        metrics.append(f'portal_critical_errors_active {len(critical_errors)}')
+        
+        # Error breakdown by category
+        for category, count in error_stats.get('by_category', {}).items():
+            metrics.append(f'# HELP portal_errors_by_category_{category.lower()} Errors by category: {category}')
+            metrics.append(f'# TYPE portal_errors_by_category_{category.lower()} counter')
+            metrics.append(f'portal_errors_by_category_{category.lower()} {count}')
+        
+        # Error breakdown by severity
+        for severity, count in error_stats.get('by_severity', {}).items():
+            metrics.append(f'# HELP portal_errors_by_severity_{severity.lower()} Errors by severity: {severity}')
+            metrics.append(f'# TYPE portal_errors_by_severity_{severity.lower()} counter')
+            metrics.append(f'portal_errors_by_severity_{severity.lower()} {count}')
+        
+        # Overall health status
+        metrics.append(f'# HELP portal_health_status Portal health status (1=healthy, 0=unhealthy)')
+        metrics.append(f'# TYPE portal_health_status gauge')
+        metrics.append(f'portal_health_status {health_status}')
+        
+        return '\n'.join(metrics), 200, {'Content-Type': 'text/plain; version=0.0.4'}
+        
+    except Exception as e:
+        # Log metrics generation failure
+        error_tracker.log_error(
+            error=e,
+            category=ErrorCategory.API,
+            severity=ErrorSeverity.MEDIUM,
+            context={'endpoint': '/health/metrics', 'action': 'generate_metrics'},
+            recoverable=True
+        )
+        # Return minimal metrics on error
+        return f'portal_health_status 0\nportal_metrics_error 1', 500, {'Content-Type': 'text/plain; version=0.0.4'}
+
+@app.route('/health/errors')
+def health_errors():
+    """Get recent errors from error tracking system"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        category = request.args.get('category', None)
+        severity = request.args.get('severity', None)
+        
+        # Get errors based on filters
+        errors = error_tracker.get_recent_errors(limit=limit, category=category, severity=severity)
+        error_stats = error_tracker.get_error_stats()
+        
+        # Format errors for response
+        formatted_errors = []
+        for error in errors:
+            formatted_errors.append({
+                'id': error.get('id'),
+                'timestamp': error.get('timestamp'),
+                'category': error.get('category'),
+                'severity': error.get('severity'),
+                'error_type': error.get('error_type'),
+                'message': error.get('error_message', '')[:200],
+                'resolved': error.get('resolved', False),
+                'recoverable': error.get('recoverable', True),
+                'user_id': error.get('user_id'),
+                'context': error.get('context', {})
+            })
+        
+        return jsonify({
+            'errors': formatted_errors,
+            'count': len(formatted_errors),
+            'statistics': {
+                'total': error_stats.get('total', 0),
+                'last_24h': error_stats.get('last_24h', 0),
+                'resolved': error_stats.get('resolved', 0),
+                'by_category': error_stats.get('by_category', {}),
+                'by_severity': error_stats.get('by_severity', {})
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(
+            error=e,
+            category=ErrorCategory.API,
+            severity=ErrorSeverity.LOW,
+            context={'endpoint': '/health/errors', 'action': 'get_errors'},
+            recoverable=True
+        )
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/health/errors/<error_id>/resolve', methods=['POST'])
+def resolve_health_error(error_id):
+    """Mark an error as resolved"""
+    try:
+        resolution = request.json.get('resolution', 'Resolved via health check API')
+        
+        success = error_tracker.resolve_error(error_id, resolution)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'error_id': error_id,
+                'message': 'Error resolved successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Error not found'
+            }), 404
+            
+    except Exception as e:
+        error_tracker.log_error(
+            error=e,
+            category=ErrorCategory.API,
+            severity=ErrorSeverity.LOW,
+            context={'endpoint': f'/health/errors/{error_id}/resolve', 'action': 'resolve_error'},
+            recoverable=True
+        )
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/ping')
 def ping():
@@ -1017,6 +1196,9 @@ def status():
         'service': 'Fantdev Trading Portal',
         'timestamp': datetime.now().isoformat()
     })
+
+# Register notification API routes
+register_notification_api(app)
 
 if __name__ == '__main__':
     print("=" * 50)
