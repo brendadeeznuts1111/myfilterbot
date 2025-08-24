@@ -2438,20 +2438,28 @@
         }
         
         // Load Recent Activity
-        function loadRecentActivity() {
-            const activities = [
-                { customer: 'BB1042', type: 'deposit', amount: 500, status: 'completed', time: '2 mins ago' },
-                { customer: 'BB1043', type: 'withdrawal', amount: -200, status: 'pending', time: '15 mins ago' },
-                { customer: 'BB1044', type: 'trade', amount: 150, status: 'completed', time: '1 hour ago' },
-                { customer: 'BB1045', type: 'deposit', amount: 1000, status: 'completed', time: '2 hours ago' }
-            ];
-            
-            const tbody = document.getElementById('activityTableBody');
-            tbody.innerHTML = '';
-            
-            activities.forEach(activity => {
-                addActivityRow(activity);
-            });
+        async function loadRecentActivity() {
+            try {
+                const activities = await apiRequest('/admin/activity');
+                
+                const tbody = document.getElementById('activityTableBody');
+                tbody.innerHTML = '';
+                
+                activities.forEach(activity => {
+                    addActivityRow(activity);
+                });
+            } catch (error) {
+                console.error('Failed to load recent activity:', error);
+                // Fallback to empty state
+                document.getElementById('activityTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted" style="padding: 2rem;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem; color: var(--warning);"></i><br>
+                            Failed to load recent activity
+                        </td>
+                    </tr>
+                `;
+            }
         }
         
         // Add Activity Row
