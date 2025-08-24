@@ -30,6 +30,12 @@ python3 auto_reporter.py  # Scheduled reports (requires 'schedule' package)
 python3 smoke_test.py           # Basic smoke tests
 python3 test_integration.py     # Integration tests 
 python3 test_enhanced_portal.py # Portal functionality tests
+python3 test_error_handling.py  # Error handling and debugging tests
+
+# Worker system tests (requires Bun runtime)
+bun test src/report_worker.test.ts       # Test report generation worker
+bun test src/admin_portal_worker.test.ts # Test admin data processing worker  
+bun test src/websocket_worker.test.ts    # Test WebSocket message worker
 ```
 
 ### Installing Dependencies
@@ -45,6 +51,9 @@ pip install schedule
 
 # Optional: WebSocket support for real-time updates
 pip install python-socketio
+
+# Optional: System monitoring for debug interface
+pip install psutil
 ```
 
 ## Dependencies
@@ -69,12 +78,15 @@ This is a Telegram trading bot with web portals and automated reporting. The pro
 2. **src/** - Core modules following separation of concerns:
    - **config.py** - Configuration management (tokens, thresholds, patterns)
    - **database.py** - Database abstraction layer with Customer and Transaction models
-   - **handlers.py** - Bot command and message handlers
+   - **handlers.py** - Bot command and message handlers (with error handling decorators)
    - **utils.py** - Utility functions (transaction detection, formatting, rate limiting)
+   - **error_handler.py** - Comprehensive error tracking and notification system
+   - **debug_handler.py** - Interactive debugging and monitoring interface
 
 3. **Data Storage**
    - **customer_database.json** - Main customer data (25 customers with balances, P&L, group members)
    - **customer_config.json** - Customer configuration metadata
+   - **logs/** - Error logs, debug logs, and error history (JSON format)
    - Automatic backup created before each save
 
 4. **Web Portal System**
@@ -101,7 +113,25 @@ This is a Telegram trading bot with web portals and automated reporting. The pro
    - **enhanced_admin_server.ts** - Enhanced admin functionality
    - Compile/run with Bun runtime (see bun commands in root)
 
-8. **Legacy Code**
+9. **High-Performance Worker System** (NEW in v1.2.21+)
+   - **src/report_worker.ts** - Background report generation with 500x faster postMessage()
+   - **src/admin_portal_worker.ts** - Real-time admin dashboard data processing
+   - **src/websocket_worker.ts** - WebSocket message queue processing
+   - **src/*_worker_thread.ts** - Worker thread implementations
+   - Leverages Bun's optimized string transfer for large JSON payloads
+   - Automatic batching and priority queuing for optimal performance
+
+8. **Error Handling & Debugging System**
+   - **src/error_handler.py** - Centralized error tracking with categorization and severity levels
+   - **src/debug_handler.py** - Interactive debug interface accessible via `/debug` command
+   - **logs/** - Comprehensive logging with daily rotation and structured error history
+   - **test_error_handling.py** - Test suite for error handling functionality
+   - **ERROR_HANDLING_GUIDE.md** - Complete documentation and usage guide
+   - Real-time admin notifications for critical errors
+   - System health monitoring and performance metrics
+   - Error simulation and testing capabilities
+
+9. **Legacy Code**
    - **backup/** directory contains older implementations
    - Preserved for reference but not actively used
 
@@ -111,6 +141,10 @@ This is a Telegram trading bot with web portals and automated reporting. The pro
 - **Transaction Detection**: Pattern-based regex matching for deposits/withdrawals/denials
 - **Admin/Customer Separation**: Different command sets based on user role
 - **Rate Limiting**: Built-in protection against spam/abuse
+- **Error Handling Decorators**: Automatic error tracking and classification for all handlers
+- **Comprehensive Logging**: Structured error logging with context and categorization
+- **Worker Thread Processing**: Background workers for CPU-intensive tasks with fast postMessage()
+- **Real-time Data Processing**: Multi-threaded analytics and reporting systems
 
 ### Bot Configuration
 
@@ -136,6 +170,38 @@ This is a Telegram trading bot with web portals and automated reporting. The pro
 - Admin dashboard provides statistics and customer overview
 - Group member management via admin portal
 - Member approval/denial workflow with permissions
+
+## Worker System Performance Benefits
+
+### Bun v1.2.21+ postMessage() Optimization
+
+The worker system leverages Bun's revolutionary 500x faster postMessage() performance for string data transfer:
+
+- **Large JSON Payloads**: Customer databases (200+ customers) transfer nearly instantly
+- **Real-time Analytics**: Admin dashboard metrics process in background threads
+- **Message Queue Processing**: WebSocket broadcasts benefit from fast string serialization
+- **Memory Efficiency**: 22x less memory usage for multi-threaded operations
+
+### Performance Benchmarks
+
+| Data Size | Traditional | Bun v1.2.21 | Speedup |
+|-----------|-------------|--------------|---------|
+| 11 chars  | 806 ns      | 543 ns       | 1.5x    |
+| 14 KB     | 1,220 ns    | 460 ns       | 2.7x    |
+| 3 MB      | 242,110 ns  | 593 ns       | 408x    |
+
+### Worker Usage Examples
+
+```typescript
+// Report generation with large customer dataset
+const report = await reportGenerator.generateDailyReport(databaseSnapshot);
+
+// Admin dashboard real-time metrics
+const metrics = await adminPortalProcessor.getDashboardStats(customers, transactions);
+
+// WebSocket message broadcasting
+webSocketProcessor.notifyTransaction(customerId, transactionData);
+```
 
 ## Important Implementation Notes
 
