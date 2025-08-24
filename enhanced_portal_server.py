@@ -116,6 +116,15 @@ def serve_admin_portal():
     except Exception as e:
         return jsonify({'error': str(e)}), 404
 
+@app.route('/cashier')
+def serve_cashier_dashboard():
+    """Serve the cashier dashboard"""
+    try:
+        response = make_response(send_file('admin_cashier_dashboard.html'))
+        return add_ngrok_headers(response)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 404
+
 # ============= Authentication Routes =============
 
 @app.route('/api/login', methods=['POST'])

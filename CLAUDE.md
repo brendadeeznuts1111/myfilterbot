@@ -9,9 +9,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 python3 main_bot.py
 ```
 
-### Running the Portal Server
+### Running Portal Servers
 ```bash
-python3 portal_server.py  # Runs on port 5000
+python3 portal_server.py        # Flask server on port 5000
+python3 enhanced_portal_server.py  # Enhanced Flask server
+python3 payment_server.py       # Payment processing server
+
+# TypeScript servers (requires Bun runtime)
+bun run admin_portal_server.ts     # TypeScript admin server
+bun run enhanced_admin_server.ts   # Enhanced TypeScript admin server
 ```
 
 ### Running Auto-Reporter
@@ -21,14 +27,24 @@ python3 auto_reporter.py  # Scheduled reports (requires 'schedule' package)
 
 ### Running Tests
 ```bash
-python3 smoke_test.py
+python3 smoke_test.py           # Basic smoke tests
+python3 test_integration.py     # Integration tests 
+python3 test_enhanced_portal.py # Portal functionality tests
 ```
 
 ### Installing Dependencies
 ```bash
-pip install -r requirements.txt
-# Note: requirements.txt is incomplete. Also install:
-pip install flask flask-cors schedule
+# Core bot dependencies
+pip install python-telegram-bot>=20.0
+
+# Web server and API dependencies (not in requirements.txt)
+pip install flask flask-cors
+
+# Scheduled reporting dependency (not in requirements.txt)
+pip install schedule
+
+# Optional: WebSocket support for real-time updates
+pip install python-socketio
 ```
 
 ## Dependencies
@@ -41,7 +57,7 @@ Required Python packages:
 
 ## Architecture Overview
 
-This is a Telegram trading bot with web portals and automated reporting:
+This is a Telegram trading bot with web portals and automated reporting. The project also includes TypeScript-based admin servers and payment processing systems:
 
 ### Core Components
 
@@ -74,7 +90,18 @@ This is a Telegram trading bot with web portals and automated reporting:
    - Weekly P&L analysis (Sunday 8:00 PM)
    - Inactive customer alerts (10:00 AM, 3:00 PM)
 
-6. **Legacy Code**
+6. **Payment System**
+   - **payment_server.py** - Payment processing server
+   - **src/payment_gateway.py** - Payment gateway integration
+   - **src/cashier_manager.py** - Cashier management system
+   - **admin_cashier_dashboard.html** - Cashier administration interface
+
+7. **TypeScript Admin Servers**
+   - **admin_portal_server.ts** - TypeScript-based admin server
+   - **enhanced_admin_server.ts** - Enhanced admin functionality
+   - Compile/run with Bun runtime (see bun commands in root)
+
+8. **Legacy Code**
    - **backup/** directory contains older implementations
    - Preserved for reference but not actively used
 
@@ -116,15 +143,22 @@ This is a Telegram trading bot with web portals and automated reporting:
 
 1. **Incomplete Dependencies**
    - requirements.txt only includes `python-telegram-bot>=20.0`
-   - Missing: flask, flask-cors, schedule, python-socketio packages
+   - Missing packages: flask, flask-cors, schedule, python-socketio
    - Manual installation required for full functionality
+   - TypeScript servers require Bun runtime installation
 
-2. **Portal Server (portal_server.py)**
+2. **Portal Server Architecture**
+   - Multiple server implementations (Python Flask and TypeScript/Bun)
    - Basic API endpoints without full CRUD operations
    - No real-time transaction streaming or WebSocket support (being implemented)
-   - Limited session management
+   - Limited session management across different server types
 
-3. **Missing Telegram Features**
+3. **Payment Integration**
+   - Payment gateway and cashier systems are separate from main bot
+   - No unified authentication between payment and trading systems
+   - Multiple dashboard interfaces without clear integration
+
+4. **Missing Telegram Features**
    - No inline keyboards for transaction confirmations
    - Limited use of Telegram's rich media capabilities
    - No scheduled messages or reminders
