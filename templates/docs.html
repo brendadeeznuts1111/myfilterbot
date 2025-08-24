@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block title %}Documentation - FantDev Trading Platform{% endblock %}
+{% block og_title %}Documentation - FantDev Trading Platform{% endblock %}
+{% block twitter_title %}FantDev Trading Documentation{% endblock %}
+{% block twitter_description %}Complete platform documentation, API reference, and integration guides{% endblock %}
+{% block schema_type %}TechArticle{% endblock %}
 
 {% block page_title %}Documentation{% endblock %}
 {% block page_description %}Complete platform documentation and API reference{% endblock %}
@@ -223,7 +227,7 @@ python3 unified_server.py</code></pre>
             e.preventDefault();
             const target = document.querySelector(this.getAttribute('href'));
             if (target) {
-                target.scrollIntoView({ behavior: 'smooth' });
+                target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
                 
                 // Update active state
                 document.querySelectorAll('.docs-nav-item').forEach(item => {
@@ -233,5 +237,137 @@ python3 unified_server.py</code></pre>
             }
         });
     });
+    
+    // Scroll Spy - Auto-highlight navigation based on scroll position
+    const sections = document.querySelectorAll('h2[id], h3[id]');
+    const navItems = document.querySelectorAll('.docs-nav-item');
+    
+    const observerOptions = {
+        root: null,
+        rootMargin: '-20% 0px -70% 0px',
+        threshold: 0
+    };
+    
+    const observerCallback = (entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.getAttribute('id');
+                navItems.forEach(item => {
+                    const href = item.getAttribute('href');
+                    if (href === `#${id}`) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            }
+        });
+    };
+    
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    sections.forEach(section => observer.observe(section));
+    
+    // Copy to clipboard for code blocks
+    document.querySelectorAll('pre code').forEach(block => {
+        // Create copy button
+        const button = document.createElement('button');
+        button.className = 'fantdev-btn fantdev-btn-sm fantdev-btn-ghost';
+        button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+        button.style.cssText = 'position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.3s;';
+        
+        // Wrap code block in relative container
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        block.parentNode.insertBefore(wrapper, block);
+        wrapper.appendChild(block);
+        wrapper.appendChild(button);
+        
+        // Show button on hover
+        wrapper.addEventListener('mouseenter', () => {
+            button.style.opacity = '1';
+        });
+        
+        wrapper.addEventListener('mouseleave', () => {
+            button.style.opacity = '0';
+        });
+        
+        // Copy functionality
+        button.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(block.textContent);
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                if (typeof app !== 'undefined' && app.showNotification) {
+                    app.showNotification('Code copied to clipboard!', 'success');
+                }
+                setTimeout(() => {
+                    button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                if (typeof app !== 'undefined' && app.showNotification) {
+                    app.showNotification('Failed to copy code', 'error');
+                }
+            }
+        });
+    });
+    
+    // Copy API endpoints on click
+    document.querySelectorAll('.api-endpoint code').forEach(endpoint => {
+        endpoint.style.cursor = 'pointer';
+        endpoint.title = 'Click to copy';
+        
+        endpoint.addEventListener('click', async function() {
+            try {
+                await navigator.clipboard.writeText(this.textContent);
+                if (typeof app !== 'undefined' && app.showNotification) {
+                    app.showNotification('API endpoint copied to clipboard!', 'success');
+                }
+                
+                // Visual feedback
+                const originalBg = this.style.background;
+                this.style.background = 'var(--success)';
+                this.style.color = 'white';
+                setTimeout(() => {
+                    this.style.background = originalBg;
+                    this.style.color = '';
+                }, 300);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        });
+    });
+    
+    // Add search functionality placeholder
+    const searchBox = document.createElement('div');
+    searchBox.className = 'docs-search';
+    searchBox.innerHTML = `
+        <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--bg-surface); border-radius: var(--border-radius);">
+            <div class="fantdev-flex" style="gap: var(--space-2);">
+                <input type="text" id="docsSearch" placeholder="Search documentation..." 
+                       class="fantdev-input fantdev-input-sm" style="flex: 1;">
+                <button class="fantdev-btn fantdev-btn-sm fantdev-btn-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const sidebar = document.querySelector('.docs-sidebar');
+    if (sidebar) {
+        sidebar.insertBefore(searchBox, sidebar.firstChild);
+        
+        // Basic search functionality
+        document.getElementById('docsSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            navItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchTerm) || !searchTerm) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
 </script>
 {% endblock %}

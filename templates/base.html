@@ -20,6 +20,43 @@
     <meta property="og:url" content="https://fantdev.com">
     <meta property="og:image" content="/static/assets/og-image.png">
     
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@fantdev">
+    <meta name="twitter:creator" content="@fantdev">
+    <meta name="twitter:title" content="{% block twitter_title %}FantDev Trading Platform{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Advanced Trading Intelligence Platform{% endblock %}">
+    <meta name="twitter:image" content="/static/assets/twitter-card.png">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "{% block schema_type %}WebApplication{% endblock %}",
+        "name": "FantDev Trading Platform",
+        "description": "Professional trading bot management and analytics platform",
+        "url": "https://fantdev.com",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "All",
+        "author": {
+            "@type": "Organization",
+            "name": "FantDev Trading",
+            "url": "https://fantdev.com"
+        },
+        "datePublished": "2025-01-01",
+        "dateModified": "2025-08-24"
+    }
+    </script>
+    
+    <!-- Resource Hints -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/static/css/fantdev-components.css" as="style">
+    <link rel="preload" href="/static/js/fantdev-core.js" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
+    
     <!-- Stylesheets -->
     <link rel="stylesheet" href="/static/css/fantdev-components.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
