@@ -3,7 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Portal - Fantdev Trading</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Customer Portal - Fantdev Trading Platform</title>
+    <meta name="title" content="Customer Portal - Fantdev Trading Platform">
+    <meta name="description" content="Access your trading account, monitor balances, track P&L, and view transaction history. Secure customer portal with real-time updates and Telegram integration.">
+    <meta name="keywords" content="trading portal, customer dashboard, account balance, P&L tracking, transaction history, telegram trading bot, fantdev trading">
+    <meta name="author" content="Fantdev Trading Systems">
+    <meta name="robots" content="noindex, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="application">
+    <meta property="og:url" content="https://fantdev.trading/portal">
+    <meta property="og:title" content="Customer Portal - Fantdev Trading">
+    <meta property="og:description" content="Secure access to your trading account with real-time balance updates, performance tracking, and transaction monitoring.">
+    <meta property="og:image" content="https://fantdev.trading/images/portal-og-preview.jpg">
+    <meta property="og:site_name" content="Fantdev Trading Platform">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://fantdev.trading/portal">
+    <meta property="twitter:title" content="Fantdev Customer Trading Portal">
+    <meta property="twitter:description" content="Monitor your trading performance with our secure customer portal featuring real-time updates.">
+    <meta property="twitter:image" content="https://fantdev.trading/images/portal-twitter-preview.jpg">
+    
+    <!-- PWA & Mobile -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fantdev Portal">
+    
+    <!-- Application Info -->
+    <meta name="application-name" content="Fantdev Customer Trading Portal">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="canonical" href="https://fantdev.trading/portal">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
@@ -335,17 +368,19 @@
             <div class="error-message" id="errorMessage"></div>
             <div class="success-message" id="successMessage"></div>
             
-            <div class="input-group">
-                <label class="input-label">Customer ID</label>
-                <input type="text" class="input-field" id="customerId" placeholder="e.g., BB1042" autocomplete="username">
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label">Password</label>
-                <input type="password" class="input-field" id="password" placeholder="Enter your password" autocomplete="current-password">
-            </div>
-            
-            <button class="login-btn" id="loginBtn" onclick="login()">Login to Portal</button>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label class="input-label">Customer ID</label>
+                    <input type="text" class="input-field" id="customerId" placeholder="e.g., BB1042" autocomplete="username">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" class="input-field" id="password" placeholder="Enter your password" autocomplete="current-password">
+                </div>
+                
+                <button class="login-btn" id="loginBtn" type="submit">Login to Portal</button>
+            </form>
         </div>
     </div>
     
@@ -862,6 +897,8 @@
         
         // Check for saved login and auto-login
         window.onload = function() {
+            console.log('Page loaded, setting up keyboard handlers...');
+            
             const savedCustomer = localStorage.getItem('customerId');
             const savedToken = localStorage.getItem('authToken');
             
@@ -898,18 +935,60 @@
                 document.getElementById('customerId').value = savedCustomer;
             }
             
-            // Handle enter key
-            document.getElementById('password').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    login();
-                }
+            // Setup keyboard handlers with comprehensive event handling
+            const customerIdField = document.getElementById('customerId');
+            const passwordField = document.getElementById('password');
+            const loginForm = document.getElementById('loginForm');
+            
+            // Debug: Log elements found
+            console.log('Elements found:', {
+                form: !!loginForm,
+                customerId: !!customerIdField,
+                password: !!passwordField
             });
             
-            document.getElementById('customerId').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    document.getElementById('password').focus();
-                }
-            });
+            // Form submit handler
+            if (loginForm) {
+                console.log('Setting up form submit handler');
+                loginForm.addEventListener('submit', function(e) {
+                    console.log('Form submit triggered');
+                    e.preventDefault();
+                    login();
+                    return false;
+                });
+            }
+            
+            // Enter key in Customer ID field -> Focus password
+            if (customerIdField) {
+                console.log('Setting up Customer ID field handler');
+                customerIdField.addEventListener('keydown', function(e) {
+                    console.log('Customer ID keydown:', e.key, e.keyCode);
+                    if (e.key === 'Enter' || e.keyCode === 13) {
+                        console.log('Enter pressed in Customer ID field');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        passwordField.focus();
+                        return false;
+                    }
+                });
+            }
+            
+            // Enter key in Password field -> Submit form
+            if (passwordField) {
+                console.log('Setting up Password field handler');
+                passwordField.addEventListener('keydown', function(e) {
+                    console.log('Password keydown:', e.key, e.keyCode);
+                    if (e.key === 'Enter' || e.keyCode === 13) {
+                        console.log('Enter pressed in Password field');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        login();
+                        return false;
+                    }
+                });
+            }
+            
+            console.log('Keyboard handlers configured successfully');
         };
         
         // Add CSS animations

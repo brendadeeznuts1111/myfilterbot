@@ -113,6 +113,401 @@ class StripeProcessor(PaymentProcessor):
     async def process_payment(self, request: PaymentRequest) -> PaymentResponse:
         """Process Stripe payment"""
         try:
+            headers = {
+                'Authorization': f'Bearer {self.secret_key}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            
+            data = {
+                'amount': int(request.amount * 100),  # Stripe uses cents
+                'currency': request.currency.lower(),
+                'payment_method_types[]': 'card',
+                'metadata': {
+                    'customer_id': request.customer_id,
+                    'transaction_id': request.transaction_id,
+                    'type': request.transaction_type.value
+                }
+            }
+            
+            if request.callback_url:
+                data['success_url'] = request.callback_url
+                data['cancel_url'] = request.callback_url
+            
+            response = requests.post(
+                f"{self.base_url}/payment_intents",
+                headers=headers,
+                data=data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return PaymentResponse(
+                    transaction_id=request.transaction_id,
+                    status=PaymentStatus.PENDING,
+                    payment_url=result.get('next_action', {}).get('redirect_to_url', {}).get('url'),
+                    reference_id=result['id'],
+                    processor_response=result,
+                    timestamp=datetime.now()
+                )
+            else:
+                error_data = response.json()
+                return PaymentResponse(
+                    transaction_id=request.transaction_id,
+                    status=PaymentStatus.FAILED,
+                    error_message=error_data.get('error', {}).get('message', 'Unknown error'),
+                    timestamp=datetime.now()
+                )
+                
+        except Exception as e:
+            logger.error(f"Stripe payment error: {e}")
+            return PaymentResponse(
+                transaction_id=request.transaction_id,
+                status=PaymentStatus.FAILED,
+                error_message=str(e),
+                timestamp=datetime.now()
+            )
+    
+    async def verify_payment(self, transaction_id: str) -> PaymentResponse:
+        """Verify Stripe payment"""
+        try:
+            headers = {
+                'Authorization': f'Bearer {self.secret_key}'
+            }
+            
+            response = requests.get(
+                f"{self.base_url}/payment_intents/{transaction_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                status_map = {
+                    'requires_payment_method': PaymentStatus.PENDING,
+                    'requires_confirmation': PaymentStatus.PENDING,
+                    'requires_action': PaymentStatus.PENDING,
+                    'processing': PaymentStatus.PROCESSING,
+                    'requires_capture': PaymentStatus.COMPLETED,
+                    'succeeded': PaymentStatus.COMPLETED,
+                    'canceled': PaymentStatus.CANCELLED
+                }
+                
+                return PaymentResponse(
+                    transaction_id=transaction_id,
+                    status=status_map.get(result['status'], PaymentStatus.FAILED),
+                    reference_id=result['id'],
+                    processor_response=result,
+                    timestamp=datetime.now()
+                )
+            else:
+                return PaymentResponse(
+                    transaction_id=transaction_id,
+                    status=PaymentStatus.FAILED,
+                    error_message="Payment verification failed",
+                    timestamp=datetime.now()
+                )
+                
+        except Exception as e:
+            logger.error(f"Stripe verification error: {e}")
+            return PaymentResponse(
+                transaction_id=transaction_id,
+                status=PaymentStatus.FAILED,
+                error_message=str(e),
+                timestamp=datetime.now()
+            )
+    
+    def verify_webhook(self, payload: bytes, signature: str) -> bool:
+        """Verify Stripe webhook signature"""
+        try:
+            import stripe
+            stripe.Webhook.construct_event(
+                payload, signature, self.webhook_secret
+            )
+            return True
+        except:
+            return False
+
+class PayPalProcessor(PaymentProcessor):
+    """PayPal payment processor"""
+    
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.base_url = "https://api.paypal.com" if self.environment == "production" else "https://api.sandbox.paypal.com"
+        self.client_id = config.get('client_id')
+        
+    async def _get_access_token(self) -> str:
+        """Get PayPal access token"""
+        try:
+            headers = {
+                'Accept': 'application/json',
+                'Accept-Language': 'en_US'
+            }
+            
+            data = 'grant_type=client_credentials'
+            
+            response = requests.post(
+                f"{self.base_url}/v1/oauth2/token",
+                headers=headers,
+                data=data,
+                auth=(self.client_id, self.secret_key),
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                return response.json()['access_token']
+            else:
+                raise Exception("Failed to get PayPal access token")
+                
+        except Exception as e:
+            logger.error(f"PayPal token error: {e}")
+            raise
+    
+    async def process_payment(self, request: PaymentRequest) -> PaymentResponse:
+        """Process PayPal payment"""
+        try:
+            access_token = await self._get_access_token()
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {access_token}'
+            }
+            
+            data = {
+                'intent': 'CAPTURE',
+                'purchase_units': [{
+                    'amount': {
+                        'currency_code': request.currency,
+                        'value': str(request.amount)
+                    },
+                    'custom_id': request.customer_id,
+                    'invoice_id': request.transaction_id
+                }],
+                'application_context': {
+                    'return_url': request.return_url,
+                    'cancel_url': request.return_url
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/v2/checkout/orders",
+                headers=headers,
+                json=data,
+                timeout=30
+            )
+            
+            if response.status_code == 201:
+                result = response.json()
+                approval_url = None
+                for link in result.get('links', []):
+                    if link['rel'] == 'approve':
+                        approval_url = link['href']
+                        break
+                
+                return PaymentResponse(
+                    transaction_id=request.transaction_id,
+                    status=PaymentStatus.PENDING,
+                    payment_url=approval_url,
+                    reference_id=result['id'],
+                    processor_response=result,
+                    timestamp=datetime.now()
+                )
+            else:
+                error_data = response.json()
+                return PaymentResponse(
+                    transaction_id=request.transaction_id,
+                    status=PaymentStatus.FAILED,
+                    error_message=error_data.get('message', 'PayPal payment failed'),
+                    timestamp=datetime.now()
+                )
+                
+        except Exception as e:
+            logger.error(f"PayPal payment error: {e}")
+            return PaymentResponse(
+                transaction_id=request.transaction_id,
+                status=PaymentStatus.FAILED,
+                error_message=str(e),
+                timestamp=datetime.now()
+            )
+    
+    async def verify_payment(self, transaction_id: str) -> PaymentResponse:
+        """Verify PayPal payment"""
+        try:
+            access_token = await self._get_access_token()
+            
+            headers = {
+                'Authorization': f'Bearer {access_token}'
+            }
+            
+            response = requests.get(
+                f"{self.base_url}/v2/checkout/orders/{transaction_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                status_map = {
+                    'CREATED': PaymentStatus.PENDING,
+                    'SAVED': PaymentStatus.PENDING,
+                    'APPROVED': PaymentStatus.PROCESSING,
+                    'VOIDED': PaymentStatus.CANCELLED,
+                    'COMPLETED': PaymentStatus.COMPLETED,
+                    'PAYER_ACTION_REQUIRED': PaymentStatus.REQUIRES_VERIFICATION
+                }
+                
+                return PaymentResponse(
+                    transaction_id=transaction_id,
+                    status=status_map.get(result['status'], PaymentStatus.FAILED),
+                    reference_id=result['id'],
+                    processor_response=result,
+                    timestamp=datetime.now()
+                )
+            else:
+                return PaymentResponse(
+                    transaction_id=transaction_id,
+                    status=PaymentStatus.FAILED,
+                    error_message="PayPal verification failed",
+                    timestamp=datetime.now()
+                )
+                
+        except Exception as e:
+            logger.error(f"PayPal verification error: {e}")
+            return PaymentResponse(
+                transaction_id=transaction_id,
+                status=PaymentStatus.FAILED,
+                error_message=str(e),
+                timestamp=datetime.now()
+            )
+    
+    def verify_webhook(self, payload: bytes, signature: str) -> bool:
+        """Verify PayPal webhook signature"""
+        try:
+            computed_signature = hmac.new(
+                self.webhook_secret.encode('utf-8'),
+                payload,
+                hashlib.sha256
+            ).hexdigest()
+            
+            return hmac.compare_digest(signature, computed_signature)
+        except:
+            return False
+
+class PaymentGateway:
+    """Main payment gateway managing multiple processors"""
+    
+    def __init__(self):
+        self.processors: Dict[str, PaymentProcessor] = {}
+        self.default_processor = None
+        self.failover_enabled = True
+        
+        # Load processor configurations
+        self._load_processors()
+        
+        logger.info(f"Payment gateway initialized with {len(self.processors)} processors")
+    
+    def _load_processors(self):
+        """Load payment processors from configuration"""
+        processor_configs = {
+            'stripe': {
+                'enabled': True,
+                'priority': 1,
+                'api_key': 'pk_test_...',
+                'secret_key': 'sk_test_...',
+                'webhook_secret': 'whsec_...',
+                'environment': 'sandbox'
+            },
+            'paypal': {
+                'enabled': True,
+                'priority': 2,
+                'client_id': 'sb_client_id',
+                'secret_key': 'sb_secret',
+                'webhook_secret': 'paypal_webhook_secret',
+                'environment': 'sandbox'
+            }
+        }
+        
+        for name, config in processor_configs.items():
+            if config.get('enabled', False):
+                try:
+                    if name == 'stripe':
+                        processor = StripeProcessor(config)
+                    elif name == 'paypal':
+                        processor = PayPalProcessor(config)
+                    else:
+                        continue
+                    
+                    self.processors[name] = processor
+                    
+                    if not self.default_processor or config['priority'] < self.processors[self.default_processor].priority:
+                        self.default_processor = name
+                        
+                except Exception as e:
+                    logger.error(f"Failed to load processor {name}: {e}")
+    
+    async def process_payment(self, request: PaymentRequest, preferred_processor: str = None) -> PaymentResponse:
+        """Process payment with failover support"""
+        processor_order = []
+        
+        # Preferred processor first
+        if preferred_processor and preferred_processor in self.processors:
+            processor_order.append(preferred_processor)
+        
+        # Default processor
+        if self.default_processor and self.default_processor not in processor_order:
+            processor_order.append(self.default_processor)
+        
+        # Other processors by priority
+        other_processors = sorted(
+            [name for name in self.processors.keys() if name not in processor_order],
+            key=lambda x: self.processors[x].priority
+        )
+        processor_order.extend(other_processors)
+        
+        # Try processors in order
+        last_error = None
+        for processor_name in processor_order:
+            try:
+                processor = self.processors[processor_name]
+                if not processor.enabled:
+                    continue
+                
+                logger.info(f"Attempting payment with processor: {processor_name}")
+                response = await processor.process_payment(request)
+                
+                if response.status != PaymentStatus.FAILED:
+                    logger.info(f"Payment successful with processor: {processor_name}")
+                    return response
+                else:
+                    last_error = response.error_message
+                    logger.warning(f"Payment failed with {processor_name}: {last_error}")
+                    
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"Payment error with {processor_name}: {e}")
+                continue
+        
+        # All processors failed
+        return PaymentResponse(
+            transaction_id=request.transaction_id,
+            status=PaymentStatus.FAILED,
+            error_message=f"All payment processors failed. Last error: {last_error}",
+            timestamp=datetime.now()
+        )
+
+# Global payment gateway instance
+payment_gateway = PaymentGateway()
+
+class StripeProcessor(PaymentProcessor):
+    """Stripe payment processor"""
+    
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.base_url = "https://api.stripe.com/v1"
+        
+    async def process_payment(self, request: PaymentRequest) -> PaymentResponse:
+        """Process Stripe payment"""
+        try:
             if request.transaction_type == TransactionType.DEPOSIT:
                 # Create Stripe checkout session
                 session_data = {

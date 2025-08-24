@@ -8,12 +8,15 @@ from telegram.constants import ParseMode
 from datetime import datetime
 import logging
 import re
+import asyncio
 
 from .config import config, messages, patterns, keywords
 from .database import db, Customer, Transaction
 from .utils import detect_transaction, format_currency, calculate_percentage
 from .error_handler import error_handler_decorator, ErrorCategory, ErrorSeverity
 from .portal_integration import notify_customer_activity, notify_balance_change, process_group_message, is_portal_enabled
+from .chat_manager import chat_manager
+from .shortlink_service import shortlink_service
 
 import sys
 import os
@@ -368,6 +371,61 @@ Select an option below:
             logger.error(f"Error in verify command: {e}")
             await self._send_error(update)
     
+    # Chat Member Handler
+    @error_handler_decorator(ErrorCategory.TELEGRAM, ErrorSeverity.MEDIUM)
+    async def handle_my_chat_member(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle bot being added/removed from chats"""
+        try:
+            await chat_manager.handle_my_chat_member(update)
+            
+            # Get chat info for notifications
+            chat_member = update.my_chat_member
+            chat = chat_member.chat
+            new_status = chat_member.new_chat_member.status
+            old_status = chat_member.old_chat_member.status if chat_member.old_chat_member else None
+            
+            # Notify admin about chat changes
+            if old_status not in ['member', 'administrator'] and new_status in ['member', 'administrator']:
+                # Bot was added
+                notification = f"""
+🎉 **Bot Added to New Chat**
+━━━━━━━━━━━━━━━━━━━━━━━
+**Type:** {chat.type}
+**Title:** {chat.title or 'Private Chat'}
+**ID:** `{chat.id}`
+**Username:** @{chat.username if chat.username else 'N/A'}
+**Status:** {new_status}
+**Time:** {datetime.now().strftime('%I:%M %p')}
+
+Total Chats: {len(await chat_manager.get_all_chats())}
+"""
+                await context.bot.send_message(
+                    chat_id=config.admin_chat_id,
+                    text=notification,
+                    parse_mode=ParseMode.MARKDOWN
+                )
+                
+            elif old_status in ['member', 'administrator'] and new_status in ['left', 'kicked']:
+                # Bot was removed
+                notification = f"""
+⚠️ **Bot Removed from Chat**
+━━━━━━━━━━━━━━━━━━━━━━━
+**Title:** {chat.title or 'Private Chat'}
+**ID:** `{chat.id}`
+**Reason:** {new_status}
+**Time:** {datetime.now().strftime('%I:%M %p')}
+
+Remaining Chats: {len(await chat_manager.get_all_chats())}
+"""
+                await context.bot.send_message(
+                    chat_id=config.admin_chat_id,
+                    text=notification,
+                    parse_mode=ParseMode.MARKDOWN
+                )
+                
+        except Exception as e:
+            logger.error(f"Error handling my_chat_member: {e}")
+    
     # Message Handler
     @error_handler_decorator(ErrorCategory.TRANSACTION, ErrorSeverity.HIGH)
     async def process_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -380,12 +438,32 @@ Select an option below:
             text = message.text
             from_user = message.from_user
             username = f"@{from_user.username}" if from_user.username else f"User_{from_user.id}"
+            chat_id = str(message.chat_id)
+            
+            # Track chat activity
+            await chat_manager.update_chat_activity(chat_id, {
+                'messages_received': 1
+            })
+            
+            # Check if it's a command
+            if text.startswith('/'):
+                await chat_manager.update_chat_activity(chat_id, {
+                    'commands_processed': 1
+                })
             
             # Detect transaction
             tx_info = detect_transaction(text)
+            if tx_info and tx_info.get('type'):
+                await chat_manager.update_chat_activity(chat_id, {
+                    'transactions_detected': 1
+                })
             
             # Check for customer mentions
             matched_customers = self._find_customer_mentions(text)
+            for customer_id in matched_customers:
+                await chat_manager.update_chat_activity(chat_id, {
+                    'customer_mentioned': customer_id
+                })
             
             # Check for important keywords
             has_keywords = any(kw.lower() in text.lower() for kw in keywords.get_all())

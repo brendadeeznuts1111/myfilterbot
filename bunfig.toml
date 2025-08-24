@@ -8,8 +8,25 @@ coveragePathIgnorePatterns = [
   "**/__tests__/**",
   "**/test_*.py",
   "**/smoke_test.py",
-  "**/backup/**"
+  "**/backup/**",
+  "**/cloudflare-worker/dist/**"
 ]
 
 [run]
 console.depth = 4
+
+# Cloudflare Worker configuration
+[worker]
+env = [
+  "CLOUDFLARE_ACCOUNT_ID",
+  "CLOUDFLARE_API_TOKEN",
+  "BOT_TOKEN",
+  "ADMIN_CHAT_ID",
+  "WEBHOOK_SECRET"
+]
+
+[worker.build]
+target = "browser"
+format = "esm"
+minify = true
+sourcemap = "linked"

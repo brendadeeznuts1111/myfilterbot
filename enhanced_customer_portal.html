@@ -3,7 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Trading Portal - Fantdev</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Enhanced Customer Trading Portal - Fantdev</title>
+    <meta name="title" content="Enhanced Customer Trading Portal - Fantdev">
+    <meta name="description" content="Advanced customer trading portal with real-time charts, WebSocket updates, and comprehensive account management. Track your trading performance with professional analytics.">
+    <meta name="keywords" content="customer trading, portfolio management, real-time charts, trading analytics, account dashboard, WebSocket updates, fantdev portal">
+    <meta name="author" content="Fantdev Trading Systems">
+    <meta name="robots" content="noindex, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="application">
+    <meta property="og:url" content="https://fantdev.trading/portal/enhanced">
+    <meta property="og:title" content="Enhanced Trading Portal - Fantdev">
+    <meta property="og:description" content="Professional trading portal with advanced analytics, real-time updates, and comprehensive account management tools.">
+    <meta property="og:image" content="https://fantdev.trading/images/enhanced-portal-og.jpg">
+    <meta property="og:site_name" content="Fantdev Trading Platform">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://fantdev.trading/portal/enhanced">
+    <meta property="twitter:title" content="Enhanced Fantdev Trading Portal">
+    <meta property="twitter:description" content="Advanced trading portal with professional analytics and real-time performance monitoring.">
+    <meta property="twitter:image" content="https://fantdev.trading/images/enhanced-portal-twitter.jpg">
+    
+    <!-- PWA & Mobile -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fantdev Trading">
+    
+    <!-- Application Info -->
+    <meta name="application-name" content="Fantdev Enhanced Customer Portal">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="canonical" href="https://fantdev.trading/portal/enhanced">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -544,6 +577,937 @@
             border-left: 4px solid #667eea;
         }
         
+        /* Support Panel Styles */
+        .support-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .support-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .support-content {
+            background: white;
+            width: 90%;
+            max-width: 900px;
+            height: 80vh;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(50px);
+            transition: transform 0.3s;
+        }
+        
+        .support-modal.active .support-content {
+            transform: translateY(0);
+        }
+        
+        .support-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .support-header h3 {
+            margin: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .support-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .support-tabs {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+        
+        .support-tab {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .support-tab:hover {
+            background: rgba(102, 126, 234, 0.05);
+            color: #333;
+        }
+        
+        .support-tab.active {
+            color: #667eea;
+            background: white;
+            border-bottom-color: #667eea;
+        }
+        
+        .support-tab-content {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .tab-panel {
+            height: 100%;
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .tab-panel.active {
+            display: block;
+        }
+        
+        /* Chat Styles */
+        .chat-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .chat-message {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+        
+        .chat-message.sent {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .chat-message.sent .message-avatar {
+            background: #48bb78;
+        }
+        
+        .message-content {
+            max-width: 70%;
+        }
+        
+        .message-text {
+            background: #f0f2f5;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .chat-message.sent .message-text {
+            background: #667eea;
+            color: white;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.1);
+            background: #5a6fd8;
+        }
+        
+        /* Profile Styles */
+        .customer-profile {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .profile-header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .profile-avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .profile-details h4 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+            color: #333;
+        }
+        
+        .profile-details p {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .profile-badges {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .profile-badges .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-success {
+            background: #e6ffed;
+            color: #2e7d32;
+        }
+        
+        .badge-primary {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+        
+        .profile-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .profile-section {
+            background: white;
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .profile-section h5 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .summary-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .summary-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .preferences-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .preference-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .preference-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            margin: 0;
+        }
+        
+        .tags-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .customer-tag {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .add-tag-btn {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 1px dashed #667eea;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .add-tag-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Tickets Styles */
+        .tickets-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .tickets-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .tickets-header h5 {
+            margin: 0;
+            flex: 1;
+        }
+        
+        .tickets-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .ticket-item {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.2s;
+        }
+        
+        .ticket-item:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+        
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .ticket-id {
+            font-family: monospace;
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .ticket-status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-open {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-resolved {
+            background: #e6ffed;
+            color: #2e7d32;
+        }
+        
+        .ticket-subject {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .ticket-meta {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            gap: 15px;
+        }
+        
+        /* Customer Sorting & Filtering */
+        .sorting-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+        
+        .search-input-enhanced {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .search-input-enhanced:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-icon-enhanced {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-select-enhanced {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .view-toggle {
+            display: flex;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .view-btn {
+            padding: 10px 15px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .view-btn:hover {
+            background: #f8f9fa;
+        }
+        
+        .view-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Enhanced Statistics */
+        .enhanced-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .enhanced-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        
+        .enhanced-stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon-large {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .stat-description {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        /* List View Styles */
+        .customers-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .customer-list-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.2s;
+        }
+        
+        .customer-list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+        
+        .list-item-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .list-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .list-item-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .list-item-details {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .list-item-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .tag-small {
+            padding: 3px 8px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .list-item-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            flex-shrink: 0;
+        }
+        
+        .list-stat {
+            text-align: center;
+        }
+        
+        .list-stat-label {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 3px;
+        }
+        
+        .list-stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .list-item-risk {
+            flex-shrink: 0;
+        }
+        
+        .list-item-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        
+        /* Table View Styles */
+        .customers-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .customer-table {
+            width: 100%;
+            margin: 0;
+        }
+        
+        .customer-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            border: none;
+            text-align: left;
+        }
+        
+        .customer-table td {
+            padding: 15px;
+            border-top: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        
+        .table-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .table-customer-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        
+        .table-customer-tags {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .badge-sm {
+            font-size: 10px;
+            padding: 2px 6px;
+        }
+        
+        /* Notes System Styles */
+        .notes-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .note-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .note-author {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .note-date {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .note-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .add-note-btn {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            background: transparent;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .add-note-btn:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Context Menu for Customer Actions */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            padding: 8px 0;
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .context-menu-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .context-menu-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .context-menu-separator {
+            height: 1px;
+            background: #f0f0f0;
+            margin: 5px 0;
+        }
+        
+        /* Activity Timeline Styles */
+        .activity-timeline {
+            position: relative;
+            padding-left: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: #e0e0e0;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -25px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .timeline-marker i {
+            font-size: 10px;
+            color: #667eea;
+        }
+        
+        .timeline-content {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .timeline-time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .timeline-description {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
             .stats-grid {
                 grid-template-columns: 1fr;
@@ -560,6 +1524,24 @@
             
             .chart-canvas {
                 height: 200px;
+            }
+            
+            .support-content {
+                width: 95%;
+                height: 90vh;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .support-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .support-tab {
+                flex: none;
+                min-width: 100px;
             }
         }
     </style>
@@ -656,6 +1638,104 @@
                 </div>
             </div>
             
+            <!-- Enhanced Sorting & Filtering Controls -->
+            <div class="sorting-controls">
+                <div class="search-container">
+                    <input type="text" class="search-input-enhanced" placeholder="Search customers by name, ID, balance, or notes..." id="customerSearch">
+                    <i class="fas fa-search search-icon-enhanced"></i>
+                </div>
+                
+                <div class="filter-controls">
+                    <select class="filter-select-enhanced" id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                    
+                    <select class="filter-select-enhanced" id="typeFilter">
+                        <option value="all">All Types</option>
+                        <option value="vip">VIP Customers</option>
+                        <option value="high-volume">High Volume</option>
+                        <option value="new">New Customers</option>
+                        <option value="at-risk">At Risk</option>
+                    </select>
+                    
+                    <select class="filter-select-enhanced" id="sortBy">
+                        <option value="name">Sort by Name</option>
+                        <option value="balance-desc">Balance (High to Low)</option>
+                        <option value="balance-asc">Balance (Low to High)</option>
+                        <option value="pnl-desc">P&L (Best to Worst)</option>
+                        <option value="pnl-asc">P&L (Worst to Best)</option>
+                        <option value="activity">Recent Activity</option>
+                        <option value="joined">Join Date</option>
+                        <option value="risk">Risk Level</option>
+                    </select>
+                    
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="gridView" onclick="toggleView('grid')">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" id="listView" onclick="toggleView('list')">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button class="view-btn" id="tableView" onclick="toggleView('table')">
+                            <i class="fas fa-table"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="showAdvancedFilters()">
+                    <i class="fas fa-filter"></i> Advanced
+                </button>
+                <button class="btn btn-outline-secondary" onclick="exportCustomerData()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+            
+            <!-- Customer Analytics Overview -->
+            <div class="enhanced-stats">
+                <div class="enhanced-stat-card">
+                    <div class="stat-icon-large" style="background: rgba(72, 187, 120, 0.1); color: #48bb78;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-number" id="totalCustomers">0</div>
+                    <div class="stat-description">Total Customers</div>
+                </div>
+                
+                <div class="enhanced-stat-card">
+                    <div class="stat-icon-large" style="background: rgba(102, 126, 234, 0.1); color: #667eea;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-number" id="activeCustomers">0</div>
+                    <div class="stat-description">Active Today</div>
+                </div>
+                
+                <div class="enhanced-stat-card">
+                    <div class="stat-icon-large" style="background: rgba(255, 193, 7, 0.1); color: #ffc107;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-number" id="vipCustomers">0</div>
+                    <div class="stat-description">VIP Members</div>
+                </div>
+                
+                <div class="enhanced-stat-card">
+                    <div class="stat-icon-large" style="background: rgba(245, 101, 101, 0.1); color: #f56565;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-number" id="riskCustomers">0</div>
+                    <div class="stat-description">High Risk</div>
+                </div>
+                
+                <div class="enhanced-stat-card">
+                    <div class="stat-icon-large" style="background: rgba(159, 122, 234, 0.1); color: #9f7aea;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-number" id="totalBalance">$0</div>
+                    <div class="stat-description">Total Balance</div>
+                </div>
+            </div>
+
             <!-- Statistics Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -1294,7 +2374,804 @@
         }
         
         function showSupport() {
-            window.open('https://t.me/admin', '_blank');
+            // Enhanced support system with messaging and profile management
+            openSupportPanel();
+        }
+        
+        // Support Panel Functions
+        function openSupportPanel() {
+            const modal = document.createElement('div');
+            modal.className = 'support-modal';
+            modal.innerHTML = `
+                <div class="support-content">
+                    <div class="support-header">
+                        <h3><i class="fas fa-headset"></i> Customer Support</h3>
+                        <button onclick="closeSupportPanel()" class="close-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="support-body">
+                        <div class="support-tabs">
+                            <button class="support-tab active" onclick="showSupportTab('chat')">Live Chat</button>
+                            <button class="support-tab" onclick="showSupportTab('profile')">My Profile</button>
+                            <button class="support-tab" onclick="showSupportTab('tickets')">Support Tickets</button>
+                        </div>
+                        
+                        <div class="support-tab-content">
+                            <!-- Chat Tab -->
+                            <div class="tab-panel active" id="chat-panel">
+                                <div class="chat-container">
+                                    <div class="chat-messages" id="supportChatMessages">
+                                        <div class="chat-message received">
+                                            <div class="message-avatar">
+                                                <i class="fas fa-user-tie"></i>
+                                            </div>
+                                            <div class="message-content">
+                                                <div class="message-text">Hello! How can I help you today?</div>
+                                                <div class="message-time">2 minutes ago</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="chat-input-area">
+                                        <input type="text" id="supportChatInput" placeholder="Type your message..." onkeypress="handleSupportChatKeypress(event)">
+                                        <button onclick="sendSupportMessage()" class="send-btn">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Profile Tab -->
+                            <div class="tab-panel" id="profile-panel">
+                                <div class="customer-profile">
+                                    <div class="profile-header-info">
+                                        <div class="profile-avatar-large">${currentUser ? currentUser.customer_id.substring(0, 2).toUpperCase() : 'CU'}</div>
+                                        <div class="profile-details">
+                                            <h4>Customer ${currentUser ? currentUser.customer_id : 'Unknown'}</h4>
+                                            <p>Member since: ${new Date().toLocaleDateString()}</p>
+                                            <div class="profile-badges">
+                                                <span class="badge badge-success">Verified</span>
+                                                <span class="badge badge-primary">Active</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="profile-sections">
+                                        <div class="profile-section">
+                                            <h5><i class="fas fa-chart-bar"></i> Account Summary</h5>
+                                            <div class="summary-grid">
+                                                <div class="summary-item">
+                                                    <span class="summary-label">Total Trades</span>
+                                                    <span class="summary-value">127</span>
+                                                </div>
+                                                <div class="summary-item">
+                                                    <span class="summary-label">Win Rate</span>
+                                                    <span class="summary-value">68%</span>
+                                                </div>
+                                                <div class="summary-item">
+                                                    <span class="summary-label">Total Volume</span>
+                                                    <span class="summary-value">$142,500</span>
+                                                </div>
+                                                <div class="summary-item">
+                                                    <span class="summary-label">Avg Trade Size</span>
+                                                    <span class="summary-value">$1,122</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="profile-section">
+                                            <h5><i class="fas fa-cog"></i> Preferences</h5>
+                                            <div class="preferences-list">
+                                                <div class="preference-item">
+                                                    <label class="preference-label">
+                                                        <input type="checkbox" checked> Email notifications
+                                                    </label>
+                                                </div>
+                                                <div class="preference-item">
+                                                    <label class="preference-label">
+                                                        <input type="checkbox" checked> SMS alerts
+                                                    </label>
+                                                </div>
+                                                <div class="preference-item">
+                                                    <label class="preference-label">
+                                                        <input type="checkbox"> Push notifications
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="profile-section">
+                                            <h5><i class="fas fa-tags"></i> Customer Tags</h5>
+                                            <div class="tags-display">
+                                                <span class="customer-tag">High Volume</span>
+                                                <span class="customer-tag">VIP</span>
+                                                <span class="customer-tag">Verified</span>
+                                                <button class="add-tag-btn" onclick="addCustomerTag()">
+                                                    <i class="fas fa-plus"></i> Add Tag
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tickets Tab -->
+                            <div class="tab-panel" id="tickets-panel">
+                                <div class="tickets-container">
+                                    <div class="tickets-header">
+                                        <h5>Support Tickets</h5>
+                                        <button class="btn btn-primary btn-sm" onclick="createNewTicket()">
+                                            <i class="fas fa-plus"></i> New Ticket
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="tickets-list">
+                                        <div class="ticket-item">
+                                            <div class="ticket-header">
+                                                <span class="ticket-id">#T001</span>
+                                                <span class="ticket-status status-open">Open</span>
+                                            </div>
+                                            <div class="ticket-subject">Account limit increase request</div>
+                                            <div class="ticket-meta">
+                                                <span>Created: 2 days ago</span>
+                                                <span>Last updated: 1 hour ago</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="ticket-item">
+                                            <div class="ticket-header">
+                                                <span class="ticket-id">#T002</span>
+                                                <span class="ticket-status status-resolved">Resolved</span>
+                                            </div>
+                                            <div class="ticket-subject">Password reset assistance</div>
+                                            <div class="ticket-meta">
+                                                <span>Created: 1 week ago</span>
+                                                <span>Resolved: 6 days ago</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.classList.add('active');
+        }
+        
+        function closeSupportPanel() {
+            const modal = document.querySelector('.support-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
+        
+        function showSupportTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.support-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab panels
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.getElementById(tabName + '-panel').classList.add('active');
+        }
+        
+        function handleSupportChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendSupportMessage();
+            }
+        }
+        
+        function sendSupportMessage() {
+            const input = document.getElementById('supportChatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const messagesContainer = document.getElementById('supportChatMessages');
+            
+            // Add user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'chat-message sent';
+            userMessage.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">${message}</div>
+                    <div class="message-time">Just now</div>
+                </div>
+                <div class="message-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            `;
+            messagesContainer.appendChild(userMessage);
+            
+            // Clear input
+            input.value = '';
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Simulate support response after delay
+            setTimeout(() => {
+                const supportMessage = document.createElement('div');
+                supportMessage.className = 'chat-message received';
+                supportMessage.innerHTML = `
+                    <div class="message-avatar">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">Thank you for your message. Our support team will assist you shortly.</div>
+                        <div class="message-time">Just now</div>
+                    </div>
+                `;
+                messagesContainer.appendChild(supportMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 1000);
+        }
+        
+        function addCustomerTag() {
+            const tag = prompt('Enter new tag:');
+            if (tag) {
+                const tagsContainer = document.querySelector('.tags-display');
+                const newTag = document.createElement('span');
+                newTag.className = 'customer-tag';
+                newTag.textContent = tag;
+                tagsContainer.insertBefore(newTag, tagsContainer.lastElementChild);
+            }
+        }
+        
+        function createNewTicket() {
+            const subject = prompt('Enter ticket subject:');
+            if (subject) {
+                const ticketsList = document.querySelector('.tickets-list');
+                const newTicket = document.createElement('div');
+                newTicket.className = 'ticket-item';
+                newTicket.innerHTML = `
+                    <div class="ticket-header">
+                        <span class="ticket-id">#T${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}</span>
+                        <span class="ticket-status status-open">Open</span>
+                    </div>
+                    <div class="ticket-subject">${subject}</div>
+                    <div class="ticket-meta">
+                        <span>Created: Just now</span>
+                        <span>Last updated: Just now</span>
+                    </div>
+                `;
+                ticketsList.insertBefore(newTicket, ticketsList.firstChild);
+            }
+        }
+        
+        // Enhanced Customer Management System
+        let customerDatabase = [];
+        let customerNotes = {};
+        let currentView = 'grid';
+        let currentFilters = {
+            search: '',
+            status: 'all',
+            type: 'all',
+            sort: 'name'
+        };
+        
+        // Sample expanded customer data
+        function initializeCustomerDatabase() {
+            customerDatabase = [
+                {
+                    id: 'BB1042',
+                    name: 'John Doe',
+                    email: 'john.doe@email.com',
+                    balance: 15420,
+                    weeklyPnl: -1250,
+                    totalVolume: 142500,
+                    totalTrades: 127,
+                    winRate: 68,
+                    status: 'active',
+                    riskLevel: 'medium',
+                    joinDate: new Date('2023-03-15'),
+                    lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+                    tags: ['vip', 'verified', 'high-volume'],
+                    telegramLinked: true,
+                    preferredContact: 'telegram',
+                    notes: []
+                },
+                {
+                    id: 'AA2051',
+                    name: 'Jane Smith',
+                    email: 'jane.smith@email.com',
+                    balance: 82500,
+                    weeklyPnl: 5200,
+                    totalVolume: 485600,
+                    totalTrades: 89,
+                    winRate: 74,
+                    status: 'active',
+                    riskLevel: 'low',
+                    joinDate: new Date('2023-01-20'),
+                    lastActive: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+                    tags: ['vip', 'high-volume', 'whale'],
+                    telegramLinked: true,
+                    preferredContact: 'email',
+                    notes: []
+                },
+                {
+                    id: 'CC3082',
+                    name: 'Mike Johnson',
+                    email: 'mike.j@email.com',
+                    balance: 3200,
+                    weeklyPnl: -800,
+                    totalVolume: 28400,
+                    totalTrades: 45,
+                    winRate: 42,
+                    status: 'inactive',
+                    riskLevel: 'high',
+                    joinDate: new Date('2023-06-10'),
+                    lastActive: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+                    tags: ['warning', 'at-risk'],
+                    telegramLinked: false,
+                    preferredContact: 'email',
+                    notes: []
+                },
+                {
+                    id: 'DD4093',
+                    name: 'Sarah Wilson',
+                    email: 'sarah.w@email.com',
+                    balance: 45000,
+                    weeklyPnl: 2100,
+                    totalVolume: 195300,
+                    totalTrades: 156,
+                    winRate: 61,
+                    status: 'active',
+                    riskLevel: 'low',
+                    joinDate: new Date('2023-02-28'),
+                    lastActive: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+                    tags: ['verified', 'consistent'],
+                    telegramLinked: true,
+                    preferredContact: 'telegram',
+                    notes: []
+                },
+                {
+                    id: 'EE5104',
+                    name: 'Robert Chen',
+                    email: 'r.chen@email.com',
+                    balance: 128000,
+                    weeklyPnl: 8500,
+                    totalVolume: 675400,
+                    totalTrades: 203,
+                    winRate: 71,
+                    status: 'active',
+                    riskLevel: 'low',
+                    joinDate: new Date('2022-11-15'),
+                    lastActive: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+                    tags: ['vip', 'whale', 'verified', 'long-term'],
+                    telegramLinked: true,
+                    preferredContact: 'telegram',
+                    notes: []
+                }
+            ];
+            
+            // Initialize customer notes
+            customerNotes = {
+                'BB1042': [
+                    { id: 1, author: 'Admin', date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), content: 'Customer requested higher limits for weekend trading. Approved after verification.' },
+                    { id: 2, author: 'Support', date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), content: 'VIP customer - priority support. Prefers communication via Telegram.' }
+                ],
+                'AA2051': [
+                    { id: 3, author: 'Risk Team', date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), content: 'Excellent risk management. Consistently profitable trader.' }
+                ],
+                'CC3082': [
+                    { id: 4, author: 'Support', date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), content: 'Customer showing signs of problem gambling. Monitor closely.' },
+                    { id: 5, author: 'Manager', date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), content: 'Implemented daily loss limits. Schedule follow-up call.' }
+                ]
+            };
+            
+            updateDashboardStats();
+            applyFiltersAndSort();
+        }
+        
+        // Update dashboard statistics
+        function updateDashboardStats() {
+            const totalCustomers = customerDatabase.length;
+            const activeCustomers = customerDatabase.filter(c => c.status === 'active').length;
+            const vipCustomers = customerDatabase.filter(c => c.tags.includes('vip')).length;
+            const riskCustomers = customerDatabase.filter(c => c.riskLevel === 'high').length;
+            const totalBalance = customerDatabase.reduce((sum, c) => sum + c.balance, 0);
+            
+            document.getElementById('totalCustomers').textContent = totalCustomers;
+            document.getElementById('activeCustomers').textContent = activeCustomers;
+            document.getElementById('vipCustomers').textContent = vipCustomers;
+            document.getElementById('riskCustomers').textContent = riskCustomers;
+            document.getElementById('totalBalance').textContent = `$${totalBalance.toLocaleString()}`;
+        }
+        
+        // Enhanced filtering and sorting
+        function applyFiltersAndSort() {
+            let filteredCustomers = [...customerDatabase];
+            
+            // Apply search filter
+            if (currentFilters.search) {
+                const searchTerm = currentFilters.search.toLowerCase();
+                filteredCustomers = filteredCustomers.filter(customer => {
+                    return customer.name.toLowerCase().includes(searchTerm) ||
+                           customer.id.toLowerCase().includes(searchTerm) ||
+                           customer.email.toLowerCase().includes(searchTerm) ||
+                           customer.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+                           (customerNotes[customer.id] && customerNotes[customer.id].some(note => 
+                               note.content.toLowerCase().includes(searchTerm)
+                           ));
+                });
+            }
+            
+            // Apply status filter
+            if (currentFilters.status !== 'all') {
+                filteredCustomers = filteredCustomers.filter(customer => customer.status === currentFilters.status);
+            }
+            
+            // Apply type filter
+            if (currentFilters.type !== 'all') {
+                filteredCustomers = filteredCustomers.filter(customer => {
+                    switch (currentFilters.type) {
+                        case 'vip':
+                            return customer.tags.includes('vip');
+                        case 'high-volume':
+                            return customer.tags.includes('high-volume');
+                        case 'new':
+                            return (Date.now() - customer.joinDate.getTime()) < (30 * 24 * 60 * 60 * 1000); // 30 days
+                        case 'at-risk':
+                            return customer.riskLevel === 'high' || customer.tags.includes('at-risk');
+                        default:
+                            return true;
+                    }
+                });
+            }
+            
+            // Apply sorting
+            filteredCustomers.sort((a, b) => {
+                switch (currentFilters.sort) {
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    case 'balance-desc':
+                        return b.balance - a.balance;
+                    case 'balance-asc':
+                        return a.balance - b.balance;
+                    case 'pnl-desc':
+                        return b.weeklyPnl - a.weeklyPnl;
+                    case 'pnl-asc':
+                        return a.weeklyPnl - b.weeklyPnl;
+                    case 'activity':
+                        return b.lastActive.getTime() - a.lastActive.getTime();
+                    case 'joined':
+                        return b.joinDate.getTime() - a.joinDate.getTime();
+                    case 'risk':
+                        const riskOrder = { 'high': 0, 'medium': 1, 'low': 2 };
+                        return riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
+                    default:
+                        return 0;
+                }
+            });
+            
+            displayCustomers(filteredCustomers);
+        }
+        
+        // Display customers based on current view
+        function displayCustomers(customers) {
+            const container = document.getElementById('customersGrid') || createCustomersContainer();
+            container.innerHTML = '';
+            
+            if (currentView === 'grid') {
+                container.className = 'customers-grid';
+                customers.forEach(customer => {
+                    const card = createCustomerCard(customer);
+                    container.appendChild(card);
+                });
+            } else if (currentView === 'list') {
+                container.className = 'customers-list';
+                customers.forEach(customer => {
+                    const listItem = createCustomerListItem(customer);
+                    container.appendChild(listItem);
+                });
+            } else if (currentView === 'table') {
+                container.className = 'customers-table';
+                const table = createCustomerTable(customers);
+                container.appendChild(table);
+            }
+        }
+        
+        // Create customer list item for list view
+        function createCustomerListItem(customer) {
+            const item = document.createElement('div');
+            item.className = 'customer-list-item';
+            
+            const initials = customer.name.split(' ').map(n => n[0]).join('');
+            const riskBadge = customer.riskLevel === 'high' ? '<span class="badge badge-danger">High Risk</span>' : 
+                             customer.riskLevel === 'medium' ? '<span class="badge badge-warning">Medium Risk</span>' : 
+                             '<span class="badge badge-success">Low Risk</span>';
+            
+            item.innerHTML = `
+                <div class="list-item-avatar">${initials}</div>
+                <div class="list-item-info">
+                    <div class="list-item-name">${customer.name}</div>
+                    <div class="list-item-details">
+                        ID: ${customer.id} | ${customer.email} | Last active: ${formatTimeAgo(customer.lastActive)}
+                    </div>
+                    <div class="list-item-tags">
+                        ${customer.tags.map(tag => `<span class="tag-small">${tag}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="list-item-stats">
+                    <div class="list-stat">
+                        <span class="list-stat-label">Balance</span>
+                        <span class="list-stat-value">$${customer.balance.toLocaleString()}</span>
+                    </div>
+                    <div class="list-stat">
+                        <span class="list-stat-label">Weekly P&L</span>
+                        <span class="list-stat-value ${customer.weeklyPnl >= 0 ? 'positive' : 'negative'}">
+                            ${customer.weeklyPnl >= 0 ? '+' : ''}$${Math.abs(customer.weeklyPnl).toLocaleString()}
+                        </span>
+                    </div>
+                    <div class="list-stat">
+                        <span class="list-stat-label">Win Rate</span>
+                        <span class="list-stat-value">${customer.winRate}%</span>
+                    </div>
+                </div>
+                <div class="list-item-risk">
+                    ${riskBadge}
+                </div>
+                <div class="list-item-actions">
+                    <button class="btn btn-sm btn-primary" onclick="openEnhancedProfile('${customer.id}')">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="startCustomerChat('${customer.id}')">
+                        <i class="fas fa-comment"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="addCustomerNote('${customer.id}')">
+                        <i class="fas fa-sticky-note"></i>
+                    </button>
+                </div>
+            `;
+            
+            return item;
+        }
+        
+        // Create customer table for table view
+        function createCustomerTable(customers) {
+            const table = document.createElement('table');
+            table.className = 'customer-table table table-striped table-hover';
+            
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>Customer</th>
+                    <th>ID</th>
+                    <th>Balance</th>
+                    <th>Weekly P&L</th>
+                    <th>Win Rate</th>
+                    <th>Total Trades</th>
+                    <th>Risk Level</th>
+                    <th>Last Active</th>
+                    <th>Actions</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            
+            const tbody = document.createElement('tbody');
+            customers.forEach(customer => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="table-avatar">${customer.name.split(' ').map(n => n[0]).join('')}</div>
+                            <div class="ml-2">
+                                <div class="table-customer-name">${customer.name}</div>
+                                <div class="table-customer-tags">
+                                    ${customer.tags.slice(0, 2).map(tag => `<span class="badge badge-secondary badge-sm">${tag}</span>`).join(' ')}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${customer.id}</td>
+                    <td>$${customer.balance.toLocaleString()}</td>
+                    <td class="${customer.weeklyPnl >= 0 ? 'text-success' : 'text-danger'}">
+                        ${customer.weeklyPnl >= 0 ? '+' : ''}$${Math.abs(customer.weeklyPnl).toLocaleString()}
+                    </td>
+                    <td>${customer.winRate}%</td>
+                    <td>${customer.totalTrades}</td>
+                    <td>
+                        <span class="badge badge-${customer.riskLevel === 'high' ? 'danger' : customer.riskLevel === 'medium' ? 'warning' : 'success'}">
+                            ${customer.riskLevel}
+                        </span>
+                    </td>
+                    <td>${formatTimeAgo(customer.lastActive)}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-primary" onclick="openEnhancedProfile('${customer.id}')">
+                                <i class="fas fa-user"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="startCustomerChat('${customer.id}')">
+                                <i class="fas fa-comment"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            
+            return table;
+        }
+        
+        // Toggle view between grid, list, and table
+        function toggleView(viewType) {
+            currentView = viewType;
+            
+            // Update button states
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(viewType + 'View').classList.add('active');
+            
+            // Re-render customers
+            applyFiltersAndSort();
+        }
+        
+        // Format time ago helper
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+            return date.toLocaleDateString();
+        }
+        
+        // Enhanced customer profile
+        function openEnhancedProfile(customerId) {
+            const customer = customerDatabase.find(c => c.id === customerId);
+            if (!customer) return;
+            
+            // Update profile modal with enhanced data
+            const initials = customer.name.split(' ').map(n => n[0]).join('');
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileName').textContent = customer.name;
+            document.getElementById('profileId').textContent = `ID: ${customer.id}`;
+            document.getElementById('profileBalance').textContent = `$${customer.balance.toLocaleString()}`;
+            document.getElementById('profilePnL').textContent = `${customer.weeklyPnl >= 0 ? '+' : ''}$${Math.abs(customer.weeklyPnl).toLocaleString()}`;
+            document.getElementById('profilePnL').className = `stat-value ${customer.weeklyPnl >= 0 ? 'positive' : 'negative'}`;
+            
+            // Load customer notes
+            loadCustomerNotes(customerId);
+            
+            document.getElementById('profileModal').classList.add('active');
+            updateCustomerChart(customer);
+        }
+        
+        // Customer notes management
+        function loadCustomerNotes(customerId) {
+            const notesContainer = document.querySelector('.notes-container');
+            if (!notesContainer) return;
+            
+            const notes = customerNotes[customerId] || [];
+            notesContainer.innerHTML = '';
+            
+            notes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note-item';
+                noteElement.innerHTML = `
+                    <div class="note-header">
+                        <span class="note-author">${note.author}</span>
+                        <span class="note-date">${formatTimeAgo(note.date)}</span>
+                    </div>
+                    <div class="note-content">${note.content}</div>
+                `;
+                notesContainer.appendChild(noteElement);
+            });
+            
+            // Add "Add Note" button
+            const addNoteBtn = document.createElement('button');
+            addNoteBtn.className = 'add-note-btn';
+            addNoteBtn.innerHTML = '<i class="fas fa-plus"></i> Add Note';
+            addNoteBtn.onclick = () => addCustomerNote(customerId);
+            notesContainer.appendChild(addNoteBtn);
+        }
+        
+        function addCustomerNote(customerId) {
+            const noteContent = prompt('Enter note:');
+            if (noteContent) {
+                if (!customerNotes[customerId]) {
+                    customerNotes[customerId] = [];
+                }
+                
+                const newNote = {
+                    id: Date.now(),
+                    author: 'Current User',
+                    date: new Date(),
+                    content: noteContent
+                };
+                
+                customerNotes[customerId].unshift(newNote);
+                
+                // If profile modal is open for this customer, refresh notes
+                const profileModal = document.getElementById('profileModal');
+                if (profileModal.classList.contains('active')) {
+                    loadCustomerNotes(customerId);
+                }
+                
+                showToast('Note added successfully', 'success');
+            }
+        }
+        
+        // Start customer chat
+        function startCustomerChat(customerId) {
+            openEnhancedProfile(customerId);
+            // Switch to messages tab
+            setTimeout(() => {
+                document.querySelector('[href="#messages"]').click();
+            }, 300);
+        }
+        
+        // Advanced filters modal
+        function showAdvancedFilters() {
+            // Implementation for advanced filters modal
+            showToast('Advanced filters coming soon', 'info');
+        }
+        
+        // Export customer data
+        function exportCustomerData() {
+            const csvContent = "data:text/csv;charset=utf-8," + 
+                "ID,Name,Email,Balance,Weekly P&L,Win Rate,Total Trades,Risk Level,Status,Last Active\n" +
+                customerDatabase.map(c => 
+                    `${c.id},${c.name},${c.email},${c.balance},${c.weeklyPnl},${c.winRate},${c.totalTrades},${c.riskLevel},${c.status},${c.lastActive.toISOString()}`
+                ).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "customer_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('Customer data exported successfully', 'success');
+        }
+        
+        // Initialize event listeners for filtering
+        function initializeFilterListeners() {
+            document.getElementById('customerSearch').addEventListener('input', (e) => {
+                currentFilters.search = e.target.value;
+                applyFiltersAndSort();
+            });
+            
+            document.getElementById('statusFilter').addEventListener('change', (e) => {
+                currentFilters.status = e.target.value;
+                applyFiltersAndSort();
+            });
+            
+            document.getElementById('typeFilter').addEventListener('change', (e) => {
+                currentFilters.type = e.target.value;
+                applyFiltersAndSort();
+            });
+            
+            document.getElementById('sortBy').addEventListener('change', (e) => {
+                currentFilters.sort = e.target.value;
+                applyFiltersAndSort();
+            });
+        }
+        
+        // Create customers container if it doesn't exist
+        function createCustomersContainer() {
+            const container = document.createElement('div');
+            container.id = 'customersGrid';
+            container.className = 'customers-grid';
+            
+            // Find the right place to insert it (after the stats)
+            const statsGrid = document.querySelector('.stats-grid');
+            if (statsGrid && statsGrid.parentNode) {
+                statsGrid.parentNode.insertBefore(container, statsGrid.nextSibling);
+            }
+            
+            return container;
         }
         
         // Check for existing session on load
@@ -1311,6 +3188,10 @@
                     clearToken();
                 }
             }
+            
+            // Initialize enhanced customer management system
+            initializeCustomerDatabase();
+            initializeFilterListeners();
         });
         
         // Add animation styles

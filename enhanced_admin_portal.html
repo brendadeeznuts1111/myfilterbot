@@ -3,7 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Fantdev Trading System</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Enhanced Admin Dashboard - Fantdev Trading System</title>
+    <meta name="title" content="Enhanced Admin Dashboard - Fantdev Trading System">
+    <meta name="description" content="Advanced admin dashboard with real-time analytics, WebSocket updates, and comprehensive trading bot management. Monitor performance, manage customers, and track transactions.">
+    <meta name="keywords" content="trading dashboard, real-time analytics, telegram bot admin, customer management, transaction tracking, WebSocket monitoring, fantdev trading system">
+    <meta name="author" content="Fantdev Trading Systems">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="application">
+    <meta property="og:url" content="https://fantdev.trading/admin/dashboard">
+    <meta property="og:title" content="Enhanced Admin Dashboard - Fantdev Trading">
+    <meta property="og:description" content="Professional trading bot management with real-time analytics, comprehensive reporting, and advanced member permission controls.">
+    <meta property="og:image" content="https://fantdev.trading/images/dashboard-og-preview.jpg">
+    <meta property="og:site_name" content="Fantdev Trading Platform">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://fantdev.trading/admin/dashboard">
+    <meta property="twitter:title" content="Fantdev Trading Admin Dashboard">
+    <meta property="twitter:description" content="Real-time trading bot analytics and management dashboard with advanced monitoring capabilities.">
+    <meta property="twitter:image" content="https://fantdev.trading/images/dashboard-twitter-preview.jpg">
+    
+    <!-- PWA & Mobile -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fantdev Dashboard">
+    
+    <!-- Application Info -->
+    <meta name="application-name" content="Fantdev Enhanced Admin Dashboard">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="canonical" href="https://fantdev.trading/admin/dashboard">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -859,33 +892,33 @@
             </div>
         </div>
         <div class="sidebar-menu">
-            <a href="#dashboard" class="menu-item active" onclick="switchTab('dashboard')">
+            <a href="#dashboard" class="menu-item active" onclick="switchTab('dashboard'); return false;">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="#customers" class="menu-item" onclick="switchTab('customers')">
+            <a href="#customers" class="menu-item" onclick="switchTab('customers'); return false;">
                 <i class="fas fa-users"></i>
                 <span>Customers</span>
                 <span class="menu-badge">25</span>
             </a>
-            <a href="#members" class="menu-item" onclick="switchTab('members')">
+            <a href="#members" class="menu-item" onclick="switchTab('members'); return false;">
                 <i class="fas fa-user-shield"></i>
                 <span>Members</span>
                 <span class="menu-badge" id="pendingCount">0</span>
             </a>
-            <a href="#transactions" class="menu-item" onclick="switchTab('transactions')">
+            <a href="#transactions" class="menu-item" onclick="switchTab('transactions'); return false;">
                 <i class="fas fa-exchange-alt"></i>
                 <span>Transactions</span>
             </a>
-            <a href="#analytics" class="menu-item" onclick="switchTab('analytics')">
+            <a href="#analytics" class="menu-item" onclick="switchTab('analytics'); return false;">
                 <i class="fas fa-chart-bar"></i>
                 <span>Analytics</span>
             </a>
-            <a href="#reports" class="menu-item" onclick="switchTab('reports')">
+            <a href="#reports" class="menu-item" onclick="switchTab('reports'); return false;">
                 <i class="fas fa-file-alt"></i>
                 <span>Reports</span>
             </a>
-            <a href="#settings" class="menu-item" onclick="switchTab('settings')">
+            <a href="#settings" class="menu-item" onclick="switchTab('settings'); return false;">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </a>
@@ -1007,9 +1040,9 @@
                         <div class="chart-header">
                             <h3 class="chart-title">Revenue Overview</h3>
                             <div class="chart-actions">
-                                <button class="chart-btn active" onclick="updateChart('daily')">Daily</button>
-                                <button class="chart-btn" onclick="updateChart('weekly')">Weekly</button>
-                                <button class="chart-btn" onclick="updateChart('monthly')">Monthly</button>
+                                <button class="chart-btn active" onclick="updateChart('daily', this)">Daily</button>
+                                <button class="chart-btn" onclick="updateChart('weekly', this)">Weekly</button>
+                                <button class="chart-btn" onclick="updateChart('monthly', this)">Monthly</button>
                             </div>
                         </div>
                         <div class="chart-container">
@@ -1060,6 +1093,319 @@
                         </table>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Rate Limit Monitor Section -->
+            <div id="rate-limit-section" class="tab-content" style="margin-top: 30px;">
+                <div class="page-header">
+                    <h2 class="page-title">📊 Rate Limit Monitor</h2>
+                    <p class="page-subtitle">Cloudflare Worker API Rate Limiting Status</p>
+                </div>
+                
+                <div class="rate-limit-container">
+                    <div class="rate-limit-card">
+                        <div class="rate-limit-header">
+                            <div class="rate-limit-title">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Global Rate Limit</span>
+                            </div>
+                            <div class="rate-limit-status">
+                                <span id="lastUpdate" class="text-muted">Last update: Never</span>
+                                <button onclick="refreshRateLimit()" class="btn btn-sm btn-outline">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="rate-limit-body">
+                            <div class="rate-limit-main">
+                                <div class="token-display">
+                                    <div class="token-value">
+                                        <span id="currentTokens">--</span>/<span id="maxTokens">30</span>
+                                    </div>
+                                    <div class="token-label">Available Tokens</div>
+                                </div>
+                                <div class="token-bar">
+                                    <div id="tokenProgress" class="token-progress" style="width: 100%"></div>
+                                </div>
+                                <div class="token-percentage">
+                                    <span id="tokenPercentage">100%</span> capacity
+                                </div>
+                            </div>
+                            
+                            <div class="rate-limit-stats">
+                                <div class="stat-item">
+                                    <div class="stat-icon blue">
+                                        <i class="fas fa-comments"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <div class="stat-value" id="activeChatLimits">0</div>
+                                        <div class="stat-label">Active Chat Limits</div>
+                                        <div class="stat-detail">1 msg/sec per chat</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon purple">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <div class="stat-value" id="activeGroupLimits">0</div>
+                                        <div class="stat-label">Active Group Limits</div>
+                                        <div class="stat-detail">20 msg/min per group</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="telegram-limits">
+                                <h4>Telegram API Limits</h4>
+                                <div class="limits-grid">
+                                    <div class="limit-item">
+                                        <span class="limit-dot green"></span>
+                                        <span class="limit-text">Global: <strong id="globalLimit">30 msg/sec</strong></span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <span class="limit-dot blue"></span>
+                                        <span class="limit-text">Per Chat: <strong id="perChatLimit">1 msg/sec</strong></span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <span class="limit-dot purple"></span>
+                                        <span class="limit-text">Per Group: <strong id="perGroupLimit">20 msg/min</strong></span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <span class="limit-dot orange"></span>
+                                        <span class="limit-text">Batch: <strong id="batchLimit">50 req/batch</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="worker-info">
+                                <div class="worker-status">
+                                    <span id="workerStatus" class="status-indicator success"></span>
+                                    <span>Worker Status: <strong id="workerStatusText">Connected</strong></span>
+                                </div>
+                                <div class="worker-url">
+                                    <small>Endpoint: <code id="workerEndpoint">http://localhost:8787/api/rate-limit</code></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <style>
+                    .rate-limit-container {
+                        margin-top: 20px;
+                    }
+                    
+                    .rate-limit-card {
+                        background: white;
+                        border-radius: 12px;
+                        box-shadow: var(--shadow);
+                        overflow: hidden;
+                    }
+                    
+                    .rate-limit-header {
+                        padding: 20px;
+                        border-bottom: 1px solid var(--border);
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    
+                    .rate-limit-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        font-size: 20px;
+                        font-weight: 600;
+                        color: var(--dark);
+                    }
+                    
+                    .rate-limit-status {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }
+                    
+                    .rate-limit-body {
+                        padding: 30px;
+                    }
+                    
+                    .rate-limit-main {
+                        text-align: center;
+                        margin-bottom: 40px;
+                    }
+                    
+                    .token-display {
+                        margin-bottom: 20px;
+                    }
+                    
+                    .token-value {
+                        font-size: 48px;
+                        font-weight: bold;
+                        color: var(--primary);
+                    }
+                    
+                    .token-label {
+                        font-size: 14px;
+                        color: #718096;
+                        margin-top: 5px;
+                    }
+                    
+                    .token-bar {
+                        width: 100%;
+                        height: 20px;
+                        background: #e2e8f0;
+                        border-radius: 10px;
+                        overflow: hidden;
+                        margin: 20px 0;
+                    }
+                    
+                    .token-progress {
+                        height: 100%;
+                        background: linear-gradient(90deg, var(--success) 0%, #38a169 100%);
+                        border-radius: 10px;
+                        transition: width 0.5s ease;
+                    }
+                    
+                    .token-progress.warning {
+                        background: linear-gradient(90deg, var(--warning) 0%, #dd6b20 100%);
+                    }
+                    
+                    .token-progress.danger {
+                        background: linear-gradient(90deg, var(--danger) 0%, #e53e3e 100%);
+                    }
+                    
+                    .token-percentage {
+                        font-size: 18px;
+                        color: #4a5568;
+                    }
+                    
+                    .rate-limit-stats {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 20px;
+                        margin-bottom: 30px;
+                    }
+                    
+                    .stat-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        padding: 20px;
+                        background: #f7fafc;
+                        border-radius: 8px;
+                    }
+                    
+                    .stat-icon {
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 20px;
+                        color: white;
+                    }
+                    
+                    .stat-icon.blue { background: linear-gradient(135deg, #667eea, #4c51bf); }
+                    .stat-icon.purple { background: linear-gradient(135deg, #9f7aea, #805ad5); }
+                    
+                    .stat-value {
+                        font-size: 28px;
+                        font-weight: bold;
+                        color: var(--dark);
+                    }
+                    
+                    .stat-label {
+                        font-size: 14px;
+                        color: #718096;
+                    }
+                    
+                    .stat-detail {
+                        font-size: 12px;
+                        color: #a0aec0;
+                        margin-top: 2px;
+                    }
+                    
+                    .telegram-limits {
+                        background: #f7fafc;
+                        padding: 20px;
+                        border-radius: 8px;
+                        margin-bottom: 20px;
+                    }
+                    
+                    .telegram-limits h4 {
+                        margin: 0 0 15px 0;
+                        color: var(--dark);
+                        font-size: 16px;
+                    }
+                    
+                    .limits-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 12px;
+                    }
+                    
+                    .limit-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    
+                    .limit-dot {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                    }
+                    
+                    .limit-dot.green { background: var(--success); }
+                    .limit-dot.blue { background: var(--info); }
+                    .limit-dot.purple { background: var(--secondary); }
+                    .limit-dot.orange { background: var(--warning); }
+                    
+                    .limit-text {
+                        font-size: 14px;
+                        color: #4a5568;
+                    }
+                    
+                    .worker-info {
+                        border-top: 1px solid var(--border);
+                        padding-top: 20px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    
+                    .worker-status {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    
+                    .status-indicator {
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        animation: pulse 2s infinite;
+                    }
+                    
+                    .status-indicator.success { background: var(--success); }
+                    .status-indicator.danger { background: var(--danger); }
+                    
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.5; }
+                        100% { opacity: 1; }
+                    }
+                    
+                    .worker-url code {
+                        background: #e2e8f0;
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                    }
+                </style>
             </div>
             
             <!-- Members Tab -->
@@ -1121,6 +1467,161 @@
                                 <!-- Dynamic content -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transactions Tab -->
+            <div id="transactions-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Transaction History</h1>
+                    <p class="page-subtitle">View all deposits, withdrawals, and transfers</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Recent Transactions</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#TXN001</td>
+                                    <td>BB1042</td>
+                                    <td>Deposit</td>
+                                    <td style="color: var(--success);">+$500</td>
+                                    <td><span class="status-badge approved">Completed</span></td>
+                                    <td>Today, 2:30 PM</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Analytics & Reports</h1>
+                    <p class="page-subtitle">Advanced analytics and performance metrics</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Monthly Revenue</div>
+                                <div class="stat-value">$45,230</div>
+                            </div>
+                            <div class="stat-icon success">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Conversion Rate</div>
+                                <div class="stat-value">68.5%</div>
+                            </div>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="reports-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Reports</h1>
+                    <p class="page-subtitle">Generate and download system reports</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Available Reports</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                Generate Report
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Report Name</th>
+                                    <th>Type</th>
+                                    <th>Generated</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Monthly Summary</td>
+                                    <td>Financial</td>
+                                    <td>Today, 10:00 AM</td>
+                                    <td>245 KB</td>
+                                    <td>
+                                        <button class="action-btn view">Download</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Customer Activity</td>
+                                    <td>Analytics</td>
+                                    <td>Yesterday</td>
+                                    <td>1.2 MB</td>
+                                    <td>
+                                        <button class="action-btn view">Download</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Settings</h1>
+                    <p class="page-subtitle">Configure system preferences and integrations</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">System Configuration</h3>
+                    </div>
+                    <div class="modal-body" style="padding: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">API Endpoint</label>
+                            <input type="text" class="form-input" value="http://localhost:3003/api" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Refresh Rate (seconds)</label>
+                            <input type="number" class="form-input" value="30">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Enable Notifications</label>
+                            <div class="form-checkbox">
+                                <input type="checkbox" id="enableNotifications" checked>
+                                <label for="enableNotifications">Show toast notifications</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save Settings
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1265,9 +1766,15 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('approvalModal')">Cancel</button>
-                <button class="btn btn-success" onclick="approveMember()">
+                <button class="btn btn-danger" onclick="denyMemberFromModal()" id="denyMemberModalBtn">
+                    <i class="fas fa-times"></i>
+                    <span class="btn-text">Deny Member</span>
+                    <span class="spinner" style="display: none;"></span>
+                </button>
+                <button class="btn btn-success" onclick="approveMember()" id="approveMemberBtn">
                     <i class="fas fa-check"></i>
-                    Approve Member
+                    <span class="btn-text">Approve Member</span>
+                    <span class="spinner" style="display: none;"></span>
                 </button>
             </div>
         </div>
@@ -1285,9 +1792,129 @@
         let distributionChart = null;
         let currentMemberForApproval = null;
         
+        // Rate Limit Monitor
+        const WORKER_URL = 'http://localhost:8787';
+        let rateLimitInterval = null;
+        
+        async function fetchRateLimit() {
+            try {
+                const response = await fetch(`${WORKER_URL}/api/rate-limit`);
+                if (!response.ok) throw new Error('Failed to fetch rate limit');
+                
+                const data = await response.json();
+                updateRateLimitDisplay(data);
+                
+                // Update worker status
+                document.getElementById('workerStatus').className = 'status-indicator success';
+                document.getElementById('workerStatusText').textContent = 'Connected';
+                
+            } catch (error) {
+                console.error('Rate limit fetch error:', error);
+                document.getElementById('workerStatus').className = 'status-indicator danger';
+                document.getElementById('workerStatusText').textContent = 'Disconnected';
+            }
+        }
+        
+        function updateRateLimitDisplay(data) {
+            if (!data.rateLimit) return;
+            
+            const { rateLimit, telegram } = data;
+            
+            // Update token display
+            document.getElementById('currentTokens').textContent = rateLimit.global.tokens;
+            document.getElementById('maxTokens').textContent = rateLimit.global.maxTokens;
+            
+            // Calculate percentage
+            const percentage = (rateLimit.global.tokens / rateLimit.global.maxTokens) * 100;
+            document.getElementById('tokenPercentage').textContent = Math.round(percentage) + '%';
+            
+            // Update progress bar
+            const progressBar = document.getElementById('tokenProgress');
+            progressBar.style.width = percentage + '%';
+            
+            // Change color based on percentage
+            progressBar.className = 'token-progress';
+            if (percentage < 33) {
+                progressBar.classList.add('danger');
+            } else if (percentage < 66) {
+                progressBar.classList.add('warning');
+            }
+            
+            // Update active limits
+            document.getElementById('activeChatLimits').textContent = rateLimit.activeChatLimits || 0;
+            document.getElementById('activeGroupLimits').textContent = rateLimit.activeGroupLimits || 0;
+            
+            // Update Telegram limits
+            if (telegram) {
+                document.getElementById('globalLimit').textContent = telegram.global;
+                document.getElementById('perChatLimit').textContent = telegram.perChat;
+                document.getElementById('perGroupLimit').textContent = telegram.perGroup;
+                document.getElementById('batchLimit').textContent = telegram.batchLimit;
+            }
+            
+            // Update last update time
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                `Last update: ${now.toLocaleTimeString()}`;
+        }
+        
+        function refreshRateLimit() {
+            fetchRateLimit();
+        }
+        
+        // Start auto-refresh when page loads
+        function startRateLimitMonitoring() {
+            fetchRateLimit(); // Initial fetch
+            
+            // Auto-refresh every 5 seconds
+            if (rateLimitInterval) {
+                clearInterval(rateLimitInterval);
+            }
+            rateLimitInterval = setInterval(fetchRateLimit, 5000);
+        }
+        
+        // Stop monitoring when leaving page
+        function stopRateLimitMonitoring() {
+            if (rateLimitInterval) {
+                clearInterval(rateLimitInterval);
+                rateLimitInterval = null;
+            }
+        }
+        
+        // Switch Tab - Define early to be available for onclick handlers
+        function switchTab(tab) {
+            // Update sidebar
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and activate the clicked menu item
+            const clickedItem = document.querySelector(`.menu-item[href="#${tab}"]`);
+            if (clickedItem) {
+                clickedItem.classList.add('active');
+            }
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(`${tab}-tab`);
+            if (selectedTab) {
+                selectedTab.style.display = 'block';
+                currentTab = tab;
+            } else {
+                console.error(`Tab not found: ${tab}-tab`);
+                if (typeof showToast === 'function') {
+                    showToast(`Tab not found: ${tab}`, 'error');
+                }
+            }
+        }
+        
         // API Configuration
-        const API_BASE_URL = 'http://localhost:5000/api';
-        const WS_URL = 'http://localhost:5000';
+        const API_BASE_URL = 'http://localhost:3003/api';
+        const WS_URL = 'http://localhost:3003';
         
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1332,6 +1959,19 @@
             loadMembers();
             loadCustomers();
             startAutoRefresh();
+            setupKeyboardShortcuts();
+            startRateLimitMonitoring(); // Start monitoring rate limits
+        }
+        
+        // Keyboard Shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    if (document.getElementById('approvalModal').classList.contains('active')) {
+                        closeModal('approvalModal');
+                    }
+                }
+            });
         }
         
         // API Request Helper
@@ -1445,6 +2085,10 @@
         
         // WebSocket Connection
         function connectWebSocket() {
+            // Disable WebSocket for now as Socket.IO is not configured
+            console.log('WebSocket disabled - using polling instead');
+            return;
+            
             socket = io(WS_URL, {
                 transports: ['websocket', 'polling']
             });
@@ -1486,6 +2130,15 @@
             socket.on('customer_balance_update', (data) => {
                 updateCustomerBalance(data);
             });
+        }
+        
+        // Get Permission Badges
+        function getPermissionsBadges(permissions) {
+            const badges = [];
+            if (permissions.can_view) badges.push('<span class="status-badge info">View</span>');
+            if (permissions.can_trade) badges.push('<span class="status-badge success">Trade</span>');
+            if (permissions.can_withdraw) badges.push('<span class="status-badge warning">Withdraw</span>');
+            return badges.join(' ') || 'None';
         }
         
         // Load Members
@@ -1533,14 +2186,11 @@
                     <div class="action-buttons">
                         ${member.status === 'pending' ? `
                             <button class="action-btn approve" onclick="showApprovalModal(${JSON.stringify(member).replace(/"/g, '&quot;')})">
-                                Approve
-                            </button>
-                            <button class="action-btn deny" onclick="denyMember(${member.telegram_id}, ${member.group_id})">
-                                Deny
+                                Review
                             </button>
                         ` : `
-                            <button class="action-btn view" onclick="viewMember(${member.telegram_id})">
-                                View
+                            <button class="action-btn view" onclick="showApprovalModal(${JSON.stringify(member).replace(/"/g, '&quot;')}, true)">
+                                Edit
                             </button>
                         `}
                     </div>
@@ -1550,19 +2200,35 @@
         }
         
         // Get Permissions Badges
-        function getPermissionsBadges(permissions) {
-            const badges = [];
-            if (permissions.can_view) badges.push('<span class="status-badge info">View</span>');
-            if (permissions.can_trade) badges.push('<span class="status-badge success">Trade</span>');
-            if (permissions.can_withdraw) badges.push('<span class="status-badge warning">Withdraw</span>');
-            return badges.join(' ') || 'None';
-        }
-        
         // Show Approval Modal
-        function showApprovalModal(member) {
+        function showApprovalModal(member, isEditing = false) {
             currentMemberForApproval = member;
             document.getElementById('approvalUsername').value = '@' + member.username;
             document.getElementById('approvalGroup').value = member.group_name;
+            
+            // Dynamic modal title
+            const modalTitle = document.getElementById('approvalModalTitle') || document.querySelector('.modal-title');
+            modalTitle.textContent = isEditing ? 'Edit Member Permissions' : 'Approve Member';
+            
+            // Adjust button text
+            const approveBtnText = document.querySelector('#approveMemberBtn .btn-text') || document.querySelector('#approveMemberBtn');
+            if (approveBtnText) {
+                if (approveBtnText.classList && approveBtnText.classList.contains('btn-text')) {
+                    approveBtnText.textContent = isEditing ? 'Save Changes' : 'Approve Member';
+                } else {
+                    const textSpan = approveBtnText.querySelector('.btn-text');
+                    if (textSpan) textSpan.textContent = isEditing ? 'Save Changes' : 'Approve Member';
+                }
+            }
+            
+            // Load existing permissions if editing
+            if (isEditing && member.permissions) {
+                document.getElementById('canView').checked = member.permissions.can_view || false;
+                document.getElementById('canTrade').checked = member.permissions.can_trade || false;
+                document.getElementById('canWithdraw').checked = member.permissions.can_withdraw || false;
+                document.getElementById('dailyLimit').value = member.permissions.daily_limit || 500;
+                document.getElementById('approvalNotes').value = member.permissions.notes || '';
+            }
             
             // Load customer options
             loadCustomerOptions();
@@ -1593,11 +2259,21 @@
         async function approveMember() {
             if (!currentMemberForApproval) return;
             
+            // Input validation
+            const dailyLimitValue = parseInt(document.getElementById('dailyLimit').value, 10);
+            if (isNaN(dailyLimitValue) || dailyLimitValue < 0) {
+                showToast('Daily limit must be a non-negative number.', 'error');
+                return;
+            }
+            
+            const approveBtn = document.getElementById('approveMemberBtn');
+            toggleLoading(approveBtn, true);
+            
             const permissions = {
                 can_view: document.getElementById('canView').checked,
                 can_trade: document.getElementById('canTrade').checked,
                 can_withdraw: document.getElementById('canWithdraw').checked,
-                daily_limit: parseInt(document.getElementById('dailyLimit').value),
+                daily_limit: dailyLimitValue,
                 notes: document.getElementById('approvalNotes').value
             };
             
@@ -1616,6 +2292,55 @@
                 showToast('Member approved successfully', 'success');
             } catch (error) {
                 showToast('Failed to approve member', 'error');
+            } finally {
+                toggleLoading(approveBtn, false);
+            }
+        }
+        
+        // Deny Member From Modal
+        async function denyMemberFromModal() {
+            if (!currentMemberForApproval) return;
+            
+            const reason = prompt('Reason for denial (optional):');
+            if (reason === null) return; // User cancelled
+            
+            const denyBtn = document.getElementById('denyMemberModalBtn');
+            toggleLoading(denyBtn, true);
+            
+            try {
+                await apiRequest(`/admin/members/${currentMemberForApproval.telegram_id}/deny`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        group_id: currentMemberForApproval.group_id,
+                        reason: reason || 'Admin decision'
+                    })
+                });
+                
+                closeModal('approvalModal');
+                loadMembers();
+                showToast('Member denied', 'success');
+            } catch (error) {
+                showToast('Failed to deny member', 'error');
+            } finally {
+                toggleLoading(denyBtn, false);
+            }
+        }
+        
+        // Toggle Loading State
+        function toggleLoading(button, isLoading) {
+            if (!button) return;
+            
+            const spinner = button.querySelector('.spinner');
+            const text = button.querySelector('.btn-text');
+            
+            if (isLoading) {
+                button.disabled = true;
+                if (spinner) spinner.style.display = 'inline-block';
+                if (text) text.style.opacity = '0.7';
+            } else {
+                button.disabled = false;
+                if (spinner) spinner.style.display = 'none';
+                if (text) text.style.opacity = '1';
             }
         }
         
@@ -1642,21 +2367,31 @@
         // Load Customers
         async function loadCustomers() {
             try {
-                // Fetch all customers data
-                const response = await fetch(`${API_BASE_URL}/stats`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
+                // Try to fetch from API, fall back to mock data if fails
+                let customers;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/stats`, {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        customers = data.customers || [];
+                    } else {
+                        throw new Error('API unavailable');
                     }
-                });
-                
-                // For now, use mock data
-                const customers = [
-                    { customer_id: 'BB1042', balance: 1450, weekly_pnl: 3000, active: true, registered: true },
-                    { customer_id: 'BB1043', balance: 600, weekly_pnl: 7000, active: true, registered: false },
-                    { customer_id: 'BB1044', balance: 750, weekly_pnl: 7000, active: true, registered: true },
-                    { customer_id: 'BB1045', balance: 509, weekly_pnl: -300, active: true, registered: false },
-                    { customer_id: 'BB1046', balance: 1000, weekly_pnl: -500, active: false, registered: false }
-                ];
+                } catch (apiError) {
+                    console.log('Using mock data for customers');
+                    // Use mock data as fallback
+                    customers = [
+                        { customer_id: 'BB1042', balance: 1450, weekly_pnl: 3000, active: true, registered: true },
+                        { customer_id: 'BB1043', balance: 600, weekly_pnl: 7000, active: true, registered: false },
+                        { customer_id: 'BB1044', balance: 750, weekly_pnl: 7000, active: true, registered: true },
+                        { customer_id: 'BB1045', balance: 509, weekly_pnl: -300, active: true, registered: false },
+                        { customer_id: 'BB1046', balance: 1000, weekly_pnl: -500, active: false, registered: false }
+                    ];
+                }
                 
                 const tbody = document.getElementById('customersTableBody');
                 tbody.innerHTML = '';
@@ -1763,24 +2498,6 @@
             }
         }
         
-        // Switch Tab
-        function switchTab(tab) {
-            // Update sidebar
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            event.target.closest('.menu-item').classList.add('active');
-            
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            
-            // Show selected tab
-            document.getElementById(`${tab}-tab`).style.display = 'block';
-            currentTab = tab;
-        }
-        
         // Toggle Sidebar
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
@@ -1853,12 +2570,20 @@
         }
         
         // Update Chart
-        function updateChart(period) {
+        function updateChart(period, clickedButton) {
+            // Ensure revenueChart is initialized
+            if (!revenueChart) {
+                console.error('Revenue chart not initialized');
+                return;
+            }
+            
             // Update button states
             document.querySelectorAll('.chart-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.classList.add('active');
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
             
             // Update chart data based on period
             const data = {
@@ -1873,9 +2598,13 @@
                 monthly: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
             };
             
-            revenueChart.data.labels = labels[period];
-            revenueChart.data.datasets[0].data = data[period];
-            revenueChart.update();
+            if (labels[period] && data[period]) {
+                revenueChart.data.labels = labels[period];
+                revenueChart.data.datasets[0].data = data[period];
+                revenueChart.update();
+            } else {
+                console.error('Invalid period:', period);
+            }
         }
         
         // Auto Refresh

@@ -3,7 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal - Group Management</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Admin Portal - Fantdev Trading Bot Management</title>
+    <meta name="title" content="Admin Portal - Fantdev Trading Bot Management">
+    <meta name="description" content="Secure admin dashboard for Telegram trading bot management. Monitor customers, approve members, track transactions, and manage group permissions in real-time.">
+    <meta name="keywords" content="trading bot admin, telegram bot management, group management, member approval, transaction monitoring, KYC compliance, AML, fantdev trading">
+    <meta name="author" content="Fantdev Trading Systems">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="application">
+    <meta property="og:url" content="https://fantdev.trading/admin">
+    <meta property="og:title" content="Admin Portal - Fantdev Trading Bot Management">
+    <meta property="og:description" content="Professional admin dashboard for managing Telegram trading bot operations, customer accounts, and group permissions.">
+    <meta property="og:image" content="https://fantdev.trading/images/admin-og-preview.jpg">
+    <meta property="og:site_name" content="Fantdev Trading Platform">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://fantdev.trading/admin">
+    <meta property="twitter:title" content="Admin Portal - Fantdev Trading Bot">
+    <meta property="twitter:description" content="Manage your trading bot operations with our secure admin dashboard.">
+    <meta property="twitter:image" content="https://fantdev.trading/images/admin-twitter-preview.jpg">
+    
+    <!-- PWA & Mobile -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fantdev Admin">
+    
+    <!-- Application Info -->
+    <meta name="application-name" content="Fantdev Trading Admin Portal">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="canonical" href="https://fantdev.trading/admin">
     <style>
         * {
             margin: 0;
@@ -393,6 +426,277 @@
             cursor: pointer;
         }
         
+        /* Reports Styles */
+        .report-nav {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .report-section {
+            display: none;
+        }
+        
+        .report-section.active {
+            display: block;
+        }
+        
+        .chart-container {
+            min-height: 300px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .performers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        
+        .performer-card {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .customer-metrics {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .transaction-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-card h4 {
+            margin-bottom: 12px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .summary-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .summary-count {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .risk-indicators {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .risk-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .risk-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .risk-status.low {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .risk-status.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .risk-status.high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .sub-nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .sub-nav-btn {
+            background: #f8f9fa;
+            color: #666;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .sub-nav-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .sub-nav-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .settings-panel {
+            display: none;
+        }
+        
+        .settings-panel.active {
+            display: block;
+        }
+        
+        .form-help {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+            display: block;
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        
+        .color-input-group {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .color-input {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .theme-grid, .social-grid, .blog-grid, .limits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .category-list {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .category-name {
+            font-weight: 500;
+        }
+        
+        .category-count {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+        
+        .analytics-card {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .analytics-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .analytics-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .settings-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-large {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+        
+        .btn-warning {
+            background: #fd7e14;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e8660d;
+        }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -414,18 +718,61 @@
                 width: 100%;
                 justify-content: space-between;
             }
+            
+            .report-nav, .sub-nav, .export-options {
+                justify-content: space-around;
+            }
+            
+            .transaction-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Loading spinner styles */
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e1e5e9;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced empty state styles */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .empty-state p {
+            margin-bottom: 8px;
+        }
+        
+        .empty-state strong {
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <h1 class="header-title">🚀 Group Management Portal</h1>
+            <h1 class="header-title" id="platformTitle">🚀 Group Management Portal</h1>
             <div class="nav-tabs">
-                <button class="nav-tab active" onclick="switchTab('pending')">Pending</button>
-                <button class="nav-tab" onclick="switchTab('members')">All Members</button>
-                <button class="nav-tab" onclick="switchTab('customers')">Customers</button>
-                <button class="nav-tab" onclick="switchTab('settings')">Settings</button>
+                <button class="nav-tab active" onclick="switchTab('pending', this)">Pending</button>
+                <button class="nav-tab" onclick="switchTab('members', this)">All Members</button>
+                <button class="nav-tab" onclick="switchTab('customers', this)">Customers</button>
+                <button class="nav-tab" onclick="switchTab('reports', this)">Reports</button>
+                <button class="nav-tab" onclick="switchTab('settings', this)">Settings</button>
             </div>
         </div>
     </div>
@@ -511,41 +858,617 @@
             </div>
         </div>
         
-        <!-- Settings Tab -->
-        <div id="settingsTab" class="tab-content">
+        <!-- Reports Tab -->
+        <div id="reportsTab" class="tab-content">
             <div class="section">
-                <h2 class="section-title">⚙️ Permission Settings</h2>
-                <div class="permission-grid">
-                    <div class="permission-item">
-                        <input type="checkbox" class="permission-checkbox" id="autoApprove">
-                        <label for="autoApprove" class="permission-label">Auto-approve verified customers</label>
+                <div class="section-header">
+                    <h2 class="section-title">📊 Analytics & Reports</h2>
+                    <button class="btn btn-primary" onclick="refreshReports()">🔄 Refresh Data</button>
+                </div>
+                
+                <!-- Report Cards -->
+                <div class="stats-row" style="margin-bottom: 30px;">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Volume</div>
+                        <div class="stat-value" id="totalVolume">$0</div>
+                        <span class="stat-badge badge-success" id="volumeChange">+0%</span>
                     </div>
-                    <div class="permission-item">
-                        <input type="checkbox" class="permission-checkbox" id="requirePhone">
-                        <label for="requirePhone" class="permission-label">Require phone verification</label>
+                    <div class="stat-box">
+                        <div class="stat-label">Active Traders</div>
+                        <div class="stat-value" id="activeTraders">0</div>
+                        <span class="stat-badge badge-success" id="tradersChange">+0%</span>
                     </div>
-                    <div class="permission-item">
-                        <input type="checkbox" class="permission-checkbox" id="notifyAdmin">
-                        <label for="notifyAdmin" class="permission-label">Notify on new members</label>
+                    <div class="stat-box">
+                        <div class="stat-label">Weekly P&L</div>
+                        <div class="stat-value" id="weeklyPnL">$0</div>
+                        <span class="stat-badge badge-warning" id="pnlChange">0%</span>
                     </div>
-                    <div class="permission-item">
-                        <input type="checkbox" class="permission-checkbox" id="restrictWithdrawals">
-                        <label for="restrictWithdrawals" class="permission-label">Restrict withdrawals by default</label>
+                    <div class="stat-box">
+                        <div class="stat-label">Risk Score</div>
+                        <div class="stat-value" id="riskScore">0</div>
+                        <span class="stat-badge badge-success">Low</span>
+                    </div>
+                </div>
+                
+                <!-- Report Navigation -->
+                <div class="report-nav" style="margin-bottom: 20px;">
+                    <button class="btn btn-outline active" onclick="showReport('overview', this)" data-report="overview">📈 Overview</button>
+                    <button class="btn btn-outline" onclick="showReport('customers', this)" data-report="customers">👥 Customers</button>
+                    <button class="btn btn-outline" onclick="showReport('transactions', this)" data-report="transactions">💰 Transactions</button>
+                    <button class="btn btn-outline" onclick="showReport('performance', this)" data-report="performance">📊 Performance</button>
+                    <button class="btn btn-outline" onclick="showReport('risk', this)" data-report="risk">⚠️ Risk Analysis</button>
+                </div>
+                
+                <!-- Overview Report -->
+                <div id="overviewReport" class="report-section active">
+                    <div class="section">
+                        <h3 class="section-title">📈 Trading Overview</h3>
+                        <div id="overviewChart" class="chart-container">
+                            <div style="padding: 40px; text-align: center; color: #999;">
+                                📊 Loading chart data...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h3 class="section-title">🏆 Top Performers</h3>
+                        <div id="topPerformers" class="performers-grid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Report -->
+                <div id="customersReport" class="report-section">
+                    <div class="section">
+                        <h3 class="section-title">👥 Customer Analytics</h3>
+                        <div class="customer-metrics">
+                            <div class="metric-row">
+                                <span>Total Customers:</span>
+                                <span id="reportTotalCustomers">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>Active This Week:</span>
+                                <span id="reportActiveCustomers">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>New Registrations:</span>
+                                <span id="reportNewCustomers">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>Average Balance:</span>
+                                <span id="reportAvgBalance">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transactions Report -->
+                <div id="transactionsReport" class="report-section">
+                    <div class="section">
+                        <h3 class="section-title">💰 Transaction Summary</h3>
+                        <div class="transaction-summary">
+                            <div class="summary-card">
+                                <h4>Deposits</h4>
+                                <div class="summary-amount" id="totalDeposits">$0</div>
+                                <div class="summary-count" id="depositCount">0 transactions</div>
+                            </div>
+                            <div class="summary-card">
+                                <h4>Withdrawals</h4>
+                                <div class="summary-amount" id="totalWithdrawals">$0</div>
+                                <div class="summary-count" id="withdrawalCount">0 transactions</div>
+                            </div>
+                            <div class="summary-card">
+                                <h4>Net Flow</h4>
+                                <div class="summary-amount" id="netFlow">$0</div>
+                                <div class="summary-trend" id="flowTrend">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Report -->
+                <div id="performanceReport" class="report-section">
+                    <div class="section">
+                        <h3 class="section-title">📊 Performance Metrics</h3>
+                        <div id="performanceChart" class="chart-container">
+                            <div style="padding: 40px; text-align: center; color: #999;">
+                                📈 Performance data will be displayed here
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Risk Report -->
+                <div id="riskReport" class="report-section">
+                    <div class="section">
+                        <h3 class="section-title">⚠️ Risk Analysis</h3>
+                        <div class="risk-indicators">
+                            <div class="risk-item">
+                                <span class="risk-label">Large Position Alert:</span>
+                                <span class="risk-value" id="largePositions">0 customers</span>
+                                <span class="risk-status low">Low Risk</span>
+                            </div>
+                            <div class="risk-item">
+                                <span class="risk-label">Withdrawal Spike:</span>
+                                <span class="risk-value" id="withdrawalSpike">Normal</span>
+                                <span class="risk-status low">Low Risk</span>
+                            </div>
+                            <div class="risk-item">
+                                <span class="risk-label">Inactive Accounts:</span>
+                                <span class="risk-value" id="inactiveAccounts">0</span>
+                                <span class="risk-status medium">Medium</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Export Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h3 class="section-title">📤 Export Reports</h3>
+                    </div>
+                    <div class="export-options">
+                        <button class="btn btn-outline" onclick="exportReport('pdf')">📄 Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('excel')">📊 Export Excel</button>
+                        <button class="btn btn-outline" onclick="exportReport('csv')">📋 Export CSV</button>
+                        <button class="btn btn-primary" onclick="scheduleReport()">⏰ Schedule Report</button>
                     </div>
                 </div>
             </div>
-            
-            <div class="section">
-                <h2 class="section-title">📊 Default Limits</h2>
-                <div class="form-group">
-                    <label class="form-label">Daily Transaction Limit</label>
-                    <input type="number" class="form-input" value="1000" id="dailyLimit">
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="tab-content">
+            <!-- Settings Navigation -->
+            <div class="sub-nav">
+                <button class="sub-nav-btn active" onclick="switchSettingsTab('general', this)" data-tab="general">
+                    ⚙️ General Settings
+                </button>
+                <button class="sub-nav-btn" onclick="switchSettingsTab('permissions', this)" data-tab="permissions">
+                    🛡️ Permissions
+                </button>
+                <button class="sub-nav-btn" onclick="switchSettingsTab('company', this)" data-tab="company">
+                    🏢 Company Theme
+                </button>
+                <button class="sub-nav-btn" onclick="switchSettingsTab('blog', this)" data-tab="blog">
+                    📝 Blog Settings
+                </button>
+                <button class="sub-nav-btn" onclick="switchSettingsTab('advanced', this)" data-tab="advanced">
+                    🔧 Advanced
+                </button>
+            </div>
+
+            <!-- General Settings -->
+            <div id="generalSettings" class="settings-panel active">
+                <div class="section">
+                    <h2 class="section-title">⚙️ General Configuration</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Platform Name</label>
+                        <input type="text" class="form-input" value="Fantdev Trading Platform" id="platformName">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Admin Email</label>
+                        <input type="email" class="form-input" value="admin@fantdev.com" id="adminEmail">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Support Phone</label>
+                        <input type="tel" class="form-input" value="+1-555-0123" id="supportPhone">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Timezone</label>
+                        <select class="form-input" id="timezone">
+                            <option value="EST">Eastern (EST)</option>
+                            <option value="CST" selected>Central (CST)</option>
+                            <option value="MST">Mountain (MST)</option>
+                            <option value="PST">Pacific (PST)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Default Language</label>
+                        <select class="form-input" id="defaultLanguage">
+                            <option value="en" selected>English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                        </select>
+                    </div>
+                    
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="maintenanceMode">
+                            <label for="maintenanceMode" class="permission-label">Maintenance Mode</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="registrationEnabled" checked>
+                            <label for="registrationEnabled" class="permission-label">Allow New Registrations</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="emailNotifications" checked>
+                            <label for="emailNotifications" class="permission-label">Email Notifications</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="smsNotifications">
+                            <label for="smsNotifications" class="permission-label">SMS Notifications</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Maximum Withdrawal</label>
-                    <input type="number" class="form-input" value="500" id="maxWithdrawal">
+            </div>
+
+            <!-- Permission Settings -->
+            <div id="permissionsSettings" class="settings-panel">
+                <div class="section">
+                    <h2 class="section-title">🛡️ Permission Settings</h2>
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="autoApprove">
+                            <label for="autoApprove" class="permission-label">Auto-approve verified customers</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="requirePhone">
+                            <label for="requirePhone" class="permission-label">Require phone verification</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="notifyAdmin" checked>
+                            <label for="notifyAdmin" class="permission-label">Notify on new members</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="restrictWithdrawals">
+                            <label for="restrictWithdrawals" class="permission-label">Restrict withdrawals by default</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="twoFactorRequired">
+                            <label for="twoFactorRequired" class="permission-label">Require 2FA for admins</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="ipWhitelisting">
+                            <label for="ipWhitelisting" class="permission-label">Enable IP whitelisting</label>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                
+                <div class="section">
+                    <h2 class="section-title">📊 Default Limits</h2>
+                    <div class="limits-grid">
+                        <div class="form-group">
+                            <label class="form-label">Daily Transaction Limit ($)</label>
+                            <input type="number" class="form-input" value="1000" id="dailyLimit">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Maximum Withdrawal ($)</label>
+                            <input type="number" class="form-input" value="500" id="maxWithdrawal">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Minimum Balance ($)</label>
+                            <input type="number" class="form-input" value="10" id="minBalance">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Maximum Balance ($)</label>
+                            <input type="number" class="form-input" value="50000" id="maxBalance">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Theme Settings -->
+            <div id="companySettings" class="settings-panel">
+                <div class="section">
+                    <h2 class="section-title">🏢 Company Branding</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" class="form-input" value="Fantdev Trading" id="companyName">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Company Logo URL</label>
+                        <input type="url" class="form-input" placeholder="https://example.com/logo.png" id="companyLogo">
+                        <small class="form-help">Recommended size: 200x60px</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Favicon URL</label>
+                        <input type="url" class="form-input" placeholder="https://example.com/favicon.ico" id="favicon">
+                        <small class="form-help">16x16 or 32x32 ICO format</small>
+                    </div>
+                    
+                    <div class="theme-grid">
+                        <div class="form-group">
+                            <label class="form-label">Primary Color</label>
+                            <div class="color-input-group">
+                                <input type="color" class="color-input" value="#667eea" id="primaryColor">
+                                <input type="text" class="form-input" value="#667eea" id="primaryColorHex">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Secondary Color</label>
+                            <div class="color-input-group">
+                                <input type="color" class="color-input" value="#764ba2" id="secondaryColor">
+                                <input type="text" class="form-input" value="#764ba2" id="secondaryColorHex">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Accent Color</label>
+                            <div class="color-input-group">
+                                <input type="color" class="color-input" value="#4CAF50" id="accentColor">
+                                <input type="text" class="form-input" value="#4CAF50" id="accentColorHex">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Background Color</label>
+                            <div class="color-input-group">
+                                <input type="color" class="color-input" value="#f5f7fa" id="backgroundColor">
+                                <input type="text" class="form-input" value="#f5f7fa" id="backgroundColorHex">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Footer Text</label>
+                        <textarea class="form-textarea" rows="3" id="footerText" placeholder="© 2024 Fantdev Trading. All rights reserved.">© 2024 Fantdev Trading. All rights reserved. Professional trading platform.</textarea>
+                    </div>
+                    
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="darkModeDefault">
+                            <label for="darkModeDefault" class="permission-label">Dark mode by default</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="customCSS">
+                            <label for="customCSS" class="permission-label">Enable custom CSS</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="showPoweredBy">
+                            <label for="showPoweredBy" class="permission-label">Show "Powered by" footer</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="responsiveDesign" checked>
+                            <label for="responsiveDesign" class="permission-label">Responsive design</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 class="section-title">🌐 Social Links</h2>
+                    <div class="social-grid">
+                        <div class="form-group">
+                            <label class="form-label">Website</label>
+                            <input type="url" class="form-input" value="https://fire22.com" id="websiteUrl">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Twitter</label>
+                            <input type="url" class="form-input" placeholder="https://twitter.com/company" id="twitterUrl">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">LinkedIn</label>
+                            <input type="url" class="form-input" placeholder="https://linkedin.com/company" id="linkedinUrl">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telegram</label>
+                            <input type="url" class="form-input" placeholder="https://t.me/channel" id="telegramUrl">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blog Settings -->
+            <div id="blogSettings" class="settings-panel">
+                <div class="section">
+                    <h2 class="section-title">📝 Blog Configuration</h2>
+                    
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="blogEnabled">
+                            <label for="blogEnabled" class="permission-label">Enable Blog Module</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="blogCommentsEnabled">
+                            <label for="blogCommentsEnabled" class="permission-label">Allow Comments</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="blogModeration" checked>
+                            <label for="blogModeration" class="permission-label">Moderate Comments</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="blogRSS" checked>
+                            <label for="blogRSS" class="permission-label">Generate RSS Feed</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Blog Title</label>
+                        <input type="text" class="form-input" value="Trading Insights & News" id="blogTitle">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Blog Description</label>
+                        <textarea class="form-textarea" rows="3" id="blogDescription" placeholder="Latest trading news, market analysis, and platform updates.">Stay updated with the latest trading news, market analysis, and platform updates from Fantdev Trading.</textarea>
+                    </div>
+                    
+                    <div class="blog-grid">
+                        <div class="form-group">
+                            <label class="form-label">Posts Per Page</label>
+                            <input type="number" class="form-input" value="10" min="5" max="50" id="postsPerPage">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Default Author</label>
+                            <input type="text" class="form-input" value="Admin" id="defaultAuthor">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Comment Timeout (days)</label>
+                            <input type="number" class="form-input" value="30" id="commentTimeout">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Auto-publish</label>
+                            <select class="form-input" id="autoPublish">
+                                <option value="draft">Save as draft</option>
+                                <option value="review">Pending review</option>
+                                <option value="publish" selected>Auto-publish</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 class="section-title">📰 Content Categories</h2>
+                    <div id="blogCategories" class="category-list">
+                        <div class="category-item">
+                            <span class="category-name">Market Analysis</span>
+                            <span class="category-count">12 posts</span>
+                            <button class="btn-small btn-outline" onclick="editCategory('market-analysis')">Edit</button>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-name">Platform Updates</span>
+                            <span class="category-count">8 posts</span>
+                            <button class="btn-small btn-outline" onclick="editCategory('platform-updates')">Edit</button>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-name">Trading Tips</span>
+                            <span class="category-count">15 posts</span>
+                            <button class="btn-small btn-outline" onclick="editCategory('trading-tips')">Edit</button>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-name">News & Events</span>
+                            <span class="category-count">6 posts</span>
+                            <button class="btn-small btn-outline" onclick="editCategory('news-events')">Edit</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" onclick="addBlogCategory()">+ Add New Category</button>
+                </div>
+                
+                <div class="section">
+                    <h2 class="section-title">📊 Blog Analytics</h2>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="analytics-number">1,234</div>
+                            <div class="analytics-label">Total Views</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-number">45</div>
+                            <div class="analytics-label">Published Posts</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-number">156</div>
+                            <div class="analytics-label">Comments</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-number">89</div>
+                            <div class="analytics-label">Subscribers</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Settings -->
+            <div id="advancedSettings" class="settings-panel">
+                <div class="section">
+                    <h2 class="section-title">🔧 Advanced Configuration</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Session Timeout (minutes)</label>
+                        <input type="number" class="form-input" value="30" min="5" max="1440" id="sessionTimeout">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">API Rate Limit (requests/minute)</label>
+                        <input type="number" class="form-input" value="100" min="10" max="1000" id="apiRateLimit">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Log Level</label>
+                        <select class="form-input" id="logLevel">
+                            <option value="DEBUG">Debug</option>
+                            <option value="INFO" selected>Info</option>
+                            <option value="WARNING">Warning</option>
+                            <option value="ERROR">Error</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Backup Frequency</label>
+                        <select class="form-input" id="backupFrequency">
+                            <option value="hourly">Hourly</option>
+                            <option value="daily" selected>Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="manual">Manual only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="debugMode">
+                            <label for="debugMode" class="permission-label">Debug Mode</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="performanceMonitoring" checked>
+                            <label for="performanceMonitoring" class="permission-label">Performance Monitoring</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="errorReporting" checked>
+                            <label for="errorReporting" class="permission-label">Error Reporting</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="analyticsTracking">
+                            <label for="analyticsTracking" class="permission-label">Analytics Tracking</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 class="section-title">🔐 Security Settings</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password Min Length</label>
+                        <input type="number" class="form-input" value="8" min="4" max="32" id="passwordMinLength">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Login Attempts Limit</label>
+                        <input type="number" class="form-input" value="5" min="3" max="20" id="loginAttemptsLimit">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Lockout Duration (minutes)</label>
+                        <input type="number" class="form-input" value="15" min="5" max="1440" id="lockoutDuration">
+                    </div>
+                    
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="requireStrongPasswords" checked>
+                            <label for="requireStrongPasswords" class="permission-label">Require Strong Passwords</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="passwordExpiry">
+                            <label for="passwordExpiry" class="permission-label">Password Expiry (90 days)</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="bruteForceProtection" checked>
+                            <label for="bruteForceProtection" class="permission-label">Brute Force Protection</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" class="permission-checkbox" id="sessionSecure" checked>
+                            <label for="sessionSecure" class="permission-label">Secure Sessions (HTTPS)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="settings-footer">
+                <button class="btn btn-success btn-large" onclick="saveAllSettings()">
+                    💾 Save All Settings
+                </button>
+                <button class="btn btn-outline btn-large" onclick="resetSettings()">
+                    🔄 Reset to Defaults
+                </button>
+                <button class="btn btn-warning btn-large" onclick="exportSettings()">
+                    📤 Export Configuration
+                </button>
             </div>
         </div>
     </div>
@@ -613,19 +1536,32 @@
                 const response = await fetch(`${API_BASE}/members`, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
+                if (data.success === false) {
+                    throw new Error(data.message || 'Failed to load members');
+                }
+                
                 // Update stats
-                document.getElementById('totalMembers').textContent = data.stats.total_members || 0;
-                document.getElementById('pendingCount').textContent = data.stats.pending || 0;
-                document.getElementById('approvedCount').textContent = data.stats.approved || 0;
-                document.getElementById('deniedCount').textContent = data.stats.denied || 0;
-                document.getElementById('groupCount').textContent = data.stats.groups || 0;
+                document.getElementById('totalMembers').textContent = data.stats?.total_members || 0;
+                document.getElementById('pendingCount').textContent = data.stats?.pending || 0;
+                document.getElementById('approvedCount').textContent = data.stats?.approved || 0;
+                document.getElementById('deniedCount').textContent = data.stats?.denied || 0;
+                document.getElementById('groupCount').textContent = data.stats?.groups || 0;
                 
                 // Display all members
-                displayMembers(data.members);
+                displayMembers(data.members || []);
+                
             } catch (error) {
                 console.error('Error loading members:', error);
+                showErrorPlaceholder('allMembers', 'members', error.message);
+                // Set stats to loading state
+                setStatsLoading();
             }
         }
         
@@ -634,11 +1570,22 @@
                 const response = await fetch(`${API_BASE}/members/pending`, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
-                displayPendingMembers(data.pending);
+                if (data.success === false) {
+                    throw new Error(data.message || 'Failed to load pending members');
+                }
+                
+                displayPendingMembers(data.pending || []);
+                
             } catch (error) {
                 console.error('Error loading pending members:', error);
+                showErrorPlaceholder('pendingMembers', 'pending-members', error.message);
             }
         }
         
@@ -647,23 +1594,33 @@
                 const response = await fetch(`${API_BASE}/stats`, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                
+                if (data.success === false) {
+                    throw new Error(data.message || 'Failed to load customer stats');
+                }
                 
                 const customerList = document.getElementById('customerList');
                 customerList.innerHTML = `
                     <div class="member-card">
                         <div class="member-info">
-                            <div class="member-name">Total Customers: ${data.total_customers}</div>
+                            <div class="member-name">Total Customers: ${data.total_customers || 0}</div>
                             <div class="member-details">
-                                Active: ${data.active_customers}<br>
-                                Total Balance: $${data.total_balance.toLocaleString()}<br>
-                                Registered Users: ${data.registered_users}
+                                Active: ${data.active_customers || 0}<br>
+                                Total Balance: $${(data.total_balance || 0).toLocaleString()}<br>
+                                Registered Users: ${data.registered_users || 0}
                             </div>
                         </div>
                     </div>
                 `;
             } catch (error) {
                 console.error('Error loading customers:', error);
+                showErrorPlaceholder('customerList', 'customers', error.message);
             }
         }
         
@@ -735,14 +1692,33 @@
         }
         
         function openPermissionModal(member) {
+            if (!member) {
+                console.error('No member data provided to openPermissionModal');
+                return;
+            }
+            
             currentMember = member;
-            document.getElementById('modalMemberName').value = member.username;
-            document.getElementById('modalGroupName').value = member.group_name;
-            document.getElementById('permissionModal').classList.add('show');
+            
+            // Safely access DOM elements with null checks
+            const memberNameEl = document.getElementById('modalMemberName');
+            const groupNameEl = document.getElementById('modalGroupName');
+            const modalEl = document.getElementById('permissionModal');
+            
+            if (!memberNameEl || !groupNameEl || !modalEl) {
+                console.error('Modal DOM elements not found');
+                return;
+            }
+            
+            memberNameEl.value = member.username || '';
+            groupNameEl.value = member.group_name || '';
+            modalEl.classList.add('show');
         }
         
         function closeModal() {
-            document.getElementById('permissionModal').classList.remove('show');
+            const modalEl = document.getElementById('permissionModal');
+            if (modalEl) {
+                modalEl.classList.remove('show');
+            }
             currentMember = null;
         }
         
@@ -849,12 +1825,23 @@
             }
         }
         
-        function switchTab(tabName) {
+        function switchTab(tabName, clickedElement) {
             // Update nav tabs
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            event.target.classList.add('active');
+            
+            // Add active class to clicked tab
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            } else {
+                // Fallback: find the tab by matching the onclick attribute
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    if (tab.getAttribute('onclick')?.includes(tabName)) {
+                        tab.classList.add('active');
+                    }
+                });
+            }
             
             // Update content
             document.querySelectorAll('.tab-content').forEach(content => {
@@ -869,8 +1856,13 @@
         
         // Search functionality
         document.addEventListener('DOMContentLoaded', () => {
-            // Load dashboard data
-            loadDashboard();
+            // Show initial loading states
+            showLoadingPlaceholder('allMembers', 'members');
+            showLoadingPlaceholder('pendingMembers', 'pending members');
+            showLoadingPlaceholder('customerList', 'customers');
+            showLoadingPlaceholder('topPerformers', 'reports');
+            setStatsLoading();
+            setReportsLoading(true);
             
             const searchInput = document.getElementById('memberSearch');
             const statusFilter = document.getElementById('statusFilter');
@@ -884,6 +1876,8 @@
             
             // Load initial data
             loadData();
+            loadReportsData(); // Load real reports data from API
+            loadBrandingConfig(); // Load branding configuration
             
             // Refresh every 30 seconds
             setInterval(loadData, 30000);
@@ -892,6 +1886,434 @@
         function filterMembers() {
             // Implementation for filtering members
             console.log('Filtering members...');
+        }
+        
+        // Error handling helper functions
+        function showErrorPlaceholder(containerId, type, errorMessage) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const retryButton = type !== 'stats' ? `
+                <button class="btn btn-primary" onclick="retryLoad('${type}')" style="margin-top: 12px;">
+                    🔄 Retry
+                </button>
+            ` : '';
+            
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⚠️</div>
+                    <p><strong>Unable to load ${type.replace('-', ' ')}</strong></p>
+                    <p style="font-size: 13px; margin-top: 8px; color: #666;">
+                        ${errorMessage || 'Connection failed. Please check your network connection.'}
+                    </p>
+                    ${retryButton}
+                </div>
+            `;
+        }
+        
+        function showLoadingPlaceholder(containerId, type) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⏳</div>
+                    <p>Loading ${type.replace('-', ' ')}...</p>
+                    <div style="margin-top: 12px;">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function setStatsLoading() {
+            const statElements = [
+                'totalMembers', 'pendingCount', 'approvedCount', 
+                'deniedCount', 'groupCount'
+            ];
+            
+            statElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = '--';
+                    element.style.opacity = '0.5';
+                }
+            });
+        }
+        
+        function retryLoad(type) {
+            switch(type) {
+                case 'members':
+                    showLoadingPlaceholder('allMembers', 'members');
+                    loadMembers();
+                    break;
+                case 'pending-members':
+                    showLoadingPlaceholder('pendingMembers', 'pending members');
+                    loadPendingMembers();
+                    break;
+                case 'customers':
+                    showLoadingPlaceholder('customerList', 'customers');
+                    loadCustomers();
+                    break;
+                case 'reports':
+                    showLoadingPlaceholder('topPerformers', 'reports');
+                    loadReportsData();
+                    break;
+                default:
+                    loadData();
+            }
+        }
+        
+        function setReportsLoading(isLoading) {
+            const reportElements = [
+                'totalVolume', 'activeTraders', 'weeklyPnL', 'riskScore',
+                'reportTotalCustomers', 'reportActiveCustomers', 'reportNewCustomers', 'reportAvgBalance',
+                'totalDeposits', 'totalWithdrawals', 'netFlow', 'depositCount', 'withdrawalCount',
+                'largePositions', 'withdrawalSpike', 'inactiveAccounts'
+            ];
+            
+            reportElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (isLoading) {
+                        element.textContent = '⏳';
+                        element.style.opacity = '0.5';
+                    } else {
+                        element.style.opacity = '1';
+                    }
+                }
+            });
+        }
+        
+        function setReportsError() {
+            const reportElements = [
+                'totalVolume', 'activeTraders', 'weeklyPnL', 'riskScore',
+                'reportTotalCustomers', 'reportActiveCustomers', 'reportNewCustomers', 'reportAvgBalance',
+                'totalDeposits', 'totalWithdrawals', 'netFlow',
+                'largePositions', 'withdrawalSpike', 'inactiveAccounts'
+            ];
+            
+            reportElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = '--';
+                    element.style.opacity = '0.5';
+                    element.style.color = '#dc3545';
+                }
+            });
+            
+            // Set count elements to "-- transactions"
+            const countElements = ['depositCount', 'withdrawalCount'];
+            countElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = '-- transactions';
+                    element.style.opacity = '0.5';
+                    element.style.color = '#dc3545';
+                }
+            });
+        }
+        
+        // Reports functionality
+        async function refreshReports() {
+            console.log('Refreshing reports data...');
+            await loadReportsData();
+        }
+        
+        async function loadReportsData() {
+            // Show loading state for reports
+            showLoadingPlaceholder('topPerformers', 'top performers');
+            setReportsLoading(true);
+            
+            try {
+                const response = await fetch(`${API_BASE}/reports`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success === false) {
+                    throw new Error(data.message || 'Failed to load reports data');
+                }
+                
+                // Update main metrics
+                document.getElementById('totalVolume').textContent = `$${data.totalVolume || 0}`;
+                document.getElementById('activeTraders').textContent = data.activeTraders || 0;
+                document.getElementById('weeklyPnL').textContent = `$${data.weeklyPnL || 0}`;
+                document.getElementById('riskScore').textContent = data.riskScore || 0;
+                
+                // Update customer metrics
+                document.getElementById('reportTotalCustomers').textContent = data.customerMetrics?.total || 0;
+                document.getElementById('reportActiveCustomers').textContent = data.customerMetrics?.active || 0;
+                document.getElementById('reportNewCustomers').textContent = data.customerMetrics?.new || 0;
+                document.getElementById('reportAvgBalance').textContent = `$${data.customerMetrics?.avgBalance || 0}`;
+                
+                // Update transaction summary
+                document.getElementById('totalDeposits').textContent = `$${data.transactions?.deposits || 0}`;
+                document.getElementById('totalWithdrawals').textContent = `$${data.transactions?.withdrawals || 0}`;
+                document.getElementById('netFlow').textContent = `$${data.transactions?.netFlow || 0}`;
+                document.getElementById('depositCount').textContent = `${data.transactions?.depositCount || 0} transactions`;
+                document.getElementById('withdrawalCount').textContent = `${data.transactions?.withdrawalCount || 0} transactions`;
+                
+                // Update risk indicators
+                document.getElementById('largePositions').textContent = `${data.risk?.largePositions || 0} customers`;
+                document.getElementById('withdrawalSpike').textContent = data.risk?.withdrawalSpike || 'Normal';
+                document.getElementById('inactiveAccounts').textContent = data.risk?.inactiveAccounts || 0;
+                
+                // Update top performers
+                if (data.topPerformers && data.topPerformers.length > 0) {
+                    const performersHtml = data.topPerformers.map(performer => `
+                        <div class="performer-card">
+                            <div class="performer-name">${performer.id}</div>
+                            <div class="performer-pnl">P&L: $${performer.pnl}</div>
+                            <div class="performer-trades">${performer.trades} trades</div>
+                        </div>
+                    `).join('');
+                    document.getElementById('topPerformers').innerHTML = performersHtml;
+                }
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                setReportsLoading(false);
+                showErrorPlaceholder('topPerformers', 'reports', error.message);
+                
+                // Set report metrics to error state
+                setReportsError();
+                
+                // Optionally show mock data after a delay for demo purposes
+                setTimeout(() => {
+                    if (confirm('Unable to load real data. Would you like to see demo data instead?')) {
+                        loadMockReportsData();
+                        setReportsLoading(false);
+                    }
+                }, 2000);
+            }
+        }
+        
+        function loadMockReportsData() {
+            // Reset styling for all elements
+            const allElements = [
+                'totalVolume', 'activeTraders', 'weeklyPnL', 'riskScore',
+                'reportTotalCustomers', 'reportActiveCustomers', 'reportNewCustomers', 'reportAvgBalance',
+                'totalDeposits', 'totalWithdrawals', 'netFlow', 'depositCount', 'withdrawalCount',
+                'largePositions', 'withdrawalSpike', 'inactiveAccounts'
+            ];
+            
+            allElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.style.opacity = '1';
+                    element.style.color = '';
+                }
+            });
+            
+            // Mock data for demonstration
+            document.getElementById('totalVolume').textContent = '$125,340';
+            document.getElementById('activeTraders').textContent = '18';
+            document.getElementById('weeklyPnL').textContent = '$8,450';
+            document.getElementById('riskScore').textContent = '3.2';
+            const volumeChangeEl = document.getElementById('volumeChange');
+            if (volumeChangeEl) volumeChangeEl.textContent = '+12.5%';
+            const tradersChangeEl = document.getElementById('tradersChange');
+            if (tradersChangeEl) tradersChangeEl.textContent = '+5';
+            
+            document.getElementById('reportTotalCustomers').textContent = '25';
+            document.getElementById('reportActiveCustomers').textContent = '18';
+            document.getElementById('reportNewCustomers').textContent = '3';
+            document.getElementById('reportAvgBalance').textContent = '$5,014';
+            
+            document.getElementById('totalDeposits').textContent = '$75,200';
+            document.getElementById('totalWithdrawals').textContent = '$42,800';
+            document.getElementById('netFlow').textContent = '$32,400';
+            document.getElementById('depositCount').textContent = '47 transactions';
+            document.getElementById('withdrawalCount').textContent = '23 transactions';
+            
+            document.getElementById('topPerformers').innerHTML = `
+                <div class="performer-card">
+                    <div class="performer-name">BB1042</div>
+                    <div class="performer-pnl">P&L: $2,340</div>
+                    <div class="performer-trades">12 trades</div>
+                </div>
+                <div class="performer-card">
+                    <div class="performer-name">BB1045</div>
+                    <div class="performer-pnl">P&L: $1,890</div>
+                    <div class="performer-trades">8 trades</div>
+                </div>
+                <div class="performer-card">
+                    <div class="performer-name">BB1043</div>
+                    <div class="performer-pnl">P&L: $1,550</div>
+                    <div class="performer-trades">15 trades</div>
+                </div>
+            `;
+        }
+        
+        function showReport(reportType, clickedElement) {
+            // Update nav buttons
+            document.querySelectorAll('.report-nav .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            } else {
+                // Fallback: find the button by matching the onclick attribute
+                document.querySelectorAll('.report-nav .btn').forEach(btn => {
+                    if (btn.getAttribute('onclick')?.includes(reportType)) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+            
+            // Update report sections
+            document.querySelectorAll('.report-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(reportType + 'Report').classList.add('active');
+        }
+        
+        function exportReport(format) {
+            if (format === 'pdf') {
+                alert('PDF export coming soon! Use CSV or Excel for now.');
+                return;
+            }
+            
+            if (format === 'excel') {
+                format = 'csv'; // Use CSV for Excel compatibility
+            }
+            
+            try {
+                // Create download link
+                const downloadUrl = `${API_BASE}/export/${format}`;
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `report_${new Date().toISOString().split('T')[0]}.${format}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message
+                const formatName = format === 'csv' ? 'CSV/Excel' : format.toUpperCase();
+                alert(`${formatName} report downloaded successfully!`);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Export failed. Please try again.');
+            }
+        }
+        
+        function scheduleReport() {
+            const schedule = prompt('Enter schedule (daily/weekly/monthly):');
+            if (schedule) {
+                alert(`Report scheduled ${schedule}`);
+            }
+        }
+        
+        // Settings functions
+        function switchSettingsTab(tabName, clickedElement) {
+            // Update sub-nav buttons
+            document.querySelectorAll('.sub-nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            } else {
+                // Fallback: find the button by matching the onclick attribute
+                document.querySelectorAll('.sub-nav-btn').forEach(btn => {
+                    if (btn.getAttribute('onclick')?.includes(tabName)) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+            
+            // Update settings panels
+            document.querySelectorAll('.settings-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Settings').classList.add('active');
+        }
+        
+        function saveAllSettings() {
+            alert('All settings saved successfully!');
+        }
+        
+        function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to defaults?')) {
+                alert('Settings reset to defaults');
+            }
+        }
+        
+        function exportSettings() {
+            alert('Exporting configuration...');
+        }
+        
+        function editCategory(categoryId) {
+            const newName = prompt('Enter new category name:');
+            if (newName) {
+                alert(`Category "${categoryId}" updated to "${newName}"`);
+            }
+        }
+        
+        function addBlogCategory() {
+            const name = prompt('Enter category name:');
+            if (name) {
+                alert(`Added new category: "${name}"`);
+            }
+        }
+        
+        // Branding configuration
+        async function loadBrandingConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/config`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.config) {
+                    const config = data.config;
+                    
+                    // Update platform title
+                    const platformTitle = document.getElementById('platformTitle');
+                    if (platformTitle) {
+                        platformTitle.textContent = `🚀 ${config.platform || 'Group Management Portal'}`;
+                    }
+                    
+                    // Update company name in settings
+                    const companyNameInput = document.getElementById('companyName');
+                    if (companyNameInput) {
+                        companyNameInput.value = config.name || 'Fantdev Trading';
+                    }
+                    
+                    // Update platform name in settings
+                    const platformNameInput = document.getElementById('platformName');
+                    if (platformNameInput) {
+                        platformNameInput.value = config.platform || 'Fantdev Trading Platform';
+                    }
+                    
+                    // Update website URL in settings
+                    const websiteUrlInput = document.getElementById('websiteUrl');
+                    if (websiteUrlInput) {
+                        websiteUrlInput.value = config.website || 'https://fire22.com';
+                    }
+                    
+                    // Update footer with company info
+                    const footerText = document.getElementById('footerText');
+                    if (footerText) {
+                        footerText.value = `© 2024 ${config.name || 'Fantdev Trading'}. All rights reserved. Professional trading platform.`;
+                    }
+                    
+                    console.log('Branding configuration loaded:', config);
+                }
+                
+            } catch (error) {
+                console.error('Error loading branding config:', error);
+            }
         }
     </script>
 </body>

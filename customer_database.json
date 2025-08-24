@@ -16,33 +16,37 @@
       "phone": "",
       "balance": 0,
       "weekly_pnl": 7000,
-      "telegram_id": null,
+      "telegram_id": 123456789,
       "active": true,
       "customer_id": "BB1043",
-      "telegram_username": null,
-      "last_activity": null
+      "telegram_username": "@testuser",
+      "last_activity": "2025-08-23T21:46:47.407653",
+      "registration_date": "2025-08-23T21:46:47.407661"
     },
     "BB1044": {
       "password": "W2T7",
       "phone": "",
       "balance": 0,
       "weekly_pnl": 7000,
-      "telegram_id": null,
+      "telegram_id": 999888777,
       "active": true,
       "customer_id": "BB1044",
-      "telegram_username": null,
-      "last_activity": null
+      "telegram_username": "@testuser_new",
+      "last_activity": "2025-08-23T21:55:27.793756",
+      "registration_date": "2025-08-23T21:55:27.793767"
     },
     "BB1045": {
       "password": "V0J3",
       "phone": "",
       "balance": 0,
       "weekly_pnl": 6000,
-      "telegram_id": null,
+      "telegram_id": 111222333,
       "active": true,
       "customer_id": "BB1045",
-      "telegram_username": null,
-      "last_activity": null
+      "telegram_username": "@duplicate_test",
+      "last_activity": "2025-08-23T21:55:50.060544",
+      "registration_date": "2025-08-23T21:55:50.060613",
+      "verification_status": "ADMIN_VERIFIED"
     },
     "BB1267": {
       "password": "JENNABW11",
@@ -291,7 +295,7 @@
     }
   },
   "settings": {
-    "last_backup": "2025-08-23T18:23:13.188938",
+    "last_backup": "2025-08-24T16:23:55.579006",
     "version": "2.0"
   },
   "members": {
@@ -396,6 +400,23 @@
         "notes": ""
       },
       "customer_id": null
+    },
+    "-1001234567890_9999999": {
+      "member_id": "M20250824162355",
+      "telegram_id": 9999999,
+      "username": "test_user",
+      "group_id": -1001234567890,
+      "group_name": "Test Trading Group",
+      "join_date": "2025-08-24T16:23:55.576317",
+      "status": "approved",
+      "permissions": {
+        "can_view": true,
+        "can_trade": false,
+        "can_withdraw": false,
+        "daily_limit": 50,
+        "notes": ""
+      },
+      "customer_id": null
     }
   },
   "permissions": {
@@ -407,7 +428,8 @@
       "-1001234567890_123456",
       "-1001234567890_79244",
       "-1002345678901_55443",
-      "-1001234567890_99887"
+      "-1001234567890_99887",
+      "-1001234567890_9999999"
     ],
     "denied": []
   }

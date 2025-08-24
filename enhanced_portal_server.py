@@ -24,6 +24,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.database import db, GroupMember, Customer, Transaction
 from src.config import config
 
+# Import Telegram dashboard components
+from src.telegram_dashboard.message_streamer import TelegramMessageStreamer
+from src.telegram_dashboard.group_monitor import TelegramGroupMonitor  
+from src.telegram_dashboard.bot_status import TelegramBotMonitor
+from src.telegram_dashboard.admin_interface import TelegramAdminInterface
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 CORS(app, supports_credentials=True)
@@ -36,6 +42,39 @@ JWT_EXPIRATION_HOURS = 24
 
 # Active WebSocket connections
 active_connections = {}
+
+# Initialize Telegram dashboard components
+telegram_streamer = None
+telegram_monitor = None
+bot_monitor = None
+admin_interface = None
+
+def initialize_telegram_components():
+    """Initialize Telegram dashboard components"""
+    global telegram_streamer, telegram_monitor, bot_monitor, admin_interface
+    
+    try:
+        # Initialize components
+        telegram_streamer = TelegramMessageStreamer(config.token, config.admin_chat_id)
+        telegram_monitor = TelegramGroupMonitor(config.token)
+        bot_monitor = TelegramBotMonitor(config.token, config.admin_chat_id)
+        admin_interface = TelegramAdminInterface(config.token, config.admin_chat_id)
+        
+        # Integrate components
+        admin_interface.integrate_components(telegram_streamer, telegram_monitor, bot_monitor)
+        
+        # Set up message streaming callback for WebSocket
+        def on_new_message(message_data):
+            socketio.emit('telegram_message', message_data, namespace='/telegram')
+        
+        telegram_streamer.subscribe(on_new_message)
+        
+        print("Telegram dashboard components initialized successfully")
+        return True
+        
+    except Exception as e:
+        print(f"Error initializing Telegram components: {e}")
+        return False
 
 def generate_token(user_data):
     """Generate JWT token for authentication"""
@@ -118,12 +157,74 @@ def serve_admin_portal():
 
 @app.route('/cashier')
 def serve_cashier_dashboard():
-    """Serve the cashier dashboard"""
+    """Serve the branded enhanced cashier dashboard"""
     try:
-        response = make_response(send_file('admin_cashier_dashboard.html'))
+        response = make_response(send_file('admin_cashier_dashboard_branded.html'))
         return add_ngrok_headers(response)
     except Exception as e:
-        return jsonify({'error': str(e)}), 404
+        # Fallback to enhanced version
+        try:
+            response = make_response(send_file('admin_cashier_dashboard_enhanced.html'))
+            return add_ngrok_headers(response)
+        except:
+            return jsonify({'error': str(e)}), 404
+
+# ============= Branding Assets Routes =============
+
+@app.route('/src/branding/<path:filename>')
+def serve_branding_assets(filename):
+    """Serve branding system assets"""
+    try:
+        file_path = f'src/branding/{filename}'
+        response = make_response(send_file(file_path))
+        
+        # Set appropriate content type
+        if filename.endswith('.css'):
+            response.headers['Content-Type'] = 'text/css'
+        elif filename.endswith('.js'):
+            response.headers['Content-Type'] = 'application/javascript'
+        elif filename.endswith('.json'):
+            response.headers['Content-Type'] = 'application/json'
+        
+        return add_ngrok_headers(response)
+    except Exception as e:
+        return jsonify({'error': f'Branding asset not found: {filename}'}), 404
+
+@app.route('/branding/core/metadata.json')
+def serve_metadata():
+    """Serve system metadata for branding system"""
+    try:
+        response = make_response(send_file('src/branding/core/metadata.json'))
+        response.headers['Content-Type'] = 'application/json'
+        return add_ngrok_headers(response)
+    except Exception as e:
+        # Fallback metadata
+        metadata = {
+            "system": {
+                "name": "Fantdev Trading Bot",
+                "version": "2.1.0-enhanced",
+                "build": "2024.08.24.002",
+                "environment": "development",
+                "api_version": "3.2.1"
+            },
+            "company": {
+                "name": "Fantdev Trading Systems",
+                "display_name": "Fantdev Trading"
+            },
+            "branding": {
+                "logo_text": "Fantdev Trading",
+                "logo_icon": "fas fa-shield-alt",
+                "theme_color": "#667eea"
+            },
+            "deployment": {
+                "server_urls": {
+                    "enhanced_portal": "http://localhost:5000",
+                    "payment_api": "http://localhost:5001"
+                }
+            }
+        }
+        response = make_response(jsonify(metadata))
+        return add_ngrok_headers(response)
 
 # ============= Authentication Routes =============
 
@@ -578,14 +679,234 @@ def broadcast_balance_update(customer_id, new_balance, old_balance):
 
 # ============= Health Check =============
 
+# ============= Telegram Dashboard APIs =============
+
+@app.route('/api/telegram/messages')
+@require_auth
+def get_telegram_messages():
+    """Get recent Telegram messages"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        limit = int(request.args.get('limit', 50))
+        chat_id = request.args.get('chat_id')
+        
+        if telegram_streamer:
+            messages = telegram_streamer.get_recent_messages(
+                limit=limit, 
+                chat_id=int(chat_id) if chat_id else None
+            )
+            return jsonify({'messages': messages})
+        else:
+            return jsonify({'messages': [], 'error': 'Message streamer not initialized'})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/groups')
+@require_auth
+def get_telegram_groups():
+    """Get monitored Telegram groups"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        if telegram_monitor:
+            groups = telegram_monitor.get_monitored_groups()
+            return jsonify({'groups': groups})
+        else:
+            return jsonify({'groups': [], 'error': 'Group monitor not initialized'})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/groups/<int:chat_id>')
+@require_auth
+def get_telegram_group_info(chat_id):
+    """Get specific group information"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        if telegram_monitor:
+            group_info = telegram_monitor.get_group_info(chat_id)
+            if group_info:
+                return jsonify({'group': group_info})
+            else:
+                return jsonify({'error': 'Group not found'}), 404
+        else:
+            return jsonify({'error': 'Group monitor not initialized'}), 503
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/groups', methods=['POST'])
+@require_auth
+def add_telegram_group():
+    """Add group to monitoring"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        data = request.get_json()
+        chat_id = data.get('chat_id')
+        
+        if not chat_id:
+            return jsonify({'error': 'chat_id is required'}), 400
+        
+        if telegram_monitor:
+            success = await telegram_monitor.add_group_to_monitor(int(chat_id))
+            if success:
+                return jsonify({'success': True, 'message': 'Group added to monitoring'})
+            else:
+                return jsonify({'error': 'Failed to add group'}), 500
+        else:
+            return jsonify({'error': 'Group monitor not initialized'}), 503
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/bot-status')
+@require_auth
+def get_bot_status():
+    """Get bot health status"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        if bot_monitor:
+            status = bot_monitor.get_current_status()
+            stats = bot_monitor.get_statistics()
+            trends = bot_monitor.get_performance_trends()
+            
+            return jsonify({
+                'status': status,
+                'statistics': stats,
+                'performance_trends': trends
+            })
+        else:
+            return jsonify({'error': 'Bot monitor not initialized'}), 503
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/send-message', methods=['POST'])
+@require_auth
+def send_telegram_message():
+    """Send message via Telegram"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        data = request.get_json()
+        chat_id = data.get('chat_id')
+        text = data.get('text')
+        
+        if not chat_id or not text:
+            return jsonify({'error': 'chat_id and text are required'}), 400
+        
+        if admin_interface:
+            result = await admin_interface.send_message(chat_id, text)
+            return jsonify(result)
+        else:
+            return jsonify({'error': 'Admin interface not initialized'}), 503
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/analytics/<int:chat_id>')
+@require_auth
+def get_chat_analytics(chat_id):
+    """Get chat analytics"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        days = int(request.args.get('days', 7))
+        
+        if admin_interface:
+            analytics = await admin_interface.get_chat_analytics(chat_id, days)
+            return jsonify(analytics)
+        else:
+            return jsonify({'error': 'Admin interface not initialized'}), 503
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/statistics')
+@require_auth
+def get_telegram_statistics():
+    """Get comprehensive Telegram statistics"""
+    if request.user['type'] != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        stats = {}
+        
+        if telegram_streamer:
+            stats['message_streamer'] = telegram_streamer.get_statistics()
+        
+        if telegram_monitor:
+            stats['group_monitor'] = telegram_monitor.get_statistics()
+        
+        if bot_monitor:
+            stats['bot_monitor'] = bot_monitor.get_statistics()
+        
+        if admin_interface:
+            stats['admin_interface'] = admin_interface.get_statistics()
+        
+        return jsonify({
+            'statistics': stats,
+            'components_status': {
+                'message_streamer': telegram_streamer is not None,
+                'group_monitor': telegram_monitor is not None,
+                'bot_monitor': bot_monitor is not None,
+                'admin_interface': admin_interface is not None
+            }
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# WebSocket events for Telegram dashboard
+@socketio.on('join_telegram_room')
+def handle_join_telegram_room():
+    """Join Telegram dashboard room"""
+    if request.sid not in active_connections:
+        emit('error', {'error': 'Not authenticated'})
+        return
+    
+    user = active_connections[request.sid].get('user')
+    if not user or user['type'] != 'admin':
+        emit('error', {'error': 'Admin access required'})
+        return
+    
+    join_room('telegram_dashboard')
+    emit('joined_telegram_room', {'message': 'Successfully joined Telegram dashboard'})
+
+@socketio.on('leave_telegram_room')
+def handle_leave_telegram_room():
+    """Leave Telegram dashboard room"""
+    leave_room('telegram_dashboard')
+    emit('left_telegram_room', {'message': 'Left Telegram dashboard'})
+
 @app.route('/api/health')
 def health_check():
     """Health check endpoint"""
+    telegram_status = {
+        'message_streamer': telegram_streamer is not None,
+        'group_monitor': telegram_monitor is not None,
+        'bot_monitor': bot_monitor is not None,
+        'admin_interface': admin_interface is not None
+    }
+    
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'active_connections': len(active_connections),
-        'database': 'connected' if db else 'disconnected'
+        'database': 'connected' if db else 'disconnected',
+        'telegram_components': telegram_status
     })
 
 # ============= Error Handlers =============
@@ -608,6 +929,37 @@ if __name__ == '__main__':
     print(f"WebSocket support enabled")
     print(f"Admin portal: http://localhost:5000/admin")
     print(f"Customer portal: http://localhost:5000/")
+    print("-" * 50)
+    
+    # Initialize Telegram components
+    print("Initializing Telegram dashboard components...")
+    if initialize_telegram_components():
+        print("✅ Telegram components initialized successfully")
+        
+        # Start async components
+        def start_async_components():
+            async def start_all():
+                try:
+                    if telegram_streamer:
+                        await telegram_streamer.start_streaming()
+                    if telegram_monitor:
+                        await telegram_monitor.start_monitoring()
+                    if bot_monitor:
+                        await bot_monitor.start_monitoring()
+                    print("✅ All async components started")
+                except Exception as e:
+                    print(f"❌ Error starting async components: {e}")
+            
+            asyncio.run(start_all())
+        
+        # Start async components in background thread
+        async_thread = threading.Thread(target=start_async_components)
+        async_thread.daemon = True
+        async_thread.start()
+        
+    else:
+        print("❌ Failed to initialize Telegram components")
+    
     print("-" * 50)
     
     # Run with WebSocket support

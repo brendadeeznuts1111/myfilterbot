@@ -17,6 +17,7 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     CallbackQueryHandler,
+    ContextTypes,
     filters
 )
 
@@ -27,6 +28,10 @@ from src.utils import rate_limiter
 from src.error_handler import error_handler, error_tracker
 from src.debug_handler import debug_handler
 from src.portal_integration import setup_portal_integration
+from src.chat_tracker import chat_tracker
+from src.enhanced_chat_handlers import enhanced_chat_handlers
+from src.authenticated_handlers import authenticated_handlers
+from src.timezone_handler import timezone_handler
 
 # Configure logging
 logging.basicConfig(
@@ -103,7 +108,17 @@ class FantdevBot:
             ("register", handlers.register_command),
             ("verify", handlers.verify_command),  # Admin verification for duplicate passwords
             ("admin", handlers.admin_command),
-            ("dashboard", handlers.admin_command),  # Alias for admin
+            ("dashboard", authenticated_handlers.dashboard_command),  # Enhanced dashboard with auth
+            ("login", authenticated_handlers.login_command),  # Persistent login
+            ("logout", authenticated_handlers.logout_command),  # Logout
+            ("history", authenticated_handlers.history_command),  # Player history
+            ("fraud", authenticated_handlers.fraud_check_command),  # Fraud detection
+            ("stats", enhanced_chat_handlers.stats_command),  # Chat statistics
+            ("link", enhanced_chat_handlers.link_command),  # Get chat shortlink
+            ("chats", enhanced_chat_handlers.chats_command),  # List all chats (admin)
+            ("broadcast", enhanced_chat_handlers.broadcast_command),  # Broadcast to all chats
+            ("timezone", timezone_handler.timezone_command),  # Set user timezone
+            ("market", timezone_handler.market_hours_command),  # Global market hours
             ("debug", debug_handler.debug_command),  # Debug interface
             ("help", self._help_command),
         ]
@@ -111,19 +126,39 @@ class FantdevBot:
         for command, handler in commands:
             self.application.add_handler(CommandHandler(command, handler))
         
-        # Add message handler
+        # Add message handlers
+        # Enhanced message handler that tracks all chats
+        async def enhanced_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+            """Process all messages with chat tracking"""
+            # Track chat activity
+            await enhanced_chat_handlers.on_message(update, context)
+            # Process for transactions and customer activity
+            await handlers.process_message(update, context)
+        
         self.application.add_handler(
             MessageHandler(
                 filters.TEXT & ~filters.COMMAND,
-                handlers.process_message
+                enhanced_message_handler
             )
         )
         
-        # Add callback query handler with debug support
+        # Add handler for when bot joins new chat
+        self.application.add_handler(
+            MessageHandler(
+                filters.StatusUpdate.NEW_CHAT_MEMBERS,
+                enhanced_chat_handlers.on_chat_join
+            )
+        )
+        
+        # Add callback query handler with debug and chat support
         async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            """Enhanced callback handler with debug support"""
-            if update.callback_query.data.startswith("debug_"):
+            """Enhanced callback handler with debug and chat support"""
+            data = update.callback_query.data
+            if data.startswith("debug_"):
                 await debug_handler.handle_debug_callback(update, context)
+            elif data in ["full_chat_report", "export_chats", "refresh_chats", 
+                         "confirm_broadcast", "cancel_broadcast"] or data.startswith("copy_link_"):
+                await enhanced_chat_handlers.handle_chat_callback(update, context)
             else:
                 await handlers.handle_callback(update, context)
         
@@ -140,30 +175,43 @@ class FantdevBot:
 ❓ **Help & Support**
 ━━━━━━━━━━━━━━━━
 
-**Basic Commands:**
+**🔐 Authentication & Session:**
+• `/login <id> <password> [remember]` - Login with persistent session
+• `/logout` - End your session
+• `/dashboard` - Access dashboard with auth token
+
+**💰 Account Management:**
 • `/start` - Welcome message
-• `/register <id> <password>` - Register your account
+• `/register <id> <password>` - Register your account  
 • `/balance` - Check your balance
 • `/account` - Account management
+• `/history [days]` - Transaction history
 
-**Admin Commands:**
-• `/admin` or `/dashboard` - Admin panel
-• `/help` - This help message
+**📊 Chat Tracking:**
+• `/stats` - Chat/global statistics
+• `/link` - Get chat shortlink URL
+• `/chats` - List all bot chats (admin)
 
-**How It Works:**
-1. Register with your customer ID
-2. Bot monitors groups for your activity
-3. Receive alerts for transactions
-4. Track balance and P&L
+**🛡️ Admin Commands:**
+• `/admin` - Admin panel
+• `/verify <token> <approve|deny>` - Verify registrations
+• `/fraud <customer_id>` - Check fraud risk
+• `/broadcast <message>` - Send to all chats
 
-**Features:**
-✅ Real-time transaction detection
-📊 Balance tracking
-🔔 Instant alerts
-📈 Performance analytics
+**🔗 How Chat Tracking Works:**
+1. Bot automatically discovers all chats it's in
+2. Creates unique shortlinks for each chat
+3. Tracks all messages and activity
+4. Stores in durable SQLite database
+
+**📱 Session Features:**
+• Stay logged in for 30 days with 'remember'
+• One-click dashboard access
+• JWT tokens for web authentication
+• Fraud detection monitoring
 
 **Support:**
-Contact @admin for assistance
+Contact @fantdev_bot admin
 """
         await update.message.reply_text(
             help_text,

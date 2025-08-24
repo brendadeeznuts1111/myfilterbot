@@ -1,489 +1,528 @@
 /**
- * Admin Portal Worker Thread Implementation
- * Processes large datasets for admin dashboard analytics
- * Optimized for Bun's fast postMessage() performance
+ * Admin Portal Worker Thread
+ * High-performance background processing for admin dashboard
+ * Leverages Bun's 500x faster postMessage() for large data transfers
  */
 
-import type { 
-  AdminDataRequest, 
-  AdminDataResponse, 
-  CustomerStats, 
-  TransactionStats, 
-  GroupMemberStats,
-  DashboardMetrics 
-} from './admin_portal_worker.ts';
+import { parentPort, workerData } from 'worker_threads';
 
-// Worker thread message handler
-self.onmessage = (event: MessageEvent<AdminDataRequest>) => {
-  const startTime = performance.now();
-  const { type, data, requestId } = event.data;
+interface AdminTask {
+  id: string;
+  type: 'CUSTOMER_STATS' | 'TRANSACTION_ANALYTICS' | 'MEMBER_PROCESSING' | 'REALTIME_UPDATE' | 'BULK_OPERATION';
+  data: any;
+  priority: 'high' | 'medium' | 'low';
+  timestamp: number;
+}
 
-  try {
-    let result: any;
-    let dataSize = 0;
+interface AdminWorkerResult {
+  taskId: string;
+  type: string;
+  success: boolean;
+  data?: any;
+  error?: string;
+  processingTime: number;
+}
 
-    switch (type) {
-      case 'dashboard_stats':
-        result = generateDashboardStats(data.customers!, data.transactions!);
-        dataSize = estimateDataSize(data.customers!) + estimateDataSize(data.transactions!);
-        break;
+class AdminPortalWorker {
+  private taskQueue: AdminTask[] = [];
+  private processing = false;
+  private stats = {
+    tasksProcessed: 0,
+    totalProcessingTime: 0,
+    errors: 0,
+    startTime: Date.now()
+  };
+
+  constructor() {
+    this.initialize();
+  }
+
+  private initialize() {
+    if (!parentPort) {
+      throw new Error('Worker must be run in a worker thread');
+    }
+
+    parentPort.on('message', (task: AdminTask) => {
+      this.addTask(task);
+      this.processQueue();
+    });
+
+    // Send heartbeat every 10 seconds
+    setInterval(() => {
+      this.sendHeartbeat();
+    }, 10000);
+
+    console.log('[AdminWorker] Initialized and ready');
+  }
+
+  private addTask(task: AdminTask) {
+    // Add task to queue based on priority
+    if (task.priority === 'high') {
+      this.taskQueue.unshift(task);
+    } else {
+      this.taskQueue.push(task);
+    }
+  }
+
+  private async processQueue() {
+    if (this.processing || this.taskQueue.length === 0) {
+      return;
+    }
+
+    this.processing = true;
+
+    while (this.taskQueue.length > 0) {
+      const task = this.taskQueue.shift()!;
+      const startTime = Date.now();
+
+      try {
+        const result = await this.processTask(task);
+        const processingTime = Date.now() - startTime;
+
+        this.stats.tasksProcessed++;
+        this.stats.totalProcessingTime += processingTime;
+
+        this.sendResult({
+          taskId: task.id,
+          type: task.type,
+          success: true,
+          data: result,
+          processingTime
+        });
+
+      } catch (error: any) {
+        this.stats.errors++;
+        
+        this.sendResult({
+          taskId: task.id,
+          type: task.type,
+          success: false,
+          error: error.message,
+          processingTime: Date.now() - startTime
+        });
+      }
+    }
+
+    this.processing = false;
+  }
+
+  private async processTask(task: AdminTask): Promise<any> {
+    switch (task.type) {
+      case 'CUSTOMER_STATS':
+        return this.processCustomerStats(task.data);
       
-      case 'customer_analysis':
-        result = analyzeCustomers(data.customers!, data.transactions!);
-        dataSize = estimateDataSize(data.customers!) + estimateDataSize(data.transactions!);
-        break;
+      case 'TRANSACTION_ANALYTICS':
+        return this.processTransactionAnalytics(task.data);
       
-      case 'transaction_summary':
-        result = generateTransactionSummary(data.transactions!, data.timeRange || '7d');
-        dataSize = estimateDataSize(data.transactions!);
-        break;
+      case 'MEMBER_PROCESSING':
+        return this.processMemberData(task.data);
       
-      case 'group_activity':
-        result = analyzeGroupActivity(data.groupMembers!, data.customers!);
-        dataSize = estimateDataSize(data.groupMembers!) + estimateDataSize(data.customers!);
-        break;
+      case 'REALTIME_UPDATE':
+        return this.processRealtimeUpdate(task.data);
       
-      case 'real_time_metrics':
-        result = generateRealTimeMetrics(data.customers!, data.transactions!, data.groupMembers!);
-        dataSize = estimateDataSize(data.customers!) + estimateDataSize(data.transactions!) + estimateDataSize(data.groupMembers!);
-        break;
+      case 'BULK_OPERATION':
+        return this.processBulkOperation(task.data);
       
       default:
-        throw new Error(`Unknown request type: ${type}`);
+        throw new Error(`Unknown task type: ${task.type}`);
     }
-
-    const processingTime = performance.now() - startTime;
-
-    const response: AdminDataResponse = {
-      requestId,
-      type,
-      result,
-      processingTime,
-      dataSize
-    };
-
-    // Fast postMessage() - benefits from 500x performance improvement
-    self.postMessage(response);
-
-  } catch (error) {
-    const processingTime = performance.now() - startTime;
-    
-    const response: AdminDataResponse = {
-      requestId,
-      type,
-      result: null,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      processingTime,
-      dataSize: 0
-    };
-
-    self.postMessage(response);
-  }
-};
-
-function estimateDataSize(data: any[]): number {
-  // Rough estimation of JSON size
-  return JSON.stringify(data).length;
-}
-
-function generateDashboardStats(customers: CustomerStats[], transactions: TransactionStats[]): DashboardMetrics {
-  const activeCustomers = customers.filter(c => c.active);
-  const totalBalance = customers.reduce((sum, c) => sum + c.balance, 0);
-  const totalWeeklyPnl = customers.reduce((sum, c) => sum + c.weekly_pnl, 0);
-  
-  // Top customers by balance
-  const topCustomers = customers
-    .sort((a, b) => b.balance - a.balance)
-    .slice(0, 10)
-    .map(c => ({ id: c.customer_id, balance: c.balance }));
-
-  // Risk distribution
-  const riskDistribution: Record<string, number> = {};
-  customers.forEach(c => {
-    const risk = c.risk_level || 'unknown';
-    riskDistribution[risk] = (riskDistribution[risk] || 0) + 1;
-  });
-
-  // Balance distribution
-  const balanceDistribution = {
-    under100: customers.filter(c => c.balance < 100).length,
-    between100And1000: customers.filter(c => c.balance >= 100 && c.balance < 1000).length,
-    between1000And10000: customers.filter(c => c.balance >= 1000 && c.balance < 10000).length,
-    over10000: customers.filter(c => c.balance >= 10000).length
-  };
-
-  // Activity trend (last 7 days)
-  const activityTrend: Array<{date: string; count: number}> = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    
-    const count = transactions.filter(t => 
-      t.timestamp.startsWith(dateStr)
-    ).length;
-    
-    activityTrend.push({
-      date: dateStr,
-      count
-    });
   }
 
-  return {
-    totalCustomers: customers.length,
-    activeCustomers: activeCustomers.length,
-    totalBalance,
-    totalWeeklyPnl,
-    transactionCount: transactions.length,
-    averageBalance: customers.length > 0 ? totalBalance / customers.length : 0,
-    topCustomers,
-    riskDistribution,
-    balanceDistribution,
-    activityTrend
-  };
-}
-
-function analyzeCustomers(customers: CustomerStats[], transactions: TransactionStats[]) {
-  // Customer performance analysis
-  const customerPerformance = customers.map(customer => {
-    const customerTransactions = transactions.filter(t => t.customer_id === customer.customer_id);
+  private async processCustomerStats(data: any) {
+    const customers = data.customers || [];
     
-    const deposits = customerTransactions
-      .filter(t => t.type === 'deposit' && t.amount)
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    
-    const withdrawals = customerTransactions
-      .filter(t => t.type === 'withdrawal' && t.amount)
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    
-    const deniedTransactions = customerTransactions.filter(t => t.type === 'denied').length;
-    
-    // Calculate activity score
-    const daysSinceLastActivity = customer.last_activity 
-      ? Math.floor((Date.now() - new Date(customer.last_activity).getTime()) / (1000 * 60 * 60 * 24))
-      : 999;
-    
-    const activityScore = Math.max(0, 100 - daysSinceLastActivity * 2);
-    
-    // Risk assessment
-    let riskScore = 0;
-    if (customer.balance < 100) riskScore += 30;
-    if (customer.weekly_pnl < -500) riskScore += 25;
-    if (deniedTransactions > 5) riskScore += 20;
-    if (daysSinceLastActivity > 7) riskScore += 15;
-    if (withdrawals > deposits * 2) riskScore += 10;
-    
-    const riskLevel = riskScore > 60 ? 'high' : riskScore > 30 ? 'medium' : 'low';
-
-    return {
-      customer_id: customer.customer_id,
-      balance: customer.balance,
-      weekly_pnl: customer.weekly_pnl,
-      total_deposits: deposits,
-      total_withdrawals: withdrawals,
-      denied_transactions: deniedTransactions,
-      activity_score: activityScore,
-      risk_score: riskScore,
-      risk_level: riskLevel,
-      days_since_activity: daysSinceLastActivity,
-      transaction_count: customerTransactions.length
-    };
-  });
-
-  // Sort by risk score descending
-  customerPerformance.sort((a, b) => b.risk_score - a.risk_score);
-
-  // Get high-risk customers
-  const highRiskCustomers = customerPerformance.filter(c => c.risk_level === 'high');
-  
-  // Get inactive customers (no activity in 7+ days)
-  const inactiveCustomers = customerPerformance.filter(c => c.days_since_activity > 7);
-  
-  // Get profitable customers
-  const profitableCustomers = customerPerformance
-    .filter(c => c.weekly_pnl > 0)
-    .sort((a, b) => b.weekly_pnl - a.weekly_pnl)
-    .slice(0, 20);
-
-  return {
-    customerPerformance,
-    highRiskCustomers,
-    inactiveCustomers,
-    profitableCustomers,
-    summary: {
+    // Calculate comprehensive statistics
+    const stats = {
       totalCustomers: customers.length,
-      highRiskCount: highRiskCustomers.length,
-      inactiveCount: inactiveCustomers.length,
-      profitableCount: profitableCustomers.length,
-      averageActivityScore: customerPerformance.reduce((sum, c) => sum + c.activity_score, 0) / customerPerformance.length
-    }
-  };
-}
+      activeCustomers: 0,
+      totalBalance: 0,
+      averageBalance: 0,
+      totalPnL: 0,
+      topPerformers: [] as any[],
+      lowBalanceAlerts: [] as any[],
+      inactiveCustomers: [] as any[],
+      balanceDistribution: {
+        under100: 0,
+        '100to500': 0,
+        '500to1000': 0,
+        '1000to5000': 0,
+        over5000: 0
+      },
+      activityMetrics: {
+        daily: 0,
+        weekly: 0,
+        monthly: 0
+      }
+    };
 
-function generateTransactionSummary(transactions: TransactionStats[], timeRange: string) {
-  // Parse time range
-  let daysBack = 7;
-  if (timeRange.endsWith('d')) {
-    daysBack = parseInt(timeRange.slice(0, -1));
-  } else if (timeRange.endsWith('h')) {
-    daysBack = parseInt(timeRange.slice(0, -1)) / 24;
+    // Process each customer
+    for (const customer of customers) {
+      const balance = customer.balance || 0;
+      stats.totalBalance += balance;
+      stats.totalPnL += customer.weekly_pnl || 0;
+
+      // Check if active
+      const lastActivity = customer.last_activity ? new Date(customer.last_activity) : null;
+      const now = new Date();
+      const daysSinceActivity = lastActivity ? 
+        Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+
+      if (daysSinceActivity <= 1) {
+        stats.activityMetrics.daily++;
+        stats.activeCustomers++;
+      }
+      if (daysSinceActivity <= 7) {
+        stats.activityMetrics.weekly++;
+      }
+      if (daysSinceActivity <= 30) {
+        stats.activityMetrics.monthly++;
+      }
+
+      // Balance distribution
+      if (balance < 100) {
+        stats.balanceDistribution.under100++;
+        stats.lowBalanceAlerts.push({
+          customer_id: customer.customer_id,
+          balance: balance,
+          daysSinceActivity
+        });
+      } else if (balance < 500) {
+        stats.balanceDistribution['100to500']++;
+      } else if (balance < 1000) {
+        stats.balanceDistribution['500to1000']++;
+      } else if (balance < 5000) {
+        stats.balanceDistribution['1000to5000']++;
+      } else {
+        stats.balanceDistribution.over5000++;
+      }
+
+      // Track inactive customers
+      if (daysSinceActivity > 3) {
+        stats.inactiveCustomers.push({
+          customer_id: customer.customer_id,
+          daysSinceActivity,
+          lastBalance: balance
+        });
+      }
+
+      // Track top performers
+      if (customer.weekly_pnl > 0) {
+        stats.topPerformers.push({
+          customer_id: customer.customer_id,
+          weekly_pnl: customer.weekly_pnl,
+          balance: balance,
+          pnl_percentage: balance > 0 ? (customer.weekly_pnl / balance * 100) : 0
+        });
+      }
+    }
+
+    // Calculate averages
+    stats.averageBalance = customers.length > 0 ? stats.totalBalance / customers.length : 0;
+
+    // Sort top performers
+    stats.topPerformers.sort((a, b) => b.weekly_pnl - a.weekly_pnl);
+    stats.topPerformers = stats.topPerformers.slice(0, 10);
+
+    // Sort inactive customers by days
+    stats.inactiveCustomers.sort((a, b) => b.daysSinceActivity - a.daysSinceActivity);
+    stats.inactiveCustomers = stats.inactiveCustomers.slice(0, 20);
+
+    return stats;
   }
 
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-  
-  const filteredTransactions = transactions.filter(t => 
-    new Date(t.timestamp) >= cutoffDate
-  );
+  private async processTransactionAnalytics(data: any) {
+    const transactions = data.transactions || [];
+    const timeframe = data.timeframe || 'day';
 
-  // Group by type
-  const transactionsByType = new Map<string, TransactionStats[]>();
-  filteredTransactions.forEach(tx => {
-    if (!transactionsByType.has(tx.type)) {
-      transactionsByType.set(tx.type, []);
+    const analytics = {
+      totalTransactions: transactions.length,
+      totalVolume: 0,
+      deposits: { count: 0, total: 0 },
+      withdrawals: { count: 0, total: 0 },
+      denied: { count: 0, total: 0 },
+      hourlyDistribution: new Array(24).fill(0),
+      topCustomers: new Map<string, number>(),
+      transactionTypes: new Map<string, number>(),
+      averageTransactionSize: 0,
+      peakHour: 0,
+      trends: [] as any[]
+    };
+
+    // Process transactions
+    for (const tx of transactions) {
+      const amount = Math.abs(tx.amount || 0);
+      analytics.totalVolume += amount;
+
+      // Type breakdown
+      if (tx.type === 'deposit') {
+        analytics.deposits.count++;
+        analytics.deposits.total += amount;
+      } else if (tx.type === 'withdrawal') {
+        analytics.withdrawals.count++;
+        analytics.withdrawals.total += amount;
+      } else if (tx.type === 'denied') {
+        analytics.denied.count++;
+        analytics.denied.total += amount;
+      }
+
+      // Hourly distribution
+      const hour = new Date(tx.timestamp).getHours();
+      analytics.hourlyDistribution[hour]++;
+
+      // Top customers
+      const currentCount = analytics.topCustomers.get(tx.customer_id) || 0;
+      analytics.topCustomers.set(tx.customer_id, currentCount + 1);
+
+      // Transaction types
+      const typeCount = analytics.transactionTypes.get(tx.type) || 0;
+      analytics.transactionTypes.set(tx.type, typeCount + 1);
     }
-    transactionsByType.get(tx.type)!.push(tx);
-  });
 
-  // Calculate volumes
-  const volumes = new Map<string, number>();
-  const counts = new Map<string, number>();
-  
-  for (const [type, txs] of transactionsByType) {
-    const totalAmount = txs
-      .filter(tx => tx.amount !== undefined)
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-    
-    volumes.set(type, totalAmount);
-    counts.set(type, txs.length);
-  }
+    // Calculate averages and peaks
+    analytics.averageTransactionSize = transactions.length > 0 ? 
+      analytics.totalVolume / transactions.length : 0;
 
-  // Hourly distribution
-  const hourlyDistribution = new Array(24).fill(0);
-  filteredTransactions.forEach(tx => {
-    const hour = new Date(tx.timestamp).getHours();
-    hourlyDistribution[hour]++;
-  });
-
-  // Daily trend
-  const dailyTrend: Array<{date: string; count: number; volume: number}> = [];
-  for (let i = daysBack - 1; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    
-    const dayTransactions = filteredTransactions.filter(t => 
-      t.timestamp.startsWith(dateStr)
-    );
-    
-    const volume = dayTransactions
-      .filter(t => t.amount !== undefined)
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    
-    dailyTrend.push({
-      date: dateStr,
-      count: dayTransactions.length,
-      volume
-    });
-  }
-
-  // Top customers by transaction count
-  const customerTransactionCounts = new Map<string, number>();
-  filteredTransactions.forEach(tx => {
-    customerTransactionCounts.set(
-      tx.customer_id, 
-      (customerTransactionCounts.get(tx.customer_id) || 0) + 1
-    );
-  });
-
-  const topActiveCustomers = Array.from(customerTransactionCounts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([customerId, count]) => ({ customer_id: customerId, transaction_count: count }));
-
-  // Anomaly detection (simple threshold-based)
-  const averageDailyVolume = dailyTrend.reduce((sum, d) => sum + d.volume, 0) / dailyTrend.length;
-  const anomalies = dailyTrend.filter(d => 
-    d.volume > averageDailyVolume * 2 || d.volume < averageDailyVolume * 0.1
-  );
-
-  return {
-    timeRange,
-    totalTransactions: filteredTransactions.length,
-    transactionsByType: Object.fromEntries(transactionsByType.entries()),
-    volumes: Object.fromEntries(volumes.entries()),
-    counts: Object.fromEntries(counts.entries()),
-    hourlyDistribution,
-    dailyTrend,
-    topActiveCustomers,
-    anomalies,
-    averageDailyVolume
-  };
-}
-
-function analyzeGroupActivity(groupMembers: GroupMemberStats[], customers: CustomerStats[]) {
-  // Group by chat_id
-  const membersByGroup = new Map<string, GroupMemberStats[]>();
-  groupMembers.forEach(member => {
-    if (!membersByGroup.has(member.chat_id)) {
-      membersByGroup.set(member.chat_id, []);
+    // Find peak hour
+    let maxTransactions = 0;
+    for (let i = 0; i < 24; i++) {
+      if (analytics.hourlyDistribution[i] > maxTransactions) {
+        maxTransactions = analytics.hourlyDistribution[i];
+        analytics.peakHour = i;
+      }
     }
-    membersByGroup.get(member.chat_id)!.push(member);
-  });
 
-  // Analyze each group
-  const groupAnalysis = Array.from(membersByGroup.entries()).map(([chatId, members]) => {
-    const approvedMembers = members.filter(m => m.status === 'approved');
-    const pendingMembers = members.filter(m => m.status === 'pending');
-    const deniedMembers = members.filter(m => m.status === 'denied');
-    
-    // Find linked customers
-    const linkedCustomers = members
-      .filter(m => m.customer_id)
-      .map(m => customers.find(c => c.customer_id === m.customer_id))
-      .filter(Boolean) as CustomerStats[];
+    // Convert maps to arrays for serialization
+    const topCustomersArray = Array.from(analytics.topCustomers.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([customer_id, count]) => ({ customer_id, count }));
 
-    const totalBalance = linkedCustomers.reduce((sum, c) => sum + c.balance, 0);
-    const averageBalance = linkedCustomers.length > 0 ? totalBalance / linkedCustomers.length : 0;
-
-    // Recent activity (members joined in last 7 days)
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const recentJoins = members.filter(m => 
-      new Date(m.join_date) >= weekAgo
-    ).length;
+    const transactionTypesArray = Array.from(analytics.transactionTypes.entries())
+      .map(([type, count]) => ({ type, count, percentage: (count / transactions.length * 100) }));
 
     return {
-      chat_id: chatId,
-      total_members: members.length,
-      approved_members: approvedMembers.length,
-      pending_members: pendingMembers.length,
-      denied_members: deniedMembers.length,
-      linked_customers: linkedCustomers.length,
-      total_balance: totalBalance,
-      average_balance: averageBalance,
-      recent_joins: recentJoins,
-      approval_rate: members.length > 0 ? (approvedMembers.length / members.length) * 100 : 0
+      ...analytics,
+      topCustomers: topCustomersArray,
+      transactionTypes: transactionTypesArray
     };
-  });
-
-  // Overall statistics
-  const totalMembers = groupMembers.length;
-  const totalApproved = groupMembers.filter(m => m.status === 'approved').length;
-  const totalPending = groupMembers.filter(m => m.status === 'pending').length;
-  const totalLinked = groupMembers.filter(m => m.customer_id).length;
-
-  // Member status distribution
-  const statusDistribution: Record<string, number> = {};
-  groupMembers.forEach(member => {
-    statusDistribution[member.status] = (statusDistribution[member.status] || 0) + 1;
-  });
-
-  // Daily join trend (last 7 days)
-  const joinTrend: Array<{date: string; joins: number}> = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    
-    const joins = groupMembers.filter(m => 
-      m.join_date.startsWith(dateStr)
-    ).length;
-    
-    joinTrend.push({
-      date: dateStr,
-      joins
-    });
   }
 
-  return {
-    groupAnalysis: groupAnalysis.sort((a, b) => b.total_members - a.total_members),
-    summary: {
-      total_members: totalMembers,
-      total_approved: totalApproved,
-      total_pending: totalPending,
-      total_linked: totalLinked,
-      approval_rate: totalMembers > 0 ? (totalApproved / totalMembers) * 100 : 0,
-      link_rate: totalMembers > 0 ? (totalLinked / totalMembers) * 100 : 0
-    },
-    statusDistribution,
-    joinTrend,
-    topGroups: groupAnalysis.slice(0, 5)
-  };
+  private async processMemberData(data: any) {
+    const members = data.members || [];
+    const action = data.action || 'analyze';
+
+    if (action === 'analyze') {
+      const analysis = {
+        totalMembers: members.length,
+        pendingApproval: 0,
+        approved: 0,
+        denied: 0,
+        groups: new Set<string>(),
+        membersByGroup: new Map<string, number>(),
+        recentJoins: [] as any[],
+        requiresAttention: [] as any[]
+      };
+
+      for (const member of members) {
+        // Status counts
+        if (member.status === 'pending') {
+          analysis.pendingApproval++;
+          analysis.requiresAttention.push({
+            telegram_id: member.telegram_id,
+            username: member.username,
+            group_name: member.group_name,
+            join_date: member.join_date
+          });
+        } else if (member.status === 'approved') {
+          analysis.approved++;
+        } else if (member.status === 'denied') {
+          analysis.denied++;
+        }
+
+        // Group tracking
+        analysis.groups.add(member.group_name);
+        const groupCount = analysis.membersByGroup.get(member.group_name) || 0;
+        analysis.membersByGroup.set(member.group_name, groupCount + 1);
+
+        // Recent joins (last 24 hours)
+        const joinDate = new Date(member.join_date);
+        const hoursSinceJoin = (Date.now() - joinDate.getTime()) / (1000 * 60 * 60);
+        if (hoursSinceJoin <= 24) {
+          analysis.recentJoins.push(member);
+        }
+      }
+
+      return {
+        ...analysis,
+        groups: Array.from(analysis.groups),
+        membersByGroup: Array.from(analysis.membersByGroup.entries())
+          .map(([group, count]) => ({ group, count }))
+          .sort((a, b) => b.count - a.count)
+      };
+    }
+
+    // Handle bulk actions
+    if (action === 'bulk_approve' || action === 'bulk_deny') {
+      const memberIds = data.memberIds || [];
+      const newStatus = action === 'bulk_approve' ? 'approved' : 'denied';
+      
+      return {
+        action: action,
+        processedCount: memberIds.length,
+        newStatus: newStatus,
+        memberIds: memberIds
+      };
+    }
+
+    return { error: 'Unknown member processing action' };
+  }
+
+  private async processRealtimeUpdate(data: any) {
+    // Process real-time updates for WebSocket broadcasting
+    const update = {
+      type: data.updateType,
+      timestamp: Date.now(),
+      data: data.payload,
+      metadata: {
+        source: 'admin_worker',
+        priority: data.priority || 'medium'
+      }
+    };
+
+    // Simulate processing delay for complex updates
+    if (data.updateType === 'FULL_REFRESH') {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    return update;
+  }
+
+  private async processBulkOperation(data: any) {
+    const operation = data.operation;
+    const targets = data.targets || [];
+    const parameters = data.parameters || {};
+
+    const results = {
+      operation: operation,
+      totalTargets: targets.length,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      errors: [] as any[],
+      results: [] as any[]
+    };
+
+    // Process each target
+    for (const target of targets) {
+      try {
+        // Simulate processing based on operation type
+        const result = await this.processSingleTarget(operation, target, parameters);
+        
+        results.processed++;
+        results.succeeded++;
+        results.results.push({
+          target: target,
+          success: true,
+          result: result
+        });
+
+      } catch (error: any) {
+        results.processed++;
+        results.failed++;
+        results.errors.push({
+          target: target,
+          error: error.message
+        });
+        results.results.push({
+          target: target,
+          success: false,
+          error: error.message
+        });
+      }
+
+      // Yield to prevent blocking
+      if (results.processed % 10 === 0) {
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    }
+
+    return results;
+  }
+
+  private async processSingleTarget(operation: string, target: any, parameters: any): Promise<any> {
+    // Simulate different operations
+    switch (operation) {
+      case 'UPDATE_BALANCE':
+        return {
+          customer_id: target.customer_id,
+          old_balance: target.balance,
+          new_balance: parameters.new_balance,
+          change: parameters.new_balance - target.balance
+        };
+
+      case 'SEND_NOTIFICATION':
+        return {
+          customer_id: target.customer_id,
+          notification_type: parameters.type,
+          message: parameters.message,
+          sent_at: Date.now()
+        };
+
+      case 'GENERATE_REPORT':
+        return {
+          customer_id: target.customer_id,
+          report_type: parameters.report_type,
+          period: parameters.period,
+          data_points: Math.floor(Math.random() * 100) + 50
+        };
+
+      default:
+        throw new Error(`Unknown operation: ${operation}`);
+    }
+  }
+
+  private sendResult(result: AdminWorkerResult) {
+    if (parentPort) {
+      // Leverage Bun's optimized postMessage for fast data transfer
+      parentPort.postMessage(result);
+    }
+  }
+
+  private sendHeartbeat() {
+    const uptime = Date.now() - this.stats.startTime;
+    const avgProcessingTime = this.stats.tasksProcessed > 0 ? 
+      this.stats.totalProcessingTime / this.stats.tasksProcessed : 0;
+
+    this.sendResult({
+      taskId: 'heartbeat',
+      type: 'HEARTBEAT',
+      success: true,
+      data: {
+        uptime: uptime,
+        tasksProcessed: this.stats.tasksProcessed,
+        averageProcessingTime: avgProcessingTime,
+        errorRate: this.stats.tasksProcessed > 0 ? 
+          (this.stats.errors / this.stats.tasksProcessed * 100) : 0,
+        queueLength: this.taskQueue.length,
+        isProcessing: this.processing
+      },
+      processingTime: 0
+    });
+  }
 }
 
-function generateRealTimeMetrics(
-  customers: CustomerStats[], 
-  transactions: TransactionStats[], 
-  groupMembers: GroupMemberStats[]
-) {
-  const now = new Date();
-  
-  // Last 24 hours metrics
-  const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const recentTransactions = transactions.filter(t => 
-    new Date(t.timestamp) >= last24h
-  );
+// Initialize worker
+const worker = new AdminPortalWorker();
 
-  // Last hour metrics
-  const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
-  const lastHourTransactions = transactions.filter(t => 
-    new Date(t.timestamp) >= lastHour
-  );
+// Handle shutdown gracefully
+process.on('SIGTERM', () => {
+  console.log('[AdminWorker] Received SIGTERM, shutting down gracefully...');
+  process.exit(0);
+});
 
-  // System health indicators
-  const activeCustomers = customers.filter(c => c.active);
-  const lowBalanceCustomers = customers.filter(c => c.balance < 100);
-  const highRiskCustomers = customers.filter(c => c.weekly_pnl < -500);
-  
-  // Transaction success rate (last 24h)
-  const successfulTransactions = recentTransactions.filter(t => 
-    t.status === 'completed' || t.status === 'success'
-  );
-  const successRate = recentTransactions.length > 0 
-    ? (successfulTransactions.length / recentTransactions.length) * 100 
-    : 100;
+process.on('SIGINT', () => {
+  console.log('[AdminWorker] Received SIGINT, shutting down gracefully...');
+  process.exit(0);
+});
 
-  // Member activity
-  const pendingApprovals = groupMembers.filter(m => m.status === 'pending').length;
-  
-  // Revenue metrics
-  const todayDeposits = recentTransactions
-    .filter(t => t.type === 'deposit' && t.amount)
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-
-  const todayWithdrawals = recentTransactions
-    .filter(t => t.type === 'withdrawal' && t.amount)
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-
-  return {
-    timestamp: now.toISOString(),
-    system_health: {
-      total_customers: customers.length,
-      active_customers: activeCustomers.length,
-      low_balance_alerts: lowBalanceCustomers.length,
-      high_risk_customers: highRiskCustomers.length,
-      pending_approvals: pendingApprovals
-    },
-    transaction_metrics: {
-      last_24h_count: recentTransactions.length,
-      last_hour_count: lastHourTransactions.length,
-      success_rate: successRate,
-      today_deposits: todayDeposits,
-      today_withdrawals: todayWithdrawals,
-      net_flow: todayDeposits - todayWithdrawals
-    },
-    performance_indicators: {
-      avg_balance: customers.reduce((sum, c) => sum + c.balance, 0) / customers.length,
-      total_pnl: customers.reduce((sum, c) => sum + c.weekly_pnl, 0),
-      activity_ratio: activeCustomers.length / customers.length,
-      approval_backlog: pendingApprovals
-    },
-    alerts: [
-      ...(lowBalanceCustomers.length > 5 ? [`${lowBalanceCustomers.length} customers have low balance`] : []),
-      ...(highRiskCustomers.length > 0 ? [`${highRiskCustomers.length} customers at high risk`] : []),
-      ...(successRate < 90 ? [`Transaction success rate below 90%: ${successRate.toFixed(1)}%`] : []),
-      ...(pendingApprovals > 10 ? [`${pendingApprovals} members awaiting approval`] : [])
-    ]
-  };
-}
+export { AdminTask, AdminWorkerResult };
