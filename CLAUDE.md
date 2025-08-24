@@ -63,10 +63,51 @@ bun test --coverage        # Coverage report
 ```
 
 #### 5. Bun-Specific Configuration (bunfig.toml)
-- Tailwind CSS plugin integration
-- Test coverage settings
-- Worker environment variables
-- Static file serving with plugins
+```toml
+[serve.static]
+plugins = ["bun-plugin-tailwind"]
+env = "BUN_PUBLIC_*"
+
+[test]
+coveragePathIgnorePatterns = [
+  "**/__tests__/**",
+  "**/test_*.py",
+  "**/backup/**",
+  "**/cloudflare-worker/dist/**"
+]
+
+[worker]
+env = [
+  "CLOUDFLARE_ACCOUNT_ID",
+  "CLOUDFLARE_API_TOKEN",
+  "BOT_TOKEN",
+  "ADMIN_CHAT_ID",
+  "WEBHOOK_SECRET"
+]
+
+[worker.build]
+target = "browser"
+format = "esm"
+minify = true
+sourcemap = "linked"
+```
+
+#### 6. Performance Benchmarks (Bun vs Node.js)
+- **Package Installation**: 10-100x faster than npm
+- **Cold Starts**: 4x faster than Node.js
+- **JSON Parsing**: 3-4x faster for large payloads
+- **Worker postMessage()**: 500x faster for strings (v1.2.21+)
+- **HTTP Serving**: 2-3x faster than Express
+- **TypeScript Execution**: No transpilation needed
+
+#### 7. Bun-Specific Files in Project
+```
+bunfig.toml          # Bun configuration
+build.ts             # Custom build script with Bun APIs
+bun.lock             # Lock file (faster than package-lock.json)
+src/env.config.ts    # Environment config using Bun.env
+*.worker.ts          # Worker threads optimized for Bun
+```
 
 #### 6. Enhanced ReadableStream (v1.2.21+)
 ```typescript
@@ -203,13 +244,28 @@ python3 generate_2000_customers.py      # Create test customers
 
 ### Multi-Server Architecture
 
-| Server | Port | Purpose | Technology |
-|--------|------|---------|------------|
-| portal_server.py | 5000 | Basic API | Flask |
-| enhanced_portal_server.py | 5001 | WebSocket + API | Flask-SocketIO |
-| admin_portal_server.ts | 3002 | Admin UI | Bun + Static HTML |
-| enhanced_admin_server.ts | 3003 | Enhanced Admin | Bun + Mock Data |
-| WebSocket Server | 3004 | Real-time updates | SocketIO |
+| Server | Port | Purpose | Technology | Runtime |
+|--------|------|---------|------------|---------|
+| portal_server.py | 5000 | Basic API | Flask | Python |
+| enhanced_portal_server.py | 5001 | WebSocket + API | Flask-SocketIO | Python |
+| admin_portal_server.ts | 3002 | Admin UI | Bun.serve + Static HTML | Bun |
+| enhanced_admin_server.ts | 3003 | Enhanced Admin | Bun.serve + Mock Data | Bun |
+| WebSocket Server | 3004 | Real-time updates | SocketIO | Python |
+| Cloudflare Worker | 8787 | Edge computing | Hono Framework | Bun/Cloudflare |
+
+### Bun-Powered Components
+
+#### HTTP Servers
+- **Native Performance**: Bun.serve() provides faster HTTP handling than Node.js
+- **Automatic ETag**: Built-in caching headers (v1.2.20+)
+- **Hot Reload**: Development mode automatically restarts on changes
+- **Static Assets**: Integrated static file serving with plugins
+
+#### Worker Threads
+- **500x Faster postMessage()**: Large JSON transfers optimized in v1.2.21+
+- **Priority Queuing**: Admin tasks processed with high/medium/low priority
+- **Memory Efficient**: 22x less memory usage for multi-threaded operations
+- **Background Processing**: CPU-intensive tasks don't block main thread
 
 ### Core Components
 
@@ -477,3 +533,80 @@ parentPort.on('message', (task: AdminTask) => {
 - Integration tests cover bot + portal
 - Mock data for isolated testing
 - Error simulation for edge cases
+
+## 🔧 Bun-Specific Troubleshooting
+
+### Common Bun Issues
+
+#### 1. Version Requirements
+- **Minimum**: Bun v1.2.20 for automatic ETag support
+- **Recommended**: Bun v1.2.21+ for 500x faster postMessage()
+- **Check version**: `bun --version`
+- **Update**: `bun upgrade`
+
+#### 2. Worker Thread Performance
+- Large JSON payloads (>1MB) benefit most from v1.2.21+
+- Use `parentPort.postMessage(largeObject)` directly
+- Avoid JSON.stringify/parse in worker threads
+- Monitor memory usage with `process.memoryUsage()`
+
+#### 3. Development Mode
+- Use `bun --hot` for instant restarts on file changes
+- Use `bun dev` for React development server
+- Enable `development: true` in Bun.serve() for debugging
+
+#### 4. TypeScript Issues
+- No need for tsc or transpilation
+- Direct execution: `bun run file.ts`
+- tsconfig.json still used for IDE support
+- Use `"type": "module"` in package.json
+
+#### 5. Package Compatibility
+- Most npm packages work with Bun
+- Some native modules may need rebuilding
+- Use `bun install --force` to rebuild if needed
+- Check `bun.lock` for dependency conflicts
+
+#### 6. Port Conflicts
+- Multiple Bun servers can conflict on same port
+- Check `lsof -i :3003` to see port usage
+- Use different ports for different server implementations
+- Environment variables for port configuration recommended
+
+### Bun Performance Tips
+
+#### 1. Use Native APIs
+```typescript
+// Prefer Bun.serve() over Express
+const server = Bun.serve({ port: 3003, fetch });
+
+// Prefer Bun.file() over fs
+const file = Bun.file("./data.json");
+const data = await file.json();
+
+// Prefer Bun.spawn() over child_process
+const proc = Bun.spawn(["python3", "script.py"]);
+```
+
+#### 2. Worker Thread Optimization
+```typescript
+// Efficient for large data transfers
+parentPort.postMessage(bigJSONObject);  // 500x faster in v1.2.21+
+
+// Use priority queuing
+if (task.priority === 'high') {
+  taskQueue.unshift(task);  // High priority first
+}
+```
+
+#### 3. Testing Performance
+```bash
+# Run tests with timing
+bun test --verbose
+
+# Profile memory usage
+bun test --reporter=verbose --coverage
+
+# Test specific patterns
+bun test --match "performance"
+```
