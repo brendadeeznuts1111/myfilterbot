@@ -24,6 +24,9 @@ from src.config import config
 from src.database import db
 from src.handlers import handlers
 from src.utils import rate_limiter
+from src.error_handler import error_handler, error_tracker
+from src.debug_handler import debug_handler
+from src.portal_integration import setup_portal_integration
 
 # Configure logging
 logging.basicConfig(
@@ -40,6 +43,8 @@ class FantdevBot:
         self.application = None
         self._validate_config()
         self._initialize_database()
+        self._setup_error_handling()
+        self._setup_portal_integration()
     
     def _validate_config(self):
         """Validate configuration"""
@@ -58,6 +63,33 @@ class FantdevBot:
         logger.info(f"Database initialized with {stats.get('total_customers', 0)} customers")
         logger.info(f"Total balance: ${stats.get('total_balance', 0):,.2f}")
     
+    def _setup_error_handling(self):
+        """Setup error handling and debug systems"""
+        # Configure error handler with admin chat ID
+        if config.admin_chat_id:
+            error_handler.set_admin_chat_id(config.admin_chat_id)
+            logger.info("Error handler configured with admin notifications")
+        else:
+            logger.warning("Admin chat ID not set - error notifications disabled")
+        
+        # Enable debug mode if in development
+        if hasattr(config, 'debug_mode') and config.debug_mode:
+            error_handler.enable_debug_mode(True)
+            logger.info("Debug mode enabled")
+        
+        logger.info("Error handling system initialized")
+    
+    def _setup_portal_integration(self):
+        """Setup portal integration for real-time updates"""
+        try:
+            portal_integration = setup_portal_integration()
+            if portal_integration.enabled:
+                logger.info("Portal integration enabled - Real-time updates active")
+            else:
+                logger.warning("Portal integration disabled - Portal server not available")
+        except Exception as e:
+            logger.error(f"Portal integration setup failed: {e}")
+    
     def setup(self):
         """Setup bot handlers and configuration"""
         # Create application
@@ -69,8 +101,10 @@ class FantdevBot:
             ("account", handlers.account_command),
             ("balance", handlers.balance_command),
             ("register", handlers.register_command),
+            ("verify", handlers.verify_command),  # Admin verification for duplicate passwords
             ("admin", handlers.admin_command),
             ("dashboard", handlers.admin_command),  # Alias for admin
+            ("debug", debug_handler.debug_command),  # Debug interface
             ("help", self._help_command),
         ]
         
@@ -85,13 +119,18 @@ class FantdevBot:
             )
         )
         
-        # Add callback query handler
-        self.application.add_handler(
-            CallbackQueryHandler(handlers.handle_callback)
-        )
+        # Add callback query handler with debug support
+        async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+            """Enhanced callback handler with debug support"""
+            if update.callback_query.data.startswith("debug_"):
+                await debug_handler.handle_debug_callback(update, context)
+            else:
+                await handlers.handle_callback(update, context)
         
-        # Add error handler
-        self.application.add_error_handler(self._error_handler)
+        self.application.add_handler(CallbackQueryHandler(callback_handler))
+        
+        # Add comprehensive error handler
+        self.application.add_error_handler(self._enhanced_error_handler)
         
         logger.info("Bot handlers configured")
     
@@ -131,8 +170,13 @@ Contact @admin for assistance
             parse_mode='Markdown'
         )
     
+    async def _enhanced_error_handler(self, update: object, context):
+        """Enhanced error handler with comprehensive logging and notification"""
+        # Use the error handler system
+        await error_handler.handle_error(update, context, context.error)
+    
     async def _error_handler(self, update: object, context):
-        """Handle errors"""
+        """Legacy error handler - kept for backward compatibility"""
         logger.error(f"Exception while handling an update: {context.error}")
         
         if update and isinstance(update, Update) and update.effective_message:
