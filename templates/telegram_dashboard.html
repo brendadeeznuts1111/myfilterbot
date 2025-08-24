@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Dashboard - Enhanced Admin Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --dark-color: #212529;
+            --light-color: #f8f9fa;
+            --border-radius: 8px;
+            --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --transition: all 0.15s ease-in-out;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+
+        .navbar-custom {
+            background: linear-gradient(90deg, var(--primary-color), #0b5ed7);
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .telegram-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(45deg, #1e88e5, #42a5f5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 20px;
+            margin: 0 5px;
+            transition: var(--transition);
+            color: var(--dark-color);
+            border: 1px solid transparent;
+        }
+
+        .nav-pills .nav-link.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .nav-pills .nav-link:hover:not(.active) {
+            background: var(--light-color);
+            border-color: var(--primary-color);
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(90deg, var(--light-color), #e9ecef);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: between;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-healthy { background: var(--success-color); }
+        .status-warning { background: var(--warning-color); }
+        .status-error { background: var(--danger-color); }
+        .status-offline { background: var(--secondary-color); }
+
+        .message-item {
+            border-left: 4px solid var(--primary-color);
+            background: var(--light-color);
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            transition: var(--transition);
+        }
+
+        .message-item:hover {
+            background: #e9ecef;
+        }
+
+        .message-type-badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .message-priority-high { border-left-color: var(--danger-color); }
+        .message-priority-medium { border-left-color: var(--warning-color); }
+        .message-priority-low { border-left-color: var(--info-color); }
+
+        .group-card {
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .group-card:hover {
+            transform: scale(1.02);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .chart-container {
+            height: 300px;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .connection-connected {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .connection-disconnected {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .message-compose {
+            background: var(--light-color);
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+            padding: 15px;
+        }
+
+        .btn-telegram {
+            background: linear-gradient(45deg, #1e88e5, #42a5f5);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: var(--transition);
+        }
+
+        .btn-telegram:hover {
+            background: linear-gradient(45deg, #1976d2, #1e88e5);
+            transform: translateY(-1px);
+            color: white;
+        }
+
+        .toast {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .table-hover tbody tr:hover {
+            background: rgba(13, 110, 253, 0.05);
+        }
+
+        #messageStream {
+            max-height: 500px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+
+        #messageStream::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #messageStream::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                margin: 10px;
+                border-radius: 0;
+            }
+            
+            .navbar-custom {
+                border-radius: 0;
+            }
+            
+            .metric-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status connection-disconnected">
+        <i class="bi bi-wifi-off"></i> Disconnected
+    </div>
+
+    <div class="container-fluid">
+        <div class="dashboard-container">
+            <!-- Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="#">
+                        <div class="telegram-logo">
+                            <i class="bi bi-telegram"></i>
+                        </div>
+                        Telegram Dashboard
+                    </a>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-light text-dark me-3">
+                            <i class="bi bi-people-fill"></i> <span id="activeConnections">0</span> Active
+                        </span>
+                        <span id="botStatus" class="badge bg-secondary">
+                            <span class="status-indicator status-offline"></span>
+                            Offline
+                        </span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+                <!-- Tab Navigation -->
+                <ul class="nav nav-pills mb-4" id="dashboardTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" role="tab">
+                            <i class="bi bi-speedometer2"></i> Overview
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="messages-tab" data-bs-toggle="pill" data-bs-target="#messages" role="tab">
+                            <i class="bi bi-chat-dots"></i> Messages
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="groups-tab" data-bs-toggle="pill" data-bs-target="#groups" role="tab">
+                            <i class="bi bi-people"></i> Groups
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="monitoring-tab" data-bs-toggle="pill" data-bs-target="#monitoring" role="tab">
+                            <i class="bi bi-activity"></i> Monitoring
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-tab" data-bs-toggle="pill" data-bs-target="#admin" role="tab">
+                            <i class="bi bi-gear"></i> Administration
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="dashboardTabsContent">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                        <div class="row mb-4">
+                            <!-- Key Metrics -->
+                            <div class="col-xl-3 col-lg-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <div class="metric-value" id="totalMessages">0</div>
+                                        <div class="metric-label">Messages Today</div>
+                                        <div class="progress progress-custom mt-2">
+                                            <div class="progress-bar bg-primary" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <div class="metric-value" id="activeGroups">0</div>
+                                        <div class="metric-label">Active Groups</div>
+                                        <div class="progress progress-custom mt-2">
+                                            <div class="progress-bar bg-success" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <div class="metric-value" id="botUptime">0h</div>
+                                        <div class="metric-label">Bot Uptime</div>
+                                        <div class="progress progress-custom mt-2">
+                                            <div class="progress-bar bg-info" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <div class="metric-value" id="apiCalls">0</div>
+                                        <div class="metric-label">API Calls</div>
+                                        <div class="progress progress-custom mt-2">
+                                            <div class="progress-bar bg-warning" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Recent Activity -->
+                            <div class="col-lg-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-clock-history"></i> Recent Activity
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="recentActivity" class="loading-spinner">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- System Status -->
+                            <div class="col-lg-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-cpu"></i> System Status
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between">
+                                                <small>CPU Usage</small>
+                                                <small id="cpuUsage">0%</small>
+                                            </div>
+                                            <div class="progress progress-custom">
+                                                <div class="progress-bar" id="cpuProgress" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Memory Usage</small>
+                                                <small id="memoryUsage">0%</small>
+                                            </div>
+                                            <div class="progress progress-custom">
+                                                <div class="progress-bar bg-info" id="memoryProgress" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Response Time</small>
+                                                <small id="responseTime">0ms</small>
+                                            </div>
+                                            <div class="progress progress-custom">
+                                                <div class="progress-bar bg-success" id="responseProgress" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages Tab -->
+                    <div class="tab-pane fade" id="messages" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-chat-dots"></i> Live Message Stream</span>
+                                        <div>
+                                            <button class="btn btn-sm btn-outline-primary" id="pauseStream">
+                                                <i class="bi bi-pause"></i> Pause
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" id="clearMessages">
+                                                <i class="bi bi-trash"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="messageStream" class="p-3">
+                                            <div class="loading-spinner">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading messages...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <!-- Message Filters -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <i class="bi bi-funnel"></i> Filters
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Message Type</label>
+                                            <select class="form-select" id="messageTypeFilter">
+                                                <option value="">All Types</option>
+                                                <option value="transaction">Transactions</option>
+                                                <option value="alert">Alerts</option>
+                                                <option value="command">Commands</option>
+                                                <option value="message">Messages</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Priority</label>
+                                            <select class="form-select" id="priorityFilter">
+                                                <option value="">All Priorities</option>
+                                                <option value="high">High</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="low">Low</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Chat</label>
+                                            <select class="form-select" id="chatFilter">
+                                                <option value="">All Chats</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Message Stats -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-bar-chart"></i> Message Statistics
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <small>Total Messages</small>
+                                            <strong id="statsTotal">0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <small>Transactions</small>
+                                            <strong id="statsTransactions">0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <small>Alerts</small>
+                                            <strong id="statsAlerts">0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <small>Commands</small>
+                                            <strong id="statsCommands">0</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Groups Tab -->
+                    <div class="tab-pane fade" id="groups" role="tabpanel">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-people"></i> Monitored Groups</span>
+                                        <button class="btn btn-telegram" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                                            <i class="bi bi-plus-lg"></i> Add Group
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="groupsList" class="row">
+                                            <div class="loading-spinner">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading groups...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monitoring Tab -->
+                    <div class="tab-pane fade" id="monitoring" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-activity"></i> Performance Trends
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="chart-container">
+                                            <canvas id="performanceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-exclamation-triangle"></i> Recent Errors
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="errorLog" class="table-responsive">
+                                            <div class="loading-spinner">
+                                                <div class="spinner-border text-danger" role="status">
+                                                    <span class="visually-hidden">Loading errors...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Administration Tab -->
+                    <div class="tab-pane fade" id="admin" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <!-- Send Message -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <i class="bi bi-send"></i> Send Message
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="message-compose">
+                                            <div class="mb-3">
+                                                <label class="form-label">Chat ID</label>
+                                                <input type="text" class="form-control" id="sendChatId" placeholder="Enter chat ID">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Message</label>
+                                                <textarea class="form-control" id="sendMessage" rows="4" placeholder="Enter your message"></textarea>
+                                            </div>
+                                            <button class="btn btn-telegram" id="sendMessageBtn">
+                                                <i class="bi bi-send"></i> Send Message
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <!-- Recent Admin Actions -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-journal-text"></i> Recent Actions
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="adminActions" class="table-responsive">
+                                            <div class="loading-spinner">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading actions...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Group Modal -->
+    <div class="modal fade" id="addGroupModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Group to Monitoring</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Chat ID</label>
+                        <input type="text" class="form-control" id="addGroupChatId" placeholder="Enter chat ID (e.g., -1001234567890)">
+                        <div class="form-text">You can get the chat ID by forwarding a message from the group to @userinfobot</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-telegram" id="addGroupBtn">Add Group</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="bi bi-bell-fill me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                <!-- Toast message content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.4/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+    <script>
+        // Global variables
+        let socket;
+        let isConnected = false;
+        let isStreamPaused = false;
+        let messageStats = { total: 0, transactions: 0, alerts: 0, commands: 0 };
+        let performanceChart;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocketConnection();
+            initializeCharts();
+            setupEventHandlers();
+            loadInitialData();
+        });
+
+        // Socket connection management
+        function initializeSocketConnection() {
+            socket = io();
+
+            socket.on('connect', function() {
+                isConnected = true;
+                updateConnectionStatus(true);
+                joinTelegramRoom();
+            });
+
+            socket.on('disconnect', function() {
+                isConnected = false;
+                updateConnectionStatus(false);
+            });
+
+            socket.on('telegram_message', function(data) {
+                if (!isStreamPaused) {
+                    addMessageToStream(data);
+                    updateMessageStats(data);
+                }
+            });
+
+            socket.on('bot_status_update', function(data) {
+                updateBotStatus(data);
+            });
+
+            socket.on('error', function(error) {
+                showToast('Error: ' + error.error, 'error');
+            });
+        }
+
+        function joinTelegramRoom() {
+            socket.emit('join_telegram_room');
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status connection-connected';
+                statusEl.innerHTML = '<i class="bi bi-wifi"></i> Connected';
+            } else {
+                statusEl.className = 'connection-status connection-disconnected';
+                statusEl.innerHTML = '<i class="bi bi-wifi-off"></i> Disconnected';
+            }
+        }
+
+        // Event handlers
+        function setupEventHandlers() {
+            // Message stream controls
+            document.getElementById('pauseStream').addEventListener('click', function() {
+                isStreamPaused = !isStreamPaused;
+                this.innerHTML = isStreamPaused ? 
+                    '<i class="bi bi-play"></i> Resume' : 
+                    '<i class="bi bi-pause"></i> Pause';
+            });
+
+            document.getElementById('clearMessages').addEventListener('click', function() {
+                document.getElementById('messageStream').innerHTML = '';
+                messageStats = { total: 0, transactions: 0, alerts: 0, commands: 0 };
+                updateMessageStatsDisplay();
+            });
+
+            // Send message
+            document.getElementById('sendMessageBtn').addEventListener('click', sendTelegramMessage);
+
+            // Add group
+            document.getElementById('addGroupBtn').addEventListener('click', addTelegramGroup);
+
+            // Filters
+            ['messageTypeFilter', 'priorityFilter', 'chatFilter'].forEach(filterId => {
+                document.getElementById(filterId).addEventListener('change', applyMessageFilters);
+            });
+        }
+
+        // Data loading
+        async function loadInitialData() {
+            try {
+                // Load recent messages
+                const messagesResponse = await fetch('/api/telegram/messages', {
+                    headers: { 'Authorization': 'Bearer ' + getAuthToken() }
+                });
+                const messagesData = await messagesResponse.json();
+                
+                if (messagesData.messages) {
+                    displayMessages(messagesData.messages);
+                }
+
+                // Load groups
+                const groupsResponse = await fetch('/api/telegram/groups', {
+                    headers: { 'Authorization': 'Bearer ' + getAuthToken() }
+                });
+                const groupsData = await groupsResponse.json();
+                
+                if (groupsData.groups) {
+                    displayGroups(groupsData.groups);
+                }
+
+                // Load statistics
+                const statsResponse = await fetch('/api/telegram/statistics', {
+                    headers: { 'Authorization': 'Bearer ' + getAuthToken() }
+                });
+                const statsData = await statsResponse.json();
+                
+                if (statsData.statistics) {
+                    updateOverviewMetrics(statsData.statistics);
+                }
+
+                // Load bot status
+                const statusResponse = await fetch('/api/telegram/bot-status', {
+                    headers: { 'Authorization': 'Bearer ' + getAuthToken() }
+                });
+                const statusData = await statusResponse.json();
+                
+                if (statusData.status) {
+                    updateBotStatus(statusData.status);
+                    updateSystemMetrics(statusData.status.system_metrics);
+                }
+
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                showToast('Error loading dashboard data', 'error');
+            }
+        }
+
+        // Message handling
+        function displayMessages(messages) {
+            const container = document.getElementById('messageStream');
+            container.innerHTML = '';
+            
+            messages.forEach(message => {
+                addMessageToStream(message);
+                updateMessageStats(message);
+            });
+        }
+
+        function addMessageToStream(message) {
+            const container = document.getElementById('messageStream');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message-item message-priority-${message.priority} fade-in`;
+            
+            const timestamp = new Date(message.timestamp).toLocaleString();
+            const typeClass = getMessageTypeClass(message.message_type);
+            
+            messageEl.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge ${typeClass} message-type-badge me-2">
+                            ${message.message_type.toUpperCase()}
+                        </span>
+                        <strong>${message.username}</strong>
+                        <small class="text-muted ms-2">@${message.chat_title}</small>
+                    </div>
+                    <small class="text-muted">${timestamp}</small>
+                </div>
+                <div class="message-content">
+                    ${escapeHtml(message.text)}
+                </div>
+                ${message.detected_transaction ? 
+                    `<div class="mt-2 p-2 bg-light rounded">
+                        <small><strong>Transaction Detected:</strong> ${JSON.stringify(message.detected_transaction)}</small>
+                    </div>` : 
+                    ''
+                }
+            `;
+            
+            container.insertBefore(messageEl, container.firstChild);
+            
+            // Keep only last 100 messages
+            while (container.children.length > 100) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function getMessageTypeClass(type) {
+            const classes = {
+                'transaction': 'bg-success',
+                'alert': 'bg-danger',
+                'command': 'bg-primary',
+                'message': 'bg-secondary',
+                'media': 'bg-info'
+            };
+            return classes[type] || 'bg-secondary';
+        }
+
+        function updateMessageStats(message) {
+            messageStats.total++;
+            if (message.message_type === 'transaction') messageStats.transactions++;
+            if (message.message_type === 'alert') messageStats.alerts++;
+            if (message.message_type === 'command') messageStats.commands++;
+            
+            updateMessageStatsDisplay();
+        }
+
+        function updateMessageStatsDisplay() {
+            document.getElementById('statsTotal').textContent = messageStats.total;
+            document.getElementById('statsTransactions').textContent = messageStats.transactions;
+            document.getElementById('statsAlerts').textContent = messageStats.alerts;
+            document.getElementById('statsCommands').textContent = messageStats.commands;
+        }
+
+        // Groups handling
+        function displayGroups(groups) {
+            const container = document.getElementById('groupsList');
+            container.innerHTML = '';
+            
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">No groups being monitored</div>';
+                return;
+            }
+            
+            groups.forEach(group => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'col-lg-4 col-md-6 mb-3';
+                
+                const statusClass = group.status === 'active' ? 'success' : 'secondary';
+                const lastActivity = new Date(group.last_activity).toLocaleString();
+                
+                groupEl.innerHTML = `
+                    <div class="card group-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">${escapeHtml(group.title)}</h6>
+                                <span class="badge bg-${statusClass}">${group.status}</span>
+                            </div>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-people"></i> ${group.member_count} members<br>
+                                    <i class="bi bi-chat"></i> ${group.message_count_24h} messages (24h)<br>
+                                    <i class="bi bi-clock"></i> ${lastActivity}
+                                </small>
+                            </p>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewGroupDetails(${group.chat_id})">
+                                <i class="bi bi-eye"></i> Details
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger ms-2" onclick="removeGroup(${group.chat_id})">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(groupEl);
+            });
+        }
+
+        // Admin functions
+        async function sendTelegramMessage() {
+            const chatId = document.getElementById('sendChatId').value;
+            const message = document.getElementById('sendMessage').value;
+            
+            if (!chatId || !message) {
+                showToast('Please fill in both chat ID and message', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/telegram/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getAuthToken()
+                    },
+                    body: JSON.stringify({ chat_id: chatId, text: message })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Message sent successfully', 'success');
+                    document.getElementById('sendChatId').value = '';
+                    document.getElementById('sendMessage').value = '';
+                } else {
+                    showToast('Failed to send message: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error sending message: ' + error.message, 'error');
+            }
+        }
+
+        async function addTelegramGroup() {
+            const chatId = document.getElementById('addGroupChatId').value;
+            
+            if (!chatId) {
+                showToast('Please enter a chat ID', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/telegram/groups', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getAuthToken()
+                    },
+                    body: JSON.stringify({ chat_id: chatId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Group added to monitoring', 'success');
+                    document.getElementById('addGroupChatId').value = '';
+                    bootstrap.Modal.getInstance(document.getElementById('addGroupModal')).hide();
+                    // Reload groups
+                    loadInitialData();
+                } else {
+                    showToast('Failed to add group: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error adding group: ' + error.message, 'error');
+            }
+        }
+
+        // Status updates
+        function updateBotStatus(status) {
+            const statusEl = document.getElementById('botStatus');
+            const statusClasses = {
+                'healthy': 'bg-success',
+                'warning': 'bg-warning',
+                'error': 'bg-danger',
+                'offline': 'bg-secondary'
+            };
+            
+            statusEl.className = `badge ${statusClasses[status.status] || 'bg-secondary'}`;
+            statusEl.innerHTML = `
+                <span class="status-indicator status-${status.status}"></span>
+                ${status.status.charAt(0).toUpperCase() + status.status.slice(1)}
+            `;
+        }
+
+        function updateOverviewMetrics(stats) {
+            if (stats.message_streamer) {
+                document.getElementById('totalMessages').textContent = stats.message_streamer.messages_processed || 0;
+            }
+            if (stats.group_monitor) {
+                document.getElementById('activeGroups').textContent = stats.group_monitor.active_groups || 0;
+            }
+            if (stats.bot_monitor) {
+                document.getElementById('botUptime').textContent = stats.bot_monitor.uptime || '0h';
+                document.getElementById('apiCalls').textContent = stats.bot_monitor.api_calls_today || 0;
+            }
+        }
+
+        function updateSystemMetrics(metrics) {
+            if (!metrics) return;
+            
+            // Update CPU usage
+            document.getElementById('cpuUsage').textContent = Math.round(metrics.cpu_usage) + '%';
+            document.getElementById('cpuProgress').style.width = metrics.cpu_usage + '%';
+            document.getElementById('cpuProgress').className = 
+                `progress-bar ${metrics.cpu_usage > 80 ? 'bg-danger' : metrics.cpu_usage > 60 ? 'bg-warning' : 'bg-success'}`;
+            
+            // Update Memory usage
+            document.getElementById('memoryUsage').textContent = Math.round(metrics.memory_usage) + '%';
+            document.getElementById('memoryProgress').style.width = metrics.memory_usage + '%';
+            
+            // Update Response time
+            document.getElementById('responseTime').textContent = Math.round(metrics.response_time * 1000) + 'ms';
+            const responsePercent = Math.min((metrics.response_time * 1000) / 10, 100); // Scale to 10s max
+            document.getElementById('responseProgress').style.width = responsePercent + '%';
+        }
+
+        // Chart initialization
+        function initializeCharts() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CPU Usage (%)',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Memory Usage (%)',
+                        data: [],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Utility functions
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('notificationToast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast show bg-${type === 'error' ? 'danger' : type}`;
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getAuthToken() {
+            // This should return the actual auth token
+            // For now, return a placeholder
+            return localStorage.getItem('authToken') || '';
+        }
+
+        function applyMessageFilters() {
+            // Implement message filtering logic
+            const typeFilter = document.getElementById('messageTypeFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const chatFilter = document.getElementById('chatFilter').value;
+            
+            // Filter messages based on selected criteria
+            // This would need to be implemented based on your specific requirements
+        }
+
+        function viewGroupDetails(chatId) {
+            // Implement group details view
+            showToast(`Viewing details for group ${chatId}`, 'info');
+        }
+
+        function removeGroup(chatId) {
+            if (confirm('Are you sure you want to remove this group from monitoring?')) {
+                // Implement group removal
+                showToast(`Group ${chatId} removed from monitoring`, 'success');
+            }
+        }
+
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+            if (isConnected) {
+                loadInitialData();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

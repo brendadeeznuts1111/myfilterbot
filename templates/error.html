@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ error_code }} - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Error {{ error_code }}{% endblock %}
+{% block page_description %}{{ error_message }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        text-align: center;
+        padding: var(--space-12) var(--space-4);
+        min-height: 50vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .error-icon {
+        font-size: 4rem;
+        margin-bottom: var(--space-6);
+        opacity: 0.5;
+    }
+    
+    .error-code {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: var(--space-4);
+    }
+    
+    .error-message {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-8);
+        max-width: 600px;
+    }
+    
+    .error-actions {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .error-suggestions {
+        margin-top: var(--space-8);
+        padding: var(--space-6);
+        background: var(--bg-surface);
+        border-radius: var(--border-radius-lg);
+        max-width: 600px;
+    }
+    
+    .error-suggestions h3 {
+        font-size: 1.125rem;
+        margin-bottom: var(--space-4);
+        color: var(--text-primary);
+    }
+    
+    .error-suggestions ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .error-suggestions li {
+        padding: var(--space-2) 0;
+        color: var(--text-secondary);
+    }
+    
+    .error-suggestions li:before {
+        content: "•";
+        color: var(--primary);
+        margin-right: var(--space-2);
+    }
+    
+    @media (max-width: 768px) {
+        .error-code {
+            font-size: 2rem;
+        }
+        
+        .error-message {
+            font-size: 1.125rem;
+        }
+        
+        .error-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-icon">
+        {% if error_code == 404 %}
+            🔍
+        {% elif error_code == 403 %}
+            🔒
+        {% elif error_code == 500 %}
+            ⚠️
+        {% else %}
+            ❌
+        {% endif %}
+    </div>
+    
+    <div class="error-code">{{ error_code }}</div>
+    
+    <div class="error-message">
+        {% if error_code == 404 %}
+            The page you're looking for doesn't exist.
+        {% elif error_code == 403 %}
+            You don't have permission to access this page.
+        {% elif error_code == 500 %}
+            Something went wrong on our end.
+        {% else %}
+            {{ error_message }}
+        {% endif %}
+    </div>
+    
+    <div class="error-actions">
+        <a href="/" class="fantdev-btn fantdev-btn-primary">
+            <i class="fas fa-home"></i>
+            Go Home
+        </a>
+        
+        <button onclick="window.history.back()" class="fantdev-btn fantdev-btn-outline">
+            <i class="fas fa-arrow-left"></i>
+            Go Back
+        </button>
+        
+        {% if error_code == 500 %}
+        <button onclick="window.location.reload()" class="fantdev-btn fantdev-btn-outline">
+            <i class="fas fa-refresh"></i>
+            Try Again
+        </button>
+        {% endif %}
+        
+        <a href="/help" class="fantdev-btn fantdev-btn-ghost">
+            <i class="fas fa-question-circle"></i>
+            Get Help
+        </a>
+    </div>
+    
+    <div class="error-suggestions">
+        <h3>What can you do?</h3>
+        <ul>
+            {% if error_code == 404 %}
+            <li>Check the URL for typos</li>
+            <li>Use the navigation menu to find what you're looking for</li>
+            <li>Return to the homepage and start over</li>
+            <li>Contact support if you believe this is an error</li>
+            {% elif error_code == 403 %}
+            <li>Make sure you're logged in with the correct account</li>
+            <li>Contact your administrator for access</li>
+            <li>Check if your account has the necessary permissions</li>
+            {% elif error_code == 500 %}
+            <li>Try refreshing the page in a few moments</li>
+            <li>Check our status page for known issues</li>
+            <li>Contact support if the problem persists</li>
+            <li>Try a different browser or clear your cache</li>
+            {% else %}
+            <li>Return to the previous page</li>
+            <li>Check your internet connection</li>
+            <li>Contact support for assistance</li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh for 500 errors after 30 seconds
+    {% if error_code == 500 %}
+    setTimeout(() => {
+        if (confirm('Would you like to try reloading the page?')) {
+            window.location.reload();
+        }
+    }, 30000);
+    {% endif %}
+    
+    // Track error for analytics
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'exception', {
+            'description': 'Error {{ error_code }}: {{ error_message }}',
+            'fatal': {% if error_code == 500 %}true{% else %}false{% endif %}
+        });
+    }
+</script>
+{% endblock %}

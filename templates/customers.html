@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Management - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Customer Management{% endblock %}
+{% block page_description %}Manage customer accounts, balances, and trading activity{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    <button onclick="showAddCustomerModal()" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-plus"></i>
+        Add Customer
+    </button>
+    <button onclick="exportCustomers()" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-download"></i>
+        Export Data
+    </button>
+    <button onclick="refreshCustomers()" class="fantdev-btn fantdev-btn-ghost">
+        <i class="fas fa-sync"></i>
+        Refresh
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .customers-grid {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .customer-filters {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        height: fit-content;
+        position: sticky;
+        top: var(--space-4);
+    }
+    
+    .customer-table {
+        width: 100%;
+        background: var(--bg-surface);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .customer-table thead {
+        background: var(--bg-secondary);
+    }
+    
+    .customer-table th,
+    .customer-table td {
+        padding: var(--space-4);
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .customer-table th {
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .customer-table tbody tr:hover {
+        background: var(--bg-hover);
+    }
+    
+    .customer-status {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--border-radius);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .customer-status.active {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--success);
+    }
+    
+    .customer-status.inactive {
+        background: rgba(156, 163, 175, 0.1);
+        color: var(--text-muted);
+    }
+    
+    .customer-balance {
+        font-family: var(--font-mono);
+        font-weight: 600;
+    }
+    
+    .customer-balance.positive {
+        color: var(--success);
+    }
+    
+    .customer-balance.negative {
+        color: var(--error);
+    }
+    
+    .customer-actions {
+        display: flex;
+        gap: var(--space-2);
+    }
+    
+    .customer-actions button {
+        padding: var(--space-1) var(--space-2);
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.875rem;
+    }
+    
+    .customer-actions .edit-btn {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--info);
+    }
+    
+    .customer-actions .delete-btn {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+    }
+    
+    .customer-actions button:hover {
+        opacity: 0.8;
+        transform: translateY(-1px);
+    }
+    
+    .filter-section {
+        margin-bottom: var(--space-6);
+    }
+    
+    .filter-section h4 {
+        margin-bottom: var(--space-3);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-checkboxes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .filter-checkbox {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+    
+    .customer-quick-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    
+    @media (max-width: 1024px) {
+        .customers-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .customer-filters {
+            position: static;
+        }
+        
+        .customer-table {
+            overflow-x: auto;
+        }
+        
+        .customer-quick-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Quick Statistics -->
+<div class="customer-quick-stats">
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="fantdev-stat-value" id="totalCustomers">{{ customers|length if customers else 0 }}</div>
+        <div class="fantdev-stat-label">Total Customers</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div class="fantdev-stat-value" id="activeCustomers">{{ active_count if active_count else 0 }}</div>
+        <div class="fantdev-stat-label">Active Customers</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="fantdev-stat-value" id="totalBalance">${{ "{:,.0f}".format(total_balance) if total_balance else "0" }}</div>
+        <div class="fantdev-stat-label">Total Balance</div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="customers-grid">
+    <!-- Customer Table -->
+    <div>
+        <div class="fantdev-card">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-users"></i>
+                    Customer Accounts
+                </h3>
+                <div class="fantdev-flex" style="gap: var(--space-3);">
+                    <input type="search" id="customerSearch" placeholder="Search customers..." 
+                           class="fantdev-input" style="width: 250px;">
+                </div>
+            </div>
+            <div class="fantdev-card-body" style="padding: 0;">
+                <table class="customer-table" id="customerTable">
+                    <thead>
+                        <tr>
+                            <th>Customer ID</th>
+                            <th>Balance</th>
+                            <th>Weekly P&L</th>
+                            <th>Status</th>
+                            <th>Telegram</th>
+                            <th>Last Activity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        {% if customers %}
+                        {% for customer in customers %}
+                        <tr data-customer-id="{{ customer.customer_id }}">
+                            <td>
+                                <div class="fantdev-flex-start" style="gap: var(--space-3);">
+                                    <div class="fantdev-avatar fantdev-avatar-sm">
+                                        {{ customer.customer_id[:2] }}
+                                    </div>
+                                    <div>
+                                        <div class="fantdev-text-sm" style="font-weight: 600;">{{ customer.customer_id }}</div>
+                                        {% if customer.phone %}
+                                        <div class="fantdev-text-xs fantdev-text-muted">{{ customer.phone }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="customer-balance {{ 'positive' if customer.balance and customer.balance > 0 else 'negative' if customer.balance and customer.balance < 0 else '' }}">
+                                    ${{ "{:,.2f}".format(customer.balance) if customer.balance else "0.00" }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="customer-balance {{ 'positive' if customer.weekly_pnl and customer.weekly_pnl > 0 else 'negative' if customer.weekly_pnl and customer.weekly_pnl < 0 else '' }}">
+                                    {{ "${:,.2f}".format(customer.weekly_pnl) if customer.weekly_pnl else "$0.00" }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="customer-status {{ 'active' if customer.active else 'inactive' }}">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                                    {{ "Active" if customer.active else "Inactive" }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if customer.telegram_id %}
+                                <span class="fantdev-badge fantdev-badge-success">
+                                    <i class="fab fa-telegram"></i>
+                                    Connected
+                                </span>
+                                {% else %}
+                                <span class="fantdev-badge fantdev-badge-outline">
+                                    Not Connected
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fantdev-text-sm fantdev-text-muted">
+                                    {{ customer.last_activity[:10] if customer.last_activity else "Never" }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="customer-actions">
+                                    <button class="edit-btn" onclick="editCustomer('{{ customer.customer_id }}')" title="Edit Customer">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteCustomer('{{ customer.customer_id }}')" title="Delete Customer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="fantdev-text-center" style="padding: var(--space-8);">
+                                <div class="fantdev-text-muted">
+                                    <i class="fas fa-users" style="font-size: 2rem; margin-bottom: var(--space-4);"></i>
+                                    <p>No customers found</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Sidebar -->
+    <div class="customer-filters">
+        <div class="filter-section">
+            <h4>Status Filter</h4>
+            <div class="filter-checkboxes">
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterActive" checked>
+                    <span>Active Customers</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterInactive" checked>
+                    <span>Inactive Customers</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <h4>Connection Status</h4>
+            <div class="filter-checkboxes">
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterConnected" checked>
+                    <span>Telegram Connected</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterNotConnected" checked>
+                    <span>Not Connected</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <h4>Balance Range</h4>
+            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <input type="number" id="minBalance" placeholder="Min balance" class="fantdev-input fantdev-input-sm">
+                <input type="number" id="maxBalance" placeholder="Max balance" class="fantdev-input fantdev-input-sm">
+                <button onclick="applyBalanceFilter()" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm">
+                    Apply Filter
+                </button>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <button onclick="clearAllFilters()" class="fantdev-btn fantdev-btn-ghost fantdev-btn-sm" style="width: 100%;">
+                <i class="fas fa-times"></i>
+                Clear All Filters
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div id="addCustomerModal" class="fantdev-modal">
+    <div class="fantdev-modal-content">
+        <div class="fantdev-modal-header">
+            <h3>Add New Customer</h3>
+            <button class="fantdev-modal-close" onclick="closeAddCustomerModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="fantdev-modal-body">
+            <form id="addCustomerForm">
+                <div class="fantdev-form-group">
+                    <label>Customer ID</label>
+                    <input type="text" id="newCustomerId" class="fantdev-input" placeholder="Enter customer ID" required>
+                </div>
+                <div class="fantdev-form-group">
+                    <label>Password</label>
+                    <input type="password" id="newCustomerPassword" class="fantdev-input" placeholder="Enter password" required>
+                </div>
+                <div class="fantdev-form-group">
+                    <label>Initial Balance</label>
+                    <input type="number" id="newCustomerBalance" class="fantdev-input" placeholder="0.00" step="0.01">
+                </div>
+                <div class="fantdev-form-group">
+                    <label>Phone Number (Optional)</label>
+                    <input type="tel" id="newCustomerPhone" class="fantdev-input" placeholder="Enter phone number">
+                </div>
+            </form>
+        </div>
+        <div class="fantdev-modal-footer">
+            <button onclick="closeAddCustomerModal()" class="fantdev-btn fantdev-btn-outline">Cancel</button>
+            <button onclick="addCustomer()" class="fantdev-btn fantdev-btn-primary">Add Customer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allCustomers = [];
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCustomers();
+        setupEventListeners();
+    });
+    
+    function setupEventListeners() {
+        // Search functionality
+        document.getElementById('customerSearch').addEventListener('input', function(e) {
+            filterCustomers();
+        });
+        
+        // Filter checkboxes
+        ['filterActive', 'filterInactive', 'filterConnected', 'filterNotConnected'].forEach(id => {
+            document.getElementById(id).addEventListener('change', filterCustomers);
+        });
+    }
+    
+    async function loadCustomers() {
+        try {
+            app.showLoading();
+            const response = await app.apiRequest('/api/admin/customers');
+            allCustomers = response.customers || [];
+            renderCustomerTable(allCustomers);
+            updateStats();
+        } catch (error) {
+            app.showNotification('Error loading customers: ' + error.message, 'error');
+        } finally {
+            app.hideLoading();
+        }
+    }
+    
+    function renderCustomerTable(customers) {
+        const tbody = document.getElementById('customerTableBody');
+        
+        if (customers.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="fantdev-text-center" style="padding: var(--space-8);">
+                        <div class="fantdev-text-muted">
+                            <i class="fas fa-users" style="font-size: 2rem; margin-bottom: var(--space-4);"></i>
+                            <p>No customers found</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = customers.map(customer => `
+            <tr data-customer-id="${customer.customer_id}">
+                <td>
+                    <div class="fantdev-flex-start" style="gap: var(--space-3);">
+                        <div class="fantdev-avatar fantdev-avatar-sm">
+                            ${customer.customer_id.substring(0, 2)}
+                        </div>
+                        <div>
+                            <div class="fantdev-text-sm" style="font-weight: 600;">${customer.customer_id}</div>
+                            ${customer.phone ? `<div class="fantdev-text-xs fantdev-text-muted">${customer.phone}</div>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="customer-balance ${customer.balance > 0 ? 'positive' : customer.balance < 0 ? 'negative' : ''}">
+                        $${app.formatNumber(customer.balance || 0)}
+                    </span>
+                </td>
+                <td>
+                    <span class="customer-balance ${customer.weekly_pnl > 0 ? 'positive' : customer.weekly_pnl < 0 ? 'negative' : ''}">
+                        $${app.formatNumber(customer.weekly_pnl || 0)}
+                    </span>
+                </td>
+                <td>
+                    <span class="customer-status ${customer.active ? 'active' : 'inactive'}">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        ${customer.active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    ${customer.telegram_id ? 
+                        '<span class="fantdev-badge fantdev-badge-success"><i class="fab fa-telegram"></i> Connected</span>' :
+                        '<span class="fantdev-badge fantdev-badge-outline">Not Connected</span>'
+                    }
+                </td>
+                <td>
+                    <span class="fantdev-text-sm fantdev-text-muted">
+                        ${customer.last_activity ? app.formatDate(customer.last_activity) : 'Never'}
+                    </span>
+                </td>
+                <td>
+                    <div class="customer-actions">
+                        <button class="edit-btn" onclick="editCustomer('${customer.customer_id}')" title="Edit Customer">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-btn" onclick="deleteCustomer('${customer.customer_id}')" title="Delete Customer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    function filterCustomers() {
+        const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
+        const showActive = document.getElementById('filterActive').checked;
+        const showInactive = document.getElementById('filterInactive').checked;
+        const showConnected = document.getElementById('filterConnected').checked;
+        const showNotConnected = document.getElementById('filterNotConnected').checked;
+        
+        const filtered = allCustomers.filter(customer => {
+            const matchesSearch = customer.customer_id.toLowerCase().includes(searchTerm) ||
+                                (customer.phone && customer.phone.includes(searchTerm));
+            
+            const matchesStatus = (customer.active && showActive) || (!customer.active && showInactive);
+            
+            const matchesConnection = (customer.telegram_id && showConnected) || 
+                                    (!customer.telegram_id && showNotConnected);
+            
+            return matchesSearch && matchesStatus && matchesConnection;
+        });
+        
+        renderCustomerTable(filtered);
+    }
+    
+    function updateStats() {
+        const totalCustomers = allCustomers.length;
+        const activeCustomers = allCustomers.filter(c => c.active).length;
+        const totalBalance = allCustomers.reduce((sum, c) => sum + (c.balance || 0), 0);
+        
+        document.getElementById('totalCustomers').textContent = totalCustomers;
+        document.getElementById('activeCustomers').textContent = activeCustomers;
+        document.getElementById('totalBalance').textContent = '$' + app.formatNumber(totalBalance);
+    }
+    
+    function showAddCustomerModal() {
+        document.getElementById('addCustomerModal').style.display = 'flex';
+    }
+    
+    function closeAddCustomerModal() {
+        document.getElementById('addCustomerModal').style.display = 'none';
+        document.getElementById('addCustomerForm').reset();
+    }
+    
+    async function addCustomer() {
+        const customerId = document.getElementById('newCustomerId').value;
+        const password = document.getElementById('newCustomerPassword').value;
+        const balance = parseFloat(document.getElementById('newCustomerBalance').value) || 0;
+        const phone = document.getElementById('newCustomerPhone').value;
+        
+        if (!customerId || !password) {
+            app.showNotification('Customer ID and password are required', 'error');
+            return;
+        }
+        
+        try {
+            const response = await app.apiRequest('/api/admin/customers', {
+                method: 'POST',
+                body: JSON.stringify({
+                    customer_id: customerId.toUpperCase(),
+                    password: password.toUpperCase(),
+                    balance: balance,
+                    phone: phone
+                })
+            });
+            
+            if (response.success) {
+                app.showNotification('Customer added successfully', 'success');
+                closeAddCustomerModal();
+                loadCustomers();
+            } else {
+                app.showNotification(response.error || 'Failed to add customer', 'error');
+            }
+        } catch (error) {
+            app.showNotification('Error adding customer: ' + error.message, 'error');
+        }
+    }
+    
+    function editCustomer(customerId) {
+        // Navigate to customer detail page
+        window.location.href = `/customers/${customerId}/edit`;
+    }
+    
+    async function deleteCustomer(customerId) {
+        if (!confirm(`Are you sure you want to delete customer ${customerId}? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            const response = await app.apiRequest(`/api/admin/customers/${customerId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.success) {
+                app.showNotification('Customer deleted successfully', 'success');
+                loadCustomers();
+            } else {
+                app.showNotification(response.error || 'Failed to delete customer', 'error');
+            }
+        } catch (error) {
+            app.showNotification('Error deleting customer: ' + error.message, 'error');
+        }
+    }
+    
+    function applyBalanceFilter() {
+        const minBalance = parseFloat(document.getElementById('minBalance').value);
+        const maxBalance = parseFloat(document.getElementById('maxBalance').value);
+        
+        const filtered = allCustomers.filter(customer => {
+            const balance = customer.balance || 0;
+            const aboveMin = isNaN(minBalance) || balance >= minBalance;
+            const belowMax = isNaN(maxBalance) || balance <= maxBalance;
+            return aboveMin && belowMax;
+        });
+        
+        renderCustomerTable(filtered);
+    }
+    
+    function clearAllFilters() {
+        document.getElementById('customerSearch').value = '';
+        document.getElementById('filterActive').checked = true;
+        document.getElementById('filterInactive').checked = true;
+        document.getElementById('filterConnected').checked = true;
+        document.getElementById('filterNotConnected').checked = true;
+        document.getElementById('minBalance').value = '';
+        document.getElementById('maxBalance').value = '';
+        
+        renderCustomerTable(allCustomers);
+    }
+    
+    async function refreshCustomers() {
+        await loadCustomers();
+        app.showNotification('Customer data refreshed', 'success');
+    }
+    
+    async function exportCustomers() {
+        try {
+            const response = await fetch('/api/admin/customers/export', {
+                headers: {
+                    'Authorization': `Bearer ${app.getToken()}`
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `customers_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                app.showNotification('Customer data exported successfully', 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            app.showNotification('Error exporting data: ' + error.message, 'error');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,779 @@
+/* FantDev Trading - Unified Component System */
+
+:root {
+  /* Brand Colors */
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #7c3aed;
+  --accent: #059669;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+  
+  /* Backgrounds */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-dark: #1f2937;
+  --bg-surface: #f1f5f9;
+  
+  /* Text */
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --text-inverse: #ffffff;
+  
+  /* Borders */
+  --border-color: #e5e7eb;
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  
+  /* Transitions */
+  --transition: all 0.15s ease-in-out;
+  --transition-slow: all 0.3s ease-in-out;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-dark: #374151;
+  --bg-surface: #374151;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  --border-color: #374151;
+}
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  transition: var(--transition);
+}
+
+/* Layout Components */
+.fantdev-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.fantdev-grid {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.fantdev-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.fantdev-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.fantdev-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .fantdev-grid-2,
+  .fantdev-grid-3,
+  .fantdev-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fantdev-flex {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.fantdev-flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fantdev-flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Header Component */
+.fantdev-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.fantdev-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+}
+
+.fantdev-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.fantdev-logo-icon {
+  font-size: 1.5rem;
+}
+
+.fantdev-logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Navigation */
+.fantdev-nav {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.fantdev-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.fantdev-nav-item:hover,
+.fantdev-nav-item.active {
+  background: var(--bg-surface);
+  color: var(--primary);
+}
+
+.fantdev-nav-icon {
+  font-size: 1rem;
+}
+
+/* Card Components */
+.fantdev-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.fantdev-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.fantdev-card-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-surface);
+}
+
+.fantdev-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fantdev-card-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+.fantdev-card-body {
+  padding: var(--space-6);
+}
+
+.fantdev-card-footer {
+  padding: var(--space-4) var(--space-6);
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Stats Cards */
+.fantdev-stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-6);
+  text-align: center;
+  transition: var(--transition);
+}
+
+.fantdev-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.fantdev-stat-icon {
+  font-size: 2rem;
+  margin-bottom: var(--space-3);
+}
+
+.fantdev-stat-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.fantdev-stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fantdev-stat-change {
+  font-size: 0.875rem;
+  margin-top: var(--space-2);
+}
+
+.fantdev-stat-change.positive {
+  color: var(--success);
+}
+
+.fantdev-stat-change.negative {
+  color: var(--error);
+}
+
+/* Button Components */
+.fantdev-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+  outline: none;
+}
+
+.fantdev-btn:focus {
+  ring: 2px solid var(--primary);
+  ring-offset: 2px;
+}
+
+.fantdev-btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.fantdev-btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.fantdev-btn-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.fantdev-btn-secondary:hover {
+  background: var(--secondary);
+  filter: brightness(0.9);
+}
+
+.fantdev-btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.fantdev-btn-success:hover {
+  background: var(--success);
+  filter: brightness(0.9);
+}
+
+.fantdev-btn-warning {
+  background: var(--warning);
+  color: white;
+}
+
+.fantdev-btn-error {
+  background: var(--error);
+  color: white;
+}
+
+.fantdev-btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.fantdev-btn-outline:hover {
+  background: var(--bg-surface);
+}
+
+.fantdev-btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.fantdev-btn-ghost:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+/* Button Sizes */
+.fantdev-btn-sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.75rem;
+}
+
+.fantdev-btn-lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: 1rem;
+}
+
+.fantdev-btn-xl {
+  padding: var(--space-5) var(--space-10);
+  font-size: 1.125rem;
+}
+
+/* Form Components */
+.fantdev-form-group {
+  margin-bottom: var(--space-4);
+}
+
+.fantdev-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.fantdev-input,
+.fantdev-select,
+.fantdev-textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+
+.fantdev-input:focus,
+.fantdev-select:focus,
+.fantdev-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  ring: 2px solid var(--primary);
+  ring-opacity: 0.2;
+}
+
+.fantdev-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.fantdev-help-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+/* Checkbox and Radio */
+.fantdev-checkbox,
+.fantdev-radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.fantdev-checkbox input,
+.fantdev-radio input {
+  margin: 0;
+}
+
+/* Table Components */
+.fantdev-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.fantdev-table th,
+.fantdev-table td {
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fantdev-table th {
+  background: var(--bg-surface);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fantdev-table tr:hover {
+  background: var(--bg-surface);
+}
+
+/* Badge Components */
+.fantdev-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fantdev-badge-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.fantdev-badge-success {
+  background: var(--success);
+  color: white;
+}
+
+.fantdev-badge-warning {
+  background: var(--warning);
+  color: white;
+}
+
+.fantdev-badge-error {
+  background: var(--error);
+  color: white;
+}
+
+.fantdev-badge-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+/* Alert Components */
+.fantdev-alert {
+  padding: var(--space-4);
+  border-radius: var(--border-radius);
+  border-left: 4px solid;
+  margin-bottom: var(--space-4);
+}
+
+.fantdev-alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.fantdev-alert-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.fantdev-alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.fantdev-alert-info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--info);
+  color: var(--info);
+}
+
+/* Loading Components */
+.fantdev-loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  border-top: 2px solid var(--primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fantdev-skeleton {
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--border-color) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: var(--border-radius);
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Modal Components */
+.fantdev-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-4);
+}
+
+.fantdev-modal {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.fantdev-modal-header {
+  padding: var(--space-6) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fantdev-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fantdev-modal-body {
+  padding: var(--space-6);
+}
+
+.fantdev-modal-footer {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+/* Toast/Notification Components */
+.fantdev-toast {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-4);
+  max-width: 400px;
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: var(--transition);
+}
+
+.fantdev-toast.show {
+  transform: translateX(0);
+}
+
+/* Sidebar Component */
+.fantdev-sidebar {
+  width: 250px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+}
+
+.fantdev-sidebar-nav {
+  padding: var(--space-4);
+}
+
+.fantdev-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  margin-bottom: var(--space-1);
+}
+
+.fantdev-sidebar-item:hover,
+.fantdev-sidebar-item.active {
+  background: var(--bg-surface);
+  color: var(--primary);
+}
+
+.fantdev-sidebar-icon {
+  font-size: 1.1rem;
+}
+
+/* Progress Components */
+.fantdev-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.fantdev-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+/* Utility Classes */
+.fantdev-text-xs { font-size: 0.75rem; }
+.fantdev-text-sm { font-size: 0.875rem; }
+.fantdev-text-base { font-size: 1rem; }
+.fantdev-text-lg { font-size: 1.125rem; }
+.fantdev-text-xl { font-size: 1.25rem; }
+.fantdev-text-2xl { font-size: 1.5rem; }
+.fantdev-text-3xl { font-size: 1.875rem; }
+
+.fantdev-font-light { font-weight: 300; }
+.fantdev-font-normal { font-weight: 400; }
+.fantdev-font-medium { font-weight: 500; }
+.fantdev-font-semibold { font-weight: 600; }
+.fantdev-font-bold { font-weight: 700; }
+
+.fantdev-text-center { text-align: center; }
+.fantdev-text-left { text-align: left; }
+.fantdev-text-right { text-align: right; }
+
+.fantdev-text-primary { color: var(--text-primary); }
+.fantdev-text-secondary { color: var(--text-secondary); }
+.fantdev-text-muted { color: var(--text-muted); }
+.fantdev-text-success { color: var(--success); }
+.fantdev-text-warning { color: var(--warning); }
+.fantdev-text-error { color: var(--error); }
+
+.fantdev-bg-primary { background: var(--bg-primary); }
+.fantdev-bg-secondary { background: var(--bg-secondary); }
+.fantdev-bg-surface { background: var(--bg-surface); }
+
+.fantdev-rounded { border-radius: var(--border-radius); }
+.fantdev-rounded-lg { border-radius: var(--border-radius-lg); }
+.fantdev-rounded-full { border-radius: 9999px; }
+
+.fantdev-shadow-sm { box-shadow: var(--shadow-sm); }
+.fantdev-shadow-md { box-shadow: var(--shadow-md); }
+.fantdev-shadow-lg { box-shadow: var(--shadow-lg); }
+.fantdev-shadow-xl { box-shadow: var(--shadow-xl); }
+
+.fantdev-hidden { display: none; }
+.fantdev-block { display: block; }
+.fantdev-inline-block { display: inline-block; }
+.fantdev-flex { display: flex; }
+.fantdev-inline-flex { display: inline-flex; }
+.fantdev-grid { display: grid; }
+
+.fantdev-w-full { width: 100%; }
+.fantdev-h-full { height: 100%; }
+
+.fantdev-m-0 { margin: 0; }
+.fantdev-m-1 { margin: var(--space-1); }
+.fantdev-m-2 { margin: var(--space-2); }
+.fantdev-m-3 { margin: var(--space-3); }
+.fantdev-m-4 { margin: var(--space-4); }
+
+.fantdev-p-0 { padding: 0; }
+.fantdev-p-1 { padding: var(--space-1); }
+.fantdev-p-2 { padding: var(--space-2); }
+.fantdev-p-3 { padding: var(--space-3); }
+.fantdev-p-4 { padding: var(--space-4); }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .fantdev-sidebar {
+    width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .fantdev-container {
+    padding: 0 var(--space-3);
+  }
+  
+  .fantdev-header-content {
+    padding: var(--space-3);
+  }
+  
+  .fantdev-nav {
+    display: none;
+  }
+  
+  .fantdev-sidebar {
+    display: none;
+  }
+  
+  .fantdev-card-body {
+    padding: var(--space-4);
+  }
+  
+  .fantdev-table th,
+  .fantdev-table td {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.875rem;
+  }
+}

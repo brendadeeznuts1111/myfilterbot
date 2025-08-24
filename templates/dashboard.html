@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Welcome back, {{ user_name }}!{% endblock %}
+{% block page_description %}Here's what's happening with your trading activity{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    {% if user_role == 'admin' %}
+    <a href="/customers" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-users"></i>
+        Manage Customers
+    </a>
+    <a href="/analytics" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-chart-line"></i>
+        View Reports
+    </a>
+    {% else %}
+    <a href="/transactions" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-history"></i>
+        View History
+    </a>
+    <a href="/profile" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-user-cog"></i>
+        Settings
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    
+    .activity-feed {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+    }
+    
+    .activity-item:hover {
+        background: var(--bg-surface);
+    }
+    
+    .activity-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+    
+    .activity-content {
+        flex: 1;
+    }
+    
+    .activity-title {
+        font-weight: 500;
+        margin-bottom: var(--space-1);
+    }
+    
+    .activity-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-1);
+    }
+    
+    .activity-time {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--space-4);
+    }
+    
+    .quick-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: var(--space-4);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: var(--transition);
+    }
+    
+    .quick-action:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: var(--primary);
+    }
+    
+    .quick-action-icon {
+        font-size: 1.5rem;
+        margin-bottom: var(--space-2);
+    }
+    
+    .quick-action-title {
+        font-weight: 500;
+        margin-bottom: var(--space-1);
+    }
+    
+    .quick-action-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+    }
+    
+    @media (max-width: 1024px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .quick-actions {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Statistics Overview -->
+<div class="stats-grid">
+    {% if user_role == 'admin' %}
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(72, 187, 120, 0.1); color: var(--success);">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="fantdev-stat-value">{{ stats.total_customers or 0 }}</div>
+        <div class="fantdev-stat-label">Total Customers</div>
+        <div class="fantdev-stat-change positive">+{{ stats.active_customers or 0 }} active</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="fantdev-stat-value">${{ "{:,.2f}".format(stats.total_balance or 0) }}</div>
+        <div class="fantdev-stat-label">Total Balance</div>
+        <div class="fantdev-stat-change positive">${{ "{:,.2f}".format(stats.total_weekly_pnl or 0) }} P&L</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="fantdev-stat-value">{{ stats.total_transactions or 0 }}</div>
+        <div class="fantdev-stat-label">Transactions</div>
+        <div class="fantdev-stat-change">Today</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--secondary);">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div class="fantdev-stat-value">{{ stats.registered_users or 0 }}</div>
+        <div class="fantdev-stat-label">Registered</div>
+        <div class="fantdev-stat-change">Connected to Telegram</div>
+    </div>
+    {% else %}
+    <!-- Customer view stats -->
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(72, 187, 120, 0.1); color: var(--success);">
+            <i class="fas fa-wallet"></i>
+        </div>
+        <div class="fantdev-stat-value">${{ customer.balance if customer else "0.00" }}</div>
+        <div class="fantdev-stat-label">Current Balance</div>
+        <div class="fantdev-stat-change {{ 'positive' if customer and customer.weekly_pnl and customer.weekly_pnl > 0 else 'negative' if customer and customer.weekly_pnl and customer.weekly_pnl < 0 else '' }}">
+            {{ "${:,.2f}".format(customer.weekly_pnl) if customer and customer.weekly_pnl else "$0.00" }} P&L
+        </div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="fantdev-stat-value">{{ recent_transactions|length if recent_transactions else 0 }}</div>
+        <div class="fantdev-stat-label">Transactions</div>
+        <div class="fantdev-stat-change">This week</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fas fa-chart-trend-up"></i>
+        </div>
+        <div class="fantdev-stat-value">{{ "85%" if customer and customer.active else "0%" }}</div>
+        <div class="fantdev-stat-label">Performance</div>
+        <div class="fantdev-stat-change">Win Rate</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--secondary);">
+            <i class="fas fa-shield-check"></i>
+        </div>
+        <div class="fantdev-stat-value">{{ "Active" if customer and customer.active else "Inactive" }}</div>
+        <div class="fantdev-stat-label">Account Status</div>
+        <div class="fantdev-stat-change">{{ "Connected" if customer and customer.telegram_id else "Not Connected" }}</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Main Dashboard Content -->
+<div class="dashboard-grid">
+    <!-- Left Column -->
+    <div>
+        <!-- Chart Section -->
+        <div class="fantdev-card">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-chart-area"></i>
+                    {% if user_role == 'admin' %}Performance Overview{% else %}Trading Activity{% endif %}
+                </h3>
+                <p class="fantdev-card-subtitle">Last 7 days</p>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="chart-container" id="mainChart">
+                    <div>
+                        <i class="fas fa-chart-line" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                        <p>Chart loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="fantdev-card" style="margin-top: var(--space-6);">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-clock"></i>
+                    Recent Activity
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="activity-feed" id="activityFeed">
+                    {% if recent_transactions %}
+                    {% for transaction in recent_transactions[:5] %}
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: {% if transaction.type == 'deposit' %}rgba(72, 187, 120, 0.1); color: var(--success){% elif transaction.type == 'withdrawal' %}rgba(245, 158, 11, 0.1); color: var(--warning){% else %}rgba(59, 130, 246, 0.1); color: var(--info){% endif %};">
+                            <i class="fas {% if transaction.type == 'deposit' %}fa-arrow-down{% elif transaction.type == 'withdrawal' %}fa-arrow-up{% else %}fa-info{% endif %}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">{{ transaction.type.title() }} {% if transaction.amount %}- ${{ "{:,.2f}".format(transaction.amount) }}{% endif %}</div>
+                            <div class="activity-description">{{ transaction.message[:100] if transaction.message else 'No description' }}...</div>
+                            <div class="activity-time">{{ transaction.timestamp }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="fantdev-text-center" style="padding: var(--space-8); color: var(--text-muted);">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: var(--space-4);"></i>
+                        <p>No recent activity</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% if recent_transactions %}
+            <div class="fantdev-card-footer">
+                <a href="/transactions" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm">
+                    View All Transactions
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Right Column -->
+    <div>
+        <!-- Quick Actions -->
+        <div class="fantdev-card">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="quick-actions">
+                    {% if user_role == 'admin' %}
+                    <a href="/customers" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="quick-action-title">Customers</div>
+                        <div class="quick-action-description">Manage accounts</div>
+                    </a>
+                    
+                    <a href="/groups" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <div class="quick-action-title">Groups</div>
+                        <div class="quick-action-description">Manage groups</div>
+                    </a>
+                    
+                    <a href="/analytics" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="quick-action-title">Reports</div>
+                        <div class="quick-action-description">View analytics</div>
+                    </a>
+                    
+                    <a href="/settings" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="quick-action-title">Settings</div>
+                        <div class="quick-action-description">System config</div>
+                    </a>
+                    {% else %}
+                    <a href="/transactions" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="quick-action-title">History</div>
+                        <div class="quick-action-description">View transactions</div>
+                    </a>
+                    
+                    <a href="/profile" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="quick-action-title">Profile</div>
+                        <div class="quick-action-description">Account settings</div>
+                    </a>
+                    
+                    <a href="/help" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <div class="quick-action-title">Support</div>
+                        <div class="quick-action-description">Get help</div>
+                    </a>
+                    
+                    <a href="/analytics" class="quick-action">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="quick-action-title">Analytics</div>
+                        <div class="quick-action-description">Your performance</div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notifications/Alerts -->
+        <div class="fantdev-card" style="margin-top: var(--space-6);">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-bell"></i>
+                    Notifications
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <div id="notificationsList">
+                    <!-- Notifications will be loaded here -->
+                    <div class="fantdev-text-center" style="padding: var(--space-4); color: var(--text-muted);">
+                        <i class="fas fa-bell-slash" style="font-size: 1.5rem; margin-bottom: var(--space-2);"></i>
+                        <p>No new notifications</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="fantdev-card" style="margin-top: var(--space-6);">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-heartbeat"></i>
+                    System Status
+                </h3>
+            </div>
+            <div class="fantdev-card-body">
+                <div class="fantdev-flex-between" style="margin-bottom: var(--space-3);">
+                    <span>Trading Bot</span>
+                    <span class="fantdev-badge fantdev-badge-success">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        Online
+                    </span>
+                </div>
+                <div class="fantdev-flex-between" style="margin-bottom: var(--space-3);">
+                    <span>Database</span>
+                    <span class="fantdev-badge fantdev-badge-success">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        Connected
+                    </span>
+                </div>
+                <div class="fantdev-flex-between" style="margin-bottom: var(--space-3);">
+                    <span>API Server</span>
+                    <span class="fantdev-badge fantdev-badge-success">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        Operational
+                    </span>
+                </div>
+                <div class="fantdev-flex-between">
+                    <span>Last Updated</span>
+                    <span class="fantdev-text-sm fantdev-text-muted" id="lastUpdateTime">Just now</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeChart();
+        loadRecentActivity();
+        updateStatusTimestamp();
+        
+        // Update timestamps every minute
+        setInterval(updateStatusTimestamp, 60000);
+        
+        // Refresh activity every 5 minutes
+        setInterval(loadRecentActivity, 300000);
+    });
+    
+    function initializeChart() {
+        const ctx = document.getElementById('mainChart');
+        if (!ctx) return;
+        
+        // Clear loading message
+        ctx.innerHTML = '<canvas></canvas>';
+        const canvas = ctx.querySelector('canvas');
+        
+        {% if user_role == 'admin' %}
+        // Admin chart - System overview
+        const chartData = {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Total Balance ($)',
+                data: [125000, 128000, 130000, 127000, 132000, 135000, {{ stats.total_balance or 125000 }}],
+                borderColor: 'rgb(37, 99, 235)',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Active Customers',
+                data: [15, 18, 16, 20, 19, 22, {{ stats.active_customers or 18 }}],
+                borderColor: 'rgb(34, 197, 94)',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y1'
+            }]
+        };
+        {% else %}
+        // Customer chart - Personal performance
+        const chartData = {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Balance ($)',
+                data: [4800, 5200, 4900, 5400, 5100, 5300, {{ customer.balance if customer else 5000 }}],
+                borderColor: 'rgb(37, 99, 235)',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        };
+        {% endif %}
+        
+        app.createChart(canvas, {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }{% if user_role == 'admin' %},
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }{% endif %}
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    async function loadRecentActivity() {
+        try {
+            {% if user_role == 'admin' %}
+            // Load admin activity
+            const response = await app.apiRequest('/api/activity');
+            {% else %}
+            // Load customer activity
+            const response = await app.apiRequest('/api/customer/{{ user_id }}/activity');
+            {% endif %}
+            
+            const feed = document.getElementById('activityFeed');
+            if (response.activities && response.activities.length > 0) {
+                feed.innerHTML = response.activities.map(activity => `
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: ${getActivityColor(activity.type)};">
+                            <i class="fas ${getActivityIcon(activity.type)}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">${activity.title}</div>
+                            <div class="activity-description">${activity.description}</div>
+                            <div class="activity-time">${app.formatTimeAgo(activity.timestamp)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Error loading activity:', error);
+        }
+    }
+    
+    function getActivityColor(type) {
+        const colors = {
+            'deposit': 'rgba(72, 187, 120, 0.1); color: var(--success)',
+            'withdrawal': 'rgba(245, 158, 11, 0.1); color: var(--warning)',
+            'login': 'rgba(59, 130, 246, 0.1); color: var(--info)',
+            'error': 'rgba(239, 68, 68, 0.1); color: var(--error)'
+        };
+        return colors[type] || 'rgba(156, 163, 175, 0.1); color: var(--text-muted)';
+    }
+    
+    function getActivityIcon(type) {
+        const icons = {
+            'deposit': 'fa-arrow-down',
+            'withdrawal': 'fa-arrow-up',
+            'login': 'fa-sign-in-alt',
+            'error': 'fa-exclamation-triangle'
+        };
+        return icons[type] || 'fa-info';
+    }
+    
+    function updateStatusTimestamp() {
+        const element = document.getElementById('lastUpdateTime');
+        if (element) {
+            element.textContent = new Date().toLocaleTimeString();
+        }
+    }
+</script>
+{% endblock %}

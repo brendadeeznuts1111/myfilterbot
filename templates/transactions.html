@@ -1,0 +1,1058 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Transaction History{% endblock %}
+{% block page_description %}{% if user_role == 'admin' %}Monitor all customer transactions and trading activity{% else %}View your complete trading history and performance{% endif %}{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    {% if user_role == 'admin' %}
+    <button onclick="exportTransactions()" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-download"></i>
+        Export Data
+    </button>
+    <button onclick="showFiltersModal()" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-filter"></i>
+        Advanced Filters
+    </button>
+    {% else %}
+    <button onclick="exportMyTransactions()" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-download"></i>
+        Export My Data
+    </button>
+    {% endif %}
+    <button onclick="refreshTransactions()" class="fantdev-btn fantdev-btn-ghost">
+        <i class="fas fa-sync"></i>
+        Refresh
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .transactions-layout {
+        display: grid;
+        grid-template-columns: {% if user_role == 'admin' %}300px 1fr{% else %}1fr{% endif %};
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .transaction-filters {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        height: fit-content;
+        position: sticky;
+        top: var(--space-4);
+    }
+    
+    .transaction-stats {
+        display: grid;
+        grid-template-columns: {% if user_role == 'admin' %}repeat(4, 1fr){% else %}repeat(3, 1fr){% endif %};
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    
+    .transaction-table-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+    }
+    
+    .transaction-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .transaction-table thead {
+        background: var(--bg-secondary);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .transaction-table th,
+    .transaction-table td {
+        padding: var(--space-4);
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .transaction-table th {
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .transaction-table th:hover {
+        background: var(--bg-hover);
+    }
+    
+    .transaction-table tbody tr {
+        transition: var(--transition);
+    }
+    
+    .transaction-table tbody tr:hover {
+        background: var(--bg-hover);
+    }
+    
+    .transaction-type {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--border-radius);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .transaction-type.deposit {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--success);
+    }
+    
+    .transaction-type.withdrawal {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+    
+    .transaction-type.denied {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+    }
+    
+    .transaction-type.other {
+        background: rgba(156, 163, 175, 0.1);
+        color: var(--text-muted);
+    }
+    
+    .transaction-amount {
+        font-family: var(--font-mono);
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .transaction-amount.positive {
+        color: var(--success);
+    }
+    
+    .transaction-amount.negative {
+        color: var(--error);
+    }
+    
+    .transaction-amount.neutral {
+        color: var(--text-muted);
+    }
+    
+    .transaction-customer {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+    
+    .customer-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .customer-details h5 {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+    }
+    
+    .customer-details p {
+        margin: 0;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    
+    .transaction-message {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    .transaction-message.expanded {
+        white-space: normal;
+        word-wrap: break-word;
+    }
+    
+    .expand-btn {
+        background: none;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        font-size: 0.75rem;
+        padding: 0;
+        margin-left: var(--space-2);
+    }
+    
+    .filter-section {
+        margin-bottom: var(--space-6);
+    }
+    
+    .filter-section h4 {
+        margin-bottom: var(--space-3);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-checkboxes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .filter-checkbox {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+    
+    .date-range-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .amount-range-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-4);
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .pagination-info {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    .pagination-controls {
+        display: flex;
+        gap: var(--space-2);
+    }
+    
+    .page-btn {
+        padding: var(--space-2) var(--space-3);
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: var(--transition);
+    }
+    
+    .page-btn:hover {
+        background: var(--bg-hover);
+    }
+    
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .page-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    @media (max-width: 1024px) {
+        .transactions-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .transaction-filters {
+            position: static;
+        }
+        
+        .transaction-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .transaction-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .transaction-table {
+            font-size: 0.875rem;
+        }
+        
+        .transaction-table th,
+        .transaction-table td {
+            padding: var(--space-2);
+        }
+        
+        .transaction-message {
+            max-width: 150px;
+        }
+        
+        .pagination {
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Transaction Statistics -->
+<div class="transaction-stats">
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">
+            <i class="fas fa-arrow-down"></i>
+        </div>
+        <div class="fantdev-stat-value" id="totalDeposits">$0.00</div>
+        <div class="fantdev-stat-label">Total Deposits</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fas fa-arrow-up"></i>
+        </div>
+        <div class="fantdev-stat-value" id="totalWithdrawals">$0.00</div>
+        <div class="fantdev-stat-label">Total Withdrawals</div>
+    </div>
+    
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+            <i class="fas fa-balance-scale"></i>
+        </div>
+        <div class="fantdev-stat-value" id="netFlow">$0.00</div>
+        <div class="fantdev-stat-label">Net Flow</div>
+    </div>
+    
+    {% if user_role == 'admin' %}
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--secondary);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="fantdev-stat-value" id="totalTransactions">0</div>
+        <div class="fantdev-stat-label">Total Transactions</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Main Content -->
+<div class="transactions-layout">
+    {% if user_role == 'admin' %}
+    <!-- Filters Sidebar (Admin Only) -->
+    <div class="transaction-filters">
+        <div class="filter-section">
+            <h4>Transaction Type</h4>
+            <div class="filter-checkboxes">
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterDeposits" checked>
+                    <span>Deposits</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterWithdrawals" checked>
+                    <span>Withdrawals</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterDenied" checked>
+                    <span>Denied</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filterOther" checked>
+                    <span>Other</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <h4>Date Range</h4>
+            <div class="date-range-inputs">
+                <input type="date" id="startDate" class="fantdev-input fantdev-input-sm">
+                <input type="date" id="endDate" class="fantdev-input fantdev-input-sm">
+                <button onclick="applyDateFilter()" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm">
+                    Apply Date Filter
+                </button>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <h4>Amount Range</h4>
+            <div class="amount-range-inputs">
+                <input type="number" id="minAmount" placeholder="Min amount" class="fantdev-input fantdev-input-sm">
+                <input type="number" id="maxAmount" placeholder="Max amount" class="fantdev-input fantdev-input-sm">
+                <button onclick="applyAmountFilter()" class="fantdev-btn fantdev-btn-outline fantdev-btn-sm">
+                    Apply Amount Filter
+                </button>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <h4>Customer Filter</h4>
+            <input type="text" id="customerFilter" placeholder="Customer ID" class="fantdev-input fantdev-input-sm">
+        </div>
+        
+        <div class="filter-section">
+            <button onclick="clearAllFilters()" class="fantdev-btn fantdev-btn-ghost fantdev-btn-sm" style="width: 100%;">
+                <i class="fas fa-times"></i>
+                Clear All Filters
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Transactions Table -->
+    <div>
+        <div class="fantdev-card">
+            <div class="fantdev-card-header">
+                <h3 class="fantdev-card-title">
+                    <i class="fas fa-list"></i>
+                    {% if user_role == 'admin' %}All Transactions{% else %}My Transactions{% endif %}
+                </h3>
+                <div class="fantdev-flex" style="gap: var(--space-3);">
+                    <input type="search" id="transactionSearch" placeholder="Search transactions..." 
+                           class="fantdev-input" style="width: 250px;">
+                    <select id="sortBy" class="fantdev-input" style="width: 150px;">
+                        <option value="timestamp">Sort by Date</option>
+                        <option value="amount">Sort by Amount</option>
+                        <option value="type">Sort by Type</option>
+                        {% if user_role == 'admin' %}
+                        <option value="customer">Sort by Customer</option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+            <div class="fantdev-card-body" style="padding: 0;">
+                <div class="transaction-table-container">
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('timestamp')">Date/Time</th>
+                                {% if user_role == 'admin' %}
+                                <th onclick="sortTable('customer')">Customer</th>
+                                {% endif %}
+                                <th onclick="sortTable('type')">Type</th>
+                                <th onclick="sortTable('amount')">Amount</th>
+                                <th onclick="sortTable('message')">Description</th>
+                                <th onclick="sortTable('status')">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody">
+                            <!-- Transactions will be loaded here -->
+                            <tr>
+                                <td colspan="{% if user_role == 'admin' %}6{% else %}5{% endif %}" class="fantdev-text-center" style="padding: var(--space-8);">
+                                    <div class="fantdev-text-muted">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: var(--space-4);"></i>
+                                        <p>Loading transactions...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination" id="paginationContainer">
+                    <div class="pagination-info">
+                        <span id="paginationInfo">Loading...</span>
+                    </div>
+                    <div class="pagination-controls" id="paginationControls">
+                        <!-- Pagination buttons will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Filters Modal -->
+<div id="filtersModal" class="fantdev-modal">
+    <div class="fantdev-modal-content fantdev-modal-lg">
+        <div class="fantdev-modal-header">
+            <h3>Advanced Filters</h3>
+            <button class="fantdev-modal-close" onclick="closeFiltersModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="fantdev-modal-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+                <div>
+                    <h4>Date & Time</h4>
+                    <div class="fantdev-form-group">
+                        <label>Date Range</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);">
+                            <input type="date" id="modalStartDate" class="fantdev-input">
+                            <input type="date" id="modalEndDate" class="fantdev-input">
+                        </div>
+                    </div>
+                    <div class="fantdev-form-group">
+                        <label>Time Range</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);">
+                            <input type="time" id="modalStartTime" class="fantdev-input">
+                            <input type="time" id="modalEndTime" class="fantdev-input">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4>Amount & Type</h4>
+                    <div class="fantdev-form-group">
+                        <label>Amount Range</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);">
+                            <input type="number" id="modalMinAmount" placeholder="Min" class="fantdev-input">
+                            <input type="number" id="modalMaxAmount" placeholder="Max" class="fantdev-input">
+                        </div>
+                    </div>
+                    <div class="fantdev-form-group">
+                        <label>Transaction Types</label>
+                        <div class="filter-checkboxes">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="modalFilterDeposits" checked>
+                                <span>Deposits</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="modalFilterWithdrawals" checked>
+                                <span>Withdrawals</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="modalFilterDenied" checked>
+                                <span>Denied</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="modalFilterOther" checked>
+                                <span>Other</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="fantdev-modal-footer">
+            <button onclick="clearModalFilters()" class="fantdev-btn fantdev-btn-outline">Clear All</button>
+            <button onclick="applyAdvancedFilters()" class="fantdev-btn fantdev-btn-primary">Apply Filters</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allTransactions = [];
+    let filteredTransactions = [];
+    let currentPage = 1;
+    let itemsPerPage = 50;
+    let currentSort = { field: 'timestamp', direction: 'desc' };
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTransactions();
+        setupEventListeners();
+        
+        // Set default date range (last 30 days)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        
+        if (document.getElementById('startDate')) {
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        }
+    });
+    
+    function setupEventListeners() {
+        // Search functionality
+        document.getElementById('transactionSearch').addEventListener('input', function(e) {
+            filterTransactions();
+        });
+        
+        // Sort functionality
+        document.getElementById('sortBy').addEventListener('change', function(e) {
+            const [field, direction] = e.target.value.split('-');
+            currentSort = { field: field, direction: direction || 'desc' };
+            applySort();
+        });
+        
+        // Filter checkboxes (admin only)
+        {% if user_role == 'admin' %}
+        ['filterDeposits', 'filterWithdrawals', 'filterDenied', 'filterOther'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', filterTransactions);
+            }
+        });
+        
+        // Customer filter
+        const customerFilter = document.getElementById('customerFilter');
+        if (customerFilter) {
+            customerFilter.addEventListener('input', filterTransactions);
+        }
+        {% endif %}
+    }
+    
+    async function loadTransactions() {
+        try {
+            app.showLoading();
+            
+            {% if user_role == 'admin' %}
+            const response = await app.apiRequest('/api/admin/transactions');
+            {% else %}
+            const response = await app.apiRequest('/api/customer/{{ user_id }}/transactions');
+            {% endif %}
+            
+            allTransactions = response.transactions || [];
+            filteredTransactions = [...allTransactions];
+            
+            updateStatistics();
+            applySort();
+            renderTransactions();
+            renderPagination();
+            
+        } catch (error) {
+            app.showNotification('Error loading transactions: ' + error.message, 'error');
+            document.getElementById('transactionTableBody').innerHTML = `
+                <tr>
+                    <td colspan="{% if user_role == 'admin' %}6{% else %}5{% endif %}" class="fantdev-text-center" style="padding: var(--space-8);">
+                        <div class="fantdev-text-muted">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: var(--space-4);"></i>
+                            <p>Error loading transactions</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        } finally {
+            app.hideLoading();
+        }
+    }
+    
+    function updateStatistics() {
+        const deposits = allTransactions.filter(t => t.type === 'deposit' && t.amount);
+        const withdrawals = allTransactions.filter(t => t.type === 'withdrawal' && t.amount);
+        
+        const totalDeposits = deposits.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalWithdrawals = withdrawals.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const netFlow = totalDeposits - totalWithdrawals;
+        
+        document.getElementById('totalDeposits').textContent = '$' + app.formatNumber(totalDeposits);
+        document.getElementById('totalWithdrawals').textContent = '$' + app.formatNumber(totalWithdrawals);
+        document.getElementById('netFlow').textContent = '$' + app.formatNumber(netFlow);
+        
+        {% if user_role == 'admin' %}
+        document.getElementById('totalTransactions').textContent = allTransactions.length;
+        {% endif %}
+    }
+    
+    function filterTransactions() {
+        const searchTerm = document.getElementById('transactionSearch').value.toLowerCase();
+        
+        {% if user_role == 'admin' %}
+        const showDeposits = document.getElementById('filterDeposits')?.checked ?? true;
+        const showWithdrawals = document.getElementById('filterWithdrawals')?.checked ?? true;
+        const showDenied = document.getElementById('filterDenied')?.checked ?? true;
+        const showOther = document.getElementById('filterOther')?.checked ?? true;
+        const customerFilter = document.getElementById('customerFilter')?.value.toLowerCase() || '';
+        {% endif %}
+        
+        filteredTransactions = allTransactions.filter(transaction => {
+            const matchesSearch = 
+                transaction.message?.toLowerCase().includes(searchTerm) ||
+                transaction.customer_id?.toLowerCase().includes(searchTerm) ||
+                transaction.type?.toLowerCase().includes(searchTerm);
+            
+            {% if user_role == 'admin' %}
+            const matchesType = 
+                (transaction.type === 'deposit' && showDeposits) ||
+                (transaction.type === 'withdrawal' && showWithdrawals) ||
+                (transaction.type === 'denied' && showDenied) ||
+                (transaction.type !== 'deposit' && transaction.type !== 'withdrawal' && transaction.type !== 'denied' && showOther);
+            
+            const matchesCustomer = !customerFilter || 
+                transaction.customer_id?.toLowerCase().includes(customerFilter);
+            
+            return matchesSearch && matchesType && matchesCustomer;
+            {% else %}
+            return matchesSearch;
+            {% endif %}
+        });
+        
+        currentPage = 1;
+        applySort();
+        renderTransactions();
+        renderPagination();
+    }
+    
+    function applySort() {
+        filteredTransactions.sort((a, b) => {
+            let aVal = a[currentSort.field];
+            let bVal = b[currentSort.field];
+            
+            // Handle different data types
+            if (currentSort.field === 'timestamp') {
+                aVal = new Date(aVal);
+                bVal = new Date(bVal);
+            } else if (currentSort.field === 'amount') {
+                aVal = parseFloat(aVal) || 0;
+                bVal = parseFloat(bVal) || 0;
+            } else {
+                aVal = (aVal || '').toString().toLowerCase();
+                bVal = (bVal || '').toString().toLowerCase();
+            }
+            
+            let result = 0;
+            if (aVal < bVal) result = -1;
+            if (aVal > bVal) result = 1;
+            
+            return currentSort.direction === 'desc' ? -result : result;
+        });
+    }
+    
+    function renderTransactions() {
+        const tbody = document.getElementById('transactionTableBody');
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageTransactions = filteredTransactions.slice(startIndex, endIndex);
+        
+        if (pageTransactions.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="{% if user_role == 'admin' %}6{% else %}5{% endif %}" class="fantdev-text-center" style="padding: var(--space-8);">
+                        <div class="fantdev-text-muted">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: var(--space-4);"></i>
+                            <p>No transactions found</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = pageTransactions.map(transaction => `
+            <tr data-transaction-id="${transaction.id || ''}">
+                <td>
+                    <div>
+                        <div style="font-weight: 500;">${app.formatDate(transaction.timestamp)}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${app.formatTime(transaction.timestamp)}</div>
+                    </div>
+                </td>
+                {% if user_role == 'admin' %}
+                <td>
+                    <div class="transaction-customer">
+                        <div class="customer-avatar">${transaction.customer_id ? transaction.customer_id.substring(0, 2) : '??'}</div>
+                        <div class="customer-details">
+                            <h5>${transaction.customer_id || 'Unknown'}</h5>
+                            <p>${transaction.from_user || 'System'}</p>
+                        </div>
+                    </div>
+                </td>
+                {% endif %}
+                <td>
+                    <span class="transaction-type ${transaction.type}">
+                        <i class="fas ${getTransactionIcon(transaction.type)}"></i>
+                        ${transaction.type ? transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1) : 'Unknown'}
+                    </span>
+                </td>
+                <td>
+                    ${transaction.amount ? 
+                        `<span class="transaction-amount ${getAmountClass(transaction.type, transaction.amount)}">
+                            ${getAmountPrefix(transaction.type)}$${app.formatNumber(Math.abs(transaction.amount))}
+                        </span>` : 
+                        '<span class="transaction-amount neutral">N/A</span>'
+                    }
+                </td>
+                <td>
+                    <div class="transaction-message" id="msg-${transaction.id || Math.random()}">
+                        ${truncateMessage(transaction.message || 'No description', 100)}
+                        ${(transaction.message || '').length > 100 ? 
+                            `<button class="expand-btn" onclick="toggleMessage('msg-${transaction.id || Math.random()}')">more</button>` : 
+                            ''
+                        }
+                    </div>
+                </td>
+                <td>
+                    <span class="fantdev-badge fantdev-badge-${getStatusBadgeType(transaction.status)}">
+                        ${transaction.status || 'Unknown'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    function renderPagination() {
+        const totalItems = filteredTransactions.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const startItem = (currentPage - 1) * itemsPerPage + 1;
+        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+        
+        // Update pagination info
+        document.getElementById('paginationInfo').textContent = 
+            `Showing ${startItem}-${endItem} of ${totalItems} transactions`;
+        
+        // Generate pagination controls
+        const controls = document.getElementById('paginationControls');
+        let controlsHTML = '';
+        
+        // Previous button
+        controlsHTML += `
+            <button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        `;
+        
+        // Page numbers
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            controlsHTML += `
+                <button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+                    ${i}
+                </button>
+            `;
+        }
+        
+        // Next button
+        controlsHTML += `
+            <button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        `;
+        
+        controls.innerHTML = controlsHTML;
+    }
+    
+    function goToPage(page) {
+        const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTransactions();
+            renderPagination();
+        }
+    }
+    
+    function getTransactionIcon(type) {
+        const icons = {
+            'deposit': 'fa-arrow-down',
+            'withdrawal': 'fa-arrow-up',
+            'denied': 'fa-times-circle',
+            'transfer': 'fa-exchange-alt'
+        };
+        return icons[type] || 'fa-question-circle';
+    }
+    
+    function getAmountClass(type, amount) {
+        if (!amount || amount === 0) return 'neutral';
+        if (type === 'deposit') return 'positive';
+        if (type === 'withdrawal') return 'negative';
+        return amount > 0 ? 'positive' : 'negative';
+    }
+    
+    function getAmountPrefix(type) {
+        if (type === 'deposit') return '+';
+        if (type === 'withdrawal') return '-';
+        return '';
+    }
+    
+    function getStatusBadgeType(status) {
+        const types = {
+            'completed': 'success',
+            'pending': 'warning',
+            'failed': 'error',
+            'cancelled': 'outline'
+        };
+        return types[status] || 'outline';
+    }
+    
+    function truncateMessage(message, length) {
+        if (message.length <= length) return message;
+        return message.substring(0, length) + '...';
+    }
+    
+    function toggleMessage(messageId) {
+        const element = document.getElementById(messageId);
+        const button = element.querySelector('.expand-btn');
+        
+        if (element.classList.contains('expanded')) {
+            element.classList.remove('expanded');
+            button.textContent = 'more';
+        } else {
+            element.classList.add('expanded');
+            button.textContent = 'less';
+        }
+    }
+    
+    function sortTable(field) {
+        if (currentSort.field === field) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort = { field: field, direction: 'desc' };
+        }
+        
+        applySort();
+        renderTransactions();
+        renderPagination();
+    }
+    
+    {% if user_role == 'admin' %}
+    function applyDateFilter() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (startDate || endDate) {
+            filteredTransactions = allTransactions.filter(transaction => {
+                const transactionDate = new Date(transaction.timestamp).toISOString().split('T')[0];
+                const afterStart = !startDate || transactionDate >= startDate;
+                const beforeEnd = !endDate || transactionDate <= endDate;
+                return afterStart && beforeEnd;
+            });
+            
+            currentPage = 1;
+            applySort();
+            renderTransactions();
+            renderPagination();
+        }
+    }
+    
+    function applyAmountFilter() {
+        const minAmount = parseFloat(document.getElementById('minAmount').value);
+        const maxAmount = parseFloat(document.getElementById('maxAmount').value);
+        
+        if (!isNaN(minAmount) || !isNaN(maxAmount)) {
+            filteredTransactions = allTransactions.filter(transaction => {
+                const amount = Math.abs(transaction.amount || 0);
+                const aboveMin = isNaN(minAmount) || amount >= minAmount;
+                const belowMax = isNaN(maxAmount) || amount <= maxAmount;
+                return aboveMin && belowMax;
+            });
+            
+            currentPage = 1;
+            applySort();
+            renderTransactions();
+            renderPagination();
+        }
+    }
+    
+    function showFiltersModal() {
+        document.getElementById('filtersModal').style.display = 'flex';
+    }
+    
+    function closeFiltersModal() {
+        document.getElementById('filtersModal').style.display = 'none';
+    }
+    
+    function clearAllFilters() {
+        // Reset all filter inputs
+        document.getElementById('transactionSearch').value = '';
+        document.getElementById('filterDeposits').checked = true;
+        document.getElementById('filterWithdrawals').checked = true;
+        document.getElementById('filterDenied').checked = true;
+        document.getElementById('filterOther').checked = true;
+        document.getElementById('customerFilter').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('minAmount').value = '';
+        document.getElementById('maxAmount').value = '';
+        
+        // Reset filtered transactions
+        filteredTransactions = [...allTransactions];
+        currentPage = 1;
+        applySort();
+        renderTransactions();
+        renderPagination();
+    }
+    
+    async function exportTransactions() {
+        try {
+            const response = await fetch('/api/admin/transactions/export', {
+                headers: {
+                    'Authorization': `Bearer ${app.getToken()}`
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `transactions_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                app.showNotification('Transactions exported successfully', 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            app.showNotification('Error exporting transactions: ' + error.message, 'error');
+        }
+    }
+    {% else %}
+    async function exportMyTransactions() {
+        try {
+            const response = await fetch('/api/customer/{{ user_id }}/transactions/export', {
+                headers: {
+                    'Authorization': `Bearer ${app.getToken()}`
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my_transactions_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                app.showNotification('Your transactions exported successfully', 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            app.showNotification('Error exporting transactions: ' + error.message, 'error');
+        }
+    }
+    {% endif %}
+    
+    async function refreshTransactions() {
+        await loadTransactions();
+        app.showNotification('Transactions refreshed', 'success');
+    }
+</script>
+{% endblock %}

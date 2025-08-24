@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - FantDev Trading Platform</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/fantdev-components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            position: relative;
+        }
+        
+        .login-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%);
+        }
+        
+        .login-card {
+            background: var(--bg-secondary);
+            padding: var(--space-10);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+        
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+        }
+        
+        .login-logo-icon {
+            font-size: 2.5rem;
+        }
+        
+        .login-logo-text {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-2);
+        }
+        
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .login-form {
+            margin-bottom: var(--space-6);
+        }
+        
+        .login-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: var(--space-3);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--space-4);
+            font-size: 0.875rem;
+        }
+        
+        .login-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: var(--space-3);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--space-4);
+            font-size: 0.875rem;
+        }
+        
+        .input-group {
+            position: relative;
+            margin-bottom: var(--space-4);
+        }
+        
+        .input-group i {
+            position: absolute;
+            left: var(--space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        
+        .input-with-icon {
+            padding-left: var(--space-10);
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: var(--space-4) var(--space-6);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+        }
+        
+        .login-button:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .login-footer {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .login-footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .demo-credentials {
+            background: var(--bg-surface);
+            border-radius: var(--border-radius);
+            padding: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+        
+        .demo-credentials h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+            color: var(--text-primary);
+        }
+        
+        .demo-credential-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-1);
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+        
+        .use-demo-btn {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--border-radius);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .use-demo-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Dark theme adjustments */
+        [data-theme="dark"] .login-card {
+            background: var(--bg-dark);
+        }
+        
+        [data-theme="dark"] .demo-credentials {
+            background: var(--bg-primary);
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .login-card {
+                margin: var(--space-4);
+                padding: var(--space-6);
+            }
+            
+            .login-logo-text {
+                font-size: 1.5rem;
+            }
+            
+            .login-title {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-background"></div>
+        
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <span class="login-logo-icon">📊</span>
+                    <span class="login-logo-text">FantDev</span>
+                </div>
+                <h1 class="login-title">Welcome Back</h1>
+                <p class="login-subtitle">Advanced Trading Intelligence Platform</p>
+            </div>
+            
+            {% if error %}
+            <div class="login-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            {% if success %}
+            <div class="login-success">
+                <i class="fas fa-check-circle"></i>
+                {{ success }}
+            </div>
+            {% endif %}
+            
+            <!-- Demo Credentials -->
+            <div class="demo-credentials">
+                <h4><i class="fas fa-key"></i> Demo Accounts</h4>
+                <div class="demo-credential-item">
+                    <span>Admin:</span>
+                    <button class="use-demo-btn" onclick="useDemoCredentials('BB1042', 'N9H9')">
+                        Use BB1042 / N9H9
+                    </button>
+                </div>
+                <div class="demo-credential-item">
+                    <span>Customer:</span>
+                    <button class="use-demo-btn" onclick="useDemoCredentials('BB1045', 'K8L2')">
+                        Use BB1045 / K8L2
+                    </button>
+                </div>
+            </div>
+            
+            <form class="login-form fantdev-form" method="POST" id="loginForm">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" 
+                           class="fantdev-input input-with-icon" 
+                           id="customer_id" 
+                           name="customer_id" 
+                           placeholder="Customer ID (e.g., BB1042)" 
+                           required
+                           autocomplete="username">
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" 
+                           class="fantdev-input input-with-icon" 
+                           id="password" 
+                           name="password" 
+                           placeholder="Password (e.g., N9H9)" 
+                           required
+                           autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="login-button" id="loginButton">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Sign In</span>
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>Need help? <a href="/help">Contact Support</a></p>
+                <p style="margin-top: var(--space-2);">
+                    <a href="/terms">Terms</a> • 
+                    <a href="/privacy">Privacy</a> • 
+                    <a href="/security">Security</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Theme toggle (floating) -->
+    <button class="fantdev-btn fantdev-btn-ghost" 
+            onclick="toggleTheme()" 
+            title="Toggle theme"
+            style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+    
+    <script src="/static/js/fantdev-core.js"></script>
+    
+    <script>
+        // Demo credential helper
+        function useDemoCredentials(customerId, password) {
+            document.getElementById('customer_id').value = customerId;
+            document.getElementById('password').value = password;
+        }
+        
+        // Enhanced form handling
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const button = document.getElementById('loginButton');
+            const buttonText = button.querySelector('span');
+            const originalText = buttonText.textContent;
+            
+            // Show loading state
+            button.disabled = true;
+            buttonText.textContent = 'Signing In...';
+            button.querySelector('i').className = 'fas fa-spinner fa-spin';
+            
+            try {
+                const formData = new FormData(this);
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customer_id: formData.get('customer_id'),
+                        password: formData.get('password')
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    buttonText.textContent = 'Success!';
+                    button.querySelector('i').className = 'fas fa-check';
+                    
+                    // Show success message
+                    app.showToast('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = result.redirect || '/dashboard';
+                    }, 1000);
+                } else {
+                    throw new Error(result.error || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                // Show error message
+                app.showToast(error.message || 'Login failed. Please try again.', 'error');
+                
+                // Reset button
+                button.disabled = false;
+                buttonText.textContent = originalText;
+                button.querySelector('i').className = 'fas fa-sign-in-alt';
+                
+                // Shake the form
+                const card = document.querySelector('.login-card');
+                card.style.animation = 'shake 0.5s ease-in-out';
+                setTimeout(() => {
+                    card.style.animation = '';
+                }, 500);
+            }
+        });
+        
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Auto-focus first input
+        document.getElementById('customer_id').focus();
+        
+        // Enter key handling
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById('loginButton').disabled) {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>

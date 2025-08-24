@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FantDev Trading Platform{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    
+    <!-- Meta tags -->
+    <meta name="description" content="Professional trading bot management and analytics platform for serious traders">
+    <meta name="author" content="FantDev Trading">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{% block og_title %}FantDev Trading Platform{% endblock %}">
+    <meta property="og:description" content="Advanced Trading Intelligence Platform">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fantdev.com">
+    <meta property="og:image" content="/static/assets/og-image.png">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/fantdev-components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Additional styles -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Theme configuration -->
+    <script>
+        // Load theme preference
+        const savedTheme = localStorage.getItem('fantdev-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</head>
+<body>
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="fantdev-loading-overlay">
+        <div class="fantdev-loading-spinner">
+            <div class="fantdev-loading"></div>
+            <div class="fantdev-text-sm fantdev-text-muted" style="margin-top: 1rem;">Loading FantDev...</div>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header class="fantdev-header">
+        <div class="fantdev-container">
+            <div class="fantdev-header-content">
+                <!-- Logo -->
+                <a href="/" class="fantdev-logo">
+                    <span class="fantdev-logo-icon">📊</span>
+                    <span class="fantdev-logo-text">FantDev</span>
+                </a>
+                
+                <!-- Navigation -->
+                <nav class="fantdev-nav">
+                    {% block navigation %}
+                    <a href="/" class="fantdev-nav-item {% if request.path == '/' %}active{% endif %}">
+                        <span class="fantdev-nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                    {% if user_role == 'admin' %}
+                    <a href="/customers" class="fantdev-nav-item {% if 'customers' in request.path %}active{% endif %}">
+                        <span class="fantdev-nav-icon">👥</span>
+                        <span>Customers</span>
+                    </a>
+                    <a href="/groups" class="fantdev-nav-item {% if 'groups' in request.path %}active{% endif %}">
+                        <span class="fantdev-nav-icon">🏢</span>
+                        <span>Groups</span>
+                    </a>
+                    {% endif %}
+                    <a href="/transactions" class="fantdev-nav-item {% if 'transactions' in request.path %}active{% endif %}">
+                        <span class="fantdev-nav-icon">💰</span>
+                        <span>Transactions</span>
+                    </a>
+                    <a href="/analytics" class="fantdev-nav-item {% if 'analytics' in request.path %}active{% endif %}">
+                        <span class="fantdev-nav-icon">📈</span>
+                        <span>Analytics</span>
+                    </a>
+                    <a href="/settings" class="fantdev-nav-item {% if 'settings' in request.path %}active{% endif %}">
+                        <span class="fantdev-nav-icon">⚙️</span>
+                        <span>Settings</span>
+                    </a>
+                    {% endblock %}
+                </nav>
+                
+                <!-- User menu -->
+                <div class="fantdev-user-menu">
+                    <!-- Theme toggle -->
+                    <button class="fantdev-btn fantdev-btn-ghost" onclick="toggleTheme()" title="Toggle theme">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                    </button>
+                    
+                    <!-- Notifications -->
+                    <button class="fantdev-btn fantdev-btn-ghost fantdev-notification-btn" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="fantdev-notification-badge" id="notification-count" style="display: none;">0</span>
+                    </button>
+                    
+                    <!-- User profile -->
+                    <div class="fantdev-user-profile" onclick="toggleUserMenu()">
+                        <div class="fantdev-user-avatar">
+                            <span>{{ user_initials or 'U' }}</span>
+                        </div>
+                        <div class="fantdev-user-info">
+                            <div class="fantdev-user-name">{{ user_name or 'User' }}</div>
+                            <div class="fantdev-user-role">{{ user_role or 'Customer' }}</div>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Mobile navigation -->
+    <div class="fantdev-mobile-nav" id="mobile-nav">
+        <div class="fantdev-mobile-nav-content">
+            {% block mobile_navigation %}
+            <a href="/" class="fantdev-mobile-nav-item">
+                <span class="fantdev-nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            {% if user_role == 'admin' %}
+            <a href="/customers" class="fantdev-mobile-nav-item">
+                <span class="fantdev-nav-icon">👥</span>
+                <span>Customers</span>
+            </a>
+            <a href="/groups" class="fantdev-mobile-nav-item">
+                <span class="fantdev-nav-icon">🏢</span>
+                <span>Groups</span>
+            </a>
+            {% endif %}
+            <a href="/transactions" class="fantdev-mobile-nav-item">
+                <span class="fantdev-nav-icon">💰</span>
+                <span>Transactions</span>
+            </a>
+            <a href="/analytics" class="fantdev-mobile-nav-item">
+                <span class="fantdev-nav-icon">📈</span>
+                <span>Analytics</span>
+            </a>
+            <a href="/settings" class="fantdev-mobile-nav-item">
+                <span class="fantdev-nav-icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+            {% endblock %}
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <main class="fantdev-main">
+        <div class="fantdev-container">
+            <!-- Breadcrumbs -->
+            {% block breadcrumbs %}
+            <div class="fantdev-breadcrumbs">
+                <a href="/" class="fantdev-breadcrumb-item">Home</a>
+                {% for crumb in breadcrumbs %}
+                <span class="fantdev-breadcrumb-separator">/</span>
+                {% if crumb.url %}
+                <a href="{{ crumb.url }}" class="fantdev-breadcrumb-item">{{ crumb.title }}</a>
+                {% else %}
+                <span class="fantdev-breadcrumb-item fantdev-breadcrumb-current">{{ crumb.title }}</span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endblock %}
+            
+            <!-- Page header -->
+            {% block page_header %}
+            <div class="fantdev-page-header">
+                <div class="fantdev-page-title">
+                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    {% block page_subtitle %}
+                    <p class="fantdev-text-secondary">{% block page_description %}Welcome to your trading dashboard{% endblock %}</p>
+                    {% endblock %}
+                </div>
+                {% block page_actions %}{% endblock %}
+            </div>
+            {% endblock %}
+            
+            <!-- Alerts/Messages -->
+            <div id="alert-container">
+                {% block alerts %}{% endblock %}
+            </div>
+            
+            <!-- Page content -->
+            <div class="fantdev-page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="fantdev-footer">
+        <div class="fantdev-container">
+            <div class="fantdev-footer-content">
+                <div class="fantdev-footer-section">
+                    <div class="fantdev-footer-logo">
+                        <span class="fantdev-logo-icon">📊</span>
+                        <span class="fantdev-logo-text">FantDev</span>
+                    </div>
+                    <p class="fantdev-text-sm fantdev-text-muted">Advanced Trading Intelligence Platform</p>
+                </div>
+                
+                <div class="fantdev-footer-section">
+                    <h4 class="fantdev-footer-title">Platform</h4>
+                    <ul class="fantdev-footer-links">
+                        <li><a href="/dashboard">Dashboard</a></li>
+                        <li><a href="/analytics">Analytics</a></li>
+                        <li><a href="/transactions">Transactions</a></li>
+                        <li><a href="/settings">Settings</a></li>
+                    </ul>
+                </div>
+                
+                <div class="fantdev-footer-section">
+                    <h4 class="fantdev-footer-title">Support</h4>
+                    <ul class="fantdev-footer-links">
+                        <li><a href="/help">Help Center</a></li>
+                        <li><a href="/docs">Documentation</a></li>
+                        <li><a href="/support">Contact Support</a></li>
+                        <li><a href="/status">System Status</a></li>
+                    </ul>
+                </div>
+                
+                <div class="fantdev-footer-section">
+                    <h4 class="fantdev-footer-title">Legal</h4>
+                    <ul class="fantdev-footer-links">
+                        <li><a href="/terms">Terms of Service</a></li>
+                        <li><a href="/privacy">Privacy Policy</a></li>
+                        <li><a href="/security">Security</a></li>
+                        <li><a href="/compliance">Compliance</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="fantdev-footer-bottom">
+                <div class="fantdev-footer-copyright">
+                    <p>&copy; 2024 FantDev Trading. All rights reserved.</p>
+                </div>
+                <div class="fantdev-footer-social">
+                    <a href="#" class="fantdev-social-link"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="fantdev-social-link"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="fantdev-social-link"><i class="fab fa-telegram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Notification panel -->
+    <div class="fantdev-notification-panel" id="notification-panel">
+        <div class="fantdev-notification-header">
+            <h3>Notifications</h3>
+            <button class="fantdev-btn fantdev-btn-ghost fantdev-btn-sm" onclick="markAllRead()">Mark all read</button>
+        </div>
+        <div class="fantdev-notification-list" id="notification-list">
+            <!-- Notifications will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- User menu dropdown -->
+    <div class="fantdev-user-dropdown" id="user-dropdown">
+        <div class="fantdev-user-dropdown-header">
+            <div class="fantdev-user-avatar-lg">{{ user_initials or 'U' }}</div>
+            <div>
+                <div class="fantdev-user-name">{{ user_name or 'User' }}</div>
+                <div class="fantdev-user-email fantdev-text-sm fantdev-text-muted">{{ user_email or 'user@example.com' }}</div>
+            </div>
+        </div>
+        <div class="fantdev-user-dropdown-content">
+            <a href="/profile" class="fantdev-user-dropdown-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+            <a href="/settings" class="fantdev-user-dropdown-item">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <a href="/help" class="fantdev-user-dropdown-item">
+                <i class="fas fa-question-circle"></i>
+                <span>Help</span>
+            </a>
+            <div class="fantdev-user-dropdown-divider"></div>
+            <a href="/logout" class="fantdev-user-dropdown-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Toast container -->
+    <div id="toast-container" class="fantdev-toast-container"></div>
+    
+    <!-- Base JavaScript -->
+    <script src="/static/js/fantdev-core.js"></script>
+    
+    <!-- Page-specific JavaScript -->
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Initialize app -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loading overlay
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }, 500);
+            
+            // Initialize theme
+            updateThemeIcon();
+            
+            // Initialize notifications
+            loadNotifications();
+            
+            {% block page_init %}{% endblock %}
+        });
+    </script>
+</body>
+</html>
