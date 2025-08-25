@@ -851,6 +851,160 @@
                 font-size: 0.625rem;
             }
         }
+
+        /* Enhanced Navigation Styles */
+        .enhanced-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .fab-tooltip {
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .enhanced-fab:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        .fab-button {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .fab-button:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 1rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .enhanced-fab.active .fab-menu {
+            display: flex;
+        }
+
+        .fab-item {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .fab-item:hover {
+            background: #667eea;
+            color: #ffffff;
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.8);
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(1rem);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: rgba(102, 126, 234, 1);
+            transform: translateY(-0.25rem);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive Design for Enhanced Navigation */
+        @media (max-width: 768px) {
+            .enhanced-fab {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .back-to-top {
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .enhanced-fab {
+                width: 3rem;
+                height: 3rem;
+            }
+
+            .fab-button {
+                width: 3rem;
+                height: 3rem;
+                font-size: 1rem;
+            }
+
+            .fab-item {
+                width: 2rem;
+                height: 2rem;
+                font-size: 0.875rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1343,8 +1497,106 @@
         }
         
         // Initialize
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            
+            // Initialize enhanced navigation
+            setupBackToTop();
+            updateSectionIndicator('Overview');
+        });
+
+        // Enhanced Navigation Functions
+        function updateSectionIndicator(section) {
+            const currentSection = document.getElementById('current-section');
+            if (currentSection) {
+                currentSection.textContent = section;
+            }
+        }
+
+        function setupBackToTop() {
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTop.classList.add('visible');
+                    } else {
+                        backToTop.classList.remove('visible');
+                    }
+                });
+
+                backToTop.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+        }
+
+        // FAB Menu Toggle
+        function toggleFabMenu() {
+            const fab = document.getElementById('enhanced-fab');
+            if (fab) {
+                fab.classList.toggle('active');
+            }
+        }
+
+        // Quick Actions Handler
+        function quickAction(action) {
+            switch (action) {
+                case 'refresh':
+                    refreshMessages();
+                    break;
+                case 'export':
+                    toggleExportMenu();
+                    break;
+                case 'add':
+                    addSampleMessage();
+                    break;
+                case 'clear':
+                    clearMessages();
+                    break;
+            }
+            // Close FAB menu after action
+            toggleFabMenu();
+        }
+
+        // Update section indicator when switching tabs
+        const originalSwitchTab = window.switchTab;
+        window.switchTab = function(tab) {
+            if (originalSwitchTab) {
+                originalSwitchTab(tab);
+            }
+            
+            // Update section indicator
+            const sectionName = tab.charAt(0).toUpperCase() + tab.slice(1);
+            updateSectionIndicator(sectionName);
+        };
     </script>
+
+    <!-- Enhanced Floating Action Button -->
+    <div class="enhanced-fab" id="enhanced-fab">
+        <div class="fab-tooltip">Quick Actions</div>
+        <button class="fab-button" onclick="toggleFabMenu()" aria-label="Quick actions menu">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab-item" onclick="quickAction('refresh')" title="Refresh messages">
+                <i class="fas fa-sync"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('export')" title="Export data">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('add')" title="Add test message">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('clear')" title="Clear all messages">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 
     <!-- Enhanced JavaScript Libraries -->
     <script src="/static/js/utils.js"></script>
