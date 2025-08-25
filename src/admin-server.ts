@@ -1,9 +1,15 @@
 import { serve } from 'bun';
 
-import enhancedAdminPortal from './enhanced_admin_portal.html';
-import { apiRouter } from './src/api/router';
+// Import YAML configurations using Bun's native support
+import appConfig from '../config/app.yaml';
+import featuresConfig from '../config/features.yaml';
 
-// Load ONLY real Fantasy402.com customers - NO MORE MOCK DATA
+import enhancedAdminPortal from './enhanced_admin_portal.html';
+import { apiRouter } from './server/api/router';
+import { dashboardRouter } from './server/api/dashboard-router';
+import { dashboardConfigService } from './services/dashboard-config-service';
+
+// Load customer data
 const configFile = await Bun.file("./customer_config.json");
 const databaseFile = await Bun.file("./customer_database.json");
 
@@ -103,12 +109,28 @@ const realData = {
   customers: customers
 };
 
+// Initialize dashboard configuration service
+dashboardConfigService.startWatching();
+
+// Apply timezone from configuration
+const timezone = appConfig?.app?.environment === 'production' ? 
+  appConfig?.production?.timezone || 'UTC' : 
+  appConfig?.development?.timezone || 'UTC';
+process.env.TZ = timezone;
+
+console.log(`🌍 Timezone set to: ${timezone}`);
+console.log(`🔥 Hot-reload: ${dashboardConfigService.getHotReloadStatus().active ? 'Active' : 'Inactive'}`);
+console.log(`📊 Feature flags loaded: ${Object.keys(featuresConfig?.features || {}).length} features`);
+
 const server = serve({
-  port: 3003,
+  port: appConfig?.server?.admin?.port || 3003,
   static: {
     "/": enhancedAdminPortal,
     "/admin": enhancedAdminPortal,
-    "/enhanced": enhancedAdminPortal
+    "/enhanced": enhancedAdminPortal,
+    "/dashboard": "./src/static/dashboard/index.html",
+    "/styles.css": "./src/static/dashboard/styles.css",
+    "/dashboard.js": "./src/static/dashboard/dashboard.js"
   },
   async fetch(req) {
     const url = new URL(req.url);
@@ -124,7 +146,18 @@ const server = serve({
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Try API router first for /api/* routes
+    // Try dashboard router for dashboard API routes
+    const dashboardResponse = await dashboardRouter.handleRequest(req);
+    if (dashboardResponse) {
+      return dashboardResponse;
+    }
+
+    // Server-Sent Events for real-time updates
+    if (url.pathname === '/api/dashboard/stream') {
+      return dashboardRouter.createEventStream(req);
+    }
+
+    // Try API router for other /api/* routes
     if (url.pathname.startsWith('/api/')) {
       const apiResponse = await apiRouter.handleRequest(req);
       if (apiResponse) {
@@ -463,5 +496,25 @@ async function fetchFantasy402Balance(customerId: string, password: string) {
 }
 
 console.log(`🚀 Enhanced Admin Portal running at ${server.url}`);
-console.log(`📊 Visit ${server.url} to view the enhanced dashboard`);
-console.log(`🔌 API endpoints available at ${server.url}api/admin/*`);
+console.log(`📊 Visit ${server.url}dashboard to view the unified dashboard`);
+console.log(`🔌 API endpoints available at ${server.url}api/*`);
+console.log(`🔥 Hot-reload enabled - YAML changes will auto-reload`);
+
+// Listen for configuration changes
+dashboardConfigService.on('config:changed', ({ file, content }) => {
+  console.log(`📝 Configuration changed: ${file}.yaml`);
+  
+  // Apply timezone changes dynamically
+  if (file === 'app' && content?.timezone) {
+    process.env.TZ = content.timezone;
+    console.log(`🌍 Timezone updated to: ${content.timezone}`);
+  }
+});
+
+dashboardConfigService.on('feature:toggled', ({ feature, enabled }) => {
+  console.log(`🎛️ Feature flag toggled: ${feature} = ${enabled}`);
+});
+
+dashboardConfigService.on('hotreload:triggered', ({ file }) => {
+  console.log(`🔥 Hot-reload triggered for: ${file}.yaml`);
+});

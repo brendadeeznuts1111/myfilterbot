@@ -1,0 +1,420 @@
+# Social Metadata Configuration
+# SEO and social media metadata for all application pages
+# Using Bun's native YAML support for better maintainability
+
+# Customer Trading Portal
+- file: enhanced_customer_portal_integrated.html
+  path: /Users/nolarose/myfilterbot/enhanced_customer_portal_integrated.html
+  
+  metadata:
+    # Open Graph Protocol metadata
+    openGraph:
+      type: website
+      url: https://yourwebsite.com/portal
+      title: Customer Trading Portal - Real-Time Dashboard | Fantdev
+      description: >
+        Manage your trading account with real-time updates, comprehensive analytics, 
+        and secure authentication. Track your P&L, view transaction history, and 
+        monitor your performance.
+      image: https://yourwebsite.com/assets/portal-preview.jpg
+      image:width: "1200"
+      image:height: "630"
+      site_name: Fantdev Trading
+    
+    # Twitter Card metadata
+    twitterCard:
+      card: summary_large_image
+      url: https://yourwebsite.com/portal
+      title: Customer Trading Portal - Real-Time Dashboard
+      description: >
+        Access your trading account with real-time updates, P&L tracking, 
+        and advanced analytics. Secure authentication included.
+      image: https://yourwebsite.com/assets/portal-twitter.jpg
+      site: "@fantdev_trading"
+    
+    # Standard meta tags
+    standard:
+      title: Customer Trading Portal - Real-Time Trading Dashboard | Fantdev
+      description: >
+        Access your trading account with real-time balance updates, P&L tracking, 
+        transaction history, and advanced analytics. Secure JWT authentication 
+        and WebSocket updates.
+      keywords: >
+        trading portal, customer dashboard, real-time trading, P&L tracking, 
+        transaction history, Fantdev, trading analytics
+      author: Fantdev Trading Systems
+      canonical: https://yourwebsite.com/portal
+    
+    # Structured data (Schema.org)
+    structuredData:
+      - "@context": https://schema.org
+        "@type": WebApplication
+        name: Fantdev Customer Trading Portal
+        description: >
+          Real-time trading dashboard with balance tracking, P&L analytics, 
+          and transaction history
+        applicationCategory: FinanceApplication
+        operatingSystem: Web
+        offers:
+          "@type": Offer
+          price: "0"
+          priceCurrency: USD
+        featureList:
+          - Real-time balance updates
+          - Transaction history tracking
+          - P&L analytics and charts
+          - WebSocket live updates
+          - JWT secure authentication
+          - Customer-specific keyword filtering
+          - Dark/Light theme toggle
+        screenshot: https://yourwebsite.com/assets/portal-screenshot.jpg
+        softwareVersion: "2.0"
+        author:
+          "@type": Organization
+          name: Fantdev Trading Systems
+          url: https://yourwebsite.com
+    
+    # Image assets
+    images:
+      - type: opengraph
+        url: https://yourwebsite.com/assets/portal-preview.jpg
+        property: og:image
+      - type: opengraph
+        url: https://fantdev.trading/1200
+        property: og:image:width
+      - type: opengraph
+        url: https://fantdev.trading/630
+        property: og:image:height
+      - type: twitter
+        url: https://yourwebsite.com/assets/portal-twitter.jpg
+        property: twitter:image
+      - type: structured_data
+        url: https://yourwebsite.com/assets/portal-screenshot.jpg
+        property: schema.org:screenshot
+      - type: favicon
+        url: https://fantdev.trading/favicon.ico
+        property: favicon
+      - type: apple-touch-icon
+        url: https://fantdev.trading/apple-touch-icon.png
+        property: apple-touch-icon
+  
+  # Summary for quick access
+  summary:
+    title: Customer Trading Portal - Real-Time Dashboard | Fantdev
+    description: >
+      Manage your trading account with real-time updates, comprehensive analytics, 
+      and secure authentication. Track your P&L, view transaction history, and 
+      monitor your performance.
+    image: https://yourwebsite.com/assets/portal-preview.jpg
+    url: https://yourwebsite.com/portal
+    siteName: Fantdev Trading
+    type: website
+    author: Fantdev Trading Systems
+    keywords: >
+      trading portal, customer dashboard, real-time trading, P&L tracking, 
+      transaction history, Fantdev, trading analytics
+    twitterSite: "@fantdev_trading"
+    imageCount: 7
+    hasStructuredData: true
+
+# Admin Command Center
+- file: admin_portal_enhanced.html
+  path: /Users/nolarose/myfilterbot/admin_portal_enhanced.html
+  
+  metadata:
+    openGraph:
+      type: website
+      url: https://yourwebsite.com/admin
+      title: Admin Command Center - Trading Operations | Fantdev
+      description: >
+        Comprehensive admin dashboard for managing trading operations. Monitor customers, 
+        analyze transactions, manage permissions, and control all system settings.
+      image: https://yourwebsite.com/assets/admin-preview.jpg
+      image:width: "1200"
+      image:height: "630"
+      site_name: Fantdev Trading Admin
+    
+    twitterCard:
+      card: summary_large_image
+      url: https://yourwebsite.com/admin
+      title: Admin Command Center - Trading Operations
+      description: >
+        Complete admin dashboard for trading operations. Real-time monitoring, 
+        customer management, and advanced analytics.
+      image: https://yourwebsite.com/assets/admin-twitter.jpg
+      site: "@fantdev_admin"
+    
+    standard:
+      title: Admin Command Center - Trading Operations Management | Fantdev
+      description: >
+        Advanced admin dashboard for managing trading operations, customer accounts, 
+        real-time transaction monitoring, analytics, and automated reporting. 
+        Complete control center.
+      keywords: >
+        admin dashboard, trading management, operations control, customer management, 
+        transaction monitoring, analytics dashboard, Fantdev admin
+      author: Fantdev Trading Systems
+      canonical: https://yourwebsite.com/admin
+    
+    structuredData:
+      - "@context": https://schema.org
+        "@type": WebApplication
+        name: Fantdev Admin Command Center
+        description: Advanced admin dashboard for complete trading operations management
+        applicationCategory: BusinessApplication
+        operatingSystem: Web
+        offers:
+          "@type": Offer
+          price: "0"
+          priceCurrency: USD
+        featureList:
+          - Real-time transaction monitoring
+          - Customer account management
+          - Advanced analytics and reporting
+          - Permission and access control
+          - WebSocket live updates
+          - Automated alerts and notifications
+          - Multi-tab interface
+          - Dark/Light theme support
+          - Export and import capabilities
+          - Audit logging
+        screenshot: https://yourwebsite.com/assets/admin-screenshot.jpg
+        softwareVersion: "3.0"
+        author:
+          "@type": Organization
+          name: Fantdev Trading Systems
+          url: https://yourwebsite.com
+        aggregateRating:
+          "@type": AggregateRating
+          ratingValue: "4.8"
+          ratingCount: "127"
+          bestRating: "5"
+          worstRating: "1"
+    
+    images:
+      - type: opengraph
+        url: https://yourwebsite.com/assets/admin-preview.jpg
+        property: og:image
+      - type: opengraph
+        url: https://fantdev.trading/1200
+        property: og:image:width
+      - type: opengraph
+        url: https://fantdev.trading/630
+        property: og:image:height
+      - type: twitter
+        url: https://yourwebsite.com/assets/admin-twitter.jpg
+        property: twitter:image
+      - type: structured_data
+        url: https://yourwebsite.com/assets/admin-screenshot.jpg
+        property: schema.org:screenshot
+      - type: favicon
+        url: https://fantdev.trading/favicon-admin.ico
+        property: favicon
+      - type: apple-touch-icon
+        url: https://fantdev.trading/apple-touch-icon-admin.png
+        property: apple-touch-icon
+  
+  summary:
+    title: Admin Command Center - Trading Operations | Fantdev
+    description: >
+      Comprehensive admin dashboard for managing trading operations. Monitor customers, 
+      analyze transactions, manage permissions, and control all system settings.
+    image: https://yourwebsite.com/assets/admin-preview.jpg
+    url: https://yourwebsite.com/admin
+    siteName: Fantdev Trading Admin
+    type: website
+    author: Fantdev Trading Systems
+    keywords: >
+      admin dashboard, trading management, operations control, customer management, 
+      transaction monitoring, analytics dashboard, Fantdev admin
+    twitterSite: "@fantdev_admin"
+    imageCount: 7
+    hasStructuredData: true
+
+# Admin Dashboard Fixed
+- file: admin_dashboard_fixed.html
+  path: /Users/nolarose/myfilterbot/admin_dashboard_fixed.html
+  
+  metadata:
+    openGraph:
+      type: website
+      url: https://admin.fantdev.com/dashboard
+      title: Fantdev Trading Admin Dashboard
+      description: >
+        Advanced admin dashboard for managing trading operations, customers, 
+        and analytics. Real-time monitoring and comprehensive management tools.
+      image: https://admin.fantdev.com/assets/dashboard-preview.png
+      site_name: Fantdev Trading
+      locale: en_US
+    
+    twitterCard: {}
+    
+    standard:
+      title: Admin Dashboard - Fantdev Trading Management System
+      description: >
+        Comprehensive trading bot admin dashboard with real-time customer management, 
+        transaction monitoring, and analytics. Manage your Fantdev trading platform 
+        efficiently with advanced tools and insights.
+      keywords: >
+        trading bot, admin dashboard, customer management, transaction monitoring, 
+        trading analytics, Fantdev, financial management, crypto trading, automated trading
+      author: Fantdev Trading
+    
+    structuredData:
+      - "@context": https://schema.org
+        "@type": WebApplication
+        name: Fantdev Trading Admin Dashboard
+        description: >
+          Professional trading bot administration dashboard with real-time customer 
+          management, transaction monitoring, and comprehensive analytics tools.
+        url: https://admin.fantdev.com
+        applicationCategory: FinanceApplication
+        operatingSystem: Web Browser
+        creator:
+          "@type": Organization
+          name: Fantdev Trading
+          url: https://fantdev.com
+        featureList:
+          - Real-time customer management
+          - Transaction monitoring
+          - Advanced analytics
+          - Member approval system
+          - Financial reporting
+          - Activity logs
+    
+    images:
+      - type: opengraph
+        url: https://admin.fantdev.com/assets/dashboard-preview.png
+        property: og:image
+      - type: favicon
+        url: https://fantdev.trading/favicon.ico
+        property: favicon
+      - type: apple-touch-icon
+        url: https://fantdev.trading/apple-touch-icon.png
+        property: apple-touch-icon
+  
+  summary:
+    title: Fantdev Trading Admin Dashboard
+    description: >
+      Advanced admin dashboard for managing trading operations, customers, 
+      and analytics. Real-time monitoring and comprehensive management tools.
+    image: https://admin.fantdev.com/assets/dashboard-preview.png
+    url: https://admin.fantdev.com/dashboard
+    siteName: Fantdev Trading
+    type: website
+    author: Fantdev Trading
+    keywords: >
+      trading bot, admin dashboard, customer management, transaction monitoring, 
+      trading analytics, Fantdev, financial management, crypto trading, automated trading
+    imageCount: 3
+    hasStructuredData: true
+
+# Filter Bot Dashboard
+- file: index.html
+  path: /Users/nolarose/myfilterbot/index.html
+  
+  metadata:
+    openGraph:
+      type: website
+      url: https://fantdev.trading/dashboard
+      title: Filter Bot Dashboard - Message Analytics | Fantdev
+      description: >
+        Monitor and analyze Telegram trading messages in real-time. Interactive 
+        dashboard with filtering, search, and analytics capabilities.
+      image: https://fantdev.trading/images/dashboard-preview.jpg
+      image:width: "1200"
+      image:height: "630"
+      site_name: Fantdev Filter Bot
+    
+    twitterCard:
+      card: summary_large_image
+      url: https://fantdev.trading/dashboard
+      title: Filter Bot Dashboard - Message Analytics
+      description: >
+        Real-time Telegram message monitoring and analytics. Track filtered 
+        messages and analyze patterns.
+      image: https://fantdev.trading/images/dashboard-twitter.jpg
+      site: "@fantdev_bot"
+    
+    standard:
+      title: Filter Bot Dashboard - Message Viewer & Analytics | Fantdev
+      description: >
+        Real-time message viewer and analytics dashboard for Telegram trading bot. 
+        Monitor filtered messages, track activity, and analyze patterns with 
+        interactive charts.
+      keywords: >
+        filter bot, message viewer, telegram dashboard, trading analytics, 
+        message monitoring, Fantdev bot
+      author: Fantdev Trading Systems
+      canonical: https://fantdev.trading/dashboard
+    
+    structuredData:
+      - "@context": https://schema.org
+        "@type": WebApplication
+        name: Fantdev Filter Bot Dashboard
+        description: Message viewer and analytics dashboard for Telegram trading bot
+        applicationCategory: UtilityApplication
+        operatingSystem: Web
+        offers:
+          "@type": Offer
+          price: "0"
+          priceCurrency: USD
+        featureList:
+          - Real-time message viewing
+          - Advanced message filtering
+          - Pattern detection and analysis
+          - Interactive charts and statistics
+          - Search functionality
+          - Export capabilities
+          - Telegram Web App integration
+          - Dark/Light theme support
+        screenshot: https://yourwebsite.com/assets/dashboard-screenshot.jpg
+        softwareVersion: "1.5"
+        author:
+          "@type": Organization
+          name: Fantdev Trading Systems
+          url: https://yourwebsite.com
+        interactionStatistic:
+          "@type": InteractionCounter
+          interactionType: https://schema.org/UseAction
+          userInteractionCount: "5432"
+    
+    images:
+      - type: opengraph
+        url: https://fantdev.trading/images/dashboard-preview.jpg
+        property: og:image
+      - type: opengraph
+        url: https://fantdev.trading/1200
+        property: og:image:width
+      - type: opengraph
+        url: https://fantdev.trading/630
+        property: og:image:height
+      - type: twitter
+        url: https://fantdev.trading/images/dashboard-twitter.jpg
+        property: twitter:image
+      - type: structured_data
+        url: https://yourwebsite.com/assets/dashboard-screenshot.jpg
+        property: schema.org:screenshot
+      - type: favicon
+        url: https://fantdev.trading/favicon.ico
+        property: favicon
+      - type: apple-touch-icon
+        url: https://fantdev.trading/apple-touch-icon.png
+        property: apple-touch-icon
+  
+  summary:
+    title: Filter Bot Dashboard - Message Analytics | Fantdev
+    description: >
+      Monitor and analyze Telegram trading messages in real-time. Interactive 
+      dashboard with filtering, search, and analytics capabilities.
+    image: https://fantdev.trading/images/dashboard-preview.jpg
+    url: https://fantdev.trading/dashboard
+    siteName: Fantdev Filter Bot
+    type: website
+    author: Fantdev Trading Systems
+    keywords: >
+      filter bot, message viewer, telegram dashboard, trading analytics, 
+      message monitoring, Fantdev bot
+    twitterSite: "@fantdev_bot"
+    imageCount: 7
+    hasStructuredData: true

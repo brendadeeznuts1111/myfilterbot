@@ -1,0 +1,183 @@
+name: "Documentation Validation"
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths:
+      - 'docs/**'
+      - '*.md'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'MIGRATION_GUIDE.md'
+      - 'NAMING_CONVENTIONS.md'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - '*.md'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'MIGRATION_GUIDE.md'
+      - 'NAMING_CONVENTIONS.md'
+  schedule:
+    # Run weekly documentation validation
+    - cron: '0 2 * * 1'  # Every Monday at 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      validation_level:
+        description: 'Validation level'
+        required: true
+        default: 'standard'
+        type: choice
+        options:
+          - standard
+          - comprehensive
+          - links-only
+
+jobs:
+  validate-documentation:
+    name: 🔍 Validate Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comprehensive validation
+
+      - name: 🔧 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.2.20'
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: |
+          bun install
+          npm install -g markdownlint-cli2 markdown-link-check
+
+      - name: 📝 Validate Markdown Formatting
+        run: |
+          echo "🔍 Checking markdown formatting..."
+          markdownlint-cli2 "**/*.md" --config .markdownlint.json || true
+
+      - name: 🔗 Check Internal Links
+        run: |
+          echo "🔍 Validating internal links..."
+          find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | \
+          xargs -I {} markdown-link-check {} --config .markdown-link-check.json
+
+      - name: 📊 Validate Code Examples
+        run: |
+          echo "🔍 Validating code examples..."
+          bun run scripts/validate-code-examples.ts
+
+      - name: 🎯 Check Documentation Consistency
+        run: |
+          echo "🔍 Checking version consistency..."
+          bun run scripts/validate-documentation-consistency.ts
+
+      - name: 📋 Generate Validation Report
+        if: always()
+        run: |
+          echo "📋 Generating validation report..."
+          bun run scripts/generate-documentation-report.ts
+
+      - name: 📤 Upload Validation Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-validation-report
+          path: docs/validation-report.html
+          retention-days: 30
+
+      - name: 💬 Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'docs/validation-report.md';
+
+            if (fs.existsSync(path)) {
+              const report = fs.readFileSync(path, 'utf8');
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## Documentation Validation Report\n\n${report}`
+              });
+            }
+
+  validate-api-documentation:
+    name: "Validate API Documentation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+
+      - name: "Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.2.20'
+
+      - name: "Install Dependencies"
+        run: bun install
+
+      - name: "Start Test Server"
+        run: |
+          bun run dev:server &
+          sleep 10  # Wait for server to start
+
+      - name: "Test API Examples"
+        run: |
+          echo "Testing API examples from documentation..."
+          bun run scripts/test-api-examples.ts
+
+      - name: "Validate OpenAPI Spec"
+        run: |
+          echo "Validating OpenAPI specification..."
+          bun run scripts/validate-openapi.ts
+
+  check-documentation-coverage:
+    name: "Check Documentation Coverage"
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+
+      - name: "Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.2.20'
+
+      - name: "Install Dependencies"
+        run: bun install
+
+      - name: "Analyze Documentation Coverage"
+        run: |
+          echo "Analyzing documentation coverage..."
+          bun run scripts/analyze-documentation-coverage.ts
+
+      - name: "Generate Coverage Report"
+        run: |
+          echo "Generating coverage report..."
+          bun run scripts/generate-coverage-report.ts
+
+      - name: "Upload Coverage Report"
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-coverage-report
+          path: docs/coverage-report.html
+          retention-days: 30

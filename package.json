@@ -58,6 +58,12 @@
     "gen:index": "bun run scripts/gen-index.ts",
     "error:budget": "bun run scripts/error_budget.ts",
     "ci": "bun run lint && bun run type-check && bun run test && python -m pytest tests/python -q",
+    "docs:monitor": "bun run scripts/monitor-documentation-pipelines.ts",
+    "docs:check-health": "bun run scripts/monitor-documentation-pipelines.ts",
+    "docs:analyze-feedback": "bun run scripts/analyze-feedback.ts",
+    "docs:feedback-report": "bun run scripts/analyze-feedback.ts",
+    "ts:analyze-errors": "bun run scripts/analyze-typescript-errors.ts",
+    "ts:error-report": "bun run scripts/analyze-typescript-errors.ts",
     "prepare": "husky install"
   },
   "lint-staged": {

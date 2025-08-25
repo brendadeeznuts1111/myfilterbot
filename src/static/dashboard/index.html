@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantdev Trading Bot - Unified Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <i class="fas fa-robot logo-icon"></i>
+                <h1>Fantdev Trading Bot Dashboard</h1>
+            </div>
+            <div class="header-controls">
+                <div class="connection-status">
+                    <span id="ws-status-dot" class="status-dot offline"></span>
+                    <span>WebSocket: <span id="ws-status">Disconnected</span></span>
+                </div>
+                <select id="environment-selector" class="env-selector">
+                    <option value="development">Development</option>
+                    <option value="production">Production</option>
+                </select>
+                <button id="refresh-all" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Refresh All
+                </button>
+                <span id="current-time" class="time-display">00:00:00</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="dashboard-nav">
+            <button class="nav-tab active" data-tab="overview">
+                <i class="fas fa-chart-line"></i> Overview
+            </button>
+            <button class="nav-tab" data-tab="services">
+                <i class="fas fa-server"></i> Services
+            </button>
+            <button class="nav-tab" data-tab="api">
+                <i class="fas fa-code"></i> API Testing
+            </button>
+            <button class="nav-tab" data-tab="config">
+                <i class="fas fa-cog"></i> YAML Config
+            </button>
+            <button class="nav-tab" data-tab="features">
+                <i class="fas fa-toggle-on"></i> Feature Flags
+            </button>
+            <button class="nav-tab" data-tab="logs">
+                <i class="fas fa-terminal"></i> Live Logs
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="dashboard-content">
+            <!-- Overview Tab -->
+            <div id="overview-tab" class="tab-content active">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3><i class="fas fa-users"></i> Active Users</h3>
+                        <div class="metric-value" id="active-users">0</div>
+                        <div class="metric-label">Total Connected</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3><i class="fas fa-exchange-alt"></i> Transactions</h3>
+                        <div class="metric-value" id="total-transactions">0</div>
+                        <div class="metric-label">Last 24 Hours</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3><i class="fas fa-dollar-sign"></i> Total Balance</h3>
+                        <div class="metric-value" id="total-balance">$0</div>
+                        <div class="metric-label">All Customers</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3><i class="fas fa-heartbeat"></i> System Uptime</h3>
+                        <div class="metric-value" id="system-uptime">0%</div>
+                        <div class="metric-label">Last 7 Days</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="dashboard.startAllServices()">
+                            <i class="fas fa-play"></i> Start All Services
+                        </button>
+                        <button class="btn btn-danger" onclick="dashboard.stopAllServices()">
+                            <i class="fas fa-stop"></i> Stop All Services
+                        </button>
+                        <button class="btn btn-warning" onclick="dashboard.restartServices()">
+                            <i class="fas fa-sync"></i> Restart Services
+                        </button>
+                        <button class="btn btn-primary" onclick="dashboard.runHealthCheck()">
+                            <i class="fas fa-heartbeat"></i> Health Check
+                        </button>
+                        <button class="btn btn-secondary" onclick="dashboard.exportData()">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- YAML Hot-Reload Status -->
+                <div class="hot-reload-status">
+                    <h3><i class="fas fa-fire"></i> Bun Hot-Reload Status</h3>
+                    <div class="reload-info">
+                        <div class="reload-item">
+                            <span>Status:</span>
+                            <span id="hot-reload-status" class="badge badge-success">Active</span>
+                        </div>
+                        <div class="reload-item">
+                            <span>Last Reload:</span>
+                            <span id="last-reload">Never</span>
+                        </div>
+                        <div class="reload-item">
+                            <span>Files Watching:</span>
+                            <span id="files-watching">0</span>
+                        </div>
+                        <div class="reload-item">
+                            <span>Config Changes:</span>
+                            <span id="config-changes">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Tab -->
+            <div id="services-tab" class="tab-content">
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-header">
+                            <h3><i class="fab fa-telegram"></i> Telegram Bot</h3>
+                            <span id="telegram-status" class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div class="service-details">
+                            <div>Port: N/A</div>
+                            <div>Response: <span id="telegram-response">-</span></div>
+                        </div>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-header">
+                            <h3><i class="fas fa-globe"></i> Portal Server</h3>
+                            <span id="portal-status" class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div class="service-details">
+                            <div>Port: 5000</div>
+                            <div>Response: <span id="portal-response">-</span></div>
+                        </div>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-header">
+                            <h3><i class="fas fa-user-shield"></i> Admin Server</h3>
+                            <span id="admin-status" class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div class="service-details">
+                            <div>Port: 3003</div>
+                            <div>Response: <span id="admin-response">-</span></div>
+                        </div>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-header">
+                            <h3><i class="fas fa-plug"></i> WebSocket Server</h3>
+                            <span id="websocket-status" class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div class="service-details">
+                            <div>Port: 3002</div>
+                            <div>Response: <span id="websocket-response">-</span></div>
+                        </div>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-header">
+                            <h3><i class="fas fa-database"></i> Database</h3>
+                            <span id="database-status" class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div class="service-details">
+                            <div>Type: PostgreSQL</div>
+                            <div>Response: <span id="database-response">-</span></div>
+                        </div>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-header">
+                            <h3><i class="fas fa-bolt"></i> Redis Cache</h3>
+                            <span id="redis-status" class="badge badge-warning">Checking...</span>
+                        </div>
+                        <div class="service-details">
+                            <div>Port: 6379</div>
+                            <div>Response: <span id="redis-response">-</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="service-actions">
+                    <button class="btn btn-primary" onclick="dashboard.checkAllServices()">
+                        <i class="fas fa-sync"></i> Check All Services
+                    </button>
+                    <button class="btn btn-secondary" id="auto-check-toggle">
+                        <i class="fas fa-clock"></i> Auto-Check: OFF
+                    </button>
+                </div>
+            </div>
+
+            <!-- API Testing Tab -->
+            <div id="api-tab" class="tab-content">
+                <div class="api-tester">
+                    <div class="api-controls">
+                        <select id="http-method">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                        <input type="text" id="api-url" placeholder="Enter API endpoint (e.g., /api/health)" />
+                        <button class="btn btn-primary" id="send-request">
+                            <i class="fas fa-paper-plane"></i> Send Request
+                        </button>
+                    </div>
+                    <div class="api-presets">
+                        <h4>Quick Test Endpoints:</h4>
+                        <div class="preset-buttons">
+                            <button class="btn btn-sm" onclick="dashboard.testEndpoint('/health')">Health</button>
+                            <button class="btn btn-sm" onclick="dashboard.testEndpoint('/api/admin/stats')">Stats</button>
+                            <button class="btn btn-sm" onclick="dashboard.testEndpoint('/api/customers')">Customers</button>
+                            <button class="btn btn-sm" onclick="dashboard.testEndpoint('/api/config')">Config</button>
+                            <button class="btn btn-sm" onclick="dashboard.testEndpoint('/api/features')">Features</button>
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="response-header">
+                            <h4>Response</h4>
+                            <span id="response-status"></span>
+                            <span id="response-time"></span>
+                        </div>
+                        <pre id="response-display">Response will appear here...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YAML Configuration Tab -->
+            <div id="config-tab" class="tab-content">
+                <div class="config-container">
+                    <div class="config-sidebar">
+                        <h3>Configuration Files</h3>
+                        <ul class="config-file-list">
+                            <li class="config-file active" data-file="app">app.yaml</li>
+                            <li class="config-file" data-file="features">features.yaml</li>
+                            <li class="config-file" data-file="services">services.yaml</li>
+                            <li class="config-file" data-file="telegram">telegram.yaml</li>
+                            <li class="config-file" data-file="database">database.yaml</li>
+                            <li class="config-file" data-file="api">api.yaml</li>
+                        </ul>
+                    </div>
+                    <div class="config-main">
+                        <div class="config-controls">
+                            <button class="btn btn-primary" id="save-config">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button class="btn btn-secondary" id="reload-config">
+                                <i class="fas fa-sync"></i> Reload
+                            </button>
+                            <button class="btn btn-secondary" id="validate-config">
+                                <i class="fas fa-check"></i> Validate
+                            </button>
+                            <button class="btn btn-secondary" id="export-config">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <span id="config-status" class="config-status"></span>
+                        </div>
+                        <div class="config-editor-wrapper">
+                            <textarea id="yaml-editor" placeholder="Select a configuration file to edit..."></textarea>
+                        </div>
+                        <div id="config-validation" class="validation-results"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Flags Tab -->
+            <div id="features-tab" class="tab-content">
+                <div class="features-container">
+                    <div class="features-header">
+                        <h3>Feature Flags Management</h3>
+                        <button class="btn btn-primary" onclick="dashboard.saveFeatures()">
+                            <i class="fas fa-save"></i> Save All Changes
+                        </button>
+                    </div>
+                    <div id="feature-flags-grid" class="feature-flags-grid">
+                        <!-- Feature flags will be dynamically loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Logs Tab -->
+            <div id="logs-tab" class="tab-content">
+                <div class="logs-controls">
+                    <select id="log-level">
+                        <option value="all">All Levels</option>
+                        <option value="error">Error</option>
+                        <option value="warn">Warning</option>
+                        <option value="info">Info</option>
+                        <option value="debug">Debug</option>
+                        <option value="success">Success</option>
+                    </select>
+                    <input type="text" id="log-search" placeholder="Search logs..." />
+                    <button class="btn btn-secondary" id="clear-logs">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                    <button class="btn btn-secondary" id="export-logs">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="btn btn-secondary" id="pause-logs">
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                </div>
+                <div id="logs-container" class="logs-container">
+                    <!-- Logs will appear here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="dashboard-footer">
+            <div class="footer-left">
+                <span>Environment: <strong id="current-env">Development</strong></span>
+                <span>Version: <strong id="app-version">3.0.0</strong></span>
+                <span>Bun: <strong id="bun-version">1.0.0</strong></span>
+            </div>
+            <div class="footer-right">
+                <span>Last Updated: <span id="last-updated">Never</span></span>
+                <span>Memory: <span id="memory-usage">0 MB</span></span>
+                <span>CPU: <span id="cpu-usage">0%</span></span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

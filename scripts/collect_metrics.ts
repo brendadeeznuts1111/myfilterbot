@@ -3,11 +3,12 @@
 /**
  * Lightweight Metrics Collector
  * Collects performance baselines and monitors system health
+ * Optimized with Bun's native file APIs
  */
 
 import { performance } from 'perf_hooks';
-import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { mkdirSync } from 'fs'; // Only for directory creation
 
 interface MetricData {
   timestamp: string;
@@ -51,11 +52,15 @@ class MetricsCollector {
     this.ensureMetricsDirectory();
   }
 
-  private ensureMetricsDirectory() {
+  private async ensureMetricsDirectory() {
     const metricsDir = join(process.cwd(), 'metrics');
     try {
-      if (!existsSync(metricsDir)) {
-        require('fs').mkdirSync(metricsDir, { recursive: true });
+      // Check if directory exists using Bun.file
+      const dirFile = Bun.file(metricsDir);
+      const exists = await dirFile.exists();
+      
+      if (!exists) {
+        mkdirSync(metricsDir, { recursive: true });
       }
     } catch (error) {
       console.warn('Could not create metrics directory:', error);
@@ -133,20 +138,24 @@ class MetricsCollector {
     this.record('cpu_system_time', cpuUsage.system, 'microseconds');
     
     // Load average (Unix-like systems only)
+    let loadAverage: number[] = [];
     try {
-      const os = require('os');
-      const loadAvg = os.loadavg();
-      this.record('load_average_1m', loadAvg[0], 'ratio');
-      this.record('load_average_5m', loadAvg[1], 'ratio');
-      this.record('load_average_15m', loadAvg[2], 'ratio');
-    } catch (error) {
+      // Use dynamic import for optional os module
+      const os = await import('os');
+      if (os.loadavg) {
+        loadAverage = os.loadavg();
+        this.record('load_average_1m', loadAverage[0], 'ratio');
+        this.record('load_average_5m', loadAverage[1], 'ratio');
+        this.record('load_average_15m', loadAverage[2], 'ratio');
+      }
+    } catch {
       // Load average not available on this platform
     }
     
     return {
       uptime,
       cpuUsage,
-      loadAverage: require('os').loadavg?.() || []
+      loadAverage
     };
   }
 
@@ -178,7 +187,7 @@ class MetricsCollector {
         apiTimes.push(responseTime);
         
         // Small delay between requests
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await Bun.sleep(100);
       }
     }
     
@@ -209,7 +218,7 @@ class MetricsCollector {
     };
     
     // Save baseline
-    this.saveBaseline(baseline);
+    await this.saveBaseline(baseline);
     
     console.log('✅ Baseline collection complete');
     console.log(`📈 API Response Times: P50=${p50.toFixed(2)}ms, P95=${p95.toFixed(2)}ms, P99=${p99.toFixed(2)}ms`);
@@ -220,11 +229,11 @@ class MetricsCollector {
   }
 
   /**
-   * Save baseline to file
+   * Save baseline to file using Bun.write()
    */
-  private saveBaseline(baseline: PerformanceBaseline) {
+  private async saveBaseline(baseline: PerformanceBaseline) {
     try {
-      writeFileSync(this.baselineFile, JSON.stringify(baseline, null, 2));
+      await Bun.write(this.baselineFile, JSON.stringify(baseline, null, 2));
       console.log(`💾 Baseline saved to ${this.baselineFile}`);
     } catch (error) {
       console.error('Failed to save baseline:', error);
@@ -232,12 +241,13 @@ class MetricsCollector {
   }
 
   /**
-   * Load existing baseline
+   * Load existing baseline using Bun.file()
    */
-  loadBaseline(): PerformanceBaseline | null {
+  async loadBaseline(): Promise<PerformanceBaseline | null> {
     try {
-      if (existsSync(this.baselineFile)) {
-        const data = readFileSync(this.baselineFile, 'utf-8');
+      const file = Bun.file(this.baselineFile);
+      if (await file.exists()) {
+        const data = await file.text();
         return JSON.parse(data);
       }
     } catch (error) {
@@ -250,7 +260,7 @@ class MetricsCollector {
    * Compare current metrics with baseline
    */
   async compareWithBaseline(): Promise<void> {
-    const baseline = this.loadBaseline();
+    const baseline = await this.loadBaseline();
     if (!baseline) {
       console.log('❌ No baseline found. Run with --collect-baseline first.');
       return;
@@ -281,16 +291,16 @@ class MetricsCollector {
     };
     
     const reportFile = join(process.cwd(), 'metrics', `comparison-${Date.now()}.json`);
-    writeFileSync(reportFile, JSON.stringify(report, null, 2));
+    await Bun.write(reportFile, JSON.stringify(report, null, 2));
     console.log(`📋 Comparison report saved to ${reportFile}`);
   }
 
   /**
-   * Save current metrics to file
+   * Save current metrics to file using Bun.write()
    */
-  saveMetrics() {
+  async saveMetrics() {
     try {
-      writeFileSync(this.metricsFile, JSON.stringify(this.metrics, null, 2));
+      await Bun.write(this.metricsFile, JSON.stringify(this.metrics, null, 2));
       console.log(`💾 Metrics saved to ${this.metricsFile}`);
     } catch (error) {
       console.error('Failed to save metrics:', error);
@@ -321,8 +331,8 @@ async function main() {
     }, 30000); // Every 30 seconds
     
     // Save metrics every 5 minutes
-    setInterval(() => {
-      collector.saveMetrics();
+    setInterval(async () => {
+      await collector.saveMetrics();
     }, 300000);
     
   } else {
