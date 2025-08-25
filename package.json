@@ -17,7 +17,7 @@
     "dev": "concurrently \"bun run dev:*\"",
     "dev:bot": "python3 src/bot/main.py",
     "dev:server": "bun --env-file=.env.local --define process.env.NODE_ENV=\"'development'\" --define ENABLE_CONSOLE_LOGS=true --define ENABLE_DEBUG_MODE=true --hot src/server/admin/index.ts",
-    "dev:web": "bun --env-file=.env.local --define process.env.NODE_ENV=\"'development'\" --define ENABLE_DEV_TOOLS=true run src/dev-server.ts",
+    "dev:web": "bun --env-file=.env.local --define process.env.NODE_ENV=\"'development'\" --define ENABLE_DEV_TOOLS=true src/dev-server.ts",
     "dev:admin": "bun --env-file=.env.local --define process.env.NODE_ENV=\"'development'\" --hot src/client/admin-mobile/dev-server.ts",
     "start": "bun run start:prod",
     "start:prod": "NODE_ENV=production concurrently \"bun run start:bot\" \"bun run start:server\"",
