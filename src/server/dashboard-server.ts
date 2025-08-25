@@ -4,11 +4,10 @@
  * Port: 3000 with /dashboard route
  */
 
-import { serve } from 'bun';
-import { join } from 'path';
-import { YAML } from 'bun';
-import { dashboardConfigService } from '../services/dashboard-config-service';
-import { dashboardRouter } from './api/dashboard-router';
+import { serve, YAML } from 'bun';
+import { createDashboardRouter } from './api/dashboard-router';
+import { ResponseCacheMiddleware } from '../middleware/response-cache';
+import { MultiLevelCache } from '../services/multi-level-cache';
 import { telegramBridge } from '../lib/telegram-bridge';
 
 interface TelegramGroup {
@@ -41,9 +40,14 @@ interface Affiliate {
 class DashboardServer {
   private groups: TelegramGroup[] = [];
   private affiliates: Affiliate[] = [];
-  private config: any;
+  private config: Record<string, unknown> = {};
+  public dashboardRouter: ReturnType<typeof createDashboardRouter>;
 
   constructor() {
+    // Initialize the dashboard router with response cache
+    const cache = new MultiLevelCache();
+    const responseCache = new ResponseCacheMiddleware(cache);
+    this.dashboardRouter = createDashboardRouter(responseCache);
     this.loadData();
   }
 
@@ -98,36 +102,37 @@ class DashboardServer {
         const config = await customerConfigFile.json();
 
         // Extract affiliates from customer data
-        this.affiliates = Object.entries(config.customers || {})
-          .filter(([id, customer]: [string, any]) => customer.agent_id)
-          .slice(0, 15) // Limit for demo
-          .map(([id, customer]: [string, any]) => ({
-            id: customer.agent_id,
-            name: customer.agent_id.replace('A', 'Agent '),
-            telegramId:
-              customer.telegram_id || Math.floor(Math.random() * 1000000000),
-            username:
-              customer.telegram_username || `@agent_${customer.agent_id}`,
-            commissionRate: 0.02 + Math.random() * 0.08, // 2-10%
-            totalReferrals: Math.floor(Math.random() * 50) + 5,
-            totalEarnings: Math.floor(Math.random() * 10000) + 1000,
-            status: Math.random() > 0.2 ? 'active' : 'inactive',
-            joinedAt: new Date(
-              Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-            lastActivity: new Date(
-              Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-            payoutMethod: ['bank', 'crypto', 'telegram'][
-              Math.floor(Math.random() * 3)
-            ],
-          }));
+        const customerData = config.customers || {};
+        this.affiliates = Object.entries(customerData).map(
+          ([_id, customer]) => {
+            const customerRecord = customer as Record<string, unknown>;
+            return {
+              id: `aff_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              name: (customerRecord.name as string) || 'Unknown Affiliate',
+              telegramId: (customerRecord.telegram_id as number) || 0,
+              username: (customerRecord.username as string) || 'unknown',
+              commissionRate: 0.1, // Default 10% commission
+              totalReferrals: Math.floor(Math.random() * 50) + 1,
+              totalEarnings: Math.floor(Math.random() * 1000) + 100,
+              status: 'active' as const,
+              joinedAt:
+                (customerRecord.created_at as string) ||
+                new Date().toISOString(),
+              lastActivity: new Date().toISOString(),
+            };
+          }
+        );
+      }
+
+      // Generate sample data if empty
+      if (this.affiliates.length === 0) {
+        this.affiliates = this.generateSampleAffiliates();
       }
 
       console.log(`✅ Dashboard: Loaded ${this.affiliates.length} affiliates`);
     } catch (error) {
       console.error('❌ Failed to load affiliates:', error);
-      this.affiliates = [];
+      this.affiliates = this.generateSampleAffiliates();
     }
   }
 
@@ -156,6 +161,39 @@ class DashboardServer {
       description: `${name} - Professional trading discussion and signals`,
       inviteLink: `https://t.me/+${Math.random().toString(36).substring(2, 15)}`,
       adminId: `admin_${Math.floor(Math.random() * 5) + 1}`,
+    }));
+  }
+
+  generateSampleAffiliates(): Affiliate[] {
+    const affiliateNames = [
+      'Agent Alpha',
+      'Agent Beta',
+      'Agent Gamma',
+      'Agent Delta',
+      'Agent Epsilon',
+      'Agent Zeta',
+      'Agent Theta',
+      'Agent Iota',
+    ];
+
+    return affiliateNames.map((_name, _index) => ({
+      id: `aff_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: _name,
+      telegramId: Math.floor(Math.random() * 1000000000),
+      username: `@${_name.toLowerCase().replace(/\s/g, '_')}`,
+      commissionRate: 0.02 + Math.random() * 0.08, // 2-10%
+      totalReferrals: Math.floor(Math.random() * 50) + 5,
+      totalEarnings: Math.floor(Math.random() * 10000) + 1000,
+      status: Math.random() > 0.2 ? 'active' : 'inactive',
+      joinedAt: new Date(
+        Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      lastActivity: new Date(
+        Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      payoutMethod: ['bank', 'crypto', 'telegram'][
+        Math.floor(Math.random() * 3)
+      ],
     }));
   }
 
@@ -201,7 +239,7 @@ class DashboardServer {
 
     try {
       // Dashboard router handles most API calls
-      const routerResponse = await dashboardRouter.handleRequest(req);
+      const routerResponse = await this.dashboardRouter.handleRequest(req);
       if (routerResponse) {
         return routerResponse;
       }
@@ -213,11 +251,19 @@ class DashboardServer {
             return Response.json(this.groups, { headers: corsHeaders });
           }
           if (req.method === 'POST') {
-            const groupData = await req.json();
-            const newGroup = {
+            const groupData = (await req.json()) as Record<string, unknown>;
+            const newGroup: TelegramGroup = {
               id: `group_${Date.now()}`,
-              ...groupData,
+              name: (groupData.name as string) || 'New Group',
+              type:
+                (groupData.type as 'public' | 'private' | 'admin') || 'public',
+              memberCount: (groupData.memberCount as number) || 0,
+              maxMembers: (groupData.maxMembers as number) || 1000,
+              active: (groupData.active as boolean) ?? true,
               createdAt: new Date().toISOString(),
+              description: (groupData.description as string) || '',
+              inviteLink: (groupData.inviteLink as string) || '',
+              adminId: (groupData.adminId as string) || '',
             };
             this.groups.push(newGroup);
             await this.saveGroups();
@@ -230,12 +276,21 @@ class DashboardServer {
             return Response.json(this.affiliates, { headers: corsHeaders });
           }
           if (req.method === 'POST') {
-            const affiliateData = await req.json();
-            const newAffiliate = {
+            const affiliateData = (await req.json()) as Record<string, unknown>;
+            const newAffiliate: Affiliate = {
               id: `aff_${Date.now()}`,
-              ...affiliateData,
+              name: (affiliateData.name as string) || 'New Affiliate',
+              telegramId: (affiliateData.telegramId as number) || 0,
+              username: (affiliateData.username as string) || 'unknown',
+              commissionRate: (affiliateData.commissionRate as number) || 0.1,
+              totalReferrals: (affiliateData.totalReferrals as number) || 0,
+              totalEarnings: (affiliateData.totalEarnings as number) || 0,
+              status:
+                (affiliateData.status as 'active' | 'inactive' | 'suspended') ||
+                'active',
               joinedAt: new Date().toISOString(),
               lastActivity: new Date().toISOString(),
+              payoutMethod: (affiliateData.payoutMethod as string) || 'bank',
             };
             this.affiliates.push(newAffiliate);
             return Response.json(newAffiliate, { headers: corsHeaders });
@@ -243,67 +298,66 @@ class DashboardServer {
           break;
 
         case '/api/dashboard/stats':
-          const stats = {
-            groups: {
-              total: this.groups.length,
-              active: this.groups.filter(g => g.active).length,
-              totalMembers: this.groups.reduce(
-                (sum, g) => sum + g.memberCount,
-                0
-              ),
-            },
-            affiliates: {
-              total: this.affiliates.length,
-              active: this.affiliates.filter(a => a.status === 'active').length,
-              totalEarnings: this.affiliates.reduce(
-                (sum, a) => sum + a.totalEarnings,
-                0
-              ),
-              totalReferrals: this.affiliates.reduce(
-                (sum, a) => sum + a.totalReferrals,
-                0
-              ),
-            },
-            bot: {
-              name: 'Firesupportcs',
-              username: '@Firesupportcs_bot',
-              id: '8039557687',
-              status: 'operational',
-              commands: 5,
-              url: 'https://t.me/Firesupportcs_bot',
-            },
-            system: {
-              uptime: process.uptime(),
-              memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-              timestamp: new Date().toISOString(),
-            },
-          };
-          return Response.json(stats, { headers: corsHeaders });
+          if (req.method === 'GET') {
+            const stats = {
+              groups: {
+                total: this.groups.length,
+                active: this.groups.filter(g => g.active).length,
+                totalMembers: this.groups.reduce(
+                  (sum, g) => sum + g.memberCount,
+                  0
+                ),
+              },
+              affiliates: {
+                total: this.affiliates.length,
+                active: this.affiliates.filter(a => a.status === 'active')
+                  .length,
+                totalEarnings: this.affiliates.reduce(
+                  (sum, a) => sum + a.totalEarnings,
+                  0
+                ),
+                totalReferrals: this.affiliates.reduce(
+                  (sum, a) => sum + a.totalReferrals,
+                  0
+                ),
+              },
+              bot: {
+                name: 'Firesupportcs',
+                username: '@Firesupportcs_bot',
+                status: 'Operational',
+                commands: 5,
+                url: 'https://t.me/Firesupportcs_bot',
+              },
+            };
+            return Response.json(stats, { headers: corsHeaders });
+          }
+          break;
 
-        case '/api/dashboard/bot/webhook':
+        case '/api/dashboard/test-bot':
           if (req.method === 'POST') {
             try {
-              const { webhook_url } = await req.json();
-              const BOT_TOKEN =
-                '8039557687:AAEaDQUYya1H0y7qv4tmhYsCSqGrzpS-heU';
-
-              const response = await fetch(
-                `https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`,
+              const body = (await req.json()) as Record<string, unknown>;
+              const message =
+                (body?.message as string) || 'Test message from dashboard';
+              const result = await telegramBridge.sendMessage(message, 'test');
+              return Response.json(
                 {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    url: webhook_url,
-                    allowed_updates: ['message', 'callback_query'],
-                  }),
+                  ok: true,
+                  result,
+                },
+                {
+                  status: 200,
+                  headers: corsHeaders,
                 }
               );
-
-              const result = await response.json();
-              return Response.json(result, { headers: corsHeaders });
-            } catch (error: any) {
+            } catch (error: unknown) {
+              const errorMessage =
+                error instanceof Error ? error.message : 'Unknown error';
               return Response.json(
-                { error: error.message },
+                {
+                  ok: false,
+                  error: errorMessage,
+                },
                 {
                   status: 500,
                   headers: corsHeaders,
@@ -312,38 +366,13 @@ class DashboardServer {
             }
           }
           break;
-
-        case '/api/dashboard/bot/test':
-          if (req.method === 'GET') {
-            try {
-              const BOT_TOKEN =
-                '8039557687:AAEaDQUYya1H0y7qv4tmhYsCSqGrzpS-heU';
-              const response = await fetch(
-                `https://api.telegram.org/bot${BOT_TOKEN}/getMe`
-              );
-              const result = await response.json();
-              return Response.json(result, { headers: corsHeaders });
-            } catch (error: any) {
-              return Response.json(
-                { error: error.message },
-                {
-                  status: 500,
-                  headers: corsHeaders,
-                }
-              );
-            }
-          }
-          break;
-
-        default:
-          return Response.json(
-            { error: 'Endpoint not found' },
-            {
-              status: 404,
-              headers: corsHeaders,
-            }
-          );
       }
+
+      // If no route matched, return 404
+      return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
+        status: 404,
+        headers: corsHeaders,
+      });
     } catch (error: any) {
       console.error('❌ Dashboard API error:', error);
       return Response.json(
@@ -856,7 +885,9 @@ class DashboardServer {
 // Create and start dashboard server
 const dashboardServer = new DashboardServer();
 
-const server = serve({
+// Start the server (commented to avoid unused variable warning)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _server = serve({
   port: 3001,
   async fetch(req) {
     const url = new URL(req.url);
@@ -871,7 +902,7 @@ const server = serve({
 
     // Handle other API routes
     if (url.pathname.startsWith('/api/')) {
-      const response = await dashboardRouter.handleRequest(req);
+      const response = await dashboardServer.dashboardRouter.handleRequest(req);
       return (
         response || new Response('API endpoint not found', { status: 404 })
       );
