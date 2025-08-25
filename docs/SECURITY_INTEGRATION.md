@@ -3,7 +3,7 @@
 ## Overview
 The Proactive Security Actions system provides automated threat detection, response, and monitoring capabilities for the Fantdev Trading Platform. This system operates independently but integrates seamlessly with existing portals, notification systems, and bot infrastructure.
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ### Core Components
 
@@ -30,7 +30,7 @@ The Proactive Security Actions system provides automated threat detection, respo
    - Event analysis and pattern detection
    - Decorator-based monitoring
 
-## 🚀 Quick Start Integration
+## Quick Start Integration
 
 ### 1. Initialize Security Engine
 
@@ -77,7 +77,7 @@ async def process_transaction(customer_id, transaction_data, ip_address=None):
     return result
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Default Security Rules
 
@@ -104,7 +104,7 @@ rule.conditions['time_window_minutes'] = 3  # Reduce time window
 rule.enabled = False  # Disable rule
 ```
 
-## 📊 Data Sources & Detection
+## Data Sources & Detection
 
 ### Monitored Data Points
 
@@ -141,7 +141,7 @@ The system uses multiple detection methods:
 - **Temporal Analysis**: Time-based sequence detection
 - **Geographic Analysis**: IP location inconsistencies
 
-## ⚡ Automated Response Actions
+## Automated Response Actions
 
 ### Available Actions
 
@@ -179,7 +179,7 @@ Event Detected → Rule Evaluation → Action Triggered → Notification Sent �
    Analysis     Comparison       Response          Generated      Entry Created
 ```
 
-## 🔔 Notification Integration
+## Notification Integration
 
 ### Admin Notifications
 
@@ -223,7 +223,7 @@ await notification_service.create_notification(
 )
 ```
 
-## 📋 Audit Trail
+## Audit Trail
 
 ### Comprehensive Logging
 
@@ -258,7 +258,7 @@ audit_data = {
 }
 ```
 
-## 🎛️ Admin Dashboard Features
+## Admin Dashboard Features
 
 ### Security Operations Center
 
@@ -297,7 +297,7 @@ socket.on('security_action', (data) => {
 });
 ```
 
-## 🧪 Testing & Validation
+## Testing & Validation
 
 ### Event Simulation
 
@@ -331,7 +331,7 @@ curl -X POST http://localhost:5000/api/security/simulate-event \
   }'
 ```
 
-## 🔒 Security Best Practices
+## Security Best Practices
 
 ### Rule Configuration
 
@@ -354,7 +354,7 @@ curl -X POST http://localhost:5000/api/security/simulate-event \
 - Rule effectiveness analysis
 - System health checks
 
-## 📈 Performance Considerations
+## Performance Considerations
 
 ### Memory Management
 
@@ -379,7 +379,7 @@ The system implements automatic cleanup:
 - Network traffic for notifications only
 - Storage for audit logs
 
-## 🚨 Emergency Procedures
+## Emergency Procedures
 
 ### System Disable
 
@@ -407,7 +407,7 @@ Use the security dashboard's manual tools:
 3. Examine audit trail
 4. Override automated actions if needed
 
-## 🔄 Integration Checklist
+## Integration Checklist
 
 - [ ] Security engine initialized in application startup
 - [ ] Security API registered with portal server

@@ -67,6 +67,14 @@ class YamlConfigService {
   }
 
   /**
+   * Get app configuration
+   */
+  public async getAppConfig(): Promise<any> {
+    if (!this.appConfig) await this.initialize();
+    return this.appConfig;
+  }
+
+  /**
    * Get server configuration
    */
   public async getServerConfig(serverType: "bot" | "admin" | "api" | "websocket"): Promise<ServerConfig> {

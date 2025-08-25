@@ -13,7 +13,7 @@ connections:
     # Connection pool settings
     pool:
       min: ${DB_POOL_MIN:-2}
-      max: ${DB_POOL_MAX:-10}
+      max: ${DB_POOL_MAX:-20}
       acquireTimeout: 30000
       idleTimeout: 30000
       connectionTimeout: 30000

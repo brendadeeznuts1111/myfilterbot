@@ -11,7 +11,7 @@ This guide provides step-by-step instructions for deploying the codebase optimiz
 - [ ] Build compilation successful (✅ Done)
 - [ ] Core test suite passing (✅ 95/99 tests pass)
 
-## 🔧 Staging Environment Setup
+## Staging Environment Setup
 
 ### 1. Environment Configuration
 
@@ -60,7 +60,7 @@ cp data/chat_tracker.db data/chat_tracker.backup.db
 python3 src/bot/database.py --migrate
 ```
 
-## 🧪 Validation Checklist
+## Validation Checklist
 
 ### Build & Compilation Validation
 
@@ -163,7 +163,7 @@ done
 wait
 ```
 
-## 📊 Performance Baseline Collection
+## Performance Baseline Collection
 
 ### Response Time Metrics
 ```bash
@@ -171,12 +171,15 @@ wait
 curl -w "@curl-format.txt" -H "X-Customer-ID: BB1042" \
   http://localhost:3003/api/customer/balance
 
-# Bot command response times
-time python3 -c "
-import asyncio
-from src.bot.handlers.handlers import FantdevBotHandlers
-# Simulate command processing
-"
+# curl-format.txt content:
+#      time_namelookup:  %{time_namelookup}\n
+#         time_connect:  %{time_connect}\n
+#      time_appconnect:  %{time_appconnect}\n
+#     time_pretransfer:  %{time_pretransfer}\n
+#        time_redirect:  %{time_redirect}\n
+#   time_starttransfer:  %{time_starttransfer}\n
+#                      ----------\n
+#           time_total:  %{time_total}\n
 ```
 
 ### Memory Usage Monitoring
@@ -197,7 +200,7 @@ tail -f logs/error.log | grep -E "(ERROR|CRITICAL)"
 grep -c "ErrorCategory" logs/application.log
 ```
 
-## 🔍 Regression Testing
+## Regression Testing
 
 ### Critical Path Testing
 1. **Customer Registration Flow**
@@ -207,7 +210,6 @@ grep -c "ErrorCategory" logs/application.log
 
 2. **Transaction Processing**
    - Deposit detection and processing
-   - Withdrawal validation
    - Balance updates
 
 3. **Admin Operations**
@@ -222,7 +224,7 @@ bun test src/test/analytics-dashboard.test.ts
 python3 -m pytest tests/python/smoke_test.py -v
 ```
 
-## 🚨 Rollback Plan
+## Rollback Plan
 
 If issues are detected:
 
@@ -236,8 +238,8 @@ pkill -f "python.*main.py"
 pkill -f "bun.*admin"
 
 # Restore database backups
-cp data/customer_database.backup.json data/customer_database.json
-cp data/chat_tracker.backup.db data/chat_tracker.db
+cp data/customer_database.json data/customer_database.backup.json
+cp data/chat_tracker.db data/chat_tracker.db
 
 # Restart with stable version
 python3 src/bot/main.py &
@@ -249,7 +251,7 @@ bun run admin:prod &
 - Revert to hardcoded constants: Set `USE_LEGACY_CONFIG=true`
 - Disable rate limiting: Set `DISABLE_RATE_LIMITING=true`
 
-## ✅ Success Criteria
+## Success Criteria
 
 ### Deployment Success Indicators
 - [ ] All services start without errors
@@ -270,7 +272,7 @@ bun run admin:prod &
 - [ ] Rate limiting protecting endpoints
 - [ ] Type annotations improving IDE experience
 
-## 📋 Post-Deployment Tasks
+## Post-Deployment Tasks
 
 1. **Monitor for 24 hours**
    - Check error logs hourly
@@ -287,7 +289,7 @@ bun run admin:prod &
    - Update configuration guides
    - Document performance improvements
 
-## 🔗 Related Documentation
+## Related Documentation
 
 - [Configuration Management Guide](./CONFIGURATION_GUIDE.md)
 - [Error Handling Patterns](./ERROR_HANDLING_GUIDE.md)
