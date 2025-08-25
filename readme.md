@@ -1,13 +1,13 @@
 # 🚀 Fantdev Trading Bot - Enterprise Trading Platform
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
 ![Bun](https://img.shields.io/badge/bun-1.2.20+-orange)
 ![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue)
 ![React](https://img.shields.io/badge/react-19+-cyan)
 ![License](https://img.shields.io/badge/license-MIT-purple)
 
-A comprehensive, enterprise-grade Telegram trading bot platform with real-time monitoring, React-based admin dashboard, and high-performance worker thread processing.
+A comprehensive, enterprise-grade Telegram trading bot platform with real-time monitoring, React-based admin dashboard, high-performance worker thread processing, and event-driven architecture.
 
 ## 🌟 Key Features
 
@@ -17,6 +17,7 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 - **Smart Alerts** - Low balance warnings, large transaction notifications, inactive customer alerts
 - **P&L Tracking** - Weekly profit/loss calculation and automated reporting
 - **Pattern Recognition** - Advanced regex-based transaction detection
+- **Event-Driven Architecture** - New modular event bus system for scalable bot operations
 
 ### Telegram Dashboard Integration
 - **Live Message Streaming** - Real-time message monitoring from all groups
@@ -38,6 +39,13 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 - **Priority Queue** - Intelligent task prioritization
 - **SQLite Persistence** - Reliable data storage for monitoring
 - **Auto-scaling** - Handles load spikes automatically
+- **Event Bus System** - Decoupled, scalable event handling
+
+### User-Agent Customization
+- **Bun CLI Integration** - Use `--user-agent` flag for custom HTTP headers
+- **Service Identification** - Unique User-Agent strings for each service
+- **API Rate Limiting** - Better control over external API requests
+- **Monitoring & Debugging** - Easy identification of request sources
 
 ## 📦 Installation
 
@@ -162,7 +170,12 @@ myfilterbot/
 │   │   ├── bun-yaml-service.ts    # Native Bun YAML handling
 │   │   ├── dashboard-config-service.ts # Dashboard configuration
 │   │   ├── yaml-config-service.ts     # YAML configuration management
-│   │   └── cloudflare-client.ts       # Cloudflare Worker client
+│   │   ├── cloudflare-client.ts       # Cloudflare Worker client
+│   │   ├── event-bus.ts              # Event bus system
+│   │   ├── event-bus-service.ts      # Event bus service
+│   │   ├── event-handlers.ts         # Event handlers
+│   │   ├── event-types.ts            # Event type definitions
+│   │   └── bot-event-integration.ts  # Bot event integration
 │   ├── web/                  # React web components
 │   │   ├── components/       # Reusable React components
 │   │   │   ├── analytics/    # Analytics charts and KPIs
@@ -176,7 +189,8 @@ myfilterbot/
 │   │   ├── api-client.ts     # API client with rate limiting
 │   │   ├── telegram-bridge.ts # Telegram integration
 │   │   └── yaml-config.ts    # YAML configuration utilities
-│   └── utils/                # Utility functions
+│   ├── utils/                # Utility functions
+│   └── start-event-driven-bot.ts # Event-driven bot entry point
 ├── tests/                    # Automated test suites
 │   ├── unit/                 # Unit tests (TypeScript)
 │   ├── integration/          # Integration tests
@@ -184,9 +198,17 @@ myfilterbot/
 │   └── e2e/                  # End-to-end tests
 ├── config/                   # Configuration files
 ├── docs/                     # Documentation
-├── public/                   # Static assets
+│   ├── USER_AGENT_CUSTOMIZATION.md # User-Agent customization guide
+│   └── ...                   # Other documentation
+├── examples/                 # Example scripts
+│   ├── user-agent-demo.ts    # User-Agent demonstration
+│   └── user-agent-integration-examples.md # Integration examples
 ├── scripts/                  # Utility scripts
-└── templates/                # HTML templates
+│   ├── start-services-with-user-agents.sh # Service startup script
+│   └── stop-services.sh      # Service shutdown script
+├── public/                   # Static assets
+├── templates/                # HTML templates
+└── README_USER_AGENT.md      # User-Agent feature overview
 ```
 
 ## 🎯 Core Components
@@ -272,6 +294,7 @@ bun test --coverage --timeout=30000                     # Efficient testing
 - **Native TypeScript** execution without transpilation
 - **Dead code elimination** with `--define` flags (Bun 1.2.20+)
 - **Environment-specific builds** with `--env-file` (Bun 1.2.20+)
+- **Custom User-Agent Headers** - Better API identification and rate limiting
 
 ### Static Optimization (New in 1.2.20+)
 ```bash
@@ -280,6 +303,9 @@ bun --env-file=.env.local --define process.env.NODE_ENV="'development'" src/inde
 
 # Production build with dead code elimination
 bun build --define ENABLE_CONSOLE_LOGS=false --define process.env.NODE_ENV="'production'" src/index.ts
+
+# Custom User-Agent for API requests
+bun --user-agent "Fantdev-Trading-Bot/2.2.0" src/start-event-driven-bot.ts start
 ```
 
 ### Benchmark Results
@@ -348,6 +374,7 @@ The platform includes comprehensive monitoring:
 - [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Complete migration guide
 - [docs/](docs/) - Technical documentation
 - [API Documentation](docs/api/) - Complete API reference
+- [USER_AGENT_CUSTOMIZATION.md](docs/USER_AGENT_CUSTOMIZATION.md) - User-Agent customization guide
 
 ## 🤝 Contributing
 
@@ -364,7 +391,25 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - High-performance runtime by [Bun](https://bun.sh/)
 - UI components styled with [Tailwind CSS](https://tailwindcss.com/)
 
-## 🆕 Recent Major Improvements (v2.1.0)
+## 🆕 Recent Major Improvements (v2.2.0)
+
+### Event-Driven Bot System
+- ✅ **Event Bus Architecture** - New modular event handling system
+- ✅ **Bot Event Integration** - Seamless integration with existing bot handlers
+- ✅ **Transaction Events** - Real-time transaction processing via events
+- ✅ **Scalable Architecture** - Decoupled components for better maintainability
+
+### User-Agent Customization
+- ✅ **Bun CLI Integration** - `--user-agent` flag support for custom HTTP headers
+- ✅ **Service Management Scripts** - Automated service startup with unique identifiers
+- ✅ **API Rate Limiting** - Better control over external API requests
+- ✅ **Monitoring & Debugging** - Easy identification of request sources
+
+### Enhanced Configuration Service
+- ✅ **Improved YAML Parsing** - Better handling of environment variables and types
+- ✅ **Type Conversion** - Automatic string-to-number/boolean conversion
+- ✅ **Error Handling** - Robust error handling for configuration issues
+- ✅ **Performance Optimization** - Faster configuration loading and parsing
 
 ### TypeScript Configuration
 - ✅ **Resolved bun-types configuration** - Proper TypeScript setup with Bun
@@ -387,6 +432,35 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - ✅ **Path aliases** - Clean and maintainable imports
 - ✅ **Comprehensive documentation** - Up-to-date guides and examples
 - ✅ **CI/CD pipeline** - Automated quality assurance
+
+## 🔧 New Scripts & Commands
+
+### Event-Driven Bot
+```bash
+# Start the event-driven bot
+bun run start:event-bot
+
+# Development mode with hot reload
+bun run dev:event-bot
+
+# Check bot health
+bun run event-bot:health
+
+# Simulate events for testing
+bun run event-bot:simulate
+```
+
+### User-Agent Customization
+```bash
+# Start services with custom User-Agents
+./scripts/start-services-with-user-agents.sh
+
+# Stop all services
+./scripts/stop-services.sh
+
+# Custom User-Agent for specific scripts
+bun --user-agent "MyCustomApp/1.0" examples/user-agent-demo.ts
+```
 
 ## 🔍 Quick Verification
 
@@ -418,4 +492,4 @@ For issues, questions, or suggestions:
 
 ---
 
-**Version 2.1.0** | Last Updated: August 25, 2025 | Built with ❤️ by Fantdev Team
+**Version 2.2.0** | Last Updated: August 25, 2025 | Built with ❤️ by Fantdev Team

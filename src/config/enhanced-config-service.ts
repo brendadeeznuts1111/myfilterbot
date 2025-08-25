@@ -128,7 +128,7 @@ class EnvParser {
    */
   static parse(value: any): any {
     if (typeof value === 'string') {
-      return value.replace(/\${([^}]+)}/g, (_, expr) => {
+      const parsed = value.replace(/\${([^}]+)}/g, (_, expr) => {
         // Handle complex expressions: ${VAR:-default}, ${VAR:?error}, ${VAR:+replacement}
         const colonIndex = expr.indexOf(':');
 
@@ -172,6 +172,24 @@ class EnvParser {
             return envValue ?? '';
         }
       });
+
+      // Convert string numbers to actual numbers, but be more careful
+      // Only convert if it's clearly a standalone number (not an ID or reference)
+      // Don't convert empty strings or very short strings that might be IDs
+      if (parsed === '') {
+        return parsed; // Keep empty strings as strings
+      }
+      if (/^\d+$/.test(parsed)) {
+        return parseInt(parsed, 10);
+      }
+      if (/^\d+\.\d+$/.test(parsed)) {
+        return parseFloat(parsed);
+      }
+      if (parsed === 'true' || parsed === 'false') {
+        return parsed === 'true';
+      }
+
+      return parsed;
     }
 
     if (Array.isArray(value)) {
@@ -234,11 +252,14 @@ export class EnhancedConfigService {
     }
 
     try {
-      // Load YAML
-      const config = await import(`../../${this.configDir}/app.yaml`);
+      // Load YAML file content
+      const yamlContent = await Bun.file(`${this.configDir}/app.yaml`).text();
+      
+      // Parse YAML
+      const config = Bun.YAML.parse(yamlContent);
 
       // Parse environment variables
-      const parsed = EnvParser.parse(config.default || config);
+      const parsed = EnvParser.parse(config);
 
       // Validate with Zod
       const validated = validateAppConfig(parsed);
@@ -278,14 +299,15 @@ export class EnhancedConfigService {
     }
 
     try {
-      const config = await import(`../../${this.configDir}/database.yaml`);
-      const parsed = EnvParser.parse(config.default || config);
+      const yamlContent = await Bun.file(`${this.configDir}/database.yaml`).text();
+      const config = Bun.YAML.parse(yamlContent);
+      const parsed = EnvParser.parse(config);
       const validated = validateDatabaseConfig(parsed);
 
       // Decrypt sensitive fields if encrypted
-      if (validated.connections.postgres?.password?.startsWith('encrypted:')) {
-        const encrypted = validated.connections.postgres.password.substring(10);
-        validated.connections.postgres.password =
+      if (validated.primary?.password?.startsWith('encrypted:')) {
+        const encrypted = validated.primary.password.substring(10);
+        validated.primary.password =
           this.encryption.decrypt(encrypted);
       }
 
@@ -317,8 +339,9 @@ export class EnhancedConfigService {
     }
 
     try {
-      const config = await import(`../../${this.configDir}/features.yaml`);
-      const parsed = EnvParser.parse(config.default || config);
+      const yamlContent = await Bun.file(`${this.configDir}/features.yaml`).text();
+      const config = Bun.YAML.parse(yamlContent);
+      const parsed = EnvParser.parse(config);
       const validated = validateFeaturesConfig(parsed);
 
       this.cache.set(cacheKey, validated);
