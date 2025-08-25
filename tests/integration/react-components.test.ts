@@ -12,6 +12,7 @@ interface MockElement {
   attributes: Record<string, string>;
   textContent: string;
   innerHTML: string;
+  eventListeners: Map<string, Function[]>;
   addEventListener: (event: string, handler: Function) => void;
   removeEventListener: (event: string, handler: Function) => void;
   querySelector: (selector: string) => MockElement | null;
@@ -25,7 +26,6 @@ interface MockElement {
 
 class MockDOM {
   private elements: Map<string, MockElement> = new Map();
-  private eventListeners: Map<string, Function[]> = new Map();
 
   createElement(tagName: string): MockElement {
     const element: MockElement = {
@@ -34,13 +34,14 @@ class MockDOM {
       attributes: {},
       textContent: '',
       innerHTML: '',
+      eventListeners: new Map(),
       addEventListener: (event: string, handler: Function) => {
-        const listeners = this.eventListeners.get(event) || [];
+        const listeners = element.eventListeners.get(event) || [];
         listeners.push(handler);
-        this.eventListeners.set(event, listeners);
+        element.eventListeners.set(event, listeners);
       },
       removeEventListener: (event: string, handler: Function) => {
-        const listeners = this.eventListeners.get(event) || [];
+        const listeners = element.eventListeners.get(event) || [];
         const index = listeners.indexOf(handler);
         if (index > -1) {
           listeners.splice(index, 1);
@@ -67,16 +68,16 @@ class MockDOM {
       getAttribute: (name: string) => {
         return element.attributes[name] || null;
       },
-      click: () => {
-        const listeners = this.eventListeners.get('click') || [];
+      click: function() {
+        const listeners = element.eventListeners.get('click') || [];
         listeners.forEach(handler => handler({ target: element, type: 'click' }));
       },
-      focus: () => {
-        const listeners = this.eventListeners.get('focus') || [];
+      focus: function() {
+        const listeners = element.eventListeners.get('focus') || [];
         listeners.forEach(handler => handler({ target: element, type: 'focus' }));
       },
-      blur: () => {
-        const listeners = this.eventListeners.get('blur') || [];
+      blur: function() {
+        const listeners = element.eventListeners.get('blur') || [];
         listeners.forEach(handler => handler({ target: element, type: 'blur' }));
       }
     };
@@ -537,6 +538,10 @@ describe('React Components Testing Suite', () => {
       });
       
       button.click();
+      
+      // Test that the button is still the same element
+      expect(button.getAttribute('class')).toBe('primary-button');
+      expect(button.textContent).toBe('Click Me');
     });
 
     test('Input field interactions', async () => {
