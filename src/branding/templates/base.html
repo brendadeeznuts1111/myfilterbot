@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- System Metadata (Injected by Branding System) -->
+    <meta name="version" content="2.1.0-enhanced">
+    <meta name="build" content="2024.08.24.002">
+    <meta name="environment" content="development">
+    <meta name="author" content="Fantdev Trading Systems">
+    <meta name="system-version" content="enhanced-v2.1.0">
+    <meta name="last-updated" content="2024-08-24T02:30:00Z">
+    
+    <!-- Branding & Company Information -->
+    <meta name="application-name" content="Fantdev Trading Bot Platform">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Advanced payment management and trading intelligence platform with enhanced error handling, accessibility, and real-time monitoring">
+    <meta name="keywords" content="trading bot, payment management, KYC, AML, transaction monitoring, enhanced dashboard, fantdev">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Fantdev Trading - Enhanced Platform">
+    <meta property="og:description" content="Advanced trading bot management with comprehensive payment processing and real-time analytics">
+    <meta property="og:site_name" content="Fantdev Trading Platform">
+    <meta property="og:type" content="application">
+    <meta property="og:image" content="/static/images/fantdev-og-image.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    
+    <!-- Page Title (Override in child templates) -->
+    <title>{{page_title}} - Fantdev Trading Platform v2.1.0</title>
+    
+    <!-- Core Stylesheets -->
+    <link rel="stylesheet" href="/src/branding/styles/fantdev-core.css">
+    <link rel="stylesheet" href="/src/branding/styles/components.css">
+    
+    <!-- External Dependencies -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
+    
+    <!-- Module-specific Stylesheets (Override in child templates) -->
+    {{additional_css}}
+    
+    <!-- Custom CSS Variables (Override in child templates) -->
+    <style>
+        /* Page-specific overrides can go here */
+        {{custom_css_vars}}
+    </style>
+</head>
+<body class="fantdev-body">
+    <!-- Skip to Content (Accessibility) -->
+    <a href="#main-content" class="sr-only focus-visible:not-sr-only fantdev-btn fantdev-btn-primary">
+        Skip to main content
+    </a>
+    
+    <!-- Header Section -->
+    <header class="fantdev-header" role="banner">
+        <div class="fantdev-container">
+            <div class="fantdev-header-content">
+                <!-- Brand Section -->
+                <div class="fantdev-header-brand">
+                    <h1 class="fantdev-header-title">
+                        <i class="{{logo_icon | default('fas fa-shield-alt')}}" aria-hidden="true"></i>
+                        <span>{{header_title | default('Fantdev Trading - Enhanced Platform')}}</span>
+                    </h1>
+                    <div class="fantdev-header-subtitle">
+                        <span class="fantdev-version-badge">Enhanced v2.1.0</span>
+                        <span class="fantdev-build-badge">Build 2024.08.24.002</span>
+                        <span class="fantdev-env-badge dev">DEV</span>
+                    </div>
+                </div>
+                
+                <!-- Actions Section -->
+                <div class="fantdev-header-actions">
+                    <!-- Connection Status -->
+                    <div class="connection-status status-connecting" id="connectionStatus" role="status" aria-live="polite">
+                        <i class="fas fa-circle" aria-hidden="true"></i>
+                        <span>Connecting...</span>
+                    </div>
+                    
+                    <!-- System Info -->
+                    <div class="fantdev-system-info">
+                        <i class="fas fa-server" aria-hidden="true"></i>
+                        <span>Payment Gateway v3.2.1</span>
+                    </div>
+                    
+                    <!-- Theme Toggle -->
+                    <button type="button" class="fantdev-btn fantdev-btn-ghost" data-theme-toggle aria-label="Toggle dark mode">
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                    </button>
+                    
+                    <!-- Additional Header Actions (Override in child templates) -->
+                    {{header_actions}}
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Navigation (Optional - Override in child templates) -->
+    {{navigation}}
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="fantdev-main" role="main">
+        <div class="fantdev-container">
+            <!-- Page-specific content goes here -->
+            {{content}}
+        </div>
+    </main>
+    
+    <!-- Toast Container -->
+    <div class="fantdev-toast-container" id="toastContainer" aria-live="polite"></div>
+    
+    <!-- Footer Section -->
+    <footer class="fantdev-footer" role="contentinfo">
+        <div class="fantdev-container">
+            <div class="fantdev-footer-content">
+                <div class="fantdev-footer-section">
+                    <div class="fantdev-footer-branding">
+                        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                        <span class="footer-company">Fantdev Trading Systems</span>
+                    </div>
+                    <div class="fantdev-footer-build">
+                        <span class="build-label">Build:</span>
+                        <span class="build-number">2024.08.24.002</span>
+                        <span class="build-time">02:30:00Z</span>
+                    </div>
+                </div>
+                <div class="fantdev-footer-section">
+                    <div class="fantdev-footer-access">
+                        <span class="access-label">Access URL:</span>
+                        <span class="access-url" id="currentUrl">{{current_url}}</span>
+                    </div>
+                    <div class="fantdev-footer-version">
+                        <span class="version-info">{{module_name | default('Enhanced Platform')}} v2.1.0</span>
+                        <span class="environment-info">Development Environment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Core JavaScript -->
+    <script src="/src/branding/scripts/versioning.js"></script>
+    <script src="/src/branding/scripts/branding.js"></script>
+    
+    <!-- External Dependencies -->
+    {{external_scripts | default('')}}
+    
+    <!-- Module-specific JavaScript (Override in child templates) -->
+    {{additional_js}}
+    
+    <!-- Initialization Script -->
+    <script>
+        // Initialize branding system
+        document.addEventListener('DOMContentLoaded', function() {
+            // Log system information
+            console.log('[Fantdev Platform] Initializing...');
+            
+            // Set up global error handling
+            window.addEventListener('error', function(event) {
+                console.error('[Fantdev Platform] Global Error:', event.error);
+            });
+            
+            // Set up unhandled promise rejection handling
+            window.addEventListener('unhandledrejection', function(event) {
+                console.error('[Fantdev Platform] Unhandled Promise Rejection:', event.reason);
+            });
+            
+            // Module-specific initialization
+            {{init_script | default('')}}
+            
+            console.log('[Fantdev Platform] Initialization complete');
+        });
+        
+        // Expose global utilities
+        window.Fantdev = {
+            version: window.FantdevVersioning ? window.FantdevVersioning.getFullVersion() : '2.1.0-enhanced',
+            branding: window.FantdevBranding,
+            versioning: window.FantdevVersioning,
+            utils: {
+                formatCurrency: function(amount, showSign = false) {
+                    const formatted = new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD'
+                    }).format(Math.abs(amount));
+                    return showSign && amount !== 0 ? (amount > 0 ? '+' + formatted : '-' + formatted) : formatted;
+                },
+                formatDate: function(dateString) {
+                    return new Date(dateString).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+                debounce: function(func, wait) {
+                    let timeout;
+                    return function executedFunction(...args) {
+                        const later = () => {
+                            clearTimeout(timeout);
+                            func(...args);
+                        };
+                        clearTimeout(timeout);
+                        timeout = setTimeout(later, wait);
+                    };
+                }
+            }
+        };
+    </script>
+    
+    <!-- Page Analytics (Development Only) -->
+    {{#if_env_dev}}
+    <script>
+        // Development analytics and debugging
+        if (console.table) {
+            console.table({
+                'Page': document.title,
+                'Version': window.Fantdev?.version || '2.1.0-enhanced',
+                'Environment': 'Development',
+                'Build': '2024.08.24.002',
+                'Timestamp': new Date().toISOString()
+            });
+        }
+    </script>
+    {{/if_env_dev}}
+</body>
+</html>

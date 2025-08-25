@@ -1,0 +1,51 @@
+{
+  "customers": {
+    "BB1042": {
+      "password": "N9H9",
+      "telegram_username": "@username1",
+      "telegram_id": null,
+      "group_chat_id": null,
+      "keywords": ["BB1042", "N9H9", "deposit", "credited", "denied"],
+      "active": true
+    },
+    "BB1043": {
+      "password": "I5H8",
+      "telegram_username": "@username2",
+      "telegram_id": null,
+      "group_chat_id": null,
+      "keywords": ["BB1043", "I5H8", "deposit", "credited", "denied"],
+      "active": true
+    },
+    "BB1044": {
+      "password": "W2T7",
+      "telegram_username": "@username3",
+      "telegram_id": null,
+      "group_chat_id": null,
+      "keywords": ["BB1044", "W2T7", "deposit", "credited", "denied"],
+      "active": true
+    },
+    "BB1045": {
+      "password": "V0J3",
+      "telegram_username": "@username4",
+      "telegram_id": null,
+      "group_chat_id": null,
+      "keywords": ["BB1045", "V0J3", "deposit", "credited", "denied"],
+      "active": true
+    }
+  },
+  "group_chats": {
+    "main_group": {
+      "chat_id": "-2714719687",
+      "name": "Main Trading Group",
+      "monitor": true
+    }
+  },
+  "global_keywords": [
+    "[credited!]",
+    "⏰",
+    "deposit was denied",
+    "Your 10 minutes have expired",
+    "urgent",
+    "important"
+  ]
+}

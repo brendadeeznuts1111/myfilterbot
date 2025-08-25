@@ -1,0 +1,219 @@
+# Fantdev Trading Bot - Production Deployment Configuration
+# ===========================================================
+
+name: fantdev-trading-bot
+version: 2.0.0
+
+# Environment Configuration
+environment:
+  production:
+    bot_token: "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0"
+    timezone: "America/Chicago"
+    redis_url: "redis://localhost:6379"
+    database_path: "customer_database.json"
+    chat_tracker_db: "chat_tracker.db"
+    
+    # Admin Configuration
+    admin_users:
+      - 123456789  # Replace with actual admin Telegram IDs
+      - 987654321
+    
+    # Portal Configuration
+    portal:
+      host: "0.0.0.0"
+      port: 5000
+      cors_origins:
+        - "https://fantasy402.com"
+        - "http://localhost:3000"
+    
+    # Security Settings
+    security:
+      jwt_secret: "${JWT_SECRET}"  # Set in environment
+      session_timeout: 86400  # 24 hours
+      remember_me_timeout: 2592000  # 30 days
+      max_login_attempts: 5
+      fraud_detection: true
+    
+    # Performance Settings
+    performance:
+      max_concurrent_chats: 1000
+      message_cache_ttl: 3600
+      database_backup_interval: 3600
+      worker_threads: 4
+
+# Services
+services:
+  telegram_bot:
+    command: "python3 main_bot.py"
+    restart: always
+    environment:
+      - TZ=America/Chicago
+      - PYTHONUNBUFFERED=1
+    health_check:
+      endpoint: "/health"
+      interval: 30
+      timeout: 10
+      retries: 3
+  
+  portal_server:
+    command: "python3 portal_server.py"
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=portal_server.py
+    depends_on:
+      - telegram_bot
+  
+  redis:
+    image: "redis:alpine"
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+  
+  nginx:
+    config: |
+      server {
+        listen 80;
+        server_name fantasy402.com;
+        
+        location /manager {
+          proxy_pass http://localhost:5000;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+          proxy_cache_bypass $http_upgrade;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        location /ws {
+          proxy_pass http://localhost:5000;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        }
+      }
+
+# Monitoring
+monitoring:
+  metrics:
+    - name: "active_chats"
+      type: "gauge"
+      description: "Number of active chats"
+    
+    - name: "messages_processed"
+      type: "counter"
+      description: "Total messages processed"
+    
+    - name: "transactions_detected"
+      type: "counter"
+      description: "Total transactions detected"
+    
+    - name: "active_sessions"
+      type: "gauge"
+      description: "Number of active user sessions"
+  
+  alerts:
+    - name: "bot_down"
+      condition: "service.telegram_bot.status != 'running'"
+      severity: "critical"
+      notification: "telegram"
+    
+    - name: "high_fraud_risk"
+      condition: "fraud_score > 80"
+      severity: "warning"
+      notification: "telegram"
+    
+    - name: "database_error"
+      condition: "database.error_rate > 0.01"
+      severity: "warning"
+      notification: "email"
+
+# Backup Configuration
+backup:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 30  # Keep 30 days of backups
+  destinations:
+    - type: "local"
+      path: "/backups/fantdev"
+    - type: "s3"
+      bucket: "fantdev-backups"
+      region: "us-east-1"
+  files:
+    - "customer_database.json"
+    - "chat_tracker.db"
+    - "*.log"
+
+# Deployment Steps
+deployment:
+  pre_deploy:
+    - "python3 test_security_integration.py"
+    - "python3 test_chat_system.py"
+    - "cp customer_database.json customer_database.json.backup"
+  
+  deploy:
+    - "pip3 install -r requirements.txt"
+    - "python3 -m src.database migrate"
+    - "systemctl restart fantdev-bot"
+    - "systemctl restart fantdev-portal"
+  
+  post_deploy:
+    - "python3 health_check.py"
+    - "curl -X POST https://api.telegram.org/bot${BOT_TOKEN}/setWebhook"
+  
+  rollback:
+    - "systemctl stop fantdev-bot"
+    - "cp customer_database.json.backup customer_database.json"
+    - "git checkout HEAD~1"
+    - "systemctl start fantdev-bot"
+
+# Scaling Configuration
+scaling:
+  auto_scale:
+    enabled: true
+    min_instances: 1
+    max_instances: 5
+    target_cpu: 70
+    target_memory: 80
+  
+  load_balancing:
+    algorithm: "round_robin"
+    health_check_path: "/health"
+    session_affinity: true
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  outputs:
+    - type: "file"
+      path: "/var/log/fantdev/bot.log"
+      max_size: "100MB"
+      max_age: 30
+      compress: true
+    
+    - type: "syslog"
+      host: "logs.example.com"
+      port: 514
+      protocol: "tcp"
+    
+    - type: "elasticsearch"
+      host: "elastic.example.com"
+      index: "fantdev-bot"
+
+# Feature Flags
+features:
+  chat_tracking: true
+  session_persistence: true
+  fraud_detection: true
+  timezone_support: true
+  websocket_updates: true
+  mini_app_integration: true
+  multi_language: false
+  voice_commands: false

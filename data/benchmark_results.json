@@ -1,0 +1,49 @@
+{
+  "database": {
+    "result": {
+      "customers": 22,
+      "total_balance": 17209,
+      "operations": 2
+    },
+    "time_ms": 2.4465840000000014
+  },
+  "transaction_detection": {
+    "result": {
+      "error": "attempted relative import with no known parent package",
+      "messages_processed": 0
+    },
+    "time_ms": 0.24712500000000082
+  },
+  "json_operations": {
+    "result": {
+      "customers_loaded": 25,
+      "json_size_kb": 10,
+      "operations": 3
+    },
+    "time_ms": 0.2894160000000007
+  },
+  "system_health": {
+    "result": {
+      "cpu_percent": 36.5,
+      "memory_percent": 86.0,
+      "disk_percent": 2.9827353012893276,
+      "metrics_collected": 3
+    },
+    "time_ms": 108.166417
+  },
+  "bun_runtime": {
+    "result": {
+      "bun_version": "1.2.21",
+      "ts_execution_time": 18.818542,
+      "memory_usage_mb": 21,
+      "bun_available": true
+    },
+    "time_ms": 34.71875000000002
+  },
+  "summary": {
+    "total_time_ms": 145.86829200000003,
+    "performance_grade": "\ud83d\ude80 EXCELLENT",
+    "timestamp": "2025-08-24T17:45:46.175273",
+    "tests_run": 4
+  }
+}

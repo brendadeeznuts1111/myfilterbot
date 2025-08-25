@@ -1,0 +1,517 @@
+/* ==========================================
+   FANTDEV TRADING SYSTEMS - UNIFIED CORE CSS
+   Version: 2.1.0-enhanced
+   Build: 2024.08.24.002
+   ========================================== */
+
+:root {
+  /* System Metadata */
+  --system-version: "2.1.0-enhanced";
+  --build-number: "2024.08.24.002";
+  --api-version: "3.2.1";
+  
+  /* Brand Identity */
+  --brand-primary: #667eea;
+  --brand-secondary: #764ba2;
+  --brand-accent: #059669;
+  
+  /* Enhanced Color Palette */
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #3b82f6;
+  --secondary: #7c3aed;
+  --secondary-dark: #6d28d9;
+  --accent: #059669;
+  --accent-dark: #047857;
+  
+  /* Semantic Colors */
+  --success: #10b981;
+  --success-light: #34d399;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+  --error: #ef4444;
+  --error-light: #f87171;
+  --info: #3b82f6;
+  --info-light: #60a5fa;
+  
+  /* Background System */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-surface: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-gradient: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+  
+  /* Text Colors */
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+  --text-muted: #9ca3af;
+  --text-accent: var(--primary);
+  
+  /* Border System */
+  --border-color: #e5e7eb;
+  --border-color-hover: #d1d5db;
+  --border-color-focus: var(--primary);
+  --border-width: 1px;
+  --border-radius-sm: 4px;
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-full: 9999px;
+  
+  /* Elevation System */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  
+  /* Spacing System */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  
+  /* Typography System */
+  --font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  --font-family-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Font Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  
+  /* Font Weights */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+  
+  /* Transitions */
+  --transition-fast: all 0.1s ease-in-out;
+  --transition: all 0.15s ease-in-out;
+  --transition-slow: all 0.3s ease-in-out;
+  --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Z-Index Scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+}
+
+/* Dark Theme Variables */
+[data-theme="dark"] {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-surface: #374151;
+  --bg-elevated: #374151;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --border-color: #374151;
+  --border-color-hover: #4b5563;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* ==========================================
+   BASE STYLES & RESET
+   ========================================== */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  transition: var(--transition);
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus Management */
+.focus-visible:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   LAYOUT COMPONENTS
+   ========================================== */
+
+.fantdev-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.fantdev-container-sm { max-width: 640px; }
+.fantdev-container-md { max-width: 768px; }
+.fantdev-container-lg { max-width: 1024px; }
+.fantdev-container-xl { max-width: 1280px; }
+.fantdev-container-2xl { max-width: 1536px; }
+
+/* Grid System */
+.fantdev-grid {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.fantdev-grid-1 { grid-template-columns: 1fr; }
+.fantdev-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.fantdev-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.fantdev-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.fantdev-grid-5 { grid-template-columns: repeat(5, 1fr); }
+.fantdev-grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+/* Flex System */
+.fantdev-flex {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.fantdev-flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.fantdev-flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fantdev-flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fantdev-flex-wrap {
+  flex-wrap: wrap;
+}
+
+/* ==========================================
+   HEADER COMPONENT SYSTEM
+   ========================================== */
+
+.fantdev-header {
+  background: var(--bg-gradient);
+  color: var(--text-inverse);
+  padding: var(--space-5) 0;
+  box-shadow: var(--shadow-lg);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.fantdev-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.fantdev-header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fantdev-header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin: 0;
+}
+
+.fantdev-header-subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  opacity: 0.9;
+  flex-wrap: wrap;
+}
+
+.fantdev-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+/* Header Badges */
+.fantdev-version-badge {
+  background: rgba(76, 175, 80, 0.3);
+  color: var(--text-inverse);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--border-radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fantdev-build-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-inverse);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--border-radius-full);
+  font-size: var(--text-xs);
+  font-family: var(--font-family-mono);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.fantdev-env-badge {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--border-radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fantdev-env-badge.dev {
+  background: rgba(255, 152, 0, 0.3);
+  color: var(--text-inverse);
+  border: 1px solid rgba(255, 152, 0, 0.5);
+}
+
+.fantdev-env-badge.staging {
+  background: rgba(156, 39, 176, 0.3);
+  color: var(--text-inverse);
+  border: 1px solid rgba(156, 39, 176, 0.5);
+}
+
+.fantdev-env-badge.prod {
+  background: rgba(76, 175, 80, 0.3);
+  color: var(--text-inverse);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.fantdev-system-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--border-radius-full);
+  font-size: var(--text-sm);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+   FOOTER COMPONENT SYSTEM
+   ========================================== */
+
+.fantdev-footer {
+  background: var(--text-primary);
+  color: var(--text-tertiary);
+  padding: var(--space-6) 0;
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+}
+
+.fantdev-footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+}
+
+.fantdev-footer-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fantdev-footer-branding {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-inverse);
+  font-weight: var(--font-semibold);
+}
+
+.fantdev-footer-build {
+  font-family: var(--font-family-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.fantdev-footer-build .build-number {
+  color: var(--success);
+  font-weight: var(--font-medium);
+}
+
+.fantdev-footer-access {
+  font-size: var(--text-sm);
+}
+
+.fantdev-footer-access .access-url {
+  color: var(--info);
+  font-family: var(--font-family-mono);
+  font-size: var(--text-xs);
+}
+
+.fantdev-footer-version {
+  text-align: right;
+}
+
+.fantdev-footer-version .version-info {
+  color: var(--text-inverse);
+  font-weight: var(--font-medium);
+  display: block;
+  font-size: var(--text-sm);
+}
+
+.fantdev-footer-version .environment-info {
+  color: var(--warning);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 1024px) {
+  .fantdev-grid-2,
+  .fantdev-grid-3,
+  .fantdev-grid-4,
+  .fantdev-grid-5,
+  .fantdev-grid-6 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .fantdev-header-content {
+    padding: 0 var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .fantdev-container {
+    padding: 0 var(--space-3);
+  }
+  
+  .fantdev-grid-2,
+  .fantdev-grid-3,
+  .fantdev-grid-4,
+  .fantdev-grid-5,
+  .fantdev-grid-6 {
+    grid-template-columns: 1fr;
+  }
+  
+  .fantdev-header-content {
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-3);
+    text-align: center;
+  }
+  
+  .fantdev-header-brand {
+    text-align: center;
+  }
+  
+  .fantdev-header-actions {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  
+  .fantdev-header-subtitle {
+    justify-content: center;
+  }
+  
+  .fantdev-footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--space-4);
+  }
+  
+  .fantdev-footer-version {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .fantdev-header-title {
+    font-size: var(--text-xl);
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  
+  .fantdev-header-subtitle {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+}

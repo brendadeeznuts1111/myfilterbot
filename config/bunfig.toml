@@ -1,0 +1,98 @@
+
+# Bun v1.2.21+ Configuration with HMR improvements
+[serve]
+development = true
+hot = true
+
+[serve.static]
+plugins = ["bun-plugin-tailwind"]
+env = "BUN_PUBLIC_*"
+
+# Enhanced test configuration for v1.2.21+
+[test]
+coveragePathIgnorePatterns = [
+  "**/__tests__/**",
+  "**/test_*.py",
+  "**/smoke_test.py",
+  "**/backup/**",
+  "**/cloudflare-worker/dist/**"
+]
+# Improved mock handling and filtering
+mock = true
+
+# Enhanced console output
+[run]
+console.depth = 4
+hot = true
+
+# File watcher optimization for HMR
+[watch]
+ignore = ["*.log", "*.swp", "*.tmp", ".git/**", "node_modules/**", "**/dist/**"]
+
+# Trading Bot Performance Optimization
+[install]
+cache = true
+exact = true
+peer = true
+optional = true
+registry = "https://registry.npmjs.org"
+
+[build]
+minify = false  # Keep false for development debugging
+sourcemap = "external"
+splitting = true
+target = "bun"
+modules = ["node_modules"]
+
+[dev]
+port = 3000
+hot = true
+cors = true
+
+[loader]
+".env" = "text"
+".json" = "json"
+".py" = "file"
+
+# Performance constants for 200+ customer scaling
+[define]
+"ENABLE_REDIS_CACHE" = "true"
+"ENABLE_MONITORING" = "true"
+"MAX_CUSTOMERS" = "250"
+"MAX_CONCURRENT_GROUPS" = "50"
+"POOL_SIZE" = "10"
+"CACHE_TTL" = "300"
+"QUEUE_BATCH_SIZE" = "100"
+
+# Custom scripts for trading bot
+[scripts]
+bot = "python3 main_bot.py"
+portal = "python3 portal_server.py"
+benchmark = "python3 quick_bench.py"
+load_test = "python3 test_load_200_customers.py"
+admin_server = "bun run enhanced_admin_server_v2.ts"
+
+[experimental]
+bundler_cache = true
+hot_module_reloading = true
+http2 = true
+
+telemetry = false
+
+# Cloudflare Worker configuration
+[worker]
+env = [
+  "CLOUDFLARE_ACCOUNT_ID",
+  "CLOUDFLARE_API_TOKEN", 
+  "BOT_TOKEN",
+  "ADMIN_CHAT_ID",
+  "WEBHOOK_SECRET",
+  "DATABASE_PATH",
+  "REDIS_URL"
+]
+
+[worker.build]
+target = "browser"
+format = "esm"
+minify = true
+sourcemap = "linked"

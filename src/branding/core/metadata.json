@@ -1,0 +1,90 @@
+{
+  "system": {
+    "name": "Fantdev Trading Bot",
+    "version": "2.1.0-enhanced",
+    "build": "2024.08.24.002",
+    "environment": "development",
+    "last_updated": "2024-08-24T02:30:00Z",
+    "api_version": "3.2.1"
+  },
+  "company": {
+    "name": "Fantdev Trading Systems",
+    "display_name": "Fantdev Trading",
+    "tagline": "Advanced Payment & Trading Intelligence Platform",
+    "description": "Professional trading bot management with enhanced cashier, payment processing, and real-time analytics",
+    "founded": "2024",
+    "website": "https://fire22.com",
+    "support_email": "support@fantdev.com",
+    "contact": "contact@fantdev.com"
+  },
+  "branding": {
+    "logo_text": "Fantdev Trading",
+    "logo_icon": "fas fa-shield-alt",
+    "favicon_emoji": "🛡️",
+    "theme_color": "#667eea",
+    "accent_color": "#764ba2"
+  },
+  "modules": {
+    "cashier_dashboard": {
+      "name": "Enhanced Cashier Dashboard",
+      "version": "2.1.0",
+      "description": "Comprehensive payment management with KYC/AML compliance",
+      "features": ["Enhanced Error Handling", "Real-time Updates", "Accessibility", "Mobile Responsive"]
+    },
+    "payment_gateway": {
+      "name": "Payment Gateway",
+      "version": "3.2.1", 
+      "description": "Multi-processor payment system with fraud detection",
+      "features": ["Stripe", "PayPal", "Cryptocurrency", "Risk Scoring"]
+    },
+    "customer_portal": {
+      "name": "Customer Portal",
+      "version": "2.0.1",
+      "description": "Self-service customer dashboard with transaction history",
+      "features": ["Balance Tracking", "Transaction History", "Real-time Alerts"]
+    },
+    "admin_portal": {
+      "name": "Admin Portal",
+      "version": "2.0.0",
+      "description": "Administrative dashboard for user and group management",
+      "features": ["User Management", "Group Controls", "Analytics", "Reporting"]
+    }
+  },
+  "build_info": {
+    "build_number": "2024.08.24.002",
+    "commit_hash": "a1b2c3d4e5f6",
+    "branch": "main",
+    "build_date": "2024-08-24",
+    "build_time": "02:30:00Z",
+    "node_version": "18.17.0",
+    "python_version": "3.9.6"
+  },
+  "deployment": {
+    "environment": "development",
+    "server_urls": {
+      "enhanced_portal": "http://localhost:5000",
+      "payment_api": "http://localhost:5001",
+      "websocket": "ws://localhost:5001"
+    },
+    "access_points": {
+      "customer_portal": "/",
+      "admin_portal": "/admin",
+      "cashier_dashboard": "/cashier",
+      "api_docs": "/docs",
+      "health_check": "/health"
+    }
+  },
+  "features": {
+    "real_time_updates": true,
+    "websocket_support": true,
+    "dark_mode": true,
+    "mobile_responsive": true,
+    "accessibility": true,
+    "multi_language": false,
+    "export_data": true,
+    "advanced_charts": true,
+    "kyc_aml": true,
+    "fraud_detection": true,
+    "multi_payment": true
+  }
+}

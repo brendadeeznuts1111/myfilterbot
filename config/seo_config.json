@@ -1,0 +1,40 @@
+{
+  "seo": {
+    "enabled": true,
+    "sitemap_url": "/sitemap.xml",
+    "robots_url": "/robots.txt",
+    "manifest_url": "/manifest.json",
+    "base_url": "https://fantdev.trading",
+    "social_images": {
+      "customer_portal": {
+        "og": "/images/customer-og.jpg",
+        "twitter": "/images/customer-twitter.jpg",
+        "thumbnail": "/images/customer-thumbnail.jpg"
+      },
+      "admin_portal": {
+        "og": "/images/admin-og.jpg",
+        "twitter": "/images/admin-twitter.jpg",
+        "thumbnail": "/images/admin-thumbnail.jpg"
+      },
+      "dashboard": {
+        "og": "/images/dashboard-og.jpg",
+        "twitter": "/images/dashboard-twitter.jpg",
+        "thumbnail": "/images/dashboard-thumbnail.jpg"
+      }
+    },
+    "favicons": {
+      "16": "/images/favicon-16x16.png",
+      "32": "/images/favicon-32x32.png",
+      "48": "/images/icon-48x48.png",
+      "64": "/images/icon-64x64.png",
+      "128": "/images/icon-128x128.png",
+      "256": "/images/icon-256x256.png",
+      "apple_touch": "/images/apple-touch-icon.png"
+    }
+  },
+  "deployment": {
+    "timestamp": "2025-08-24T17:32:05.931076",
+    "version": "2.0",
+    "assets_deployed": true
+  }
+}

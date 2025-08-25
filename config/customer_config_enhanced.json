@@ -1,0 +1,640 @@
+{
+  "version": "2.0",
+  "platform": {
+    "name": "Fantdev Trading Platform",
+    "environment": "production",
+    "region": "US",
+    "timezone": "America/New_York",
+    "currency": "USD",
+    "last_updated": "2025-08-24T22:50:00Z"
+  },
+  "agents": {
+    "BLAKEPPH": {
+      "agent_id": "BLAKEPPH",
+      "agent_type": "M",
+      "agent_name": "Blake Manager",
+      "status": "active",
+      "email": "blake@fire22.ag",
+      "phone": "+1-555-0100",
+      "timezone": "America/New_York",
+      "permissions": {
+        "view_reports": true,
+        "manage_customers": true,
+        "process_payments": true,
+        "modify_limits": true,
+        "access_admin": true,
+        "view_sensitive_data": true,
+        "approve_withdrawals": true,
+        "manage_agents": true
+      },
+      "commission": {
+        "rate": 15.5,
+        "type": "percentage",
+        "minimum": 100.00,
+        "maximum": 50000.00
+      },
+      "territory": {
+        "regions": ["US", "CA"],
+        "customer_limit": 5000,
+        "balance_limit": 1000000.00
+      },
+      "sub_agents": ["3NOLAPPH"],
+      "assigned_customers": ["BB1042", "BB1043", "BB1044", "BB1045"],
+      "performance_targets": {
+        "monthly_revenue": 25000.00,
+        "customer_retention": 95.0,
+        "new_acquisitions": 50
+      },
+      "access_schedule": {
+        "timezone": "America/New_York",
+        "working_hours": "09:00-18:00",
+        "emergency_access": true
+      },
+      "created_at": "2025-01-01T00:00:00Z",
+      "last_login": "2025-08-24T22:45:00Z"
+    },
+    "3NOLAPPH": {
+      "agent_id": "3NOLAPPH",
+      "agent_type": "A",
+      "agent_name": "Nola Agent",
+      "status": "active",
+      "email": "nola@fire22.ag",
+      "phone": "+1-555-0101",
+      "timezone": "America/Chicago",
+      "parent_agent": "BLAKEPPH",
+      "permissions": {
+        "view_reports": true,
+        "manage_customers": true,
+        "process_payments": false,
+        "modify_limits": false,
+        "access_admin": false,
+        "view_sensitive_data": true,
+        "approve_withdrawals": false,
+        "manage_agents": false
+      },
+      "commission": {
+        "rate": 8.5,
+        "type": "percentage",
+        "minimum": 50.00,
+        "maximum": 10000.00
+      },
+      "territory": {
+        "regions": ["US-Central"],
+        "customer_limit": 500,
+        "balance_limit": 100000.00
+      },
+      "assigned_customers": ["BB1042", "BB1043"],
+      "performance_targets": {
+        "monthly_revenue": 5000.00,
+        "customer_retention": 90.0,
+        "new_acquisitions": 10
+      },
+      "access_schedule": {
+        "timezone": "America/Chicago",
+        "working_hours": "08:00-17:00",
+        "emergency_access": false
+      },
+      "created_at": "2025-02-01T00:00:00Z",
+      "last_login": "2025-08-24T20:30:00Z"
+    }
+  },
+  "customers": {
+    "BB1042": {
+      "customer_id": "BB1042",
+      "password": "N9H9",
+      "status": "active",
+      "tier": "VIP",
+      "risk_score": 25,
+      "kyc_status": "verified",
+      "verification_level": "full",
+      "profile": {
+        "first_name": "Blake",
+        "last_name": "Customer",
+        "email": "blake.customer@email.com",
+        "phone": "+1-555-1001",
+        "date_of_birth": "1990-05-15",
+        "country": "US",
+        "state": "NY",
+        "city": "New York",
+        "timezone": "America/New_York"
+      },
+      "telegram": {
+        "username": "@blake_trader",
+        "telegram_id": null,
+        "chat_id": null,
+        "notifications_enabled": true,
+        "preferred_language": "en"
+      },
+      "trading": {
+        "preferred_markets": ["sports", "casino", "live_betting"],
+        "betting_limits": {
+          "min_bet": 10.00,
+          "max_bet": 5000.00,
+          "daily_limit": 10000.00,
+          "weekly_limit": 50000.00
+        },
+        "trading_hours": "24/7",
+        "auto_approval_limit": 1000.00
+      },
+      "financial": {
+        "credit_limit": 25000.00,
+        "payment_methods": ["bank_transfer", "crypto", "card"],
+        "preferred_currency": "USD",
+        "withdrawal_method": "bank_transfer"
+      },
+      "keywords": ["BB1042", "N9H9", "Blake", "deposit", "credited", "denied", "VIP", "urgent"],
+      "groups": ["main_group", "vip_group"],
+      "assigned_agent": "BLAKEPPH",
+      "notes": "High-value customer, requires priority support",
+      "activity": {
+        "registration_date": "2025-01-15T10:30:00Z",
+        "last_activity": "2025-08-24T22:40:00Z",
+        "last_bet_date": "2025-08-24T18:20:00Z",
+        "session_count": 245,
+        "total_deposits": 15000.00,
+        "total_withdrawals": 8500.00,
+        "lifetime_value": 6500.00
+      },
+      "preferences": {
+        "email_notifications": true,
+        "sms_notifications": true,
+        "telegram_notifications": true,
+        "marketing_emails": false,
+        "language": "en",
+        "theme": "dark"
+      },
+      "active": true
+    },
+    "BB1043": {
+      "customer_id": "BB1043",
+      "password": "I5H8",
+      "status": "active",
+      "tier": "Premium",
+      "risk_score": 35,
+      "kyc_status": "verified",
+      "verification_level": "standard",
+      "profile": {
+        "first_name": "Sarah",
+        "last_name": "Johnson",
+        "email": "sarah.johnson@email.com",
+        "phone": "+1-555-1002",
+        "date_of_birth": "1985-09-22",
+        "country": "US",
+        "state": "CA",
+        "city": "Los Angeles",
+        "timezone": "America/Los_Angeles"
+      },
+      "telegram": {
+        "username": "@sarah_bets",
+        "telegram_id": null,
+        "chat_id": null,
+        "notifications_enabled": true,
+        "preferred_language": "en"
+      },
+      "trading": {
+        "preferred_markets": ["sports", "esports"],
+        "betting_limits": {
+          "min_bet": 5.00,
+          "max_bet": 2000.00,
+          "daily_limit": 5000.00,
+          "weekly_limit": 25000.00
+        },
+        "trading_hours": "18:00-02:00",
+        "auto_approval_limit": 500.00
+      },
+      "financial": {
+        "credit_limit": 10000.00,
+        "payment_methods": ["card", "paypal"],
+        "preferred_currency": "USD",
+        "withdrawal_method": "card"
+      },
+      "keywords": ["BB1043", "I5H8", "Sarah", "deposit", "credited", "denied", "premium"],
+      "groups": ["main_group", "premium_group"],
+      "assigned_agent": "3NOLAPPH",
+      "notes": "Regular player, prefers evening sessions",
+      "activity": {
+        "registration_date": "2025-02-01T14:15:00Z",
+        "last_activity": "2025-08-24T21:30:00Z",
+        "last_bet_date": "2025-08-24T21:15:00Z",
+        "session_count": 180,
+        "total_deposits": 8000.00,
+        "total_withdrawals": 5200.00,
+        "lifetime_value": 2800.00
+      },
+      "preferences": {
+        "email_notifications": true,
+        "sms_notifications": false,
+        "telegram_notifications": true,
+        "marketing_emails": true,
+        "language": "en",
+        "theme": "light"
+      },
+      "active": true
+    },
+    "BB1044": {
+      "customer_id": "BB1044",
+      "password": "W2T7",
+      "status": "active",
+      "tier": "Standard",
+      "risk_score": 45,
+      "kyc_status": "pending",
+      "verification_level": "basic",
+      "profile": {
+        "first_name": "Mike",
+        "last_name": "Rodriguez",
+        "email": "mike.rodriguez@email.com",
+        "phone": "+1-555-1003",
+        "date_of_birth": "1992-03-10",
+        "country": "US",
+        "state": "TX",
+        "city": "Houston",
+        "timezone": "America/Chicago"
+      },
+      "telegram": {
+        "username": "@mike_sports",
+        "telegram_id": null,
+        "chat_id": null,
+        "notifications_enabled": true,
+        "preferred_language": "en"
+      },
+      "trading": {
+        "preferred_markets": ["sports"],
+        "betting_limits": {
+          "min_bet": 2.00,
+          "max_bet": 500.00,
+          "daily_limit": 1000.00,
+          "weekly_limit": 5000.00
+        },
+        "trading_hours": "19:00-01:00",
+        "auto_approval_limit": 100.00
+      },
+      "financial": {
+        "credit_limit": 2000.00,
+        "payment_methods": ["card"],
+        "preferred_currency": "USD",
+        "withdrawal_method": "card"
+      },
+      "keywords": ["BB1044", "W2T7", "Mike", "deposit", "credited", "denied", "verify"],
+      "groups": ["main_group"],
+      "assigned_agent": "BLAKEPPH",
+      "notes": "New customer, needs KYC completion",
+      "activity": {
+        "registration_date": "2025-08-10T09:45:00Z",
+        "last_activity": "2025-08-24T20:00:00Z",
+        "last_bet_date": "2025-08-24T19:45:00Z",
+        "session_count": 25,
+        "total_deposits": 500.00,
+        "total_withdrawals": 0.00,
+        "lifetime_value": 500.00
+      },
+      "preferences": {
+        "email_notifications": true,
+        "sms_notifications": true,
+        "telegram_notifications": true,
+        "marketing_emails": true,
+        "language": "en",
+        "theme": "auto"
+      },
+      "active": true
+    },
+    "BB1045": {
+      "customer_id": "BB1045",
+      "password": "V0J3",
+      "status": "active",
+      "tier": "VIP",
+      "risk_score": 20,
+      "kyc_status": "verified",
+      "verification_level": "full",
+      "profile": {
+        "first_name": "Emma",
+        "last_name": "Chen",
+        "email": "emma.chen@email.com",
+        "phone": "+1-555-1004",
+        "date_of_birth": "1988-11-30",
+        "country": "US",
+        "state": "WA",
+        "city": "Seattle",
+        "timezone": "America/Los_Angeles"
+      },
+      "telegram": {
+        "username": "@emma_winner",
+        "telegram_id": null,
+        "chat_id": null,
+        "notifications_enabled": true,
+        "preferred_language": "en"
+      },
+      "trading": {
+        "preferred_markets": ["casino", "live_betting", "crypto"],
+        "betting_limits": {
+          "min_bet": 50.00,
+          "max_bet": 10000.00,
+          "daily_limit": 25000.00,
+          "weekly_limit": 100000.00
+        },
+        "trading_hours": "24/7",
+        "auto_approval_limit": 5000.00
+      },
+      "financial": {
+        "credit_limit": 50000.00,
+        "payment_methods": ["bank_transfer", "crypto", "wire"],
+        "preferred_currency": "USD",
+        "withdrawal_method": "crypto"
+      },
+      "keywords": ["BB1045", "V0J3", "Emma", "deposit", "credited", "denied", "VIP", "high-roller", "crypto"],
+      "groups": ["main_group", "vip_group", "crypto_group"],
+      "assigned_agent": "BLAKEPPH",
+      "notes": "Top-tier customer, crypto specialist, requires white-glove service",
+      "activity": {
+        "registration_date": "2024-12-01T16:20:00Z",
+        "last_activity": "2025-08-24T22:30:00Z",
+        "last_bet_date": "2025-08-24T22:15:00Z",
+        "session_count": 890,
+        "total_deposits": 75000.00,
+        "total_withdrawals": 45000.00,
+        "lifetime_value": 30000.00
+      },
+      "preferences": {
+        "email_notifications": true,
+        "sms_notifications": false,
+        "telegram_notifications": true,
+        "marketing_emails": false,
+        "language": "en",
+        "theme": "dark"
+      },
+      "active": true
+    }
+  },
+  "group_chats": {
+    "main_group": {
+      "chat_id": "-2714719687",
+      "name": "Main Trading Group",
+      "type": "supergroup",
+      "description": "Primary customer support and announcement group",
+      "monitor": true,
+      "auto_join": true,
+      "permissions": {
+        "all_members_can_post": true,
+        "agents_can_moderate": true,
+        "customers_can_invite": false,
+        "media_allowed": true,
+        "links_allowed": false
+      },
+      "member_tiers": ["Standard", "Premium", "VIP"],
+      "languages": ["en"],
+      "timezone": "America/New_York",
+      "active_hours": "24/7",
+      "escalation_group": "admin_group"
+    },
+    "vip_group": {
+      "chat_id": "-2714719688",
+      "name": "VIP Trading Lounge",
+      "type": "supergroup",
+      "description": "Exclusive group for VIP customers with priority support",
+      "monitor": true,
+      "auto_join": false,
+      "permissions": {
+        "all_members_can_post": true,
+        "agents_can_moderate": true,
+        "customers_can_invite": false,
+        "media_allowed": true,
+        "links_allowed": true
+      },
+      "member_tiers": ["VIP"],
+      "languages": ["en"],
+      "timezone": "America/New_York",
+      "active_hours": "24/7",
+      "escalation_group": "manager_group"
+    },
+    "premium_group": {
+      "chat_id": "-2714719689",
+      "name": "Premium Players Hub",
+      "type": "supergroup",
+      "description": "Group for premium tier customers",
+      "monitor": true,
+      "auto_join": true,
+      "permissions": {
+        "all_members_can_post": true,
+        "agents_can_moderate": true,
+        "customers_can_invite": false,
+        "media_allowed": true,
+        "links_allowed": false
+      },
+      "member_tiers": ["Premium", "VIP"],
+      "languages": ["en"],
+      "timezone": "America/New_York",
+      "active_hours": "24/7",
+      "escalation_group": "main_group"
+    },
+    "crypto_group": {
+      "chat_id": "-2714719690",
+      "name": "Crypto Trading Elite",
+      "type": "supergroup",
+      "description": "Specialized group for cryptocurrency betting",
+      "monitor": true,
+      "auto_join": false,
+      "permissions": {
+        "all_members_can_post": true,
+        "agents_can_moderate": true,
+        "customers_can_invite": true,
+        "media_allowed": true,
+        "links_allowed": true
+      },
+      "member_tiers": ["Premium", "VIP"],
+      "languages": ["en"],
+      "timezone": "America/New_York",
+      "active_hours": "24/7",
+      "escalation_group": "vip_group"
+    },
+    "admin_group": {
+      "chat_id": "-2714719691",
+      "name": "Admin Operations Center",
+      "type": "supergroup",
+      "description": "Internal group for agent coordination and escalations",
+      "monitor": true,
+      "auto_join": false,
+      "permissions": {
+        "all_members_can_post": true,
+        "agents_can_moderate": true,
+        "customers_can_invite": false,
+        "media_allowed": true,
+        "links_allowed": true
+      },
+      "member_tiers": ["agent", "manager"],
+      "languages": ["en"],
+      "timezone": "America/New_York",
+      "active_hours": "24/7",
+      "escalation_group": null
+    }
+  },
+  "keywords": {
+    "global": [
+      "[credited!]",
+      "⏰",
+      "deposit was denied",
+      "Your 10 minutes have expired",
+      "urgent",
+      "important",
+      "system maintenance",
+      "withdrawal processed",
+      "account verified",
+      "bonus credited"
+    ],
+    "contextual": {
+      "deposits": {
+        "positive": ["credited", "confirmed", "processed", "received", "approved"],
+        "negative": ["denied", "rejected", "failed", "insufficient", "blocked"],
+        "triggers": ["deposit", "payment", "fund", "add money", "top up"]
+      },
+      "withdrawals": {
+        "positive": ["processed", "sent", "completed", "approved", "confirmed"],
+        "negative": ["denied", "rejected", "pending", "review required", "blocked"],
+        "triggers": ["withdrawal", "cashout", "withdraw", "payout", "cash out"]
+      },
+      "support": {
+        "urgent": ["urgent", "emergency", "immediate", "asap", "critical"],
+        "priority": ["VIP", "high roller", "important", "escalate", "manager"],
+        "issues": ["problem", "issue", "error", "bug", "not working", "broken"]
+      },
+      "compliance": {
+        "kyc": ["verify", "verification", "documents", "ID", "passport", "driver license"],
+        "aml": ["suspicious", "unusual", "large amount", "compliance", "investigate"],
+        "alerts": ["alert", "warning", "violation", "breach", "policy"]
+      }
+    },
+    "tier_specific": {
+      "VIP": ["VIP", "priority", "exclusive", "premium service", "dedicated", "white glove"],
+      "Premium": ["premium", "enhanced", "priority", "upgraded"],
+      "Standard": ["standard", "basic", "regular", "normal"]
+    },
+    "sentiment": {
+      "positive": ["happy", "satisfied", "great", "excellent", "perfect", "amazing", "love it"],
+      "negative": ["frustrated", "angry", "disappointed", "terrible", "worst", "hate", "awful"],
+      "neutral": ["question", "inquiry", "information", "help", "support", "check"]
+    }
+  },
+  "business_intelligence": {
+    "performance_metrics": {
+      "revenue_targets": {
+        "monthly": 100000.00,
+        "quarterly": 300000.00,
+        "annual": 1200000.00
+      },
+      "customer_metrics": {
+        "acquisition_target": 100,
+        "retention_rate_target": 85.0,
+        "lifetime_value_target": 5000.00,
+        "churn_rate_threshold": 15.0
+      },
+      "operational_metrics": {
+        "response_time_target": 300,
+        "resolution_time_target": 3600,
+        "satisfaction_score_target": 4.5
+      }
+    },
+    "alert_thresholds": {
+      "financial": {
+        "large_deposit": 10000.00,
+        "large_withdrawal": 5000.00,
+        "unusual_activity_multiplier": 5.0,
+        "negative_balance_alert": -1000.00
+      },
+      "activity": {
+        "dormant_days": 30,
+        "high_frequency_threshold": 100,
+        "session_length_alert": 480
+      },
+      "risk": {
+        "risk_score_threshold": 75,
+        "multiple_failed_attempts": 5,
+        "suspicious_pattern_score": 80
+      }
+    },
+    "reporting": {
+      "schedules": {
+        "daily_summary": {
+          "time": "08:00",
+          "timezone": "America/New_York",
+          "recipients": ["BLAKEPPH"],
+          "format": "email"
+        },
+        "weekly_performance": {
+          "day": "Monday",
+          "time": "09:00",
+          "timezone": "America/New_York",
+          "recipients": ["BLAKEPPH", "3NOLAPPH"],
+          "format": "email"
+        },
+        "monthly_analytics": {
+          "day": 1,
+          "time": "10:00",
+          "timezone": "America/New_York",
+          "recipients": ["BLAKEPPH"],
+          "format": "pdf"
+        }
+      },
+      "dashboards": {
+        "manager_dashboard": {
+          "refresh_interval": 300,
+          "widgets": ["revenue", "active_customers", "pending_issues", "top_performers"],
+          "access": ["BLAKEPPH"]
+        },
+        "agent_dashboard": {
+          "refresh_interval": 600,
+          "widgets": ["assigned_customers", "pending_tasks", "performance"],
+          "access": ["3NOLAPPH"]
+        }
+      }
+    }
+  },
+  "security": {
+    "access_control": {
+      "session_timeout": 3600,
+      "max_failed_attempts": 5,
+      "lockout_duration": 1800,
+      "require_2fa": true,
+      "password_expiry_days": 90
+    },
+    "audit_logging": {
+      "enabled": true,
+      "log_level": "detailed",
+      "retention_days": 365,
+      "alert_on_sensitive_access": true
+    },
+    "encryption": {
+      "customer_data": "AES-256",
+      "communications": "TLS-1.3",
+      "storage": "encrypted_at_rest"
+    },
+    "compliance": {
+      "gdpr_compliant": true,
+      "pci_dss_level": "1",
+      "aml_monitoring": true,
+      "kyc_requirements": "enhanced"
+    }
+  },
+  "integrations": {
+    "fire22": {
+      "api_version": "v2.1",
+      "authentication": "JWT",
+      "endpoints": {
+        "agents": "/api/fire22/agents",
+        "dashboard": "/api/fire22/dashboard-data",
+        "customers": "/api/fire22/customers"
+      },
+      "sync_interval": 300,
+      "failover_enabled": true
+    },
+    "telegram": {
+      "bot_token_encrypted": true,
+      "webhook_enabled": true,
+      "rate_limit": 30,
+      "auto_retry": true
+    },
+    "payment_processors": {
+      "primary": "stripe",
+      "backup": "paypal",
+      "crypto": "coinbase",
+      "supported_currencies": ["USD", "EUR", "BTC", "ETH"]
+    }
+  }
+}
