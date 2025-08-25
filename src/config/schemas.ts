@@ -124,11 +124,9 @@ export const DatabaseConnectionSchema = z.union([
 ]);
 
 const DatabaseConfigSchema = z.object({
-  connections: z.object({
-    postgres: PostgresConfigSchema.optional(),
-    redis: RedisConfigSchema.optional(),
-    clickhouse: ClickHouseConfigSchema.optional(),
-  }),
+  primary: PostgresConfigSchema.optional(),
+  cache: RedisConfigSchema.optional(),
+  analytics: ClickHouseConfigSchema.optional(),
   migrations: z
     .object({
       autoRun: z.boolean().default(false),
@@ -198,13 +196,13 @@ const FeatureConfigSchema = z.object({
   rolloutPercentage: z.number().min(0).max(100).default(100),
   description: z.string().optional(),
   allowedUsers: z.array(z.string()).optional(),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
 });
 
 const ABTestVariantSchema = z.object({
   name: z.string(),
   weight: z.number().min(0).max(100),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
 });
 
 const ABTestSchema = z.object({
@@ -213,15 +211,16 @@ const ABTestSchema = z.object({
 });
 
 const FeaturesConfigSchema = z.object({
-  features: z.record(FeatureConfigSchema),
+  features: z.record(z.string(), FeatureConfigSchema),
   dependencies: z
     .record(
+      z.string(),
       z.object({
         requires: z.array(z.string()),
       })
     )
     .optional(),
-  abTests: z.record(ABTestSchema).optional(),
+  abTests: z.record(z.string(), ABTestSchema).optional(),
 });
 
 // ============================================================================
@@ -238,9 +237,9 @@ const AppMetadataSchema = z.object({
 const TelegramConfigSchema = z.object({
   botToken: z.string().optional(),
   webhookUrl: z.string().url().optional(),
-  apiId: z.string().optional(),
+  apiId: z.union([z.string(), z.number()]).optional(),
   apiHash: z.string().optional(),
-  adminChatId: z.string().optional(),
+  adminChatId: z.union([z.string(), z.number()]).optional(),
 });
 
 const CloudflareConfigSchema = z.object({
@@ -255,7 +254,7 @@ const FirebaseConfigSchema = z.object({
   apiKey: z.string().optional(),
   authDomain: z.string().optional(),
   storageBucket: z.string().optional(),
-  messagingSenderId: z.string().optional(),
+  messagingSenderId: z.union([z.string(), z.number()]).optional(),
   appId: z.string().optional(),
 });
 

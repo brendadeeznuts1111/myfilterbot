@@ -85,9 +85,9 @@ security:
 telegram:
   botToken: ${TELEGRAM_BOT_TOKEN}
   webhookUrl: ${TELEGRAM_WEBHOOK_URL}
-  apiId: ${TELEGRAM_API_ID}
-  apiHash: ${TELEGRAM_API_HASH}
-  adminChatId: ${TELEGRAM_ADMIN_CHAT_ID}
+  apiId: ${TELEGRAM_API_ID:-""}
+  apiHash: ${TELEGRAM_API_HASH:-""}
+  adminChatId: ${TELEGRAM_ADMIN_CHAT_ID:-""}
 
 # Cloud services
 cloudflare:
@@ -97,12 +97,12 @@ cloudflare:
   kvNamespace: ${CLOUDFLARE_KV_NAMESPACE}
 
 firebase:
-  projectId: ${FIREBASE_PROJECT_ID}
-  apiKey: ${FIREBASE_API_KEY}
-  authDomain: ${FIREBASE_AUTH_DOMAIN}
-  storageBucket: ${FIREBASE_STORAGE_BUCKET}
-  messagingSenderId: ${FIREBASE_MESSAGING_SENDER_ID}
-  appId: ${FIREBASE_APP_ID}
+  projectId: ${FIREBASE_PROJECT_ID:-""}
+  apiKey: ${FIREBASE_API_KEY:-""}
+  authDomain: ${FIREBASE_AUTH_DOMAIN:-""}
+  storageBucket: ${FIREBASE_STORAGE_BUCKET:-""}
+  messagingSenderId: ${FIREBASE_MESSAGING_SENDER_ID:-""}
+  appId: ${FIREBASE_APP_ID:-""}
 
 # Monitoring
 monitoring:
