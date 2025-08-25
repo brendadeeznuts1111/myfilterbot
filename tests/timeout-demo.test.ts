@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { test, expect } from 'bun:test';
 
 test("Quick test - default timeout", () => {
   expect(true).toBe(true);

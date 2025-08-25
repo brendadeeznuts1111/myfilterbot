@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 class TimezoneHandler:
     """Handles timezone operations for the bot"""
+    default_timezone: Any
+    user_timezones: Any
     
     TRADING_ZONES = {
         "America/New_York": {
@@ -62,7 +64,7 @@ class TimezoneHandler:
         }
     }
     
-    def __init__(self, default_timezone: str = "America/Chicago"):
+    def __init__(self, default_timezone: str = "America/Chicago") -> None:
         """Initialize with default timezone"""
         self.default_timezone = default_timezone
         self.user_timezones = {}  # Store user timezone preferences
@@ -118,7 +120,7 @@ class TimezoneHandler:
         else:
             return False, f"Closed at {close_hour:.1f}:00"
     
-    async def timezone_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def timezone_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /timezone command"""
         try:
             user_id = update.effective_user.id
@@ -161,7 +163,7 @@ class TimezoneHandler:
         except Exception as e:
             logger.error(f"Error in timezone command: {e}")
     
-    async def market_hours_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def market_hours_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Show global market hours"""
         try:
             market_status = "📊 **Global Market Status**\n"
@@ -192,7 +194,7 @@ class TimezoneHandler:
         except Exception as e:
             logger.error(f"Error in market hours command: {e}")
     
-    async def handle_timezone_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_timezone_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle timezone selection callbacks"""
         try:
             query = update.callback_query
@@ -265,7 +267,7 @@ class TimezoneHandler:
             logger.error(f"Error converting timestamp: {e}")
             return timestamp
     
-    def schedule_market_alerts(self, context: ContextTypes.DEFAULT_TYPE):
+    def schedule_market_alerts(self, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Schedule alerts for market open/close times"""
         for tz_name, info in self.TRADING_ZONES.items():
             if info["market_hours"]:
@@ -295,7 +297,7 @@ class TimezoneHandler:
                     name=f"market_close_{tz_name}"
                 )
     
-    async def _market_open_alert(self, context: ContextTypes.DEFAULT_TYPE, timezone: str):
+    async def _market_open_alert(self, context: ContextTypes.DEFAULT_TYPE, timezone: str) -> None:
         """Send market open alert"""
         info = self.TRADING_ZONES[timezone]
         message = f"{info['emoji']} **{info['label'].split('(')[0]} Market Open**\n\n"
@@ -313,7 +315,7 @@ class TimezoneHandler:
                 except Exception as e:
                     logger.error(f"Error sending market open alert: {e}")
     
-    async def _market_close_alert(self, context: ContextTypes.DEFAULT_TYPE, timezone: str):
+    async def _market_close_alert(self, context: ContextTypes.DEFAULT_TYPE, timezone: str) -> None:
         """Send market close alert"""
         info = self.TRADING_ZONES[timezone]
         message = f"{info['emoji']} **{info['label'].split('(')[0]} Market Closed**\n\n"

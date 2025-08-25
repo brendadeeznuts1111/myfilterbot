@@ -3,8 +3,8 @@
  * Connects to the real Telegram bot and monitors transactions
  */
 
-import { serve } from "bun";
-import { config } from "../config/env.config";
+import { serve } from 'bun';
+import { config } from '../config/env.config';
 
 // Bot configuration from src/config.py
 const BOT_TOKEN = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0";

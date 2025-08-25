@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+
 import "./index.css";
 
 // Analytics Components
-import { RealTimeAnalyticsCenter } from "./components/RealTimeAnalyticsCenter";
-import { EnhancedAnalyticsDashboard } from "./components/EnhancedAnalyticsDashboard";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { RealTimeAnalyticsCenter } from './web/components/RealTimeAnalyticsCenter';
+import { EnhancedAnalyticsDashboard } from './web/components/EnhancedAnalyticsDashboard';
+import { ErrorBoundary } from './web/components/ErrorBoundary';
 
 // Types
 type AppView = 'legacy-analytics' | 'enhanced-analytics';

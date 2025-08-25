@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Dict, List, Optional, Any, Tuple, Set, Union
 """
 Fantdev Trading Bot - Main Application
 Clean, modular architecture with proper error handling
@@ -22,16 +23,16 @@ from telegram.ext import (
 )
 
 from config import config
-from database import db
-from handlers import handlers
-from utils.rate_limiter import rate_limiter
-from services.error_handler import error_handler, error_tracker
-from debug_handler import debug_handler
-from services.portal_integration import setup_portal_integration
-from services.chat_tracker import chat_tracker
-from enhanced_chat_handlers import enhanced_chat_handlers
-from authenticated_handlers import authenticated_handlers
-from timezone_handler import timezone_handler
+from bot.database import db
+from bot.handlers.handlers import handlers
+from bot.utils.rate_limiter import rate_limiter
+from bot.services.error_handler import error_handler, error_tracker
+from bot.debug_handler import debug_handler
+from bot.services.portal_integration import setup_portal_integration
+from bot.services.chat_tracker import chat_tracker
+from bot.enhanced_chat_handlers import enhanced_chat_handlers
+from bot.authenticated_handlers import authenticated_handlers
+from bot.timezone_handler import timezone_handler
 
 # Configure logging
 logging.basicConfig(

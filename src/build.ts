@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
-import plugin from "bun-plugin-tailwind";
+import plugin from 'bun-plugin-tailwind';
 // Using Bun native file APIs for better performance
-import path from "path";
+import path from 'path';
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
   console.log(`

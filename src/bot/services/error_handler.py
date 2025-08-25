@@ -37,8 +37,11 @@ class ErrorSeverity:
 
 class ErrorTracker:
     """Track and manage errors"""
+    log_dir: Any
+    max_history: Any
+    error_stats: Any
     
-    def __init__(self, log_dir: str = "logs"):
+    def __init__(self, log_dir: str = "logs") -> None:
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(exist_ok=True)
         
@@ -61,7 +64,7 @@ class ErrorTracker:
         # Load previous errors if exists
         self._load_error_history()
     
-    def _setup_logging(self):
+    def _setup_logging(self) -> None:
         """Setup comprehensive logging"""
         # Main error log
         error_handler = logging.FileHandler(
@@ -96,7 +99,7 @@ class ErrorTracker:
         logger.addHandler(debug_handler)
         logger.addHandler(critical_handler)
     
-    def _load_error_history(self):
+    def _load_error_history(self) -> None:
         """Load error history from file"""
         history_file = self.log_dir / "error_history.json"
         if history_file.exists():
@@ -108,7 +111,7 @@ class ErrorTracker:
             except Exception as e:
                 logging.warning(f"Could not load error history: {e}")
     
-    def _save_error_history(self):
+    def _save_error_history(self) -> None:
         """Save error history to file"""
         history_file = self.log_dir / "error_history.json"
         try:
@@ -173,7 +176,7 @@ class ErrorTracker:
         
         return error_id
     
-    def resolve_error(self, error_id: str, resolution: str = None):
+    def resolve_error(self, error_id: str, resolution: str = None) -> Any:
         """Mark an error as resolved"""
         for error in self.error_history:
             if error["id"] == error_id:
@@ -212,7 +215,7 @@ class ErrorTracker:
         
         return self.error_stats
     
-    def clear_old_errors(self, days: int = 30):
+    def clear_old_errors(self, days: int = 30) -> None:
         """Clear errors older than specified days"""
         now = datetime.now()
         self.error_history = [
@@ -225,17 +228,17 @@ class ErrorTracker:
 class ErrorHandler:
     """Main error handler for the bot"""
     
-    def __init__(self, tracker: ErrorTracker = None):
+    def __init__(self, tracker: ErrorTracker = None) -> None:
         self.tracker = tracker or ErrorTracker()
         self.admin_chat_id = None
         self.notification_enabled = True
         self.debug_mode = False
     
-    def set_admin_chat_id(self, chat_id: str):
+    def set_admin_chat_id(self, chat_id: str) -> int:
         """Set admin chat ID for notifications"""
         self.admin_chat_id = chat_id
     
-    def enable_debug_mode(self, enabled: bool = True):
+    def enable_debug_mode(self, enabled: bool = True) -> None:
         """Enable/disable debug mode"""
         self.debug_mode = enabled
         if enabled:
@@ -314,7 +317,7 @@ class ErrorHandler:
         # Default
         return ErrorCategory.UNKNOWN, ErrorSeverity.MEDIUM
     
-    async def _send_user_error(self, update: Update, error_id: str, severity: str):
+    async def _send_user_error(self, update: Update, error_id: str, severity: str) -> None:
         """Send error message to user"""
         if severity == ErrorSeverity.CRITICAL:
             message = "⚠️ A critical error occurred. The admin has been notified."
@@ -378,9 +381,9 @@ Use /debug to view full error details.
 def error_handler_decorator(category: str = ErrorCategory.UNKNOWN, 
                            severity: str = ErrorSeverity.MEDIUM):
     """Decorator for automatic error handling"""
-    def decorator(func):
+    def decorator(func) -> Any:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args, **kwargs) -> None:
             try:
                 return await func(*args, **kwargs)
             except Exception as e:

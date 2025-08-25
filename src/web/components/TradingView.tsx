@@ -1,7 +1,8 @@
-import React from 'react';
-import { useTheme } from '../hooks/useTheme';
 
 export function TradingView() {
+
+import { useTheme } from '../hooks/useTheme';
+
   const { theme } = useTheme();
 
   return (

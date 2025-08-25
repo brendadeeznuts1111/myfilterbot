@@ -20,8 +20,12 @@ logger = logging.getLogger(__name__)
 
 class PortalIntegration:
     """Handles communication between bot and customer portal"""
+    portal_base_url: Any
+    enabled: Any
+    retry_count: int
+    timeout: Any
     
-    def __init__(self, portal_base_url: str = None):
+    def __init__(self, portal_base_url: str = None) -> None:
         if portal_base_url is None:
             portal_base_url = os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000')
         self.portal_base_url = portal_base_url
@@ -220,12 +224,12 @@ class PortalIntegration:
         # Remove duplicates
         return list(set(relevant_customers))
     
-    def enable(self):
+    def enable(self) -> None:
         """Enable portal integration"""
         self.enabled = True
         logger.info("Portal integration enabled")
     
-    def disable(self):
+    def disable(self) -> None:
         """Disable portal integration"""
         self.enabled = False
         logger.info("Portal integration disabled")
@@ -237,7 +241,7 @@ def get_portal_integration() -> PortalIntegration:
     """Get the global portal integration instance"""
     return portal_integration
 
-def setup_portal_integration(portal_url: str = None):
+def setup_portal_integration(portal_url: str = None) -> Any:
     """Setup portal integration with custom URL"""
     global portal_integration
     

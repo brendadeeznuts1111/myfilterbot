@@ -42,8 +42,12 @@ class UserSession:
 
 class SessionManager:
     """Manages persistent user sessions and authentication"""
+    jwt_secret: Any
+    sessions: Any
+    session_timeout: Any
+    remember_me_timeout: Any
     
-    def __init__(self, redis_host='localhost', redis_port=6379, jwt_secret=None):
+    def __init__(self, redis_host='localhost', redis_port=6379, jwt_secret=None) -> None:
         """Initialize session manager with Redis for persistence"""
         self.jwt_secret = jwt_secret or secrets.token_hex(32)
         self.sessions = {}  # In-memory cache
@@ -64,9 +68,18 @@ class SessionManager:
             self.use_redis = False
             logger.warning("Redis not available, using in-memory sessions only")
         
-        # Session configuration
-        self.session_timeout = 86400  # 24 hours in seconds
-        self.remember_me_timeout = 2592000  # 30 days in seconds
+        # Session configuration - import constants
+        try:
+            import sys
+            import os
+            sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'config'))
+            from app_constants import TIMEOUT_CONFIG
+            self.session_timeout = TIMEOUT_CONFIG.SESSION_TIMEOUT
+            self.remember_me_timeout = TIMEOUT_CONFIG.REMEMBER_ME_TIMEOUT
+        except ImportError:
+            # Fallback to hardcoded values
+            self.session_timeout = 86400  # 24 hours in seconds
+            self.remember_me_timeout = 2592000  # 30 days in seconds
         
     def create_session(self, telegram_id: int, customer_id: str, 
                       username: str, remember_me: bool = False) -> Dict[str, Any]:
@@ -269,13 +282,16 @@ class SessionManager:
             'can_withdraw': False,
             'can_view_history': True,
             'is_admin': False
+    session_manager: Any
+    fraud_patterns: Any
+    risk_scores: Any
         }
 
 
 class FraudDetector:
     """Detect and track fraudulent activity"""
     
-    def __init__(self, session_manager: SessionManager):
+    def __init__(self, session_manager: SessionManager) -> None:
         self.session_manager = session_manager
         self.fraud_patterns = {}
         self.risk_scores = {}
@@ -379,6 +395,7 @@ class FraudDetector:
             return "LOW"
         elif score < 50:
             return "MEDIUM"
+    db_path: str
         elif score < 80:
             return "HIGH"
         else:
@@ -388,7 +405,7 @@ class FraudDetector:
 class PlayerHistory:
     """Track and retrieve player history"""
     
-    def __init__(self, db_path: str = "data/customer_database.json"):
+    def __init__(self, db_path: str = "data/customer_database.json") -> None:
         self.db_path = db_path
         
     def get_player_history(self, customer_id: str, days: int = 30) -> Dict[str, Any]:

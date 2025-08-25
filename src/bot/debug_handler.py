@@ -26,8 +26,11 @@ logger = logging.getLogger(__name__)
 
 class DebugHandler:
     """Debug and monitoring command handler"""
+    test_mode: Any
+    monitoring: Any
+    performance_metrics: Any
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_mode = False
         self.monitoring = False
         self.performance_metrics = {
@@ -36,7 +39,7 @@ class DebugHandler:
             "database_query_times": []
         }
     
-    async def debug_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def debug_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Main debug command - shows debug menu"""
         # Check if user is admin
         if str(update.message.chat_id) != config.admin_chat_id:
@@ -87,7 +90,7 @@ Select an option below:
             reply_markup=reply_markup
         )
     
-    async def handle_debug_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_debug_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle debug menu callbacks"""
         query = update.callback_query
         await query.answer()
@@ -125,7 +128,7 @@ Select an option below:
             error_id = data.replace("debug_resolve_", "")
             await self._resolve_error(query, error_id)
     
-    async def _show_system_status(self, query):
+    async def _show_system_status(self, query) -> None:
         """Show system status and health"""
         try:
             # Get system info (if psutil is available)
@@ -191,7 +194,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         except Exception as e:
             await query.edit_message_text(f"Error getting system status: {e}")
     
-    async def _show_recent_errors(self, query):
+    async def _show_recent_errors(self, query) -> None:
         """Show recent errors"""
         errors = error_tracker.get_recent_errors(limit=10)
         
@@ -235,7 +238,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             reply_markup=reply_markup
         )
     
-    async def _show_error_details(self, query, error_id: str):
+    async def _show_error_details(self, query, error_id: str) -> None:
         """Show detailed error information"""
         error = None
         for e in error_tracker.error_history:
@@ -286,7 +289,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             reply_markup=reply_markup
         )
     
-    async def _show_performance_metrics(self, query):
+    async def _show_performance_metrics(self, query) -> None:
         """Show performance metrics"""
         stats = error_tracker.get_error_stats()
         
@@ -343,7 +346,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             reply_markup=reply_markup
         )
     
-    async def _show_database_health(self, query):
+    async def _show_database_health(self, query) -> None:
         """Show database health status"""
         try:
             # Check database file
@@ -418,7 +421,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         except Exception as e:
             await query.edit_message_text(f"Error checking database health: {e}")
     
-    async def _test_error_handling(self, query, context):
+    async def _test_error_handling(self, query, context) -> None:
         """Test error handling system"""
         keyboard = [
             [
@@ -442,7 +445,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             reply_markup=reply_markup
         )
     
-    async def _show_recent_logs(self, query):
+    async def _show_recent_logs(self, query) -> None:
         """Show recent log entries"""
         log_dir = error_tracker.log_dir
         today_log = log_dir / f"debug_{datetime.now().strftime('%Y%m%d')}.log"
@@ -475,7 +478,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         except Exception as e:
             await query.edit_message_text(f"Error reading logs: {e}")
     
-    async def _show_configuration(self, query):
+    async def _show_configuration(self, query) -> None:
         """Show current configuration"""
         config_text = f"""
 🔧 **Current Configuration**
@@ -511,7 +514,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             reply_markup=reply_markup
         )
     
-    async def _clear_errors(self, query):
+    async def _clear_errors(self, query) -> None:
         """Clear old errors"""
         error_tracker.clear_old_errors(days=7)
         
@@ -524,7 +527,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             parse_mode=ParseMode.MARKDOWN
         )
     
-    async def _toggle_debug_mode(self, query):
+    async def _toggle_debug_mode(self, query) -> None:
         """Toggle debug mode on/off"""
         current = error_handler.debug_mode
         error_handler.enable_debug_mode(not current)
@@ -538,7 +541,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             parse_mode=ParseMode.MARKDOWN
         )
     
-    async def _export_debug_info(self, query, context):
+    async def _export_debug_info(self, query, context) -> None:
         """Export debug information to file"""
         try:
             # Prepare debug info
@@ -583,7 +586,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         except Exception as e:
             await query.edit_message_text(f"Error exporting debug info: {e}")
     
-    async def _show_debug_menu(self, query):
+    async def _show_debug_menu(self, query) -> None:
         """Show the main debug menu"""
         debug_status = "🟢 Enabled" if error_handler.debug_mode else "🔴 Disabled"
         
@@ -617,7 +620,7 @@ Select an option:
             reply_markup=reply_markup
         )
     
-    async def _simulate_error(self, query, error_type):
+    async def _simulate_error(self, query, error_type) -> None:
         """Simulate different types of errors for testing"""
         from .error_handler import ErrorCategory, ErrorSeverity
         
@@ -670,7 +673,7 @@ Select an option:
         except Exception as e:
             await query.edit_message_text(f"Error simulating error: {e}")
     
-    async def _resolve_error(self, query, error_id: str):
+    async def _resolve_error(self, query, error_id: str) -> None:
         """Mark an error as resolved"""
         success = error_tracker.resolve_error(error_id, "Manually resolved via debug interface")
         

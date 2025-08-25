@@ -1,7 +1,8 @@
+export class CloudflareWorkerClient {
 import type { ChatInfo, ShortlinkData, APIResponse } from '@shared/types';
+
 import { fetchJSON } from '../utils/stream-helpers';
 
-export class CloudflareWorkerClient {
   private baseUrl: string;
   private headers: HeadersInit;
 

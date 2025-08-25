@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { test, expect } from 'bun:test';
 
 test("clean test 1", () => {
   expect(2 + 2).toBe(4);
