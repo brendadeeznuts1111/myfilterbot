@@ -7,7 +7,7 @@
 ![React](https://img.shields.io/badge/react-19+-cyan)
 ![License](https://img.shields.io/badge/license-MIT-purple)
 
-A comprehensive, enterprise-grade Telegram trading bot platform with real-time monitoring, React-based admin dashboard, high-performance worker thread processing, and event-driven architecture.
+A comprehensive, enterprise-grade Telegram trading bot platform with real-time monitoring, React-based admin dashboard, high-performance worker thread processing, and optimized caching architecture.
 
 ## 🌟 Key Features
 
@@ -17,7 +17,7 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 - **Smart Alerts** - Low balance warnings, large transaction notifications, inactive customer alerts
 - **P&L Tracking** - Weekly profit/loss calculation and automated reporting
 - **Pattern Recognition** - Advanced regex-based transaction detection
-- **Event-Driven Architecture** - New modular event bus system for scalable bot operations
+- **High-Performance Architecture** - Worker threads and optimized processing for scalable operations
 
 ### Telegram Dashboard Integration
 - **Live Message Streaming** - Real-time message monitoring from all groups
@@ -39,7 +39,7 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 - **Priority Queue** - Intelligent task prioritization
 - **SQLite Persistence** - Reliable data storage for monitoring
 - **Auto-scaling** - Handles load spikes automatically
-- **Event Bus System** - Decoupled, scalable event handling
+- **Optimized Processing** - Efficient data handling and caching
 
 ### User-Agent Customization
 - **Bun CLI Integration** - Use `--user-agent` flag for custom HTTP headers
@@ -171,11 +171,10 @@ myfilterbot/
 │   │   ├── dashboard-config-service.ts # Dashboard configuration
 │   │   ├── yaml-config-service.ts     # YAML configuration management
 │   │   ├── cloudflare-client.ts       # Cloudflare Worker client
-│   │   ├── event-bus.ts              # Event bus system
-│   │   ├── event-bus-service.ts      # Event bus service
-│   │   ├── event-handlers.ts         # Event handlers
-│   │   ├── event-types.ts            # Event type definitions
-│   │   └── bot-event-integration.ts  # Bot event integration
+│   │   ├── cache-warming-service.ts   # Cache management
+│   │   ├── multi-level-cache.ts       # Multi-level caching system
+│   │   ├── performance-monitor.ts     # Performance monitoring
+│   │   └── websocket-service.ts      # WebSocket communication
 │   ├── web/                  # React web components
 │   │   ├── components/       # Reusable React components
 │   │   │   ├── analytics/    # Analytics charts and KPIs
@@ -189,8 +188,7 @@ myfilterbot/
 │   │   ├── api-client.ts     # API client with rate limiting
 │   │   ├── telegram-bridge.ts # Telegram integration
 │   │   └── yaml-config.ts    # YAML configuration utilities
-│   ├── utils/                # Utility functions
-│   └── start-event-driven-bot.ts # Event-driven bot entry point
+│   └── utils/                # Utility functions
 ├── tests/                    # Automated test suites
 │   ├── unit/                 # Unit tests (TypeScript)
 │   ├── integration/          # Integration tests
@@ -312,7 +310,7 @@ bun --env-file=.env.local --define process.env.NODE_ENV="'development'" src/inde
 bun build --define ENABLE_CONSOLE_LOGS=false --define process.env.NODE_ENV="'production'" src/index.ts
 
 # Custom User-Agent for API requests
-bun --user-agent "Fantdev-Trading-Bot/2.2.0" src/start-event-driven-bot.ts start
+bun --user-agent "Fantdev-Trading-Bot/2.2.0" src/server/admin/index.ts
 ```
 
 ### Benchmark Results
@@ -400,11 +398,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🆕 Recent Major Improvements (v2.2.0)
 
-### Event-Driven Bot System
-- ✅ **Event Bus Architecture** - New modular event handling system
-- ✅ **Bot Event Integration** - Seamless integration with existing bot handlers
-- ✅ **Transaction Events** - Real-time transaction processing via events
-- ✅ **Scalable Architecture** - Decoupled components for better maintainability
+### Enhanced Performance & Monitoring
+- ✅ **Performance Monitoring** - Real-time performance metrics and optimization
+- ✅ **Multi-Level Caching** - Intelligent caching system for better performance
+- ✅ **Cache Warming** - Proactive cache management for optimal response times
+- ✅ **WebSocket Integration** - Real-time communication and updates
 
 ### User-Agent Customization
 - ✅ **Bun CLI Integration** - `--user-agent` flag support for custom HTTP headers
@@ -443,20 +441,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🔧 New Scripts & Commands
 
-### Event-Driven Bot
-```bash
-# Start the event-driven bot
-bun run start:event-bot
 
-# Development mode with hot reload
-bun run dev:event-bot
-
-# Check bot health
-bun run event-bot:health
-
-# Simulate events for testing
-bun run event-bot:simulate
-```
 
 ### User-Agent Customization
 ```bash
