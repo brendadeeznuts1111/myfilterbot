@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Feedback Widget - FantDev Trading</title>
+    
+    <!-- Enhanced Static Assets -->
+    <link rel="stylesheet" href="../static/css/utilities.css">
+    <link rel="stylesheet" href="../static/css/components.css">
+    <link rel="stylesheet" href="../static/css/fantdev-components.css">
+    
+    <link rel="stylesheet" href="../static/css/feedback-widget.css">
+</head>
+<body>
+    <div id="enhanced-feedback-widget" class="enhanced-feedback-widget">
+        <!-- Toggle Button -->
+        <button class="enhanced-feedback-toggle" id="feedback-toggle">
+            💬
+        </button>
+        
+        <!-- Header -->
+        <div class="enhanced-feedback-header">
+            <button class="enhanced-feedback-close" id="feedback-close">×</button>
+            <h3>Help Us Improve</h3>
+            <p>Your feedback helps us make FantDev Trading better</p>
+        </div>
+        
+        <!-- Body -->
+        <div class="enhanced-feedback-body" id="feedback-body">
+            <!-- Question 1: Overall Experience -->
+            <div class="enhanced-feedback-question">
+                <label for="overall-rating">How would you rate your overall experience?</label>
+                <div class="enhanced-rating-buttons" id="overall-rating">
+                    <button class="enhanced-rating-btn" data-rating="1" data-label="Poor">1</button>
+                    <button class="enhanced-rating-btn" data-rating="2" data-label="Fair">2</button>
+                    <button class="enhanced-rating-btn" data-rating="3" data-label="Good">3</button>
+                    <button class="enhanced-rating-btn" data-rating="4" data-label="Very Good">4</button>
+                    <button class="enhanced-rating-btn" data-rating="5" data-label="Excellent">5</button>
+                </div>
+            </div>
+            
+            <!-- Question 2: Specific Feedback -->
+            <div class="enhanced-feedback-question">
+                <label for="feedback-text">What specific improvements would you suggest?</label>
+                <textarea 
+                    class="enhanced-feedback-textarea" 
+                    id="feedback-text" 
+                    placeholder="Share your thoughts, suggestions, or report any issues..."
+                    maxlength="500"
+                ></textarea>
+                <div style="text-align: right; font-size: 0.75rem; color: var(--text-tertiary);">
+                    <span id="char-count">0</span>/500
+                </div>
+            </div>
+            
+            <!-- Question 3: Category -->
+            <div class="enhanced-feedback-question">
+                <label for="feedback-category">What category does this feedback relate to?</label>
+                <select class="enhanced-feedback-textarea" id="feedback-category">
+                    <option value="">Select a category...</option>
+                    <option value="user-interface">User Interface</option>
+                    <option value="trading-features">Trading Features</option>
+                    <option value="performance">Performance</option>
+                    <option value="customer-support">Customer Support</option>
+                    <option value="bug-report">Bug Report</option>
+                    <option value="feature-request">Feature Request</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="enhanced-feedback-buttons">
+                <button class="enhanced-btn enhanced-btn-secondary" id="feedback-cancel">Cancel</button>
+                <button class="enhanced-btn enhanced-btn-primary" id="feedback-submit">Submit Feedback</button>
+            </div>
+        </div>
+        
+        <!-- Success State -->
+        <div class="enhanced-feedback-success hidden" id="feedback-success">
+            <div class="enhanced-feedback-emoji">🎉</div>
+            <h4>Thank You!</h4>
+            <p>Your feedback has been submitted successfully. We appreciate your input!</p>
+        </div>
+        
+        <!-- Loading State -->
+        <div class="enhanced-feedback-loading hidden" id="feedback-loading">
+            <div class="enhanced-spinner"></div>
+        </div>
+    </div>
+
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="../static/js/utils.js"></script>
+    <script src="../static/js/components.js"></script>
+    <script src="../static/js/icon-helper.js"></script>
+    
+    <script src="../static/js/feedback-widget.js"></script>
+</body>
+</html>

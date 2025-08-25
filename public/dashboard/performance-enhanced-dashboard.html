@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantDev Performance-Optimized Dashboard</title>
+    <meta name="description" content="High-performance trading dashboard with advanced caching and offline support">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Performance-optimized styles with CSS containment */
+        .dashboard-container {
+            contain: layout style paint;
+        }
+        
+        .widget-card {
+            contain: layout style;
+            will-change: transform;
+        }
+        
+        /* Hardware acceleration for animations */
+        .animate-slide {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+        
+        /* Loading skeleton styles */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Offline indicator */
+        .offline-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ef4444;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            z-index: 9999;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .offline-banner.show {
+            transform: translateY(0);
+        }
+        
+        /* Performance metrics display */
+        .perf-metrics {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        /* Update notification */
+        .update-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .update-notification.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body x-data="performanceDashboard()" x-init="init()">
+    
+    <!-- Offline Banner -->
+    <div class="offline-banner" :class="{ 'show': !isOnline }">
+        <i class="fas fa-wifi-slash mr-2"></i>
+        You are currently offline. Changes will be synced when connection is restored.
+    </div>
+    
+    <!-- Update Notification -->
+    <div class="update-notification" id="updateNotification">
+        <div class="flex items-center justify-between">
+            <div>
+                <i class="fas fa-download mr-2"></i>
+                New version available!
+            </div>
+            <button onclick="window.location.reload()" class="ml-4 px-3 py-1 bg-white text-blue-600 rounded">
+                Update Now
+            </button>
+        </div>
+    </div>
+    
+    <!-- Performance Metrics Display -->
+    <div class="perf-metrics" x-show="showPerfMetrics">
+        <div class="mb-1">Load Time: <span x-text="perfMetrics.loadTime"></span>ms</div>
+        <div class="mb-1">Memory: <span x-text="perfMetrics.memory"></span>MB</div>
+        <div class="mb-1">Cache Hit: <span x-text="perfMetrics.cacheHitRate"></span>%</div>
+        <div class="mb-1">API Avg: <span x-text="perfMetrics.avgApiTime"></span>ms</div>
+        <div>Queue: <span x-text="offlineQueue.length"></span> pending</div>
+    </div>
+
+    <!-- Main Dashboard Container -->
+    <div class="dashboard-container min-h-screen bg-gray-100 dark:bg-gray-900">
+        
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-sm">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <h1 class="text-2xl font-bold">Performance Dashboard</h1>
+                        <span class="text-sm text-gray-500">
+                            <span class="w-2 h-2 inline-block rounded-full mr-1"
+                                  :class="isOnline ? 'bg-green-500' : 'bg-red-500'"></span>
+                            <span x-text="isOnline ? 'Online' : 'Offline'"></span>
+                        </span>
+                    </div>
+                    
+                    <!-- Performance Toggle -->
+                    <button @click="showPerfMetrics = !showPerfMetrics" 
+                            class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded">
+                        <i class="fas fa-tachometer-alt mr-1"></i>
+                        Metrics
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation with Prefetch -->
+        <nav class="bg-white dark:bg-gray-800 border-b">
+            <div class="container mx-auto px-4">
+                <div class="flex space-x-1 overflow-x-auto py-2">
+                    <template x-for="tab in tabs" :key="tab.id">
+                        <button @click="switchTab(tab.id)"
+                                @mouseenter="prefetchTab(tab.id)"
+                                :class="activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                                class="px-4 py-2 rounded font-medium whitespace-nowrap transition-all">
+                            <i :class="tab.icon" class="mr-2"></i>
+                            <span x-text="tab.name"></span>
+                            <span x-show="tab.cached" class="ml-1 text-xs">
+                                <i class="fas fa-check-circle text-green-400"></i>
+                            </span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="container mx-auto px-4 py-6">
+            
+            <!-- Loading State -->
+            <div x-show="loading" class="space-y-4">
+                <div class="skeleton h-32 rounded-lg"></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="skeleton h-48 rounded-lg"></div>
+                    <div class="skeleton h-48 rounded-lg"></div>
+                    <div class="skeleton h-48 rounded-lg"></div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div x-show="!loading" x-transition class="space-y-6">
+                
+                <!-- Overview Tab -->
+                <div x-show="activeTab === 'overview'" class="space-y-6">
+                    <!-- KPI Cards with Lazy Loading -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <template x-for="kpi in kpis" :key="kpi.id">
+                            <div class="widget-card bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-500" x-text="kpi.label"></span>
+                                    <i :class="kpi.icon" class="text-2xl opacity-20"></i>
+                                </div>
+                                <div class="text-2xl font-bold" x-text="kpi.value"></div>
+                                <div class="text-sm mt-2" :class="kpi.trend > 0 ? 'text-green-500' : 'text-red-500'">
+                                    <i :class="kpi.trend > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                                    <span x-text="Math.abs(kpi.trend) + '%'"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Real-time Activity Feed -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">Live Activity</h3>
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            <template x-for="activity in activities" :key="activity.id">
+                                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                        <div>
+                                            <p class="font-medium" x-text="activity.user"></p>
+                                            <p class="text-sm text-gray-500" x-text="activity.action"></p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-gray-400" x-text="activity.time"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Players Tab -->
+                <div x-show="activeTab === 'players'" class="space-y-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">Players Management</h3>
+                        
+                        <!-- Virtual Scrolling Container -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="text-left py-2">Name</th>
+                                        <th class="text-left py-2">Status</th>
+                                        <th class="text-right py-2">Balance</th>
+                                        <th class="text-right py-2">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="player in visiblePlayers" :key="player.id">
+                                        <tr class="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            <td class="py-2">
+                                                <span x-text="player.name"></span>
+                                            </td>
+                                            <td class="py-2">
+                                                <span class="px-2 py-1 rounded text-xs"
+                                                      :class="{
+                                                          'bg-green-100 text-green-800': player.status === 'active',
+                                                          'bg-red-100 text-red-800': player.status === 'inactive'
+                                                      }"
+                                                      x-text="player.status"></span>
+                                            </td>
+                                            <td class="py-2 text-right">$<span x-text="player.balance.toLocaleString()"></span></td>
+                                            <td class="py-2 text-right">
+                                                <button @click="queueAction('edit', player.id)" 
+                                                        class="text-blue-600 hover:text-blue-800 mr-2">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button @click="queueAction('delete', player.id)"
+                                                        class="text-red-600 hover:text-red-800">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div x-show="activeTab === 'analytics'" class="space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold mb-4">Performance Chart</h3>
+                            <canvas id="perfChart"></canvas>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold mb-4">Cache Statistics</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span>Cache Size</span>
+                                    <span x-text="cacheStats.size + ' KB'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Hit Rate</span>
+                                    <span x-text="cacheStats.hitRate + '%'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Items Cached</span>
+                                    <span x-text="cacheStats.items"></span>
+                                </div>
+                                <button @click="clearCache()" 
+                                        class="w-full mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                    Clear Cache
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Advanced Performance Dashboard Implementation
+        function performanceDashboard() {
+            return {
+                // State
+                activeTab: 'overview',
+                loading: false,
+                isOnline: navigator.onLine,
+                showPerfMetrics: false,
+                
+                // Cache Management
+                cache: new Map(),
+                cacheVersion: '1.0.0',
+                maxCacheSize: 5 * 1024 * 1024, // 5MB
+                cacheExpiry: 5 * 60 * 1000, // 5 minutes
+                
+                // Performance Metrics
+                perfMetrics: {
+                    loadTime: 0,
+                    memory: 0,
+                    cacheHitRate: 0,
+                    avgApiTime: 0,
+                    apiCalls: []
+                },
+                
+                // Cache Statistics
+                cacheStats: {
+                    size: 0,
+                    hitRate: 0,
+                    items: 0,
+                    hits: 0,
+                    misses: 0
+                },
+                
+                // Offline Queue
+                offlineQueue: [],
+                
+                // WebSocket
+                ws: null,
+                wsReconnectAttempts: 0,
+                wsMaxReconnectAttempts: 5,
+                wsReconnectDelay: 1000,
+                
+                // Data
+                tabs: [
+                    { id: 'overview', name: 'Overview', icon: 'fas fa-home', cached: false },
+                    { id: 'players', name: 'Players', icon: 'fas fa-users', cached: false },
+                    { id: 'analytics', name: 'Analytics', icon: 'fas fa-chart-bar', cached: false },
+                    { id: 'transactions', name: 'Transactions', icon: 'fas fa-exchange-alt', cached: false },
+                    { id: 'settings', name: 'Settings', icon: 'fas fa-cog', cached: false }
+                ],
+                
+                kpis: [],
+                activities: [],
+                players: [],
+                visiblePlayers: [],
+                
+                // Initialization
+                async init() {
+                    // Start performance monitoring
+                    this.startPerfMonitoring();
+                    
+                    // Setup service worker
+                    this.setupServiceWorker();
+                    
+                    // Setup offline detection
+                    this.setupOfflineDetection();
+                    
+                    // Setup WebSocket with reconnection
+                    this.setupWebSocket();
+                    
+                    // Load initial data
+                    await this.loadInitialData();
+                    
+                    // Setup prefetching
+                    this.setupPrefetching();
+                    
+                    // Setup cache cleanup
+                    this.setupCacheCleanup();
+                    
+                    // Check for updates
+                    this.checkForUpdates();
+                },
+                
+                // Performance Monitoring
+                startPerfMonitoring() {
+                    const startTime = performance.now();
+                    
+                    // Monitor load time
+                    window.addEventListener('load', () => {
+                        this.perfMetrics.loadTime = Math.round(performance.now() - startTime);
+                    });
+                    
+                    // Monitor memory usage
+                    if (performance.memory) {
+                        setInterval(() => {
+                            this.perfMetrics.memory = Math.round(performance.memory.usedJSHeapSize / 1048576);
+                        }, 5000);
+                    }
+                    
+                    // Monitor cache hit rate
+                    setInterval(() => {
+                        const total = this.cacheStats.hits + this.cacheStats.misses;
+                        this.perfMetrics.cacheHitRate = total > 0 
+                            ? Math.round((this.cacheStats.hits / total) * 100) 
+                            : 0;
+                    }, 1000);
+                },
+                
+                // Service Worker Setup
+                setupServiceWorker() {
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('/sw.js')
+                            .then(registration => {
+                                // Check for updates
+                                registration.addEventListener('updatefound', () => {
+                                    const newWorker = registration.installing;
+                                    newWorker.addEventListener('statechange', () => {
+                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                            document.getElementById('updateNotification').classList.add('show');
+                                        }
+                                    });
+                                });
+                            })
+                            .catch(error => console.error('SW registration failed:', error));
+                    }
+                },
+                
+                // Offline Detection
+                setupOfflineDetection() {
+                    window.addEventListener('online', () => {
+                        this.isOnline = true;
+                        this.processOfflineQueue();
+                    });
+                    
+                    window.addEventListener('offline', () => {
+                        this.isOnline = false;
+                    });
+                },
+                
+                // WebSocket with Reconnection
+                setupWebSocket() {
+                    const connect = () => {
+                        try {
+                            this.ws = new WebSocket('ws://localhost:3005/ws');
+                            
+                            this.ws.onopen = () => {
+                                console.log('WebSocket connected');
+                                this.wsReconnectAttempts = 0;
+                                this.wsReconnectDelay = 1000;
+                            };
+                            
+                            this.ws.onmessage = (event) => {
+                                const data = JSON.parse(event.data);
+                                this.handleRealtimeUpdate(data);
+                            };
+                            
+                            this.ws.onerror = (error) => {
+                                console.error('WebSocket error:', error);
+                            };
+                            
+                            this.ws.onclose = () => {
+                                console.log('WebSocket disconnected');
+                                this.reconnectWebSocket();
+                            };
+                        } catch (error) {
+                            console.error('WebSocket setup failed:', error);
+                            this.fallbackToSimulation();
+                        }
+                    };
+                    
+                    connect();
+                },
+                
+                // WebSocket Reconnection with Exponential Backoff
+                reconnectWebSocket() {
+                    if (this.wsReconnectAttempts < this.wsMaxReconnectAttempts) {
+                        setTimeout(() => {
+                            console.log(`WebSocket reconnection attempt ${this.wsReconnectAttempts + 1}`);
+                            this.wsReconnectAttempts++;
+                            this.wsReconnectDelay *= 2; // Exponential backoff
+                            this.setupWebSocket();
+                        }, this.wsReconnectDelay);
+                    } else {
+                        console.log('Max reconnection attempts reached, falling back to simulation');
+                        this.fallbackToSimulation();
+                    }
+                },
+                
+                // Fallback to Simulated Updates
+                fallbackToSimulation() {
+                    setInterval(() => {
+                        this.handleRealtimeUpdate({
+                            type: 'activity',
+                            data: {
+                                id: Date.now(),
+                                user: `User${Math.floor(Math.random() * 1000)}`,
+                                action: ['Deposited $100', 'Placed bet', 'Withdrew $50'][Math.floor(Math.random() * 3)],
+                                time: 'just now'
+                            }
+                        });
+                    }, 5000);
+                },
+                
+                // Handle Real-time Updates
+                handleRealtimeUpdate(data) {
+                    switch (data.type) {
+                        case 'activity':
+                            this.activities.unshift(data.data);
+                            if (this.activities.length > 50) {
+                                this.activities.pop();
+                            }
+                            break;
+                        case 'kpi':
+                            const kpiIndex = this.kpis.findIndex(k => k.id === data.data.id);
+                            if (kpiIndex !== -1) {
+                                this.kpis[kpiIndex] = data.data;
+                            }
+                            break;
+                    }
+                },
+                
+                // Advanced Caching with Versioning
+                async fetchWithCache(url, options = {}) {
+                    const cacheKey = `${url}_${JSON.stringify(options)}`;
+                    const now = Date.now();
+                    
+                    // Check cache
+                    if (this.cache.has(cacheKey)) {
+                        const cached = this.cache.get(cacheKey);
+                        if (cached.expires > now) {
+                            this.cacheStats.hits++;
+                            return cached.data;
+                        } else {
+                            // Remove expired cache
+                            this.cache.delete(cacheKey);
+                        }
+                    }
+                    
+                    this.cacheStats.misses++;
+                    
+                    // Track API performance
+                    const startTime = performance.now();
+                    
+                    try {
+                        const response = await fetch(url, options);
+                        const data = await response.json();
+                        
+                        // Track API time
+                        const apiTime = performance.now() - startTime;
+                        this.perfMetrics.apiCalls.push(apiTime);
+                        if (this.perfMetrics.apiCalls.length > 10) {
+                            this.perfMetrics.apiCalls.shift();
+                        }
+                        this.perfMetrics.avgApiTime = Math.round(
+                            this.perfMetrics.apiCalls.reduce((a, b) => a + b, 0) / this.perfMetrics.apiCalls.length
+                        );
+                        
+                        // Cache the result
+                        this.cache.set(cacheKey, {
+                            data,
+                            expires: now + this.cacheExpiry,
+                            size: JSON.stringify(data).length
+                        });
+                        
+                        // Update cache stats
+                        this.updateCacheStats();
+                        
+                        // Also save to localStorage for offline
+                        this.saveToLocalStorage(cacheKey, data);
+                        
+                        return data;
+                    } catch (error) {
+                        // Try to get from localStorage if online request fails
+                        const offlineData = this.getFromLocalStorage(cacheKey);
+                        if (offlineData) {
+                            return offlineData;
+                        }
+                        throw error;
+                    }
+                },
+                
+                // LocalStorage Caching
+                saveToLocalStorage(key, data) {
+                    try {
+                        const stored = {
+                            data,
+                            version: this.cacheVersion,
+                            timestamp: Date.now()
+                        };
+                        localStorage.setItem(`cache_${key}`, JSON.stringify(stored));
+                    } catch (e) {
+                        console.warn('LocalStorage save failed:', e);
+                        // Clear old items if storage is full
+                        this.clearOldLocalStorage();
+                    }
+                },
+                
+                getFromLocalStorage(key) {
+                    try {
+                        const stored = localStorage.getItem(`cache_${key}`);
+                        if (stored) {
+                            const parsed = JSON.parse(stored);
+                            if (parsed.version === this.cacheVersion) {
+                                return parsed.data;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('LocalStorage read failed:', e);
+                    }
+                    return null;
+                },
+                
+                clearOldLocalStorage() {
+                    const keys = Object.keys(localStorage);
+                    const cacheKeys = keys.filter(k => k.startsWith('cache_'));
+                    
+                    // Sort by timestamp and remove oldest
+                    const items = cacheKeys.map(key => {
+                        try {
+                            const data = JSON.parse(localStorage.getItem(key));
+                            return { key, timestamp: data.timestamp || 0 };
+                        } catch {
+                            return { key, timestamp: 0 };
+                        }
+                    }).sort((a, b) => a.timestamp - b.timestamp);
+                    
+                    // Remove oldest 25%
+                    const toRemove = Math.floor(items.length * 0.25);
+                    for (let i = 0; i < toRemove; i++) {
+                        localStorage.removeItem(items[i].key);
+                    }
+                },
+                
+                // Intelligent Prefetching
+                setupPrefetching() {
+                    // Prefetch adjacent tabs
+                    if ('requestIdleCallback' in window) {
+                        requestIdleCallback(() => {
+                            this.prefetchAdjacentTabs();
+                        });
+                    } else {
+                        setTimeout(() => this.prefetchAdjacentTabs(), 1000);
+                    }
+                },
+                
+                prefetchAdjacentTabs() {
+                    const currentIndex = this.tabs.findIndex(t => t.id === this.activeTab);
+                    const adjacent = [
+                        this.tabs[currentIndex - 1],
+                        this.tabs[currentIndex + 1]
+                    ].filter(Boolean);
+                    
+                    adjacent.forEach(tab => {
+                        if (!tab.cached) {
+                            this.prefetchTab(tab.id);
+                        }
+                    });
+                },
+                
+                async prefetchTab(tabId) {
+                    // Don't prefetch if already cached
+                    const tab = this.tabs.find(t => t.id === tabId);
+                    if (tab && tab.cached) return;
+                    
+                    try {
+                        const data = await this.fetchWithCache(`/api/dashboard/${tabId}`);
+                        if (tab) {
+                            tab.cached = true;
+                        }
+                    } catch (error) {
+                        console.error(`Prefetch failed for ${tabId}:`, error);
+                    }
+                },
+                
+                // Tab Switching with Cache
+                async switchTab(tabId) {
+                    this.loading = true;
+                    this.activeTab = tabId;
+                    
+                    try {
+                        const data = await this.fetchWithCache(`/api/dashboard/${tabId}`);
+                        this.processTabData(tabId, data);
+                    } catch (error) {
+                        console.error('Failed to load tab:', error);
+                    } finally {
+                        this.loading = false;
+                        // Prefetch adjacent tabs after switching
+                        requestIdleCallback(() => this.prefetchAdjacentTabs());
+                    }
+                },
+                
+                processTabData(tabId, data) {
+                    switch (tabId) {
+                        case 'overview':
+                            this.kpis = data.kpis || this.generateSampleKPIs();
+                            this.activities = data.activities || this.generateSampleActivities();
+                            break;
+                        case 'players':
+                            this.players = data.players || this.generateSamplePlayers();
+                            this.visiblePlayers = this.players.slice(0, 50); // Virtual scrolling
+                            break;
+                    }
+                },
+                
+                // Load Initial Data
+                async loadInitialData() {
+                    this.loading = true;
+                    
+                    try {
+                        const data = await this.fetchWithCache('/api/dashboard/overview');
+                        this.processTabData('overview', data);
+                    } catch (error) {
+                        // Use sample data if API fails
+                        this.kpis = this.generateSampleKPIs();
+                        this.activities = this.generateSampleActivities();
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Offline Queue Management
+                queueAction(action, data) {
+                    const queueItem = {
+                        id: Date.now(),
+                        action,
+                        data,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    if (this.isOnline) {
+                        this.executeAction(queueItem);
+                    } else {
+                        this.offlineQueue.push(queueItem);
+                        this.saveOfflineQueue();
+                    }
+                },
+                
+                async executeAction(item) {
+                    try {
+                        const response = await fetch('/api/actions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(item)
+                        });
+                        
+                        if (response.ok) {
+                            console.log('Action executed:', item.action);
+                        }
+                    } catch (error) {
+                        console.error('Action failed:', error);
+                        // Re-queue if failed
+                        if (!this.offlineQueue.includes(item)) {
+                            this.offlineQueue.push(item);
+                        }
+                    }
+                },
+                
+                processOfflineQueue() {
+                    const queue = [...this.offlineQueue];
+                    this.offlineQueue = [];
+                    
+                    queue.forEach(item => {
+                        this.executeAction(item);
+                    });
+                    
+                    this.saveOfflineQueue();
+                },
+                
+                saveOfflineQueue() {
+                    localStorage.setItem('offlineQueue', JSON.stringify(this.offlineQueue));
+                },
+                
+                loadOfflineQueue() {
+                    try {
+                        const saved = localStorage.getItem('offlineQueue');
+                        if (saved) {
+                            this.offlineQueue = JSON.parse(saved);
+                        }
+                    } catch (error) {
+                        console.error('Failed to load offline queue:', error);
+                    }
+                },
+                
+                // Cache Management
+                updateCacheStats() {
+                    let totalSize = 0;
+                    this.cache.forEach(item => {
+                        totalSize += item.size || 0;
+                    });
+                    
+                    this.cacheStats.size = Math.round(totalSize / 1024); // KB
+                    this.cacheStats.items = this.cache.size;
+                    this.cacheStats.hitRate = this.cacheStats.hits + this.cacheStats.misses > 0
+                        ? Math.round((this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses)) * 100)
+                        : 0;
+                },
+                
+                setupCacheCleanup() {
+                    // Run cleanup every minute
+                    setInterval(() => {
+                        this.cleanupCache();
+                    }, 60000);
+                },
+                
+                cleanupCache() {
+                    const now = Date.now();
+                    let totalSize = 0;
+                    const toDelete = [];
+                    
+                    // Check each cache entry
+                    this.cache.forEach((item, key) => {
+                        if (item.expires < now) {
+                            toDelete.push(key);
+                        } else {
+                            totalSize += item.size || 0;
+                        }
+                    });
+                    
+                    // Remove expired items
+                    toDelete.forEach(key => this.cache.delete(key));
+                    
+                    // If still over size limit, remove oldest items
+                    if (totalSize > this.maxCacheSize) {
+                        const items = Array.from(this.cache.entries())
+                            .sort((a, b) => a[1].expires - b[1].expires);
+                        
+                        while (totalSize > this.maxCacheSize && items.length > 0) {
+                            const [key, item] = items.shift();
+                            totalSize -= item.size || 0;
+                            this.cache.delete(key);
+                        }
+                    }
+                    
+                    this.updateCacheStats();
+                },
+                
+                clearCache() {
+                    this.cache.clear();
+                    
+                    // Clear localStorage cache
+                    const keys = Object.keys(localStorage);
+                    keys.filter(k => k.startsWith('cache_')).forEach(k => {
+                        localStorage.removeItem(k);
+                    });
+                    
+                    // Reset stats
+                    this.cacheStats.hits = 0;
+                    this.cacheStats.misses = 0;
+                    this.updateCacheStats();
+                    
+                    // Reset cached flags
+                    this.tabs.forEach(tab => tab.cached = false);
+                    
+                    console.log('Cache cleared');
+                },
+                
+                // Version Checking
+                async checkForUpdates() {
+                    try {
+                        const response = await fetch('/api/version');
+                        const data = await response.json();
+                        
+                        const currentVersion = localStorage.getItem('appVersion');
+                        if (currentVersion && data.version !== currentVersion) {
+                            document.getElementById('updateNotification').classList.add('show');
+                        }
+                        
+                        localStorage.setItem('appVersion', data.version);
+                    } catch (error) {
+                        console.error('Version check failed:', error);
+                    }
+                },
+                
+                // Sample Data Generators
+                generateSampleKPIs() {
+                    return [
+                        { id: 'revenue', label: 'Revenue', value: '$125,678', trend: 12.5, icon: 'fas fa-dollar-sign text-green-500' },
+                        { id: 'users', label: 'Active Users', value: '1,234', trend: 5.2, icon: 'fas fa-users text-blue-500' },
+                        { id: 'conversion', label: 'Conversion', value: '3.4%', trend: -2.1, icon: 'fas fa-chart-line text-purple-500' },
+                        { id: 'performance', label: 'Performance', value: '98.5%', trend: 0.8, icon: 'fas fa-tachometer-alt text-orange-500' }
+                    ];
+                },
+                
+                generateSampleActivities() {
+                    return Array.from({ length: 10 }, (_, i) => ({
+                        id: i,
+                        user: `User${1000 + i}`,
+                        action: ['Deposited $500', 'Placed bet on Lakers', 'Withdrew $200'][i % 3],
+                        time: `${i * 2} min ago`
+                    }));
+                },
+                
+                generateSamplePlayers() {
+                    return Array.from({ length: 100 }, (_, i) => ({
+                        id: i,
+                        name: `Player ${i + 1}`,
+                        status: i % 3 === 0 ? 'inactive' : 'active',
+                        balance: Math.floor(Math.random() * 50000)
+                    }));
+                }
+            }
+        }
+    </script>
+</body>
+</html>

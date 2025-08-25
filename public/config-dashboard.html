@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Manager Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --danger: #f56565;
+            --info: #4299e1;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --gray: #718096;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2d3748;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--gray);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-label {
+            color: var(--gray);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .metric-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .metric-change.positive {
+            color: var(--success);
+        }
+
+        .metric-change.negative {
+            color: var(--danger);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .sidebar h2 {
+            color: var(--dark);
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .config-list {
+            list-style: none;
+        }
+
+        .config-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid var(--border);
+        }
+
+        .config-item:hover {
+            background: var(--light);
+        }
+
+        .config-item.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .config-item .config-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .config-item .config-meta {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab {
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 1rem;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .editor {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            min-height: 400px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: white;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: var(--success);
+        }
+
+        .status-indicator.disconnected {
+            background: var(--danger);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .event-log {
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+
+        .event-item {
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-left: 3px solid var(--info);
+            background: white;
+        }
+
+        .event-item.error {
+            border-left-color: var(--danger);
+        }
+
+        .event-item.success {
+            border-left-color: var(--success);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            color: var(--dark);
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            font-family: monospace;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            display: flex;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--info);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--light);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            min-width: 300px;
+        }
+
+        .search-box input {
+            background: none;
+            border: none;
+            outline: none;
+            flex: 1;
+            padding: 0.25rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Configuration Manager</h1>
+            <p>Real-time YAML configuration management with live updates</p>
+            <div style="margin-top: 1rem;">
+                <span class="status-indicator connected" id="connectionStatus"></span>
+                <span id="connectionText">Connected</span>
+            </div>
+        </div>
+
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-label">Total Configs</div>
+                <div class="metric-value" id="totalConfigs">0</div>
+                <div class="metric-change positive">Active</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Connected Clients</div>
+                <div class="metric-value" id="connectedClients">0</div>
+                <div class="metric-change" id="clientsChange">Real-time</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">File Watchers</div>
+                <div class="metric-value" id="watchers">0</div>
+                <div class="metric-change positive">Monitoring</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Memory Usage</div>
+                <div class="metric-value" id="memoryUsage">0 MB</div>
+                <div class="metric-change" id="memoryChange">Optimized</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="toolbar">
+                    <h2>Configurations</h2>
+                    <button class="btn btn-primary" onclick="showCreateModal()">+ New</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" placeholder="Search configs..." id="searchInput">
+                </div>
+                <ul class="config-list" id="configList">
+                    <!-- Config items will be populated here -->
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div class="tabs">
+                    <button class="tab active" data-tab="editor">Editor</button>
+                    <button class="tab" data-tab="preview">Preview</button>
+                    <button class="tab" data-tab="events">Events</button>
+                    <button class="tab" data-tab="validation">Validation</button>
+                </div>
+
+                <div class="tab-content active" id="editor">
+                    <div class="toolbar">
+                        <h3 id="configTitle">Select a configuration</h3>
+                        <div>
+                            <button class="btn btn-success" onclick="saveConfig()">Save</button>
+                            <button class="btn btn-secondary" onclick="exportConfig()">Export</button>
+                            <button class="btn btn-danger" onclick="deleteConfig()">Delete</button>
+                        </div>
+                    </div>
+                    <div class="editor" id="configEditor" contenteditable="true">
+# Select or create a configuration to edit
+                    </div>
+                </div>
+
+                <div class="tab-content" id="preview">
+                    <h3>JSON Preview</h3>
+                    <div class="editor" id="jsonPreview">
+                        {}
+                    </div>
+                </div>
+
+                <div class="tab-content" id="events">
+                    <h3>Event Log</h3>
+                    <div class="event-log" id="eventLog">
+                        <!-- Events will be populated here -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="validation">
+                    <h3>Validation Rules</h3>
+                    <div class="editor" id="validationRules">
+                        No validation rules defined
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Configuration</h3>
+            </div>
+            <form id="createForm">
+                <div class="form-group">
+                    <label>Configuration ID</label>
+                    <input type="text" id="configId" required>
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="configName" required>
+                </div>
+                <div class="form-group">
+                    <label>Environment</label>
+                    <select id="configEnv">
+                        <option value="development">Development</option>
+                        <option value="staging">Staging</option>
+                        <option value="production">Production</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Initial Configuration (YAML)</label>
+                    <textarea id="configData"># Example configuration
+database:
+  host: localhost
+  port: 5432
+  name: myapp
+
+features:
+  enableCache: true
+  maxConnections: 100</textarea>
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary">Create</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toastMessage">Notification message</span>
+    </div>
+
+    <script>
+        // State management
+        let configs = new Map();
+        let currentConfig = null;
+        let eventSource = null;
+        let isConnected = false;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            connectSSE();
+            loadMetrics();
+            setupEventListeners();
+            setInterval(loadMetrics, 30000); // Update metrics every 30 seconds
+        });
+
+        // Server-Sent Events connection
+        function connectSSE() {
+            eventSource = new EventSource('/api/config/stream');
+            
+            eventSource.onopen = () => {
+                isConnected = true;
+                updateConnectionStatus(true);
+                showToast('Connected to configuration server', 'success');
+            };
+
+            eventSource.onerror = () => {
+                isConnected = false;
+                updateConnectionStatus(false);
+                showToast('Connection lost, reconnecting...', 'error');
+                
+                // Reconnect after 5 seconds
+                setTimeout(connectSSE, 5000);
+            };
+
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleSSEMessage(data);
+            };
+        }
+
+        // Handle SSE messages
+        function handleSSEMessage(data) {
+            const { event, configs: configList, data: eventData, timestamp } = data;
+            
+            // Log event
+            logEvent(event, eventData);
+
+            switch (event) {
+                case 'connected':
+                    // Initial load of configs
+                    if (configList) {
+                        configs.clear();
+                        configList.forEach(config => {
+                            configs.set(config.id, config);
+                        });
+                        renderConfigList();
+                    }
+                    break;
+                
+                case 'config:created':
+                case 'config:loaded':
+                case 'config:updated':
+                    configs.set(eventData.id, eventData);
+                    renderConfigList();
+                    if (currentConfig?.id === eventData.id) {
+                        loadConfig(eventData.id);
+                    }
+                    showToast(`Configuration ${eventData.id} ${event.split(':')[1]}`, 'success');
+                    break;
+                
+                case 'config:deleted':
+                    configs.delete(eventData.id);
+                    renderConfigList();
+                    if (currentConfig?.id === eventData.id) {
+                        currentConfig = null;
+                        document.getElementById('configEditor').textContent = '# Select or create a configuration to edit';
+                        document.getElementById('configTitle').textContent = 'Select a configuration';
+                    }
+                    showToast(`Configuration ${eventData.id} deleted`, 'info');
+                    break;
+            }
+
+            updateMetrics();
+        }
+
+        // Load metrics from server
+        async function loadMetrics() {
+            try {
+                const response = await fetch('/api/metrics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const metrics = data.data;
+                    document.getElementById('totalConfigs').textContent = metrics.totalConfigs;
+                    document.getElementById('connectedClients').textContent = metrics.connectedClients;
+                    document.getElementById('watchers').textContent = metrics.watchers;
+                    
+                    const memoryMB = Math.round(metrics.memory.heapUsed / 1024 / 1024);
+                    document.getElementById('memoryUsage').textContent = `${memoryMB} MB`;
+                }
+            } catch (error) {
+                console.error('Failed to load metrics:', error);
+            }
+        }
+
+        // Update metrics display
+        function updateMetrics() {
+            document.getElementById('totalConfigs').textContent = configs.size;
+        }
+
+        // Render config list
+        function renderConfigList() {
+            const list = document.getElementById('configList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            list.innerHTML = '';
+            
+            const sortedConfigs = Array.from(configs.values()).sort((a, b) => 
+                a.name.localeCompare(b.name)
+            );
+
+            sortedConfigs.forEach(config => {
+                if (searchTerm && !config.name.toLowerCase().includes(searchTerm) && 
+                    !config.id.toLowerCase().includes(searchTerm)) {
+                    return;
+                }
+
+                const item = document.createElement('li');
+                item.className = 'config-item';
+                if (currentConfig?.id === config.id) {
+                    item.classList.add('active');
+                }
+                
+                item.innerHTML = `
+                    <div class="config-name">${config.name}</div>
+                    <div class="config-meta">
+                        ${config.environment} • v${config.version}
+                    </div>
+                `;
+                
+                item.onclick = () => loadConfig(config.id);
+                list.appendChild(item);
+            });
+        }
+
+        // Load configuration into editor
+        async function loadConfig(id) {
+            const config = configs.get(id);
+            if (!config) return;
+            
+            currentConfig = config;
+            document.getElementById('configTitle').textContent = config.name;
+            
+            // Convert data to YAML for editing
+            const yaml = await convertToYAML(config.data);
+            document.getElementById('configEditor').textContent = yaml;
+            
+            // Update JSON preview
+            document.getElementById('jsonPreview').textContent = JSON.stringify(config.data, null, 2);
+            
+            // Update validation rules if present
+            if (config.validation) {
+                document.getElementById('validationRules').textContent = JSON.stringify(config.validation, null, 2);
+            }
+            
+            renderConfigList();
+        }
+
+        // Save configuration
+        async function saveConfig() {
+            if (!currentConfig) {
+                showToast('No configuration selected', 'error');
+                return;
+            }
+            
+            const content = document.getElementById('configEditor').textContent;
+            
+            try {
+                // Parse YAML to validate
+                const data = await parseYAML(content);
+                
+                const response = await fetch(`/api/config/${currentConfig.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showToast('Configuration saved successfully', 'success');
+                } else {
+                    showToast('Failed to save configuration', 'error');
+                }
+            } catch (error) {
+                showToast('Invalid YAML format', 'error');
+            }
+        }
+
+        // Delete configuration
+        async function deleteConfig() {
+            if (!currentConfig) {
+                showToast('No configuration selected', 'error');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete ${currentConfig.name}?`)) {
+                return;
+            }
+            
+            const response = await fetch(`/api/config/${currentConfig.id}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                showToast('Configuration deleted successfully', 'success');
+            } else {
+                showToast('Failed to delete configuration', 'error');
+            }
+        }
+
+        // Export configuration
+        async function exportConfig() {
+            if (!currentConfig) {
+                showToast('No configuration selected', 'error');
+                return;
+            }
+            
+            const format = confirm('Export as JSON? (Cancel for YAML)') ? 'json' : 'yaml';
+            const response = await fetch(`/api/config/${currentConfig.id}/export?format=${format}`);
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentConfig.id}.${format}`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('Configuration exported', 'success');
+            } else {
+                showToast('Failed to export configuration', 'error');
+            }
+        }
+
+        // Show create modal
+        function showCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('createModal').classList.remove('active');
+            document.getElementById('createForm').reset();
+        }
+
+        // Create new configuration
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('configId').value;
+            const name = document.getElementById('configName').value;
+            const environment = document.getElementById('configEnv').value;
+            const dataYAML = document.getElementById('configData').value;
+            
+            try {
+                const data = await parseYAML(dataYAML);
+                data.name = name;
+                data.environment = environment;
+                
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, data })
+                });
+                
+                if (response.ok) {
+                    showToast('Configuration created successfully', 'success');
+                    closeModal();
+                } else {
+                    showToast('Failed to create configuration', 'error');
+                }
+            } catch (error) {
+                showToast('Invalid YAML format', 'error');
+            }
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+
+            // Search
+            document.getElementById('searchInput').addEventListener('input', renderConfigList);
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('connectionStatus');
+            const text = document.getElementById('connectionText');
+            
+            if (connected) {
+                indicator.classList.add('connected');
+                indicator.classList.remove('disconnected');
+                text.textContent = 'Connected';
+            } else {
+                indicator.classList.remove('connected');
+                indicator.classList.add('disconnected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Log event
+        function logEvent(event, data) {
+            const log = document.getElementById('eventLog');
+            const item = document.createElement('div');
+            item.className = 'event-item';
+            
+            if (event.includes('error')) {
+                item.classList.add('error');
+            } else if (event.includes('created') || event.includes('updated')) {
+                item.classList.add('success');
+            }
+            
+            const timestamp = new Date().toLocaleTimeString();
+            item.textContent = `[${timestamp}] ${event}: ${JSON.stringify(data)}`;
+            
+            log.insertBefore(item, log.firstChild);
+            
+            // Keep only last 50 events
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = `toast ${type} show`;
+            toastMessage.textContent = message;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // YAML parsing helpers
+        async function parseYAML(text) {
+            // Simple YAML parser for demo - in production use a proper library
+            try {
+                // For demo, we'll use JSON
+                return JSON.parse(text);
+            } catch {
+                // Basic YAML to JSON conversion
+                const lines = text.split('\n');
+                const result = {};
+                let currentObj = result;
+                let indent = 0;
+                
+                lines.forEach(line => {
+                    if (line.trim() && !line.trim().startsWith('#')) {
+                        const match = line.match(/^(\s*)([^:]+):\s*(.*)$/);
+                        if (match) {
+                            const [, spaces, key, value] = match;
+                            const level = spaces.length / 2;
+                            
+                            if (value) {
+                                currentObj[key] = isNaN(value) ? value : Number(value);
+                            } else {
+                                currentObj[key] = {};
+                            }
+                        }
+                    }
+                });
+                
+                return result;
+            }
+        }
+
+        async function convertToYAML(obj) {
+            // Simple JSON to YAML converter for demo
+            return JSON.stringify(obj, null, 2)
+                .replace(/[{}]/g, '')
+                .replace(/"/g, '')
+                .replace(/,$/gm, '');
+        }
+    </script>
+</body>
+</html>

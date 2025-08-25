@@ -1,0 +1,3569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary Meta Tags -->
+    <title>Enhanced Admin Dashboard - Fantdev Trading System</title>
+    <meta name="title" content="Enhanced Admin Dashboard - Fantdev Trading System">
+    <meta name="description" content="Advanced admin dashboard with real-time analytics, WebSocket updates, and comprehensive trading bot management. Monitor performance, manage customers, and track transactions.">
+    <meta name="keywords" content="trading dashboard, real-time analytics, telegram bot admin, customer management, transaction tracking, WebSocket monitoring, fantdev trading system">
+    <meta name="author" content="Fantdev Trading Systems">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="application">
+    <meta property="og:url" content="https://fantdev.trading/admin/dashboard">
+    <meta property="og:title" content="Enhanced Admin Dashboard - Fantdev Trading">
+    <meta property="og:description" content="Professional trading bot management with real-time analytics, comprehensive reporting, and advanced member permission controls.">
+    <meta property="og:image" content="/images/dashboard-og-preview.jpg">
+    <meta property="og:site_name" content="Fantdev Trading Platform">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="/admin/dashboard">
+    <meta property="twitter:title" content="Fantdev Trading Admin Dashboard">
+    <meta property="twitter:description" content="Real-time trading bot analytics and management dashboard with advanced monitoring capabilities.">
+    <meta property="twitter:image" content="/images/dashboard-twitter-preview.jpg">
+    
+    <!-- PWA & Mobile -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fantdev Dashboard">
+    
+    <!-- Application Info -->
+    <meta name="application-name" content="Fantdev Enhanced Admin Dashboard">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="canonical" href="/admin/dashboard">
+    
+    <!-- Enhanced Static Assets Integration -->
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/advanced-components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/advanced-components.js"></script>
+    <script src="/static/js/icon-helper.js"></script>
+    <script src="/static/js/websocket-client.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --danger: #f56565;
+            --warning: #ed8936;
+            --info: #4299e1;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px rgba(0,0,0,0.07);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 260px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-header {
+            padding: 30px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .logo i {
+            font-size: 32px;
+        }
+        
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        
+        .menu-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 15px;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding-left: 25px;
+        }
+        
+        .menu-item.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-left: 4px solid white;
+        }
+        
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .menu-badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+        
+        /* Top Bar */
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .search-box {
+            position: relative;
+            width: 400px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+        }
+        
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .notification-btn {
+            position: relative;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--dark);
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: var(--light);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* Dashboard Content */
+        .dashboard-content {
+            padding: 30px;
+        }
+        
+        .page-header {
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        
+        .page-subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .stat-card.success::before { background: var(--success); }
+        .stat-card.danger::before { background: var(--danger); }
+        .stat-card.warning::before { background: var(--warning); }
+        .stat-card.info::before { background: var(--info); }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .stat-title {
+            font-size: 13px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .stat-icon.primary { background: rgba(102, 126, 234, 0.1); color: var(--primary); }
+        .stat-icon.success { background: rgba(72, 187, 120, 0.1); color: var(--success); }
+        .stat-icon.danger { background: rgba(245, 101, 101, 0.1); color: var(--danger); }
+        .stat-icon.warning { background: rgba(237, 137, 54, 0.1); color: var(--warning); }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        
+        .stat-change {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+        }
+        
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+        
+        /* Charts */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chart-btn {
+            padding: 6px 12px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .chart-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .chart-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        /* Tables */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--dark);
+        }
+        
+        .btn-outline:hover {
+            background: var(--light);
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: var(--light);
+        }
+        
+        th {
+            padding: 12px 24px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+        }
+        
+        tbody tr {
+            transition: background 0.2s;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge.approved {
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--success);
+        }
+        
+        .status-badge.pending {
+            background: rgba(237, 137, 54, 0.1);
+            color: var(--warning);
+        }
+        
+        .status-badge.denied {
+            background: rgba(245, 101, 101, 0.1);
+            color: var(--danger);
+        }
+        
+        .status-badge.active {
+            background: rgba(66, 153, 225, 0.1);
+            color: var(--info);
+        }
+        
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-avatar-small {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .user-id {
+            font-size: 12px;
+            color: #718096;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .action-btn.approve {
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--success);
+        }
+        
+        .action-btn.approve:hover {
+            background: var(--success);
+            color: white;
+        }
+        
+        .action-btn.deny {
+            background: rgba(245, 101, 101, 0.1);
+            color: var(--danger);
+        }
+        
+        .action-btn.deny:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .action-btn.view {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary);
+        }
+        
+        .action-btn.view:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #718096;
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modal-footer {
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* Live Indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--success);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Filters */
+        .filters-bar {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-label {
+            font-size: 14px;
+            color: #718096;
+            font-weight: 500;
+        }
+        
+        .filter-select {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 3000;
+        }
+        
+        .toast {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            animation: slideInRight 0.3s;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .toast-icon {
+            font-size: 20px;
+        }
+        
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.success .toast-icon { color: var(--success); }
+        
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.error .toast-icon { color: var(--danger); }
+        
+        .toast.info { border-left: 4px solid var(--info); }
+        .toast.info .toast-icon { color: var(--info); }
+        
+        /* Responsive */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .search-box {
+                width: 200px;
+            }
+            
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Enhanced Navigation Styles */
+        .enhanced-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            margin: 0 1rem 1rem 1rem;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-list {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 0.5rem;
+            color: var(--border);
+        }
+
+        .breadcrumb-current {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        /* Section Indicator */
+        .section-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--light);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .section-label {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        .section-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Enhanced Floating Action Button */
+        .enhanced-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .fab-tooltip {
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--dark);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .enhanced-fab:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        .fab-button {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.2s ease;
+        }
+
+        .fab-button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 1rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .enhanced-fab.active .fab-menu {
+            display: flex;
+        }
+
+        .fab-item {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .fab-item:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(1rem);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-0.25rem);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Rate Limit Monitor Styles */
+        .rate-limit-container {
+            margin-top: 20px;
+        }
+        
+        .rate-limit-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .rate-limit-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .rate-limit-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .rate-limit-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .rate-limit-body {
+            padding: 30px;
+        }
+        
+        .rate-limit-main {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .token-display {
+            margin-bottom: 20px;
+        }
+        
+        .token-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .token-label {
+            font-size: 14px;
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        .token-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .token-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success) 0%, #38a169 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .token-progress.warning {
+            background: linear-gradient(90deg, var(--warning) 0%, #dd6b20 100%);
+        }
+        
+        .token-progress.danger {
+            background: linear-gradient(90deg, var(--danger) 0%, #e53e3e 100%);
+        }
+        
+        .token-percentage {
+            font-size: 18px;
+            color: #4a5568;
+        }
+        
+        .rate-limit-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+        
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea, #4c51bf); }
+        .stat-icon.purple { background: linear-gradient(135deg, #9f7aea, #805ad5); }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .stat-detail {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-top: 2px;
+        }
+        
+        .telegram-limits {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .telegram-limits h4 {
+            margin: 0 0 15px 0;
+            color: var(--dark);
+            font-size: 16px;
+        }
+        
+        .limits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .limit-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .limit-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .limit-dot.green { background: var(--success); }
+        .limit-dot.blue { background: var(--info); }
+        .limit-dot.purple { background: var(--secondary); }
+        .limit-dot.orange { background: var(--warning); }
+        
+        .limit-text {
+            font-size: 14px;
+            color: #4a5568;
+        }
+        
+        .worker-info {
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .worker-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.success { background: var(--success); }
+        .status-indicator.danger { background: var(--danger); }
+        
+        .worker-url code {
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* Responsive Design for Enhanced Navigation */
+        @media (max-width: 768px) {
+            .enhanced-navigation {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+                margin: 0 0.5rem 1rem 0.5rem;
+            }
+
+            .section-indicator {
+                align-self: stretch;
+                justify-content: center;
+            }
+
+            .enhanced-fab {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .back-to-top {
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .breadcrumb-nav {
+                font-size: 0.875rem;
+            }
+
+            .section-indicator {
+                padding: 0.375rem 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>Admin Panel</span>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <a href="#dashboard" class="menu-item active" onclick="switchTab('dashboard'); return false;">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#customers" class="menu-item" onclick="switchTab('customers'); return false;">
+                <i class="fas fa-users"></i>
+                <span>Customers</span>
+                <span class="menu-badge">25</span>
+            </a>
+            <a href="#members" class="menu-item" onclick="switchTab('members'); return false;">
+                <i class="fas fa-user-shield"></i>
+                <span>Members</span>
+                <span class="menu-badge" id="pendingCount">0</span>
+            </a>
+            <a href="#transactions" class="menu-item" onclick="switchTab('transactions'); return false;">
+                <i class="fas fa-exchange-alt"></i>
+                <span>Transactions</span>
+            </a>
+            <a href="#analytics" class="menu-item" onclick="switchTab('analytics'); return false;">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="#reports" class="menu-item" onclick="switchTab('reports'); return false;">
+                <i class="fas fa-file-alt"></i>
+                <span>Reports</span>
+            </a>
+            <a href="#settings" class="menu-item" onclick="switchTab('settings'); return false;">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="Search customers, members, transactions..." id="searchInput">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="live-indicator">
+                    <span class="live-dot"></span>
+                    <span id="connectionStatus">Connected</span>
+                </div>
+                <button class="notification-btn" onclick="showNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+                <div class="user-menu" onclick="showUserMenu()">
+                    <div class="user-avatar">A</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">Administrator</div>
+                        <div style="font-size: 12px; color: #718096;">admin@fantdev.trading</div>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #718096;"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Navigation Elements -->
+        <div class="enhanced-navigation">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <ol class="breadcrumb-list">
+                    <li class="breadcrumb-item">
+                        <a href="/" class="breadcrumb-link">Home</a>
+                    </li>
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item breadcrumb-current">Admin Dashboard</li>
+                </ol>
+            </nav>
+            
+            <!-- Section Indicator -->
+            <div class="section-indicator">
+                <span class="section-label">Current Section:</span>
+                <span class="section-name" id="current-section">Dashboard</span>
+            </div>
+        </div>
+        
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content">
+                <div class="page-header">
+                    <h1 class="page-title">Dashboard Overview</h1>
+                    <p class="page-subtitle">Real-time statistics and system health monitoring</p>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Total Customers</div>
+                                <div class="stat-value" id="totalCustomers">25</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>12% from last month</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card success">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Total Balance</div>
+                                <div class="stat-value" id="totalBalance">$17,209</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>8.5% increase</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon success">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card warning">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Active Members</div>
+                                <div class="stat-value" id="activeMembers">15</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>3 new this week</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon warning">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card danger">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Weekly P&L</div>
+                                <div class="stat-value" id="weeklyPnl">$12,345</div>
+                                <div class="stat-change negative">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span>3.2% decrease</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon danger">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+            <!-- Revenue & Activity Trends Section -->
+            <div class="revenue-trends-section">
+                <div class="page-header">
+                    <h2 class="page-title">📈 Revenue & Activity Trends</h2>
+                    <p class="page-subtitle">Advanced analytics with real-time monitoring and forecasting</p>
+                </div>
+                
+                <!-- Trend Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Revenue Trend</div>
+                                <div class="stat-value" id="revenueTrend">$45,230</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>18.5% growth</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon success">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card primary">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Activity Volume</div>
+                                <div class="stat-value" id="activityVolume">1,247</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>12.3% increase</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card warning">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Avg. Transaction</div>
+                                <div class="stat-value" id="avgTransaction">$362</div>
+                                <div class="stat-change negative">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span>5.2% decrease</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon warning">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card info">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Conversion Rate</div>
+                                <div class="stat-value" id="conversionRate">68.5%</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>3.2% improvement</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon info">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Charts Grid -->
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Revenue Trends</h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn active" onclick="updateRevenueChart('daily', this)">Daily</button>
+                                <button class="chart-btn" onclick="updateRevenueChart('weekly', this)">Weekly</button>
+                                <button class="chart-btn" onclick="updateRevenueChart('monthly', this)">Monthly</button>
+                                <button class="chart-btn" onclick="updateRevenueChart('yearly', this)">Yearly</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Activity Heatmap</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="activityHeatmap"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Trends Section -->
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Activity Patterns</h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn active" onclick="updateActivityChart('hourly', this)">Hourly</button>
+                                <button class="chart-btn" onclick="updateActivityChart('daily', this)">Daily</button>
+                                <button class="chart-btn" onclick="updateActivityChart('weekly', this)">Weekly</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Revenue Sources</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueSourcesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Forecasting Section -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Revenue Forecast</h3>
+                        <div class="chart-actions">
+                            <button class="chart-btn active" onclick="updateForecast('30days', this)">30 Days</button>
+                            <button class="chart-btn" onclick="updateForecast('90days', this)">90 Days</button>
+                            <button class="chart-btn" onclick="updateForecast('180days', this)">180 Days</button>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Original Charts Section -->
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Customer Distribution</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Transaction Types</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="transactionTypesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+                
+                <!-- Recent Activity Table -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Recent Activity</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-outline" onclick="showFilters()">
+                                <i class="fas fa-filter"></i>
+                                Filter
+                            </button>
+                            <button class="btn btn-primary" onclick="exportData()">
+                                <i class="fas fa-download"></i>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rate Limit Monitor Section -->
+            <div id="rate-limit-section" class="tab-content" style="margin-top: 30px;">
+                <div class="page-header">
+                    <h2 class="page-title">📊 Rate Limit Monitor</h2>
+                    <p class="page-subtitle">Cloudflare Worker API Rate Limiting Status</p>
+                </div>
+                
+                <div class="rate-limit-container">
+                    <div class="rate-limit-card">
+                        <div class="rate-limit-header">
+                            <div class="rate-limit-title">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Global Rate Limit</span>
+                            </div>
+                            <div class="rate-limit-status">
+                                <span id="lastUpdate" class="text-muted">Last update: Never</span>
+                                <button onclick="refreshRateLimit()" class="btn btn-sm btn-outline">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="rate-limit-body">
+                            <div class="rate-limit-main">
+                                <div class="token-display">
+                                    <div class="token-value">
+                                        <span id="currentTokens">--</span>/<span id="maxTokens">30</span>
+                                    </div>
+                                    <div class="token-label">Available Tokens</div>
+                                </div>
+                                <div class="token-bar">
+                                    <div id="tokenProgress" class="token-progress" style="width: 100%"></div>
+                                </div>
+                                <div class="token-percentage">
+                                    <span id="tokenPercentage">100%</span> capacity
+                                </div>
+                            </div>
+                            
+                            <div class="rate-limit-stats">
+                                <div class="stat-item">
+                                    <div class="stat-icon blue">
+                                        <i class="fas fa-comments"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <div class="stat-value" id="activeChatLimits">0</div>
+                                        <div class="stat-label">Active Chat Limits</div>
+                                        <div class="stat-detail">1 msg/sec per chat</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon purple">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <div class="stat-value" id="activeGroupLimits">0</div>
+                                        <div class="stat-label">Active Group Limits</div>
+                                        <div class="stat-detail">20 msg/min per group</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="telegram-limits">
+                                <h4>Telegram API Limits</h4>
+                                <div class="limits-grid">
+                                    <div class="limit-item">
+                                        <span class="limit-dot green"></span>
+                                        <span class="limit-text">Global: <strong id="globalLimit">30 msg/sec</strong></span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <span class="limit-dot blue"></span>
+                                        <span class="limit-text">Per Chat: <strong id="perChatLimit">1 msg/sec</strong></span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <span class="limit-dot purple"></span>
+                                        <span class="limit-text">Per Group: <strong id="perGroupLimit">20 msg/min</strong></span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <span class="limit-dot orange"></span>
+                                        <span class="limit-text">Batch: <strong id="batchLimit">50 req/batch</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="worker-info">
+                                <div class="worker-status">
+                                    <span id="workerStatus" class="status-indicator success"></span>
+                                    <span>Worker Status: <strong id="workerStatusText">Connected</strong></span>
+                                </div>
+                                <div class="worker-url">
+                                    <small>Endpoint: <code id="workerEndpoint">http://localhost:8787/api/rate-limit</code></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Members Tab -->
+            <div id="members-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Member Management</h1>
+                    <p class="page-subtitle">Approve, deny, and manage group member permissions</p>
+                </div>
+                
+                <!-- Filters -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label class="filter-label">Status:</label>
+                        <select class="filter-select" id="statusFilter" onchange="filterMembers()">
+                            <option value="all">All Members</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="denied">Denied</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Group:</label>
+                        <select class="filter-select" id="groupFilter" onchange="filterMembers()">
+                            <option value="all">All Groups</option>
+                            <option value="trading">Trading Group</option>
+                            <option value="vip">VIP Group</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" style="margin-left: auto;" onclick="showAddMemberModal()">
+                        <i class="fas fa-plus"></i>
+                        Add Member
+                    </button>
+                </div>
+                
+                <!-- Members Table -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Members List</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-outline" onclick="refreshMembers()">
+                                <i class="fas fa-sync-alt"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Group</th>
+                                    <th>Join Date</th>
+                                    <th>Status</th>
+                                    <th>Permissions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="membersTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transactions Tab -->
+            <div id="transactions-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Transaction History</h1>
+                    <p class="page-subtitle">View all deposits, withdrawals, and transfers</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Recent Transactions</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Analytics & Reports</h1>
+                    <p class="page-subtitle">Advanced analytics and performance metrics</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Monthly Revenue</div>
+                                <div class="stat-value">$45,230</div>
+                            </div>
+                            <div class="stat-icon success">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Conversion Rate</div>
+                                <div class="stat-value">68.5%</div>
+                            </div>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="reports-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Reports</h1>
+                    <p class="page-subtitle">Generate and download system reports</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Available Reports</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-primary" onclick="generateReport()">
+                                <i class="fas fa-plus"></i>
+                                Generate Report
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Report Name</th>
+                                    <th>Type</th>
+                                    <th>Generated</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Settings</h1>
+                    <p class="page-subtitle">Configure system preferences and integrations</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">System Configuration</h3>
+                    </div>
+                    <div class="modal-body" style="padding: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">API Endpoint</label>
+                            <input type="text" class="form-input" value="http://localhost:3003/api" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Refresh Rate (seconds)</label>
+                            <input type="number" class="form-input" value="30" id="refreshRate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Enable Notifications</label>
+                            <div class="form-checkbox">
+                                <input type="checkbox" id="enableNotifications" checked>
+                                <label for="enableNotifications">Show toast notifications</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveSettings()">
+                            <i class="fas fa-save"></i>
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Customers Tab -->
+            <div id="customers-tab" class="tab-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Customer Management</h1>
+                    <p class="page-subtitle">View and manage all customer accounts</p>
+                </div>
+                
+                <!-- Customer Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Active Customers</div>
+                                <div class="stat-value" id="activeCustomers">20</div>
+                            </div>
+                            <div class="stat-icon success">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Inactive</div>
+                                <div class="stat-value" id="inactiveCustomers">5</div>
+                            </div>
+                            <div class="stat-icon danger">
+                                <i class="fas fa-user-times"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Registered</div>
+                                <div class="stat-value" id="registeredCustomers">8</div>
+                            </div>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Avg Balance</div>
+                                <div class="stat-value" id="avgBalance">$688</div>
+                            </div>
+                            <div class="stat-icon warning">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customers Table -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">All Customers</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-primary" onclick="exportCustomers()">
+                                <i class="fas fa-download"></i>
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Customer ID</th>
+                                    <th>Balance</th>
+                                    <th>Weekly P&L</th>
+                                    <th>Status</th>
+                                    <th>Registered</th>
+                                    <th>Last Activity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Member Approval Modal -->
+    <div class="modal" id="approvalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="approvalModalTitle">Approve Member</h3>
+                <button class="modal-close" onclick="closeModal('approvalModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Member Username</label>
+                    <input type="text" class="form-input" id="approvalUsername" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Group</label>
+                    <input type="text" class="form-input" id="approvalGroup" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Customer ID (Optional)</label>
+                    <select class="form-select" id="approvalCustomerId">
+                        <option value="">Select Customer</option>
+                        <!-- Dynamic options -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Permissions</label>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="canView" checked>
+                        <label for="canView">Can View Balances</label>
+                    </div>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="canTrade">
+                        <label for="canTrade">Can Execute Trades</label>
+                    </div>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="canWithdraw">
+                        <label for="canWithdraw">Can Make Withdrawals</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Daily Limit ($)</label>
+                    <input type="number" class="form-input" id="dailyLimit" value="500">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-textarea" id="approvalNotes" placeholder="Additional notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('approvalModal')">Cancel</button>
+                <button class="btn btn-danger" onclick="denyMemberFromModal()" id="denyMemberModalBtn">
+                    <i class="fas fa-times"></i>
+                    <span class="btn-text">Deny Member</span>
+                    <span class="spinner" style="display: none;"></span>
+                </button>
+                <button class="btn btn-success" onclick="approveMember()" id="approveMemberBtn">
+                    <i class="fas fa-check"></i>
+                    <span class="btn-text">Approve Member</span>
+                    <span class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Enhanced Floating Action Button -->
+    <div class="enhanced-fab" id="enhanced-fab">
+        <div class="fab-tooltip">Quick Actions</div>
+        <button class="fab-button" onclick="toggleFabMenu()" aria-label="Quick actions menu">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab-item" onclick="quickAction('refresh')" title="Refresh all data">
+                <i class="fas fa-sync"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('export')" title="Export data">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('notifications')" title="View notifications">
+                <i class="fas fa-bell"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('settings')" title="Admin settings">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    
+    <script>
+        // State Management
+        let currentTab = 'dashboard';
+        let authToken = localStorage.getItem('adminToken');
+        let socket = null;
+        let revenueChart = null;
+        let distributionChart = null;
+        let currentMemberForApproval = null;
+        
+        // Rate Limit Monitor
+        const WORKER_URL = 'http://localhost:8787';
+        let rateLimitInterval = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authToken) {
+                adminLogin();
+            } else {
+                initialize();
+            }
+            
+            // Setup enhanced navigation
+            setupEnhancedNavigation();
+            setupBackToTop();
+            setupSearch();
+        });
+        
+        // Enhanced Navigation Setup
+        function setupEnhancedNavigation() {
+            updateSectionIndicator('Dashboard');
+        }
+        
+        // Setup Back to Top
+        function setupBackToTop() {
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTop.classList.add('visible');
+                    } else {
+                        backToTop.classList.remove('visible');
+                    }
+                });
+                
+                backToTop.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+        }
+        
+        // Setup Search
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    performSearch(query);
+                });
+            }
+        }
+        
+        // Perform Search
+        function performSearch(query) {
+            // Implement search functionality across all tabs
+            console.log('Searching for:', query);
+            showToast(`Searching for: ${query}`, 'info');
+        }
+        
+        // Admin Login
+        async function adminLogin() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    authToken = data.token;
+                    localStorage.setItem('adminToken', authToken);
+                    initialize();
+                } else {
+                    showToast('Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Connection error', 'error');
+            }
+        }
+        
+        // Initialize Dashboard
+        async function initialize() {
+            loadDashboardData();
+            initializeCharts();
+            connectWebSocket();
+            loadMembers();
+            loadCustomers();
+            loadTransactions();
+            loadReports();
+            startAutoRefresh();
+            setupKeyboardShortcuts();
+            startRateLimitMonitoring();
+        }
+        
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:3003/api';
+        const WS_URL = 'http://localhost:3003';
+        
+        // Keyboard Shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    if (document.getElementById('approvalModal').classList.contains('active')) {
+                        closeModal('approvalModal');
+                    }
+                }
+                
+                // Ctrl/Cmd + K for search
+                if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+                    event.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+            });
+        }
+        
+        // API Request Helper
+        async function apiRequest(endpoint, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+                ...options.headers
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    ...options,
+                    headers
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+        
+        // Load Dashboard Data
+        async function loadDashboardData() {
+            try {
+                const stats = await apiRequest('/admin/statistics');
+                
+                // Update stats
+                document.getElementById('totalCustomers').textContent = stats.customers.total;
+                document.getElementById('totalBalance').textContent = `$${stats.customers.total_balance.toLocaleString()}`;
+                document.getElementById('activeMembers').textContent = stats.members.approved;
+                document.getElementById('weeklyPnl').textContent = `$${stats.customers.total_weekly_pnl.toLocaleString()}`;
+                document.getElementById('pendingCount').textContent = stats.members.pending || '';
+                
+                // Load recent activity
+                loadRecentActivity();
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                // Use mock data as fallback
+                loadMockDashboardData();
+            }
+        }
+        
+        // Mock Dashboard Data
+        function loadMockDashboardData() {
+            document.getElementById('totalCustomers').textContent = '25';
+            document.getElementById('totalBalance').textContent = '$17,209';
+            document.getElementById('activeMembers').textContent = '15';
+            document.getElementById('weeklyPnl').textContent = '$12,345';
+            document.getElementById('pendingCount').textContent = '3';
+            
+            // Load mock recent activity
+            const mockActivities = [
+                { customer: 'BB1042', type: 'deposit', amount: 500, status: 'completed', time: '2:30 PM' },
+                { customer: 'BB1043', type: 'withdrawal', amount: 200, status: 'completed', time: '1:45 PM' },
+                { customer: 'BB1044', type: 'trade', amount: 1000, status: 'completed', time: '12:30 PM' }
+            ];
+            
+            const tbody = document.getElementById('activityTableBody');
+            tbody.innerHTML = '';
+            
+            mockActivities.forEach(activity => {
+                addActivityRow(activity);
+            });
+        }
+        
+        // Initialize Charts
+        function initializeCharts() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [1200, 1900, 1500, 2100, 2400, 2200, 2800],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Activity Chart
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            const activityChart = new Chart(activityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Activity Volume',
+                        data: [45, 32, 78, 125, 98, 67],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: '#667eea',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' actions';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Revenue Sources Chart
+            const revenueSourcesCtx = document.getElementById('revenueSourcesChart').getContext('2d');
+            const revenueSourcesChart = new Chart(revenueSourcesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Trading Fees', 'Subscription', 'Premium Features', 'API Usage'],
+                    datasets: [{
+                        data: [45, 25, 20, 10],
+                        backgroundColor: [
+                            '#667eea',
+                            '#48bb78',
+                            '#ed8936',
+                            '#9f7aea'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Forecast Chart
+            const forecastCtx = document.getElementById('forecastChart').getContext('2d');
+            const forecastChart = new Chart(forecastCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Today', '+7d', '+14d', '+21d', '+28d', '+35d', '+42d'],
+                    datasets: [{
+                        label: 'Actual Revenue',
+                        data: [2800, 3200, 3500, 3800, 4200, 4500, 4800],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Forecast',
+                        data: [2800, null, 3400, null, 4100, null, 4700],
+                        borderColor: '#48bb78',
+                        backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Activity Heatmap
+            const heatmapCtx = document.getElementById('activityHeatmap').getContext('2d');
+            const heatmapChart = new Chart(heatmapCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Activity Intensity',
+                        data: generateHeatmapData(),
+                        backgroundColor: function(context) {
+                            const value = context.parsed.y;
+                            const alpha = Math.min(value / 100, 1);
+                            return `rgba(102, 126, 234, ${alpha})`;
+                        },
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Activity: ${context.parsed.y} actions`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Hour of Day'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Day of Week'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Transaction Types Chart
+            const transactionTypesCtx = document.getElementById('transactionTypesChart').getContext('2d');
+            const transactionTypesChart = new Chart(transactionTypesCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Deposits', 'Withdrawals', 'Trades', 'Transfers'],
+                    datasets: [{
+                        data: [35, 25, 30, 10],
+                        backgroundColor: [
+                            '#48bb78',
+                            '#f56565',
+                            '#667eea',
+                            '#ed8936'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Generate Heatmap Data
+        function generateHeatmapData() {
+            const data = [];
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            days.forEach((day, dayIndex) => {
+                for (let hour = 0; hour < 24; hour++) {
+                    // Generate realistic activity patterns
+                    let intensity = Math.random() * 100;
+                    
+                    // Higher activity during business hours
+                    if (hour >= 9 && hour <= 17) {
+                        intensity *= 1.5;
+                    }
+                    
+                    // Weekend patterns
+                    if (dayIndex >= 5) {
+                        intensity *= 0.7;
+                    }
+                    
+                    // Peak hours
+                    if (hour >= 14 && hour <= 16) {
+                        intensity *= 1.3;
+                    }
+                    
+                    data.push({
+                        x: hour,
+                        y: dayIndex,
+                        r: Math.min(intensity / 10, 15)
+                    });
+                }
+            });
+            
+            return data;
+        }
+        
+        // Update Revenue Chart
+        function updateRevenueChart(period, button) {
+            // Update active button
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            // Update chart data based on period
+            let newData, newLabels;
+            
+            switch (period) {
+                case 'daily':
+                    newLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    newData = [1200, 1900, 1500, 2100, 2400, 2200, 2800];
+                    break;
+                case 'weekly':
+                    newLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                    newData = [8500, 9200, 7800, 10500];
+                    break;
+                case 'monthly':
+                    newLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                    newData = [32000, 35000, 28000, 41000, 38000, 45000];
+                    break;
+                case 'yearly':
+                    newLabels = ['2020', '2021', '2022', '2023', '2024', '2025'];
+                    newData = [180000, 220000, 280000, 350000, 420000, 480000];
+                    break;
+            }
+            
+            revenueChart.data.labels = newLabels;
+            revenueChart.data.datasets[0].data = newData;
+            revenueChart.update();
+        }
+        
+        // Update Activity Chart
+        function updateActivityChart(period, button) {
+            // Update active button
+            const parent = button.parentElement;
+            parent.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            // Update chart data based on period
+            let newData, newLabels;
+            
+            switch (period) {
+                case 'hourly':
+                    newLabels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
+                    newData = [45, 32, 78, 125, 98, 67];
+                    break;
+                case 'daily':
+                    newLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    newData = [320, 280, 450, 380, 420, 290, 180];
+                    break;
+                case 'weekly':
+                    newLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                    newData = [2100, 2300, 1950, 2400];
+                    break;
+            }
+            
+            // Find and update activity chart
+            const activityChart = Chart.getChart('activityChart');
+            if (activityChart) {
+                activityChart.data.labels = newLabels;
+                activityChart.data.datasets[0].data = newData;
+                activityChart.update();
+            }
+        }
+        
+        // Update Forecast Chart
+        function updateForecast(period, button) {
+            // Update active button
+            const parent = button.parentElement;
+            parent.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            // Update chart data based on period
+            let newLabels, actualData, forecastData;
+            
+            switch (period) {
+                case '30days':
+                    newLabels = ['Today', '+7d', '+14d', '+21d', '+28d'];
+                    actualData = [2800, 3200, 3500, 3800, 4200];
+                    forecastData = [2800, null, 3400, null, 4100];
+                    break;
+                case '90days':
+                    newLabels = ['Today', '+15d', '+30d', '+45d', '+60d', '+75d', '+90d'];
+                    actualData = [2800, 3000, 3200, 3400, 3600, 3800, 4000];
+                    forecastData = [2800, 2900, null, 3300, null, 3700, null];
+                    break;
+                case '180days':
+                    newLabels = ['Today', '+30d', '+60d', '+90d', '+120d', '+150d', '+180d'];
+                    actualData = [2800, 3000, 3200, 3400, 3600, 3800, 4000];
+                    forecastData = [2800, 2950, 3100, null, 3500, null, 3900];
+                    break;
+            }
+            
+            // Find and update forecast chart
+            const forecastChart = Chart.getChart('forecastChart');
+            if (forecastChart) {
+                forecastChart.data.labels = newLabels;
+                forecastChart.data.datasets[0].data = actualData;
+                forecastChart.data.datasets[1].data = forecastData;
+                forecastChart.update();
+            }
+        }
+        
+        // WebSocket Connection
+        function connectWebSocket() {
+            // Disable WebSocket for now as Socket.IO is not configured
+            console.log('WebSocket disabled - using polling instead');
+            return;
+            
+            socket = io(WS_URL, {
+                transports: ['websocket', 'polling']
+            });
+            
+            socket.on('connect', () => {
+                console.log('WebSocket connected');
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                
+                // Authenticate
+                socket.emit('authenticate', { token: authToken });
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+            });
+            
+            socket.on('auth_success', () => {
+                console.log('Authenticated as admin');
+                socket.emit('subscribe_updates', { type: 'admin' });
+            });
+            
+            // Real-time events
+            socket.on('new_transaction', (data) => {
+                addActivityRow(data);
+                showToast(`New ${data.type}: $${data.amount}`, 'info');
+            });
+            
+            socket.on('member_approved', (data) => {
+                loadMembers();
+                showToast(`Member approved: ${data.username}`, 'success');
+            });
+            
+            socket.on('member_denied', (data) => {
+                loadMembers();
+                showToast(`Member denied: ${data.username}`, 'error');
+            });
+            
+            socket.on('customer_balance_update', (data) => {
+                updateCustomerBalance(data);
+            });
+        }
+        
+        // Get Permission Badges
+        function getPermissionsBadges(permissions) {
+            const badges = [];
+            if (permissions.can_view) badges.push('<span class="status-badge info">View</span>');
+            if (permissions.can_trade) badges.push('<span class="status-badge success">Trade</span>');
+            if (permissions.can_withdraw) badges.push('<span class="status-badge warning">Withdraw</span>');
+            return badges.join(' ') || 'None';
+        }
+        
+        // Load Members
+        async function loadMembers() {
+            try {
+                const data = await apiRequest('/admin/members');
+                const tbody = document.getElementById('membersTableBody');
+                tbody.innerHTML = '';
+                
+                data.members.forEach(member => {
+                    const row = createMemberRow(member);
+                    tbody.appendChild(row);
+                });
+                
+                // Update pending count
+                const pending = data.members.filter(m => m.status === 'pending').length;
+                document.getElementById('pendingCount').textContent = pending || '';
+            } catch (error) {
+                console.error('Failed to load members:', error);
+                loadMockMembers();
+            }
+        }
+        
+        // Mock Members Data
+        function loadMockMembers() {
+            const mockMembers = [
+                {
+                    username: 'trader123',
+                    group: 'Trading Group',
+                    join_date: '2025-08-20',
+                    status: 'pending',
+                    permissions: { can_view: true, can_trade: false, can_withdraw: false }
+                },
+                {
+                    username: 'vip_user',
+                    group: 'VIP Group',
+                    join_date: '2025-08-15',
+                    status: 'approved',
+                    permissions: { can_view: true, can_trade: true, can_withdraw: true }
+                },
+                {
+                    username: 'newbie',
+                    group: 'Trading Group',
+                    join_date: '2025-08-25',
+                    status: 'pending',
+                    permissions: { can_view: true, can_trade: false, can_withdraw: false }
+                }
+            ];
+            
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '';
+            
+            mockMembers.forEach(member => {
+                const row = createMemberRow(member);
+                tbody.appendChild(row);
+            });
+            
+            // Update pending count
+            const pending = mockMembers.filter(m => m.status === 'pending').length;
+            document.getElementById('pendingCount').textContent = pending || '';
+        }
+        
+        // Create Member Row
+        function createMemberRow(member) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar-small">${member.username.charAt(0).toUpperCase()}</div>
+                        <div class="user-info">
+                            <div class="user-name">${member.username}</div>
+                            <div class="user-id">${member.group}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${member.group}</td>
+                <td>${new Date(member.join_date).toLocaleDateString()}</td>
+                <td>
+                    <span class="status-badge ${member.status}">${member.status}</span>
+                </td>
+                <td>${getPermissionsBadges(member.permissions)}</td>
+                <td>
+                    <div class="action-buttons">
+                        ${member.status === 'pending' ? `
+                            <button class="action-btn approve" onclick="approveMemberFromRow('${member.username}', '${member.group}')">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="action-btn deny" onclick="denyMemberFromRow('${member.username}', '${member.group}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : `
+                            <button class="action-btn view" onclick="viewMemberDetails('${member.username}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        `}
+                    </div>
+                </td>
+            `;
+            return row;
+        }
+        
+        // Load Customers
+        async function loadCustomers() {
+            try {
+                const data = await apiRequest('/admin/customers');
+                const tbody = document.getElementById('customersTableBody');
+                tbody.innerHTML = '';
+                
+                data.customers.forEach(customer => {
+                    const row = createCustomerRow(customer);
+                    tbody.appendChild(row);
+                });
+                
+                // Update customer stats
+                document.getElementById('activeCustomers').textContent = data.stats.active;
+                document.getElementById('inactiveCustomers').textContent = data.stats.inactive;
+                document.getElementById('registeredCustomers').textContent = data.stats.registered;
+                document.getElementById('avgBalance').textContent = `$${data.stats.avg_balance.toLocaleString()}`;
+            } catch (error) {
+                console.error('Failed to load customers:', error);
+                loadMockCustomers();
+            }
+        }
+        
+        // Mock Customers Data
+        function loadMockCustomers() {
+            const mockCustomers = [
+                { id: 'BB1042', balance: 1500, weekly_pnl: 250, status: 'active', registered: '2025-08-01', last_activity: '2 hours ago' },
+                { id: 'BB1043', balance: 800, weekly_pnl: -100, status: 'active', registered: '2025-08-05', last_activity: '1 day ago' },
+                { id: 'BB1044', balance: 2200, weekly_pnl: 450, status: 'active', registered: '2025-08-10', last_activity: '30 minutes ago' },
+                { id: 'BB1045', balance: 0, weekly_pnl: 0, status: 'inactive', registered: '2025-08-15', last_activity: '1 week ago' }
+            ];
+            
+            const tbody = document.getElementById('customersTableBody');
+            tbody.innerHTML = '';
+            
+            mockCustomers.forEach(customer => {
+                const row = createCustomerRow(customer);
+                tbody.appendChild(row);
+            });
+            
+            // Update customer stats
+            document.getElementById('activeCustomers').textContent = '3';
+            document.getElementById('inactiveCustomers').textContent = '1';
+            document.getElementById('registeredCustomers').textContent = '4';
+            document.getElementById('avgBalance').textContent = '$1,125';
+        }
+        
+        // Create Customer Row
+        function createCustomerRow(customer) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${customer.id}</td>
+                <td>$${customer.balance.toLocaleString()}</td>
+                <td class="${customer.weekly_pnl >= 0 ? 'positive' : 'negative'}">
+                    ${customer.weekly_pnl >= 0 ? '+' : ''}$${customer.weekly_pnl}
+                </td>
+                <td>
+                    <span class="status-badge ${customer.status}">${customer.status}</span>
+                </td>
+                <td>${new Date(customer.registered).toLocaleDateString()}</td>
+                <td>${customer.last_activity}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn view" onclick="viewCustomerDetails('${customer.id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            return row;
+        }
+        
+        // Load Transactions
+        async function loadTransactions() {
+            try {
+                const data = await apiRequest('/admin/transactions');
+                const tbody = document.getElementById('transactionsTableBody');
+                tbody.innerHTML = '';
+                
+                data.transactions.forEach(transaction => {
+                    const row = createTransactionRow(transaction);
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Failed to load transactions:', error);
+                loadMockTransactions();
+            }
+        }
+        
+        // Mock Transactions Data
+        function loadMockTransactions() {
+            const mockTransactions = [
+                { id: 'TXN001', customer: 'BB1042', type: 'deposit', amount: 500, status: 'completed', date: '2025-08-25 14:30' },
+                { id: 'TXN002', customer: 'BB1043', type: 'withdrawal', amount: 200, status: 'completed', date: '2025-08-25 13:45' },
+                { id: 'TXN003', customer: 'BB1044', type: 'trade', amount: 1000, status: 'completed', date: '2025-08-25 12:30' }
+            ];
+            
+            const tbody = document.getElementById('transactionsTableBody');
+            tbody.innerHTML = '';
+            
+            mockTransactions.forEach(transaction => {
+                const row = createTransactionRow(transaction);
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Create Transaction Row
+        function createTransactionRow(transaction) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${transaction.id}</td>
+                <td>${transaction.customer}</td>
+                <td>${transaction.type}</td>
+                <td>$${transaction.amount.toLocaleString()}</td>
+                <td>
+                    <span class="status-badge ${transaction.status}">${transaction.status}</span>
+                </td>
+                <td>${new Date(transaction.date).toLocaleString()}</td>
+            `;
+            return row;
+        }
+        
+        // Load Reports
+        async function loadReports() {
+            try {
+                const data = await apiRequest('/admin/reports');
+                const tbody = document.getElementById('reportsTableBody');
+                tbody.innerHTML = '';
+                
+                data.reports.forEach(report => {
+                    const row = createReportRow(report);
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Failed to load reports:', error);
+                loadMockReports();
+            }
+        }
+        
+        // Mock Reports Data
+        function loadMockReports() {
+            const mockReports = [
+                { name: 'Monthly Revenue Report', type: 'PDF', generated: '2025-08-25 10:00', size: '2.3 MB' },
+                { name: 'Customer Analytics', type: 'CSV', generated: '2025-08-24 15:30', size: '1.1 MB' },
+                { name: 'System Performance', type: 'PDF', generated: '2025-08-23 09:00', size: '3.7 MB' }
+            ];
+            
+            const tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = '';
+            
+            mockReports.forEach(report => {
+                const row = createReportRow(report);
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Create Report Row
+        function createReportRow(report) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${report.name}</td>
+                <td>${report.type}</td>
+                <td>${new Date(report.generated).toLocaleString()}</td>
+                <td>${report.size}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn view" onclick="downloadReport('${report.name}')">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            return row;
+        }
+        
+        // Load Recent Activity
+        function loadRecentActivity() {
+            const mockActivities = [
+                { customer: 'BB1042', type: 'deposit', amount: 500, status: 'completed', time: '2:30 PM' },
+                { customer: 'BB1043', type: 'withdrawal', amount: 200, status: 'completed', time: '1:45 PM' },
+                { customer: 'BB1044', type: 'trade', amount: 1000, status: 'completed', time: '12:30 PM' }
+            ];
+            
+            const tbody = document.getElementById('activityTableBody');
+            tbody.innerHTML = '';
+            
+            mockActivities.forEach(activity => {
+                addActivityRow(activity);
+            });
+        }
+        
+        // Add Activity Row
+        function addActivityRow(activity) {
+            const tbody = document.getElementById('activityTableBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${activity.customer}</td>
+                <td>${activity.type}</td>
+                <td>$${activity.amount.toLocaleString()}</td>
+                <td>
+                    <span class="status-badge ${activity.status}">${activity.status}</span>
+                </td>
+                <td>${activity.time}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn view" onclick="viewActivityDetails('${activity.customer}', '${activity.type}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.insertBefore(row, tbody.firstChild);
+        }
+        
+        // Tab Switching
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Remove active class from all menu items
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`${tab}-tab`).style.display = 'block';
+            
+            // Add active class to clicked menu item
+            event.target.closest('.menu-item').classList.add('active');
+            
+            // Update section indicator
+            updateSectionIndicator(tab.charAt(0).toUpperCase() + tab.slice(1));
+            
+            currentTab = tab;
+            
+            // Load tab-specific data if needed
+            if (tab === 'members') {
+                loadMembers();
+            } else if (tab === 'customers') {
+                loadCustomers();
+            } else if (tab === 'transactions') {
+                loadTransactions();
+            } else if (tab === 'reports') {
+                loadReports();
+            }
+        }
+        
+        // Update Section Indicator
+        function updateSectionIndicator(section) {
+            const currentSection = document.getElementById('current-section');
+            if (currentSection) {
+                currentSection.textContent = section;
+            }
+        }
+        
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // Show Approval Modal
+        function showApprovalModal(username, group) {
+            currentMemberForApproval = { username, group };
+            document.getElementById('approvalUsername').value = username;
+            document.getElementById('approvalGroup').value = group;
+            document.getElementById('approvalModalTitle').textContent = 'Approve Member';
+            openModal('approvalModal');
+        }
+        
+        // Approve Member
+        async function approveMember() {
+            if (!currentMemberForApproval) return;
+            
+            const btn = document.getElementById('approveMemberBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.spinner');
+            
+            // Show loading state
+            btn.disabled = true;
+            btnText.textContent = 'Approving...';
+            spinner.style.display = 'inline-block';
+            
+            try {
+                const permissions = {
+                    can_view: document.getElementById('canView').checked,
+                    can_trade: document.getElementById('canTrade').checked,
+                    can_withdraw: document.getElementById('canWithdraw').checked
+                };
+                
+                const data = {
+                    username: currentMemberForApproval.username,
+                    group: currentMemberForApproval.group,
+                    customer_id: document.getElementById('approvalCustomerId').value,
+                    permissions: permissions,
+                    daily_limit: parseInt(document.getElementById('dailyLimit').value),
+                    notes: document.getElementById('approvalNotes').value
+                };
+                
+                const response = await apiRequest('/admin/approve-member', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.success) {
+                    showToast('Member approved successfully', 'success');
+                    closeModal('approvalModal');
+                    loadMembers();
+                } else {
+                    showToast('Failed to approve member', 'error');
+                }
+            } catch (error) {
+                console.error('Approval error:', error);
+                showToast('Error approving member', 'error');
+            } finally {
+                // Reset button state
+                btn.disabled = false;
+                btnText.textContent = 'Approve Member';
+                spinner.style.display = 'none';
+            }
+        }
+        
+        // Deny Member
+        async function denyMember(username, group) {
+            if (!confirm(`Are you sure you want to deny ${username} from ${group}?`)) return;
+            
+            try {
+                const data = await apiRequest('/admin/deny-member', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, group })
+                });
+                
+                if (data.success) {
+                    showToast('Member denied successfully', 'success');
+                    loadMembers();
+                } else {
+                    showToast('Failed to deny member', 'error');
+                }
+            } catch (error) {
+                console.error('Denial error:', error);
+                showToast('Error denying member', 'error');
+            }
+        }
+        
+        // Approve Member from Row
+        function approveMemberFromRow(username, group) {
+            showApprovalModal(username, group);
+        }
+        
+        // Deny Member from Row
+        function denyMemberFromRow(username, group) {
+            denyMember(username, group);
+        }
+        
+        // Deny Member from Modal
+        function denyMemberFromModal() {
+            if (!currentMemberForApproval) return;
+            
+            const btn = document.getElementById('denyMemberModalBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.spinner');
+            
+            // Show loading state
+            btn.disabled = true;
+            btnText.textContent = 'Denying...';
+            spinner.style.display = 'inline-block';
+            
+            denyMember(currentMemberForApproval.username, currentMemberForApproval.group);
+            
+            // Reset button state
+            btn.disabled = false;
+            btnText.textContent = 'Deny Member';
+            spinner.style.display = 'none';
+        }
+        
+        // Toast Notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                        type === 'error' ? 'exclamation-circle' : 
+                        'info-circle';
+            
+            toast.innerHTML = `
+                <i class="fas fa-${icon} toast-icon"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // FAB Menu
+        function toggleFabMenu() {
+            const fab = document.getElementById('enhanced-fab');
+            fab.classList.toggle('active');
+        }
+        
+        // Quick Actions
+        function quickAction(action) {
+            switch (action) {
+                case 'refresh':
+                    location.reload();
+                    break;
+                case 'export':
+                    exportData();
+                    break;
+                case 'notifications':
+                    showNotifications();
+                    break;
+                case 'settings':
+                    switchTab('settings');
+                    break;
+            }
+            toggleFabMenu();
+        }
+        
+        // Export Data
+        function exportData() {
+            showToast('Export functionality coming soon', 'info');
+        }
+        
+        // Show Notifications
+        function showNotifications() {
+            showToast('No new notifications', 'info');
+        }
+        
+        // Show User Menu
+        function showUserMenu() {
+            showToast('User menu coming soon', 'info');
+        }
+        
+        // Show Filters
+        function showFilters() {
+            showToast('Filter functionality coming soon', 'info');
+        }
+        
+        // Generate Report
+        function generateReport() {
+            showToast('Report generation coming soon', 'info');
+        }
+        
+        // Export Customers
+        function exportCustomers() {
+            showToast('Customer export coming soon', 'info');
+        }
+        
+        // Download Report
+        function downloadReport(reportName) {
+            showToast(`Downloading ${reportName}`, 'info');
+        }
+        
+        // View Member Details
+        function viewMemberDetails(username) {
+            showToast(`Viewing details for ${username}`, 'info');
+        }
+        
+        // View Customer Details
+        function viewCustomerDetails(customerId) {
+            showToast(`Viewing details for ${customerId}`, 'info');
+        }
+        
+        // View Activity Details
+        function viewActivityDetails(customer, type) {
+            showToast(`Viewing ${type} activity for ${customer}`, 'info');
+        }
+        
+        // Refresh Members
+        function refreshMembers() {
+            loadMembers();
+            showToast('Members refreshed', 'success');
+        }
+        
+        // Save Settings
+        function saveSettings() {
+            const refreshRate = document.getElementById('refreshRate').value;
+            const enableNotifications = document.getElementById('enableNotifications').checked;
+            
+            localStorage.setItem('refreshRate', refreshRate);
+            localStorage.setItem('enableNotifications', enableNotifications);
+            
+            showToast('Settings saved successfully', 'success');
+        }
+        
+        // Update Chart
+        function updateChart(period, button) {
+            // Update active button
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            // Update chart data based on period
+            let newData, newLabels;
+            
+            switch (period) {
+                case 'daily':
+                    newLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    newData = [1200, 1900, 1500, 2100, 2400, 2200, 2800];
+                    break;
+                case 'weekly':
+                    newLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                    newData = [8500, 9200, 7800, 10500];
+                    break;
+                case 'monthly':
+                    newLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                    newData = [32000, 35000, 28000, 41000, 38000, 45000];
+                    break;
+            }
+            
+            revenueChart.data.labels = newLabels;
+            revenueChart.data.datasets[0].data = newData;
+            revenueChart.update();
+        }
+        
+        // Filter Members
+        function filterMembers() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const groupFilter = document.getElementById('groupFilter').value;
+            
+            showToast(`Filtering by: Status - ${statusFilter}, Group - ${groupFilter}`, 'info');
+            
+            // Implement actual filtering logic here
+            loadMembers();
+        }
+        
+        // Show Add Member Modal
+        function showAddMemberModal() {
+            showToast('Add member functionality coming soon', 'info');
+        }
+        
+        // Update Customer Balance
+        function updateCustomerBalance(data) {
+            // Find and update the customer balance in the table
+            const rows = document.querySelectorAll('#customersTableBody tr');
+            rows.forEach(row => {
+                if (row.cells[0].textContent === data.customer_id) {
+                    row.cells[1].textContent = `$${data.new_balance.toLocaleString()}`;
+                    row.cells[2].textContent = `${data.pnl >= 0 ? '+' : ''}$${data.pnl}`;
+                    row.cells[2].className = data.pnl >= 0 ? 'positive' : 'negative';
+                }
+            });
+        }
+        
+        // Start Auto Refresh
+        function startAutoRefresh() {
+            const refreshRate = localStorage.getItem('refreshRate') || 30;
+            
+            setInterval(() => {
+                if (currentTab === 'dashboard') {
+                    loadDashboardData();
+                }
+            }, refreshRate * 1000);
+        }
+        
+        // Start Rate Limit Monitoring
+        function startRateLimitMonitoring() {
+            // Initial load
+            refreshRateLimit();
+            
+            // Auto-refresh every 30 seconds
+            rateLimitInterval = setInterval(refreshRateLimit, 30000);
+        }
+        
+        // Refresh Rate Limit
+        async function refreshRateLimit() {
+            try {
+                const response = await fetch(`${WORKER_URL}/api/rate-limit`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update UI with rate limit data
+                document.getElementById('currentTokens').textContent = data.tokens_available;
+                document.getElementById('maxTokens').textContent = data.max_tokens;
+                document.getElementById('activeChatLimits').textContent = data.active_chat_limits;
+                document.getElementById('activeGroupLimits').textContent = data.active_group_limits;
+                
+                // Update progress bar
+                const percentage = (data.tokens_available / data.max_tokens) * 100;
+                const progressBar = document.getElementById('tokenProgress');
+                const percentageText = document.getElementById('tokenPercentage');
+                
+                progressBar.style.width = `${percentage}%`;
+                percentageText.textContent = `${Math.round(percentage)}%`;
+                
+                // Update progress bar color based on percentage
+                progressBar.classList.remove('warning', 'danger');
+                if (percentage < 30) {
+                    progressBar.classList.add('danger');
+                } else if (percentage < 60) {
+                    progressBar.classList.add('warning');
+                }
+                
+                // Update last update time
+                document.getElementById('lastUpdate').textContent = 
+                    `Last update: ${new Date().toLocaleTimeString()}`;
+                
+                // Update worker status
+                const statusIndicator = document.getElementById('workerStatus');
+                const statusText = document.getElementById('workerStatusText');
+                
+                if (data.worker_status === 'connected') {
+                    statusIndicator.className = 'status-indicator success';
+                    statusText.textContent = 'Connected';
+                } else {
+                    statusIndicator.className = 'status-indicator danger';
+                    statusText.textContent = 'Disconnected';
+                }
+                
+            } catch (error) {
+                console.error('Failed to refresh rate limit:', error);
+                
+                // Show error state
+                document.getElementById('currentTokens').textContent = 'Error';
+                document.getElementById('tokenProgress').style.width = '0%';
+                document.getElementById('tokenPercentage').textContent = 'Error';
+                document.getElementById('workerStatus').className = 'status-indicator danger';
+                document.getElementById('workerStatusText').textContent = 'Error';
+                
+                showToast('Failed to fetch rate limit data', 'error');
+            }
+        }
+        
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            // Check if user is logged in
+            if (!authToken) {
+                adminLogin();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary Meta Tags -->
+    <title>FantDev Trading Platform - Enterprise-Grade Trading Solutions</title>
+    <meta name="description" content="Transform your trading with FantDev's enterprise-grade platform. Real-time analytics, automated strategies, and professional tools for serious traders.">
+    <meta name="keywords" content="trading platform, automated trading, real-time analytics, enterprise trading, FantDev">
+    <meta name="author" content="FantDev Trading Systems">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fantdev.trading/">
+    <meta property="og:title" content="FantDev Trading Platform - Enterprise-Grade Trading Solutions">
+    <meta property="og:description" content="Transform your trading with FantDev's enterprise-grade platform. Real-time analytics, automated strategies, and professional tools.">
+    <meta property="og:image" content="/images/landing-hero.webp">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FantDev Trading Platform">
+    <meta name="twitter:description" content="Enterprise-grade trading platform with real-time analytics and automated strategies.">
+    <meta name="twitter:image" content="/images/landing-hero.webp">
+    
+    <!-- PWA & Mobile -->
+    <meta name="theme-color" content="#0A4DFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FantDev Trading">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/static/css/landing.css" as="style">
+    <link rel="preload" href="/static/js/landing.js" as="script">
+    
+    <!-- Enhanced Static Assets -->
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/advanced-components.css">
+    <link rel="stylesheet" href="/static/css/landing.css">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "FantDev Trading Platform",
+        "description": "Enterprise-grade trading platform with real-time analytics and automated strategies",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Real-time trading analytics",
+            "Automated strategy execution",
+            "Professional charting tools",
+            "Risk management systems",
+            "Multi-platform support",
+            "24/7 monitoring"
+        ]
+    }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 transition-colors duration-300" x-data="landingPage()" x-init="init()">
+    <!-- Skip to Main Content for Accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
+        Skip to main content
+    </a>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="#" class="flex items-center space-x-2 text-2xl font-bold text-primary">
+                        <i class="fas fa-chart-line"></i>
+                        <span>FantDev</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Features</a>
+                    <a href="#pricing" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Pricing</a>
+                    <a href="#testimonials" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Testimonials</a>
+                    <a href="#contact" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Contact</a>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button @click="toggleDarkMode()" 
+                            class="p-2 text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+                            aria-label="Toggle dark mode">
+                        <i :class="isDarkMode ? 'fas fa-sun' : 'fas fa-moon'" class="text-lg"></i>
+                    </button>
+                    
+                    <!-- Login Button -->
+                    <a href="/portals/customer-portal.html" 
+                       class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+                        Login
+                    </a>
+                    
+                    <!-- Get Started Button -->
+                    <a href="#contact" 
+                       class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 focus:ring-4 focus:ring-primary/20">
+                        Get Started
+                    </a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button @click="toggleMobileMenu()" 
+                        class="md:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+                        aria-label="Toggle mobile menu">
+                    <i :class="mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars'" class="text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div x-show="mobileMenuOpen" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 -translate-y-2"
+                 class="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col space-y-4">
+                    <a href="#features" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Features</a>
+                    <a href="#pricing" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Pricing</a>
+                    <a href="#testimonials" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Testimonials</a>
+                    <a href="#contact" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Contact</a>
+                    <a href="/portals/customer-portal.html" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">Login</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="pt-16">
+        <!-- Hero Section -->
+        <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+            <!-- Animated Background Blob -->
+            <div class="absolute inset-0 -z-10">
+                <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                <div class="absolute top-1/3 right-1/4 w-96 h-96 bg-secondary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+                <div class="absolute bottom-1/4 left-1/3 w-96 h-96 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+                <!-- Hero Content -->
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+                        Transform Your Trading with
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+                            Enterprise-Grade
+                        </span>
+                        Solutions
+                    </h1>
+                    
+                    <p class="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                        Professional trading platform with real-time analytics, automated strategies, and institutional-grade tools designed for serious traders.
+                    </p>
+                    
+                    <!-- CTA Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <a href="#contact" 
+                           class="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 focus:ring-4 focus:ring-primary/20 shadow-lg hover:shadow-xl">
+                            Start Free Trial
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                        <a href="#demo" 
+                           class="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105">
+                            <i class="fas fa-play mr-2"></i>
+                            Watch Demo
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Hero Image -->
+                <div class="mt-16 relative">
+                    <picture>
+                        <source srcset="/images/landing-hero.webp" type="image/webp">
+                        <source srcset="/images/landing-hero.avif" type="image/avif">
+                        <img src="/images/landing-hero.png" 
+                             alt="FantDev Trading Platform Dashboard"
+                             class="w-full max-w-5xl mx-auto rounded-2xl shadow-2xl"
+                             loading="lazy"
+                             width="1200"
+                             height="675">
+                    </picture>
+                    
+                    <!-- Floating Stats Cards -->
+                    <div class="absolute -top-8 -left-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div class="text-2xl font-bold text-primary">98.5%</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Success Rate</div>
+                    </div>
+                    <div class="absolute -bottom-8 -right-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div class="text-2xl font-bold text-secondary">24/7</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Monitoring</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="py-20 bg-gray-50 dark:bg-gray-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                        Why Choose FantDev?
+                    </h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                        Built by traders, for traders. Our platform combines cutting-edge technology with proven trading strategies.
+                    </p>
+                </div>
+
+                <!-- Features Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Feature Card 1 -->
+                    <div class="feature-card bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                        <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-chart-line text-3xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Real-Time Analytics</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Advanced charting with real-time data feeds, technical indicators, and pattern recognition.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 2 -->
+                    <div class="feature-card bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                        <div class="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-robot text-3xl text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Automated Strategies</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Build, test, and deploy automated trading strategies with our powerful backtesting engine.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 3 -->
+                    <div class="feature-card bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                        <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-shield-alt text-3xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Risk Management</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Comprehensive risk controls, position sizing, and portfolio protection tools.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 4 -->
+                    <div class="feature-card bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                        <div class="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-mobile-alt text-3xl text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Multi-Platform</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Access your trading from anywhere with our responsive web and mobile applications.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 5 -->
+                    <div class="feature-card bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                        <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-users text-3xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Community Support</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Join our community of professional traders and access exclusive insights and strategies.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 6 -->
+                    <div class="feature-card bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                        <div class="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-bolt text-3xl text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Lightning Fast</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Ultra-low latency execution with direct market access and institutional-grade infrastructure.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="py-20 bg-white dark:bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                        Choose Your Plan
+                    </h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                        Start with our free tier and scale up as your trading grows. No hidden fees, no surprises.
+                    </p>
+                </div>
+
+                <!-- Pricing Toggle -->
+                <div class="flex justify-center mb-12">
+                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                        <button @click="billingCycle = 'monthly'" 
+                                :class="billingCycle === 'monthly' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400'"
+                                class="px-6 py-2 rounded-md font-medium transition-all duration-200">
+                            Monthly
+                        </button>
+                        <button @click="billingCycle = 'yearly'" 
+                                :class="billingCycle === 'yearly' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400'"
+                                class="px-6 py-2 rounded-md font-medium transition-all duration-200">
+                            Yearly
+                            <span class="ml-2 text-sm text-primary">Save 20%</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pricing Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <!-- Starter Plan -->
+                    <div class="pricing-card bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 hover:rotate-1">
+                        <div class="text-center mb-8">
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Starter</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Perfect for beginners</p>
+                            <div class="mt-4">
+                                <span class="text-4xl font-bold text-gray-900 dark:text-white">
+                                    $<span x-text="billingCycle === 'monthly' ? '0' : '0'"></span>
+                                </span>
+                                <span class="text-gray-600 dark:text-gray-400">/month</span>
+                            </div>
+                        </div>
+                        
+                        <ul class="space-y-4 mb-8">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Basic charting tools</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">5 trading strategies</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Email support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Mobile app access</span>
+                            </li>
+                        </ul>
+                        
+                        <a href="#contact" 
+                           class="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white py-3 px-6 rounded-lg font-medium text-center block hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Get Started Free
+                        </a>
+                    </div>
+
+                    <!-- Pro Plan -->
+                    <div class="pricing-card bg-white dark:bg-gray-800 border-2 border-primary rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 hover:rotate-1 relative">
+                        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                            <span class="bg-primary text-white px-4 py-2 rounded-full text-sm font-medium">Most Popular</span>
+                        </div>
+                        
+                        <div class="text-center mb-8">
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Pro</h3>
+                            <p class="text-gray-600 dark:text-gray-400">For active traders</p>
+                            <div class="mt-4">
+                                <span class="text-4xl font-bold text-gray-900 dark:text-white">
+                                    $<span x-text="billingCycle === 'monthly' ? '99' : '79'"></span>
+                                </span>
+                                <span class="text-gray-600 dark:text-gray-400">/month</span>
+                            </div>
+                        </div>
+                        
+                        <ul class="space-y-4 mb-8">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Everything in Starter</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Advanced analytics</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Unlimited strategies</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Priority support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">API access</span>
+                            </li>
+                        </ul>
+                        
+                        <a href="#contact" 
+                           class="w-full bg-primary hover:bg-primary-dark text-white py-3 px-6 rounded-lg font-medium text-center block transition-colors">
+                            Start Pro Trial
+                        </a>
+                    </div>
+
+                    <!-- Enterprise Plan -->
+                    <div class="pricing-card bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 hover:rotate-1">
+                        <div class="text-center mb-8">
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Enterprise</h3>
+                            <p class="text-gray-600 dark:text-gray-400">For institutions</p>
+                            <div class="mt-4">
+                                <span class="text-4xl font-bold text-gray-900 dark:text-white">Custom</span>
+                            </div>
+                        </div>
+                        
+                        <ul class="space-y-4 mb-8">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Everything in Pro</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Custom integrations</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">Dedicated support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">SLA guarantees</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-3"></i>
+                                <span class="text-gray-600 dark:text-gray-400">On-premise options</span>
+                            </li>
+                        </ul>
+                        
+                        <a href="#contact" 
+                           class="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white py-3 px-6 rounded-lg font-medium text-center block hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Contact Sales
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section id="testimonials" class="py-20 bg-gray-50 dark:bg-gray-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                        What Our Traders Say
+                    </h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                        Join thousands of successful traders who trust FantDev with their trading journey.
+                    </p>
+                </div>
+
+                <!-- Testimonials Carousel -->
+                <div class="relative max-w-4xl mx-auto">
+                    <div class="testimonials-container overflow-hidden">
+                        <div class="testimonials-track flex transition-transform duration-500 ease-in-out" 
+                             :style="`transform: translateX(-${currentTestimonial * 100}%)`">
+                            
+                            <!-- Testimonial 1 -->
+                            <div class="testimonial-slide w-full flex-shrink-0 px-4">
+                                <div class="bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg text-center">
+                                    <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-user text-3xl text-primary"></i>
+                                    </div>
+                                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-6 italic">
+                                        "FantDev transformed my trading. The automated strategies and real-time analytics helped me increase my win rate from 45% to 78% in just 3 months."
+                                    </p>
+                                    <div class="font-semibold text-gray-900 dark:text-white">Sarah Johnson</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">Professional Trader</div>
+                                </div>
+                            </div>
+
+                            <!-- Testimonial 2 -->
+                            <div class="testimonial-slide w-full flex-shrink-0 px-4">
+                                <div class="bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg text-center">
+                                    <div class="w-20 h-20 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-user text-3xl text-secondary"></i>
+                                    </div>
+                                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-6 italic">
+                                        "The risk management tools are incredible. I can sleep soundly knowing my positions are protected with automatic stop-losses and position sizing."
+                                    </p>
+                                    <div class="font-semibold text-gray-900 dark:text-white">Michael Chen</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">Hedge Fund Manager</div>
+                                </div>
+                            </div>
+
+                            <!-- Testimonial 3 -->
+                            <div class="testimonial-slide w-full flex-shrink-0 px-4">
+                                <div class="bg-white dark:bg-gray-700 p-8 rounded-2xl shadow-lg text-center">
+                                    <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-user text-3xl text-primary"></i>
+                                    </div>
+                                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-6 italic">
+                                        "As a beginner, I was overwhelmed by trading. FantDev's intuitive interface and educational resources made it easy to get started and profitable quickly."
+                                    </p>
+                                    <div class="font-semibold text-gray-900 dark:text-white">David Rodriguez</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">Retail Trader</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Dots -->
+                    <div class="flex justify-center mt-8 space-x-2">
+                        <button @click="currentTestimonial = 0" 
+                                :class="currentTestimonial === 0 ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
+                                class="w-3 h-3 rounded-full transition-colors"></button>
+                        <button @click="currentTestimonial = 1" 
+                                :class="currentTestimonial === 1 ? 'bg-primary' : 'bg-secondary' : 'bg-gray-300 dark:bg-gray-600'"
+                                class="w-3 h-3 rounded-full transition-colors"></button>
+                        <button @click="currentTestimonial = 2" 
+                                :class="currentTestimonial === 2 ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
+                                class="w-3 h-3 rounded-full transition-colors"></button>
+                    </div>
+
+                    <!-- Navigation Arrows -->
+                    <button @click="previousTestimonial()" 
+                            class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
+                            aria-label="Previous testimonial">
+                        <i class="fas fa-chevron-left text-gray-600 dark:text-gray-400"></i>
+                    </button>
+                    <button @click="nextTestimonial()" 
+                            class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
+                            aria-label="Next testimonial">
+                        <i class="fas fa-chevron-right text-gray-600 dark:text-gray-400"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 bg-white dark:bg-gray-900">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    Ready to Transform Your Trading?
+                </h2>
+                <p class="text-xl text-gray-600 dark:text-gray-300 mb-12">
+                    Start your free trial today and experience the difference that professional-grade tools can make.
+                </p>
+
+                <!-- Contact Form -->
+                <form @submit.prevent="submitContactForm()" class="max-w-2xl mx-auto">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-left">
+                                First Name
+                            </label>
+                            <input type="text" 
+                                   id="firstName" 
+                                   x-model="contactForm.firstName"
+                                   required
+                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-primary/20 focus:border-primary dark:bg-gray-800 dark:text-white transition-colors">
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-left">
+                                Last Name
+                            </label>
+                            <input type="text" 
+                                   id="lastName" 
+                                   x-model="contactForm.lastName"
+                                   required
+                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-primary/20 focus:border-primary dark:bg-gray-800 dark:text-white transition-colors">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-left">
+                            Email Address
+                        </label>
+                        <input type="email" 
+                               id="email" 
+                               x-model="contactForm.email"
+                               required
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-primary/20 focus:border-primary dark:bg-gray-800 dark:text-white transition-colors">
+                    </div>
+                    
+                    <div class="mb-8">
+                        <label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-left">
+                            Message (Optional)
+                        </label>
+                        <textarea id="message" 
+                                  x-model="contactForm.message"
+                                  rows="4"
+                                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-primary/20 focus:border-primary dark:bg-gray-800 dark:text-white transition-colors"
+                                  placeholder="Tell us about your trading goals..."></textarea>
+                    </div>
+                    
+                    <button type="submit" 
+                            class="w-full bg-primary hover:bg-primary-dark text-white py-4 px-8 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 focus:ring-4 focus:ring-primary/20 shadow-lg hover:shadow-xl">
+                        <span x-show="!submitting">Start Free Trial</span>
+                        <span x-show="submitting" class="flex items-center justify-center">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            Processing...
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 text-2xl font-bold mb-4">
+                        <i class="fas fa-chart-line text-primary"></i>
+                        <span>FantDev</span>
+                    </div>
+                    <p class="text-gray-400 mb-4">
+                        Enterprise-grade trading platform for serious traders and institutions.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fab fa-github text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
+                        <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">API</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Documentation</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">About</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Community</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Status</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Security</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 FantDev Trading Systems. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/advanced-components.js"></script>
+    <script src="/static/js/icon-helper.js"></script>
+    <script src="/static/js/landing.js"></script>
+</body>
+</html>

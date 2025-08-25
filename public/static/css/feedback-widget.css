@@ -1,0 +1,272 @@
+/* Enhanced Feedback Widget Styles */
+.enhanced-feedback-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-xl);
+    max-width: 380px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    z-index: var(--z-popover);
+    transition: all var(--transition-normal);
+    overflow: hidden;
+}
+
+.enhanced-feedback-widget.minimized {
+    transform: translateX(calc(100% - 60px));
+}
+
+.enhanced-feedback-widget:hover {
+    box-shadow: var(--shadow-2xl);
+    transform: translateY(-2px);
+}
+
+.enhanced-feedback-toggle {
+    position: absolute;
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--primary);
+    color: var(--text-inverse);
+    border: none;
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
+    padding: 12px 10px;
+    cursor: pointer;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-md);
+}
+
+.enhanced-feedback-toggle:hover {
+    background: var(--primary-dark);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.enhanced-feedback-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text-inverse);
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+}
+
+.enhanced-feedback-header h3 {
+    margin: 0;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+}
+
+.enhanced-feedback-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: var(--font-size-sm);
+}
+
+.enhanced-feedback-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: var(--text-inverse);
+    border-radius: var(--border-radius-full);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.enhanced-feedback-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.enhanced-feedback-body {
+    padding: 1.5rem;
+}
+
+.enhanced-feedback-question {
+    margin-bottom: 1.5rem;
+}
+
+.enhanced-feedback-question label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+}
+
+.enhanced-rating-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+
+.enhanced-rating-btn {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
+}
+
+.enhanced-rating-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.enhanced-rating-btn.selected {
+    background: var(--primary);
+    color: var(--text-inverse);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+.enhanced-feedback-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    resize: vertical;
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+.enhanced-feedback-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.enhanced-feedback-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.enhanced-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.enhanced-btn-primary {
+    background: var(--primary);
+    color: var(--text-inverse);
+}
+
+.enhanced-btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.enhanced-btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.enhanced-btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.enhanced-feedback-success {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    color: var(--success);
+}
+
+.enhanced-feedback-success h4 {
+    margin: 0 0 1rem 0;
+    font-size: var(--font-size-lg);
+    color: var(--success);
+}
+
+.enhanced-feedback-success p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.enhanced-feedback-emoji {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .enhanced-feedback-widget {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .enhanced-feedback-widget.minimized {
+        transform: translateX(calc(100% - 50px));
+    }
+    
+    .enhanced-feedback-toggle {
+        left: -35px;
+        padding: 10px 8px;
+    }
+}
+
+/* Animation Classes */
+.enhanced-feedback-widget.animate-slide-in {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Loading States */
+.enhanced-feedback-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.enhanced-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

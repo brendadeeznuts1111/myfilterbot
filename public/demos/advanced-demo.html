@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantDev Trading - Advanced Components Demo</title>
+    
+    <!-- Enhanced Static Assets -->
+    <link rel="stylesheet" href="../static/css/utilities.css">
+    <link rel="stylesheet" href="../static/css/components.css">
+    <link rel="stylesheet" href="../static/css/advanced-components.css">
+    <link rel="stylesheet" href="../static/css/fantdev-components.css">
+    
+    <!-- Chart.js for advanced charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="../static/css/advanced-demo.css">
+</head>
+<body>
+            <!-- Performance Indicator -->
+        <div class="performance-indicator">
+            <div class="metric">
+                <span>FPS:</span>
+                <span class="value" id="fps">60</span>
+            </div>
+            <div class="metric">
+                <span>Memory:</span>
+                <span class="value" id="memory">0 MB</span>
+            </div>
+        </div>
+
+        <!-- Section Indicator -->
+        <div class="section-indicator" id="section-indicator">
+            <span class="section-label">Current Section:</span>
+            <span class="section-name" id="current-section">AI Components</span>
+        </div>
+
+    <div class="demo-container">
+        <!-- Demo Header -->
+        <header class="demo-header">
+            <h1>🚀 FantDev Trading - Advanced Components Demo</h1>
+            <p>Experience the future of web development with AI-powered components, virtual scrolling, and advanced UX patterns</p>
+        </header>
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+            <ol class="breadcrumb-list">
+                <li class="breadcrumb-item">
+                    <a href="#" class="breadcrumb-link">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <span class="breadcrumb-separator">/</span>
+                    <span class="breadcrumb-current">Advanced Demo</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Enhanced Demo Navigation -->
+        <nav class="demo-navigation">
+            <div class="nav-header">
+                <h3>Navigation</h3>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="demo-nav-list" id="nav-list">
+                <li class="demo-nav-item">
+                    <a href="#ai-components" data-section="ai-components">
+                        <span class="nav-icon">🤖</span>
+                        <span class="nav-text">AI Components</span>
+                        <span class="nav-count">3</span>
+                    </a>
+                </li>
+                <li class="demo-nav-item">
+                    <a href="#virtual-scrolling" data-section="virtual-scrolling">
+                        <span class="nav-icon">📜</span>
+                        <span class="nav-text">Virtual Scrolling</span>
+                        <span class="nav-count">2</span>
+                    </a>
+                </li>
+                <li class="demo-nav-item">
+                    <a href="#advanced-charts" data-section="advanced-charts">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Advanced Charts</span>
+                        <span class="nav-count">2</span>
+                    </a>
+                </li>
+                <li class="demo-nav-item">
+                    <a href="#ai-data-tables" data-section="ai-data-tables">
+                        <span class="nav-icon">🔍</span>
+                        <span class="nav-text">AI Data Tables</span>
+                        <span class="nav-count">2</span>
+                    </a>
+                </li>
+                <li class="demo-nav-item">
+                    <a href="#performance" data-section="performance">
+                        <span class="nav-icon">⚡</span>
+                        <span class="nav-text">Performance</span>
+                        <span class="nav-count">2</span>
+                    </a>
+                </li>
+                <li class="demo-nav-item">
+                    <a href="#animations" data-section="animations">
+                        <span class="nav-icon">🎭</span>
+                        <span class="nav-text">Animations</span>
+                        <span class="nav-count">2</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-footer">
+                <div class="nav-progress">
+                    <div class="nav-progress-bar" id="nav-progress"></div>
+                </div>
+                <div class="nav-status" id="nav-status">Ready</div>
+            </div>
+        </nav>
+
+        <!-- AI Components Section -->
+        <section id="ai-components" class="demo-section">
+            <h2>🤖 AI-Powered Components</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>Smart Form</h3>
+                    <p>AI-powered form with intelligent suggestions and contextual tips</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleAISmartForm()">Show Smart Form</button>
+                        <button class="demo-toggle danger" onclick="hideAISmartForm()">Hide</button>
+                    </div>
+                    <div id="ai-smart-form-demo" class="demo-content">
+                        Click "Show Smart Form" to see AI-powered form suggestions
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>Content Generator</h3>
+                    <p>AI-driven content generation with customizable prompts</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleAIContentGenerator()">Show Generator</button>
+                        <button class="demo-toggle danger" onclick="hideAIContentGenerator()">Hide</button>
+                    </div>
+                    <div id="ai-content-generator-demo" class="demo-content">
+                        Click "Show Generator" to see AI content generation
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>Data Analyzer</h3>
+                    <p>Intelligent data analysis with pattern recognition</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleAIDataAnalyzer()">Show Analyzer</button>
+                        <button class="demo-toggle danger" onclick="hideAIDataAnalyzer()">Hide</button>
+                    </div>
+                    <div id="ai-data-analyzer-demo" class="demo-content">
+                        Click "Show Analyzer" to see AI data analysis
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Virtual Scrolling Section -->
+        <section id="virtual-scrolling" class="demo-section">
+            <h2>📜 Virtual Scrolling</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>Large List Scroller</h3>
+                    <p>Efficiently render thousands of items with virtual scrolling</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleVirtualScroller()">Show Scroller</button>
+                        <button class="demo-toggle danger" onclick="hideVirtualScroller()">Hide</button>
+                    </div>
+                    <div id="virtual-scroller-demo" class="demo-content">
+                        Click "Show Scroller" to see virtual scrolling in action
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>Infinite Scroll</h3>
+                    <p>Seamless infinite scrolling with dynamic content loading</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleInfiniteScroll()">Show Infinite</button>
+                        <button class="demo-toggle danger" onclick="hideInfiniteScroll()">Hide</button>
+                    </div>
+                    <div id="infinite-scroll-demo" class="demo-content">
+                        Click "Show Infinite" to see infinite scrolling
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Charts Section -->
+        <section id="advanced-charts" class="demo-section">
+            <h2>📊 Advanced Charts</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>Real-time Chart</h3>
+                    <p>Live updating charts with streaming data</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleRealTimeChart()">Show Chart</button>
+                        <button class="demo-toggle danger" onclick="hideRealTimeChart()">Hide</button>
+                    </div>
+                    <div id="real-time-chart-demo" class="demo-content">
+                        Click "Show Chart" to see real-time chart updates
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>Interactive Chart</h3>
+                    <p>Advanced chart with zoom, pan, and custom controls</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleInteractiveChart()">Show Chart</button>
+                        <button class="demo-toggle danger" onclick="hideInteractiveChart()">Hide</button>
+                    </div>
+                    <div id="interactive-chart-demo" class="demo-content">
+                        Click "Show Chart" to see interactive chart
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Data Tables Section -->
+        <section id="ai-data-tables" class="demo-section">
+            <h2>🔍 AI Data Tables</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>Smart Data Table</h3>
+                    <p>AI-powered table with intelligent insights and anomaly detection</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleAIDataTable()">Show Table</button>
+                        <button class="demo-toggle danger" onclick="hideAIDataTable()">Hide</button>
+                    </div>
+                    <div id="ai-data-table-demo" class="demo-content">
+                        Click "Show Table" to see AI-powered data table
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>Predictive Search</h3>
+                    <p>Intelligent search with AI-powered query understanding</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="togglePredictiveSearch()">Show Search</button>
+                        <button class="demo-toggle danger" onclick="hidePredictiveSearch()">Hide</button>
+                    </div>
+                    <div id="predictive-search-demo" class="demo-content">
+                        Click "Show Search" to see predictive search
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Section -->
+        <section id="performance" class="demo-section">
+            <h2>⚡ Performance Monitoring</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>Performance Monitor</h3>
+                    <p>Real-time performance metrics and monitoring</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="togglePerformanceMonitor()">Show Monitor</button>
+                        <button class="demo-toggle danger" onclick="hidePerformanceMonitor()">Hide</button>
+                    </div>
+                    <div id="performance-monitor-demo" class="demo-content">
+                        Click "Show Monitor" to see performance metrics
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>Memory Profiler</h3>
+                    <p>Memory usage tracking and optimization suggestions</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleMemoryProfiler()">Show Profiler</button>
+                        <button class="demo-toggle danger" onclick="hideMemoryProfiler()">Hide</button>
+                    </div>
+                    <div id="memory-profiler-demo" class="demo-content">
+                        Click "Show Profiler" to see memory profiling
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Animations Section -->
+        <section id="animations" class="demo-section">
+            <h2>🎭 Advanced Animations</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>Intersection Observer</h3>
+                    <p>Scroll-triggered animations with intersection observer</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleIntersectionAnimations()">Show Animations</button>
+                        <button class="demo-toggle danger" onclick="hideIntersectionAnimations()">Hide</button>
+                    </div>
+                    <div id="intersection-animations-demo" class="demo-content">
+                        Click "Show Animations" to see intersection observer animations
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>Advanced Hover Effects</h3>
+                    <p>Sophisticated hover animations and micro-interactions</p>
+                    <div class="demo-actions">
+                        <button class="demo-toggle" onclick="toggleHoverEffects()">Show Effects</button>
+                        <button class="demo-toggle danger" onclick="hideHoverEffects()">Hide</button>
+                    </div>
+                    <div id="hover-effects-demo" class="demo-content">
+                        Click "Show Effects" to see advanced hover animations
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Back to Top Button -->
+        <button id="back-to-top" class="back-to-top" aria-label="Back to top">
+            <span>↑</span>
+        </button>
+    </div>
+
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="../static/js/utils.js"></script>
+    <script src="../static/js/components.js"></script>
+    <script src="../static/js/icon-helper.js"></script>
+    <script src="../static/js/advanced-components.js"></script>
+    
+    <script src="../static/js/advanced-demo.js"></script>
+</body>
+</html>
