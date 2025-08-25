@@ -354,6 +354,35 @@ const server = serve({
       });
     }
 
+    // Favicon endpoints
+    if (url.pathname === '/favicon.ico') {
+      const faviconFile = Bun.file('./public/images/favicon-32x32.png');
+      return new Response(faviconFile, {
+        headers: { 'Content-Type': 'image/x-icon' }
+      });
+    }
+
+    if (url.pathname === '/favicon-32x32.png') {
+      const faviconFile = Bun.file('./public/images/favicon-32x32.png');
+      return new Response(faviconFile, {
+        headers: { 'Content-Type': 'image/png' }
+      });
+    }
+
+    if (url.pathname === '/favicon-16x16.png') {
+      const faviconFile = Bun.file('./public/images/favicon-16x16.png');
+      return new Response(faviconFile, {
+        headers: { 'Content-Type': 'image/png' }
+      });
+    }
+
+    if (url.pathname === '/apple-touch-icon.png') {
+      const faviconFile = Bun.file('./public/images/apple-touch-icon.png');
+      return new Response(faviconFile, {
+        headers: { 'Content-Type': 'image/png' }
+      });
+    }
+
     // Serve main admin portal
     if (url.pathname === '/' || url.pathname === '/admin' || url.pathname === '/enhanced') {
       return new Response(enhancedAdminPortal);
