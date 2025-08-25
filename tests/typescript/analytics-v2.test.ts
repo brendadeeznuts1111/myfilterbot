@@ -1,10 +1,34 @@
-import { test, expect, beforeEach } from "bun:test";
+import { test, expect, beforeEach, beforeAll, afterAll } from "bun:test";
 import { Database } from "bun:sqlite";
 
-const db = new Database("analytics.db");
+let db: Database;
+
+beforeAll(() => {
+  // Create in-memory database for testing
+  db = new Database(":memory:");
+  
+  // Create events table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      eventType TEXT NOT NULL,
+      timestamp INTEGER NOT NULL,
+      payload TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+});
 
 beforeEach(() => {
+  // Clear events before each test
   db.run("DELETE FROM events");
+});
+
+afterAll(() => {
+  // Close database connection
+  if (db) {
+    db.close();
+  }
 });
 
 test("Analytics v2 GET data endpoint returns empty array initially", async () => {
