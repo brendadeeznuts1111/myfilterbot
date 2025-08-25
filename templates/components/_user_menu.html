@@ -1,0 +1,17 @@
+<!-- User Menu Component -->
+<div class="fantdev-user-menu">
+    <div class="fantdev-user-info">
+        <span class="fantdev-user-name">{{ user_name or 'Guest' }}</span>
+        {% if user_role %}
+        <span class="fantdev-user-role">{{ user_role }}</span>
+        {% endif %}
+    </div>
+    <div class="fantdev-user-actions">
+        <button class="fantdev-btn fantdev-btn-icon" onclick="toggleTheme()">
+            <i class="fas fa-moon"></i>
+        </button>
+        <a href="/logout" class="fantdev-btn fantdev-btn-icon">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</div>
