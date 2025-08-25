@@ -233,7 +233,7 @@ modules = ["node_modules"]
 # These are default values - can be overridden with CLI --define flags
 
 # Environment
-"process.env.NODE_ENV" = '"development"'
+# "process.env.NODE_ENV" = '"development"'  # Commented out to allow test environment override
 
 # Debug/Console controls
 ENABLE_CONSOLE_LOGS = "true"

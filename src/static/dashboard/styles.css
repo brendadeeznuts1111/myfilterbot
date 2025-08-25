@@ -1175,7 +1175,6 @@ body {
     background: var(--accent-yellow);
     color: var(--bg-primary);
     box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
-
 }
 
 /* Enhanced Customer Table Styles */
@@ -1718,5 +1717,4 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
->>>>>>> feat/ui-components-pr
 }
