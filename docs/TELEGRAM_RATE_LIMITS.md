@@ -1,10 +1,10 @@
 # Telegram API Rate Limiting & Webhook Setup
 
-## ✅ Implementation Complete
+## Implementation Complete
 
 Your Cloudflare Worker now includes comprehensive rate limiting for Telegram API calls and proper webhook management.
 
-## 📊 Telegram API Rate Limits
+## Telegram API Rate Limits
 
 ### Official Limits
 - **Global**: 30 messages/second across all chats
@@ -33,7 +33,7 @@ Your Cloudflare Worker now includes comprehensive rate limiting for Telegram API
    - Safe webhook replacement
    - Secret generation
 
-## 🚀 Quick Setup
+## Quick Setup
 
 ### 1. Check Current Webhook Status
 ```bash
@@ -59,7 +59,7 @@ bun run setup-webhook.ts --url https://telegram-bot-worker.YOUR-SUBDOMAIN.worker
 bun run setup-webhook.ts --delete
 ```
 
-## 🔍 Monitoring Rate Limits
+## Monitoring Rate Limits
 
 ### Check Rate Limit Status
 ```bash
@@ -87,9 +87,9 @@ Response:
 }
 ```
 
-## 🛡️ Rate Limiting Best Practices
+## Rate Limiting Best Practices
 
-### 1. **Batch Operations**
+### 1. Batch Operations
 ```typescript
 // Good: Batch multiple operations
 await rateLimiter.executeBatch(requests, 50);
@@ -100,18 +100,18 @@ for (const request of requests) {
 }
 ```
 
-### 2. **Use Different Update Types**
+### 2. Use Different Update Types
 - Use `answerCallbackQuery` for button responses (no rate limit)
 - Use `editMessageText` instead of deleting and sending new
 - Use inline keyboards to reduce message count
 
-### 3. **Priority Queue**
+### 3. Priority Queue
 Important messages (errors, alerts) should have priority over regular updates.
 
-### 4. **Graceful Degradation**
+### 4. Graceful Degradation
 If rate limited, queue messages or combine them rather than dropping.
 
-## 📝 Webhook Security
+## Webhook Security
 
 ### Secret Token
 The webhook uses a secret token for validation:
@@ -130,7 +130,7 @@ Telegram webhooks come from these IP ranges:
 - `149.154.160.0/20`
 - `91.108.4.0/22`
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### "Too Many Requests" Error
 - Check rate limit status: `/api/rate-limit`
@@ -154,7 +154,7 @@ Telegram webhooks come from these IP ranges:
 - Worker tracks `update_id` to prevent duplicates
 - Automatically cleans old IDs to prevent memory issues
 
-## 📊 Performance Tips
+## Performance Tips
 
 1. **Use Durable Objects** for state that needs consistency
 2. **Use KV** for eventually consistent data
@@ -162,7 +162,7 @@ Telegram webhooks come from these IP ranges:
 4. **Batch Telegram API calls** when possible
 5. **Use webhook** instead of polling (more efficient)
 
-## 🔄 Integration with Your Bot
+## Integration with Your Bot
 
 ### Python Bot
 ```python
@@ -180,7 +180,7 @@ import { cloudflareClient } from '@/services/cloudflare-client';
 const status = await fetch(`${workerUrl}/api/rate-limit`);
 ```
 
-## 📈 Next Steps
+## Next Steps
 
 1. **Deploy to Production**:
    ```bash
@@ -202,7 +202,7 @@ const status = await fetch(`${workerUrl}/api/rate-limit`);
    - Implement dead letter queue for failed messages
    - Use Cloudflare Analytics for monitoring
 
-## 🎯 Summary
+## Summary
 
 Your implementation now includes:
 - ✅ Comprehensive rate limiting

@@ -1,18 +1,22 @@
 /**
  * Enhanced Bun Development Server for React App
  * Features: TypeScript transpilation, Hot-reloading, API proxy, WebSocket support, Tailwind CSS processing
+ * Now with YAML configuration support
  */
 
-import { serve, file } from "bun";
-import { watch } from "fs";
-import { join, resolve } from "path";
-import tailwindPlugin from "bun-plugin-tailwind";
+import { serve, file } from 'bun';
+import { watch } from 'fs';
+import { join, resolve } from 'path';
+import tailwindPlugin from 'bun-plugin-tailwind';
+import { server, paths } from '../config/app.yaml';
+import { yamlConfigService } from './services/yaml-config-service';
 
 // Hot-reload WebSocket clients
 const wsClients = new Set<WebSocket>();
 
-// API server configuration
-const API_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003';
+// Get configuration from YAML
+const serverConfig = server.api;
+const API_SERVER_URL = process.env.REACT_APP_API_URL || `http://${serverConfig.host}:${serverConfig.port}`;
 
 // CSS cache for processed Tailwind output
 const cssCache = new Map<string, { content: string; mtime: number }>();

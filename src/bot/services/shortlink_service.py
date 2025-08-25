@@ -15,8 +15,12 @@ logger = logging.getLogger(__name__)
 
 class ShortlinkService:
     """Service for creating and managing shortlinks"""
+    worker_url: Any
+    api_key: Any
+    headers: Any
+    shortlink_cache: Any
     
-    def __init__(self, worker_url: str = None, api_key: str = None):
+    def __init__(self, worker_url: str = None, api_key: str = None) -> None:
         """
         Initialize ShortlinkService
         

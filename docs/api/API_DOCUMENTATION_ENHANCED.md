@@ -1,6 +1,6 @@
-# 📡 Enhanced API Documentation - Fantdev Trading Bot v2.0
+# 📡 Enhanced API Documentation - Fantdev Trading Bot v2.1
 
-## 🚀 What's New in v2.0
+## 🚀 What's New in v2.1
 - **JWT Authentication**: Secure token-based authentication
 - **WebSocket Support**: Real-time updates via Socket.IO
 - **Enhanced Security**: Bearer token authorization
@@ -501,6 +501,6 @@ socket.io-client (CDN)
 
 ---
 
-**API Version:** 2.0.0  
-**Last Updated:** August 23, 2025  
-**Contact:** admin@fantdev.trading
+**API Version:** 2.1.0
+**Last Updated:** August 25, 2025
+**Maintained By:** Fantdev Development Team

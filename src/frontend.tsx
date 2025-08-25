@@ -1,9 +1,11 @@
 import React from 'react';
+
 import { createRoot } from 'react-dom/client';
+
 import { App } from './App';
-import { ThemeProvider } from './hooks/useTheme';
 import { AuthProvider } from './hooks/useAuth';
 import { QueryProvider } from './providers/QueryProvider';
+import { ThemeProvider } from './hooks/useTheme';
 
 const container = document.getElementById('root');
 if (!container) {

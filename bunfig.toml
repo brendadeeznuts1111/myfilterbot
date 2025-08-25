@@ -140,7 +140,7 @@ TZ = "UTC"                          # Use UTC timezone for consistent results âœ
 
 # Network settings (inherits from [install] section for private registries)
 [install]
-# registry = "https://registry.npmjs.org/"  # Default registry
+registry = "https://registry.npmjs.org/"  # Default registry
 # cache = "~/.bun/install/cache"            # Package cache location
 
 # =============================================================================
@@ -223,6 +223,32 @@ sourcemap = "external"
 splitting = true
 target = "bun"
 modules = ["node_modules"]
+
+# =============================================================================
+# DEFINE CONFIGURATION (Static Constants)
+# =============================================================================
+
+[define]
+# Static replacements for dead code elimination
+# These are default values - can be overridden with CLI --define flags
+
+# Environment
+"process.env.NODE_ENV" = '"development"'
+
+# Debug/Console controls
+ENABLE_CONSOLE_LOGS = "true"
+ENABLE_DEBUG_MODE = "true"
+ENABLE_DEV_TOOLS = "true"
+
+# Feature flags
+FF_ANALYTICS = "true"
+FF_RBAC = "true"
+ENABLE_ADMIN_MOBILE = "true"
+
+# Performance constants
+WORKER_POOL_SIZE = "4"
+MAX_CONCURRENT_REQUESTS = "50"
+CACHE_TTL = "300"
 
 # =============================================================================
 # PROJECT STATUS

@@ -1,6 +1,8 @@
-import { serve } from "bun";
-import { config, validateEnv } from "../config/env.config";
-import adminPortal from "../public/admin_portal_improved.html";
+import { serve } from 'bun';
+import adminPortal from '../dist/admin_portal_improved.html';
+import { config, validateEnv } from '../config/env.config';
+import { rbacApp } from "./server/rbac"; // Import rbacApp
+import { authAppRoutes } from "./server/auth"; // Import authAppRoutes
 
 // Validate environment on startup
 try {
@@ -36,6 +38,16 @@ const server = serve({
       return new Response(null, { status: 204, headers: corsHeaders });
     }
     
+    // Delegate to RBAC app if path starts with /rbac
+    if (url.pathname.startsWith("/rbac")) {
+      return rbacApp.fetch(req);
+    }
+
+    // Delegate to Auth app if path starts with /auth
+    if (url.pathname.startsWith("/auth")) {
+      return authAppRoutes.fetch(req);
+    }
+
     // Serve admin portal HTML
     if (url.pathname === "/" || url.pathname === "/admin") {
       return new Response(adminPortal, {

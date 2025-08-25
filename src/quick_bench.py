@@ -30,7 +30,7 @@ def benchmark_decorator(func):
 def test_database_operations():
     """Test database read/write performance"""
     try:
-        from database import db
+        from src.portal.db.repositories import db
         
         # Test customer lookup
         stats = db.get_statistics()

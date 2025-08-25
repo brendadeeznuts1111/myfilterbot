@@ -1,0 +1,301 @@
+# API Configuration
+# Comprehensive settings for API routes, middleware, and services
+
+api:
+  # Base configuration
+  name: ${API_NAME:-FantDev Trading API}
+  version: ${API_VERSION:-2.1.0}
+  basePath: ${API_BASE_PATH:-/api}
+  
+  # Server settings
+  server:
+    host: ${API_HOST:-localhost}
+    port: ${API_PORT:-3001}
+    workers: ${API_WORKERS:-4}
+    timeout: ${API_TIMEOUT:-30000}
+    bodyLimit: ${API_BODY_LIMIT:-10mb}
+    
+  # Route configuration
+  routes:
+    # Public routes (no auth required)
+    public:
+      - path: /health
+        methods: [GET]
+        rateLimit: 
+          window: 60000
+          max: 60
+      - path: /status
+        methods: [GET]
+        rateLimit:
+          window: 60000
+          max: 60
+      - path: /api/auth/login
+        methods: [POST]
+        rateLimit:
+          window: 60000
+          max: 10
+      - path: /api/auth/register
+        methods: [POST]
+        rateLimit:
+          window: 3600000
+          max: 5
+      - path: /api/auth/refresh
+        methods: [POST]
+        rateLimit:
+          window: 60000
+          max: 20
+    
+    # Protected routes (auth required)
+    protected:
+      - path: /api/users/*
+        methods: [GET, POST, PUT, DELETE]
+        roles: [admin, user]
+        features: [userManagement]
+      - path: /api/customers/*
+        methods: [GET, POST, PUT, DELETE]
+        roles: [admin]
+        features: [customerManagement]
+      - path: /api/transactions/*
+        methods: [GET, POST]
+        roles: [admin, customer]
+        features: [transactions]
+      - path: /api/reports/*
+        methods: [GET]
+        roles: [admin]
+        features: [reporting]
+      - path: /api/analytics/*
+        methods: [GET]
+        roles: [admin, customer]
+        features: [analytics]
+    
+    # Admin-only routes
+    admin:
+      - path: /api/admin/*
+        methods: [ALL]
+        roles: [admin]
+        features: [adminPanel]
+      - path: /api/config/*
+        methods: [GET, POST]
+        roles: [admin]
+        features: [configManagement]
+      - path: /api/fire22/*
+        methods: [ALL]
+        roles: [admin]
+        features: [fire22Dashboard]
+  
+  # Middleware configuration
+  middleware:
+    # CORS settings
+    cors:
+      enabled: ${CORS_ENABLED:-true}
+      origins: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:8080}
+      methods: [GET, POST, PUT, DELETE, OPTIONS]
+      allowedHeaders: [Content-Type, Authorization, X-Request-ID]
+      exposedHeaders: [X-Total-Count, X-Page-Count]
+      credentials: true
+      maxAge: 86400
+    
+    # Rate limiting
+    rateLimit:
+      enabled: ${RATE_LIMIT_ENABLED:-true}
+      window: ${RATE_LIMIT_WINDOW:-60000}
+      max: ${RATE_LIMIT_MAX:-100}
+      message: Too many requests, please try again later
+      standardHeaders: true
+      legacyHeaders: false
+      store: ${RATE_LIMIT_STORE:-memory} # memory, redis
+      
+    # Authentication
+    auth:
+      enabled: true
+      type: jwt # jwt, session, oauth
+      jwt:
+        secret: ${JWT_SECRET:?JWT secret is required}
+        expiresIn: ${JWT_EXPIRES_IN:-1d}
+        refreshExpiresIn: ${JWT_REFRESH_EXPIRES_IN:-7d}
+        algorithm: ${JWT_ALGORITHM:-HS256}
+        issuer: ${JWT_ISSUER:-fantdev-api}
+        audience: ${JWT_AUDIENCE:-fantdev-users}
+      session:
+        secret: ${SESSION_SECRET}
+        maxAge: 86400000
+        secure: ${SESSION_SECURE:-false}
+        httpOnly: true
+        sameSite: strict
+      oauth:
+        providers:
+          google:
+            enabled: ${OAUTH_GOOGLE_ENABLED:-false}
+            clientId: ${OAUTH_GOOGLE_CLIENT_ID}
+            clientSecret: ${OAUTH_GOOGLE_CLIENT_SECRET}
+          github:
+            enabled: ${OAUTH_GITHUB_ENABLED:-false}
+            clientId: ${OAUTH_GITHUB_CLIENT_ID}
+            clientSecret: ${OAUTH_GITHUB_CLIENT_SECRET}
+    
+    # Request validation
+    validation:
+      enabled: true
+      strict: ${VALIDATION_STRICT:-false}
+      maxParamLength: 100
+      maxBodySize: 10485760 # 10MB
+      
+    # Compression
+    compression:
+      enabled: ${COMPRESSION_ENABLED:-true}
+      threshold: 1024
+      level: 6
+      
+    # Security headers
+    security:
+      enabled: true
+      helmet:
+        contentSecurityPolicy: false
+        crossOriginEmbedderPolicy: false
+      headers:
+        X-Frame-Options: DENY
+        X-Content-Type-Options: nosniff
+        X-XSS-Protection: 1; mode=block
+        Strict-Transport-Security: max-age=31536000; includeSubDomains
+        X-Powered-By: false
+    
+    # Logging
+    logging:
+      enabled: true
+      level: ${LOG_LEVEL:-info}
+      format: ${LOG_FORMAT:-json}
+      requestLogging: true
+      responseLogging: ${LOG_RESPONSES:-false}
+      errorLogging: true
+      skipPaths:
+        - /health
+        - /metrics
+        - /favicon.ico
+    
+    # Error handling
+    errorHandling:
+      enabled: true
+      exposeStack: ${EXPOSE_STACK:-false}
+      exposeDetails: ${EXPOSE_ERROR_DETAILS:-false}
+      fallbackMessage: An error occurred processing your request
+      
+  # API Documentation
+  documentation:
+    enabled: ${API_DOCS_ENABLED:-true}
+    path: /api/docs
+    title: FantDev Trading API
+    version: 2.1.0
+    description: Comprehensive API for trading platform management
+    
+  # Metrics and monitoring
+  metrics:
+    enabled: ${METRICS_ENABLED:-true}
+    path: /metrics
+    collectDefault: true
+    
+  # Health checks
+  health:
+    enabled: true
+    path: /health
+    timeout: 5000
+    checks:
+      - name: database
+        critical: true
+      - name: redis
+        critical: false
+      - name: telegram
+        critical: true
+      
+  # Feature flags for API
+  features:
+    v2Endpoints: ${FEATURE_V2_ENDPOINTS:-false}
+    graphql: ${FEATURE_GRAPHQL:-false}
+    websocket: ${FEATURE_WEBSOCKET:-true}
+    streaming: ${FEATURE_STREAMING:-false}
+    batchRequests: ${FEATURE_BATCH_REQUESTS:-false}
+    
+  # Response formatting
+  response:
+    format: json # json, xml
+    pretty: ${RESPONSE_PRETTY:-false}
+    envelope: true
+    successKey: success
+    dataKey: data
+    errorKey: error
+    metaKey: meta
+    
+  # Pagination defaults
+  pagination:
+    defaultLimit: 20
+    maxLimit: 100
+    defaultPage: 1
+    
+  # Search configuration
+  search:
+    minLength: 2
+    maxLength: 100
+    fuzzy: true
+    
+  # Cache configuration
+  cache:
+    enabled: ${CACHE_ENABLED:-true}
+    ttl:
+      default: 300
+      health: 60
+      static: 3600
+      user: 600
+    headers:
+      public: [/api/public/*]
+      private: [/api/users/*, /api/customers/*]
+      noStore: [/api/auth/*, /api/admin/*]
+
+# Environment-specific overrides
+environments:
+  development:
+    api:
+      server:
+        workers: 1
+      middleware:
+        cors:
+          origins: '*'
+        auth:
+          jwt:
+            expiresIn: 7d
+        logging:
+          level: debug
+          responseLogging: true
+        errorHandling:
+          exposeStack: true
+          exposeDetails: true
+      features:
+        v2Endpoints: true
+        graphql: true
+      response:
+        pretty: true
+        
+  production:
+    api:
+      server:
+        workers: ${API_WORKERS:-8}
+      middleware:
+        cors:
+          origins: ${PRODUCTION_ORIGINS:?Production origins required}
+        rateLimit:
+          store: redis
+        auth:
+          jwt:
+            expiresIn: 1h
+            refreshExpiresIn: 7d
+        security:
+          headers:
+            Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+        logging:
+          level: error
+          responseLogging: false
+        errorHandling:
+          exposeStack: false
+          exposeDetails: false
+      cache:
+        ttl:
+          default: 600
+          static: 86400

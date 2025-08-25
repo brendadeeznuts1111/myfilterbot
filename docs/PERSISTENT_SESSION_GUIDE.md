@@ -3,7 +3,7 @@
 ## Overview
 Complete guide for staying signed in, accessing player info, fraud detection, and dashboard connectivity.
 
-## 🚀 Quick Start - Stay Signed In
+## Quick Start - Stay Signed In
 
 ### Method 1: Login with Remember Me (30 Days)
 ```
@@ -21,16 +21,16 @@ This creates a 30-day persistent session that:
 ```
 Creates a 24-hour session with same features but shorter duration.
 
-## 📱 Bot Commands for Persistent Access
+## Bot Commands for Persistent Access
 
-### **Authentication Commands**
+### Authentication Commands
 ```
 /login <customer_id> <password> [remember]  - Login with session
 /dashboard                                   - Access dashboard (if logged in)
 /logout                                      - End session and revoke access
 ```
 
-### **Information Commands** (Requires Login)
+### Information Commands (Requires Login)
 ```
 /history [days]     - Get player transaction history (default 30 days)
 /fraud <customer_id> - Check fraud risk score (admin only)
@@ -38,9 +38,9 @@ Creates a 24-hour session with same features but shorter duration.
 /account            - Full account management
 ```
 
-## 🌐 Dashboard Integration
+## Dashboard Integration
 
-### **After Login, You Get:**
+### After Login, You Get:
 
 1. **Dashboard URL with Auth Token**
    ```
@@ -60,9 +60,9 @@ Creates a 24-hour session with same features but shorter duration.
    - Click "🌐 Open Dashboard" button in Telegram
    - Opens authenticated dashboard instantly
 
-## 📊 Player Information Access
+## Player Information Access
 
-### **Get Complete History**
+### Get Complete History
 ```
 /history 30
 
@@ -88,7 +88,7 @@ Last Active: 2025-08-23
 ...
 ```
 
-### **Access from Dashboard**
+### Access from Dashboard
 Once logged in, the dashboard shows:
 - Real-time balance updates
 - Complete transaction history
@@ -96,9 +96,9 @@ Once logged in, the dashboard shows:
 - Risk indicators
 - Activity timeline
 
-## 🚨 Fraud Detection & Monitoring
+## Fraud Detection & Monitoring
 
-### **Automatic Fraud Checks**
+### Automatic Fraud Checks
 The system monitors for:
 - Rapid login attempts (< 1 minute apart)
 - Multiple IP addresses (> 3 different IPs)
@@ -107,7 +107,7 @@ The system monitors for:
 - High withdrawal frequency
 - Declining balance with losses
 
-### **Check Fraud Risk** (Admin)
+### Check Fraud Risk (Admin)
 ```
 /fraud BB1042
 
@@ -132,9 +132,9 @@ Recommendations:
 • Monitor account closely
 ```
 
-## 🔄 Session Persistence Features
+## Session Persistence Features
 
-### **What Persists Across Sessions:**
+### What Persists Across Sessions:
 - ✅ Login state (no re-authentication needed)
 - ✅ Customer ID and permissions
 - ✅ Dashboard access token
@@ -142,14 +142,14 @@ Recommendations:
 - ✅ Risk score calculations
 - ✅ Activity timestamps
 
-### **Session Storage:**
+### Session Storage:
 - **Redis** (if available): Enterprise-grade persistence
 - **In-Memory**: Fallback for development
 - **JWT Tokens**: Secure, signed, time-limited
 
-## 🔗 Connect Everything Together
+## Connect Everything Together
 
-### **Full Integration Flow:**
+### Full Integration Flow:
 
 1. **Customer Logs In**
    ```
@@ -182,37 +182,37 @@ Recommendations:
    - Risk indicators
    - Export options
 
-## 🛡️ Security Features
+## Security Features
 
-### **Session Security:**
+### Session Security:
 - JWT tokens with expiration
 - Session timeout (24h or 30d)
 - IP tracking for fraud detection
 - Activity monitoring
 - One-click logout
 
-### **Fraud Prevention:**
+### Fraud Prevention:
 - Login pattern analysis
 - Transaction velocity checks
 - Amount anomaly detection
 - Time-based risk scoring
 - Admin alerts for high risk
 
-## 📱 Mobile & Desktop Access
+## Mobile & Desktop Access
 
-### **Telegram Bot** (Mobile Primary)
+### Telegram Bot (Mobile Primary)
 - Quick commands
 - Push notifications
 - One-tap dashboard access
 - Session persistence
 
-### **Web Dashboard** (Desktop Primary)
+### Web Dashboard (Desktop Primary)
 - Full analytics
 - Advanced charts
 - Bulk operations
 - Export capabilities
 
-### **API Access** (Programmatic)
+### API Access (Programmatic)
 ```javascript
 // Use dashboard_token for API calls
 fetch('https://fantasy402.com/api/player/history', {
@@ -222,16 +222,16 @@ fetch('https://fantasy402.com/api/player/history', {
 })
 ```
 
-## 🔧 Configuration
+## Configuration
 
-### **Session Timeouts**
+### Session Timeouts
 ```python
 # In session_manager.py
 session_timeout = 86400  # 24 hours
 remember_me_timeout = 2592000  # 30 days
 ```
 
-### **Fraud Thresholds**
+### Fraud Thresholds
 ```python
 # Risk scoring
 rapid_login_threshold = 60  # seconds
@@ -240,25 +240,25 @@ max_failed_attempts = 5
 high_risk_score = 50
 ```
 
-## 📝 Implementation Status
+## Implementation Status
 
-### ✅ **Completed:**
-- Session management system
-- JWT token generation
-- Dashboard URL generation
-- Fraud detection engine
-- Player history tracking
-- Login/logout commands
-- Dashboard integration
-- History retrieval
+### Completed:
+- [x] Session management system
+- [x] JWT token generation
+- [x] Dashboard URL generation
+- [x] Fraud detection engine
+- [x] Player history tracking
+- [x] Login/logout commands
+- [x] Dashboard integration
+- [x] History retrieval
 
-### 🔄 **Next Steps:**
-- Redis integration for production
-- WebSocket real-time updates
-- Advanced fraud ML models
-- Multi-factor authentication
+### Next Steps:
+- [ ] Redis integration for production
+- [ ] WebSocket real-time updates
+- [ ] Advanced fraud ML models
+- [ ] Multi-factor authentication
 
-## 🚀 Getting Started
+## Getting Started
 
 1. **Login to bot:**
    ```

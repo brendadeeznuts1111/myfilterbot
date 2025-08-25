@@ -40,14 +40,16 @@ class ChatTracker:
     Tracks ALL chats the bot is part of and creates shortlinks
     Uses SQLite for durable storage
     """
+    db_path: str
+    base_shortlink_url: Any
     
-    def __init__(self, db_path: str = "chat_tracker.db"):
+    def __init__(self, db_path: str = "chat_tracker.db") -> None:
         self.db_path = db_path
         self.base_shortlink_url = "t.me/fantdev_bot"
         self._init_database()
         self._init_cache()
         
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize SQLite database for durable storage"""
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
@@ -107,13 +109,13 @@ class ChatTracker:
         self.conn.commit()
         logger.info(f"Chat tracker database initialized at {self.db_path}")
     
-    def _init_cache(self):
+    def _init_cache(self) -> None:
         """Initialize in-memory cache for fast access"""
         self.chat_cache = {}
         self.shortlink_cache = {}
         self._load_cache_from_db()
     
-    def _load_cache_from_db(self):
+    def _load_cache_from_db(self) -> None:
         """Load active chats into cache"""
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM chats WHERE is_active = 1")
@@ -265,7 +267,7 @@ class ChatTracker:
             logger.error(f"Error updating chat activity {chat_id}: {e}")
             return None
     
-    def log_message(self, chat_id: int, message_id: int, user_id: int,
+    def log_message(self, chat_id: int, message_id: int, user_id -> str: int,
                    username: str = None, message_text: str = None,
                    message_type: str = "text"):
         """Log a message from a chat for activity tracking"""
@@ -412,7 +414,7 @@ class ChatTracker:
             'shortlinks_created': len(self.shortlink_cache)
         }
     
-    def mark_chat_inactive(self, chat_id: int):
+    def mark_chat_inactive(self, chat_id: int) -> None:
         """Mark a chat as inactive (bot removed or blocked)"""
         try:
             cursor = self.conn.cursor()
@@ -515,7 +517,7 @@ class ChatTracker:
         
         return report
     
-    def export_to_json(self, filepath: str = "chat_export.json"):
+    def export_to_json(self, filepath: str = "chat_export.json") -> Any:
         """Export all chat data to JSON"""
         chats = self.get_all_chats(active_only=False)
         stats = self.get_chat_statistics()

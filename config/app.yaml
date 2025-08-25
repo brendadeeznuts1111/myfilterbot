@@ -1,0 +1,127 @@
+# Main application configuration
+app:
+  name: fantdev-trading-bot
+  version: 2.1.0
+  description: Enterprise-grade Telegram trading platform with web portals, real-time monitoring, and automated reporting
+  environment: ${NODE_ENV:-development}
+  
+# Server configuration
+server:
+  bot:
+    host: ${BOT_HOST:-localhost}
+    port: ${BOT_PORT:-8080}
+    workers: ${BOT_WORKERS:-4}
+  
+  admin:
+    host: ${ADMIN_HOST:-localhost}
+    port: ${ADMIN_PORT:-3000}
+    workers: ${ADMIN_WORKERS:-2}
+  
+  api:
+    host: ${API_HOST:-localhost}
+    port: ${API_PORT:-3001}
+    rateLimit:
+      windowMs: 60000
+      maxRequests: 100
+  
+  websocket:
+    port: ${WS_PORT:-3002}
+    compression: true
+    maxConnections: 1000
+
+# Database configuration
+database:
+  primary:
+    type: postgres
+    host: ${DB_HOST:-localhost}
+    port: ${DB_PORT:-5432}
+    database: ${DB_NAME:-fantdev_trading}
+    username: ${DB_USER:-postgres}
+    password: ${DB_PASS}
+    pool:
+      min: 2
+      max: 10
+      idleTimeout: 30000
+  
+  cache:
+    type: redis
+    host: ${REDIS_HOST:-localhost}
+    port: ${REDIS_PORT:-6379}
+    password: ${REDIS_PASS}
+    db: 0
+    keyPrefix: fantdev:
+  
+  analytics:
+    type: clickhouse
+    host: ${ANALYTICS_HOST:-localhost}
+    port: 8123
+    database: analytics
+
+# Security configuration
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiresIn: 7d
+    refreshExpiresIn: 30d
+  
+  encryption:
+    algorithm: aes-256-gcm
+    key: ${ENCRYPTION_KEY}
+  
+  cors:
+    origins:
+      - http://localhost:3000
+      - http://localhost:3001
+      - https://fantdev.com
+    credentials: true
+  
+  rateLimit:
+    enabled: true
+    window: 60000
+    max: 100
+
+# Telegram configuration
+telegram:
+  botToken: ${TELEGRAM_BOT_TOKEN}
+  webhookUrl: ${TELEGRAM_WEBHOOK_URL}
+  apiId: ${TELEGRAM_API_ID}
+  apiHash: ${TELEGRAM_API_HASH}
+  adminChatId: ${TELEGRAM_ADMIN_CHAT_ID}
+
+# Cloud services
+cloudflare:
+  accountId: ${CLOUDFLARE_ACCOUNT_ID}
+  apiToken: ${CLOUDFLARE_API_TOKEN}
+  workerName: ${CLOUDFLARE_WORKER_NAME:-fantdev-worker}
+  kvNamespace: ${CLOUDFLARE_KV_NAMESPACE}
+
+firebase:
+  projectId: ${FIREBASE_PROJECT_ID}
+  apiKey: ${FIREBASE_API_KEY}
+  authDomain: ${FIREBASE_AUTH_DOMAIN}
+  storageBucket: ${FIREBASE_STORAGE_BUCKET}
+  messagingSenderId: ${FIREBASE_MESSAGING_SENDER_ID}
+  appId: ${FIREBASE_APP_ID}
+
+# Monitoring
+monitoring:
+  sentry:
+    dsn: ${SENTRY_DSN}
+    environment: ${NODE_ENV:-development}
+    tracesSampleRate: 0.1
+  
+  prometheus:
+    enabled: ${PROMETHEUS_ENABLED:-false}
+    port: ${PROMETHEUS_PORT:-9090}
+  
+  logging:
+    level: ${LOG_LEVEL:-info}
+    format: json
+    destination: ${LOG_DESTINATION:-stdout}
+
+# Paths
+paths:
+  uploads: ${UPLOAD_PATH:-./uploads}
+  temp: ${TEMP_PATH:-./temp}
+  logs: ${LOG_PATH:-./logs}
+  static: ${STATIC_PATH:-./public}

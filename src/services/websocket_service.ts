@@ -1,6 +1,7 @@
 /**
  * Enhanced WebSocket Service with Stream Optimization
  * Leverages Bun v1.2.21+ ReadableStream features for high-performance real-time communication
+ * Now with YAML configuration support
  */
 
 import { Server as SocketIOServer } from 'socket.io';
@@ -10,6 +11,8 @@ import {
   StreamNotification,
 } from './enhanced_notification_service';
 import type { Server as HTTPServer } from 'http';
+import { server as serverConfig, security } from '../../config/app.yaml';
+import { yamlConfigService, checkFeature } from './yaml-config-service';
 
 export interface WebSocketClient {
   id: string;
@@ -35,6 +38,9 @@ export class EnhancedWebSocketService {
   private io: SocketIOServer | null = null;
   private clients = new Map<string, WebSocketClient>();
   private messageQueue = new Map<string, StreamMessage[]>();
+  private wsConfig = serverConfig.websocket;
+  private corsConfig = security.cors;
+  private compressionEnabled = false;
   private performanceMetrics = {
     messagesDelivered: 0,
     streamOptimizedMessages: 0,
@@ -50,15 +56,19 @@ export class EnhancedWebSocketService {
   }
 
   /**
-   * Initialize WebSocket server with stream optimizations
+   * Initialize WebSocket server with stream optimizations and YAML config
    */
-  private initializeWebSocket() {
+  private async initializeWebSocket() {
+    // Check if WebSocket compression feature is enabled
+    this.compressionEnabled = await checkFeature('webSocketCompression');
+    
     this.io = new SocketIOServer(this.httpServer, {
       cors: {
-        origin: '*',
+        origin: this.corsConfig?.origins || '*',
         methods: ['GET', 'POST'],
+        credentials: this.corsConfig?.credentials || true,
       },
-      compression: true,
+      compression: this.compressionEnabled && this.wsConfig?.compression !== false,
       pingTimeout: 60000,
       pingInterval: 25000,
       maxHttpBufferSize: 1e6, // 1MB

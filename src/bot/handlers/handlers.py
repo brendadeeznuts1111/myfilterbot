@@ -1,7 +1,7 @@
 """
 Bot command and message handlers
 """
-from typing import List, Optional
+from typing import List, Optional, Any
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
@@ -10,31 +10,31 @@ import logging
 import re
 import asyncio
 
-from config import config, messages, patterns, keywords
-from database import db, Customer, Transaction
-from utils.utils import detect_transaction, format_currency, calculate_percentage
+from src.config import config, messages, patterns, keywords
+from src.portal.db.repositories import db
+from src.portal.db.models import Customer, Transaction
+from src.utils.utils import detect_transaction, format_currency, calculate_percentage
 from services.error_handler import error_handler_decorator, ErrorCategory, ErrorSeverity
 from services.portal_integration import notify_customer_activity, notify_balance_change, process_group_message, is_portal_enabled
 from services.chat_manager import chat_manager
 from services.shortlink_service import shortlink_service
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from SECURITY_FIX_duplicate_passwords import SecureRegistrationSystem
+from bot.security_password_manager import SecureRegistrationSystem
 
 logger = logging.getLogger(__name__)
 
 class BotHandlers:
     """Main bot handlers class"""
+    pending_registrations: Any
+    secure_registration: Any
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.pending_registrations = {}
         self.secure_registration = SecureRegistrationSystem()
     
     # Command Handlers
     @error_handler_decorator(ErrorCategory.TELEGRAM, ErrorSeverity.LOW)
-    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /start command"""
         try:
             keyboard = [
@@ -59,7 +59,7 @@ class BotHandlers:
             await self._send_error(update)
     
     @error_handler_decorator(ErrorCategory.DATABASE, ErrorSeverity.MEDIUM)
-    async def account_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def account_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /account command - unified account management"""
         try:
             user_id = update.effective_user.id
@@ -103,7 +103,7 @@ Select an option below:
             await self._send_error(update)
     
     @error_handler_decorator(ErrorCategory.DATABASE, ErrorSeverity.MEDIUM)
-    async def balance_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def balance_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /balance command - quick balance check"""
         try:
             user_id = update.effective_user.id
@@ -148,7 +148,7 @@ Select an option below:
             await self._send_error(update)
     
     @error_handler_decorator(ErrorCategory.VALIDATION, ErrorSeverity.HIGH)
-    async def register_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def register_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /register command with enhanced security"""
         try:
             if len(context.args) != 2:
@@ -248,7 +248,7 @@ Select an option below:
             )
     
     @error_handler_decorator(ErrorCategory.DATABASE, ErrorSeverity.MEDIUM)
-    async def admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /admin command - admin dashboard"""
         try:
             # Check if user is admin (remove for testing)
@@ -306,7 +306,7 @@ Select an option below:
             await self._send_error(update)
     
     @error_handler_decorator(ErrorCategory.VALIDATION, ErrorSeverity.HIGH)
-    async def verify_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def verify_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /verify command for admin verification of duplicate password registrations"""
         try:
             # Check if user is admin
@@ -373,7 +373,7 @@ Select an option below:
     
     # Chat Member Handler
     @error_handler_decorator(ErrorCategory.TELEGRAM, ErrorSeverity.MEDIUM)
-    async def handle_my_chat_member(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_my_chat_member(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle bot being added/removed from chats"""
         try:
             await chat_manager.handle_my_chat_member(update)
@@ -428,7 +428,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
     
     # Message Handler
     @error_handler_decorator(ErrorCategory.TRANSACTION, ErrorSeverity.HIGH)
-    async def process_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def process_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
         """Process incoming messages for customer activity"""
         try:
             message = update.message
@@ -483,7 +483,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
     
     # Callback Query Handler
     @error_handler_decorator(ErrorCategory.TELEGRAM, ErrorSeverity.MEDIUM)
-    async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle inline button callbacks"""
         try:
             query = update.callback_query
@@ -552,7 +552,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
         # Forward to admin
         await self._forward_to_admin(message, customers, tx_info, context)
     
-    async def _forward_to_admin(self, message, customers, tx_info, context):
+    async def _forward_to_admin(self, message, customers, tx_info, context) -> None:
         """Forward relevant message to admin"""
         forward_text = "🔔 **Activity Detected**\n━━━━━━━━━━━━━━━\n\n"
         
@@ -592,7 +592,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             reply_markup=reply_markup
         )
     
-    async def _send_error(self, update: Update):
+    async def _send_error(self, update: Update) -> None:
         """Send generic error message"""
         await update.message.reply_text(
             "❌ An error occurred. Please try again later.\n"
@@ -600,7 +600,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             parse_mode=ParseMode.MARKDOWN
         )
     
-    async def _prompt_registration(self, update: Update):
+    async def _prompt_registration(self, update: Update) -> None:
         """Prompt user to register"""
         keyboard = [[
             InlineKeyboardButton("📝 How to Register", callback_data="help_register")
@@ -613,7 +613,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             reply_markup=reply_markup
         )
     
-    async def _handle_menu_callback(self, query, data):
+    async def _handle_menu_callback(self, query, data) -> None:
         """Handle main menu callbacks"""
         if data == "menu_register":
             await query.edit_message_text(
@@ -637,12 +637,12 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             else:
                 await query.edit_message_text(messages.ERROR_NOT_REGISTERED, parse_mode=ParseMode.MARKDOWN)
     
-    async def _handle_account_callback(self, query, data):
+    async def _handle_account_callback(self, query, data) -> None:
         """Handle account menu callbacks"""
         # Implementation for account callbacks
         pass
     
-    async def _handle_admin_callback(self, query, data):
+    async def _handle_admin_callback(self, query, data) -> None:
         """Handle admin menu callbacks"""
         if data == "admin_refresh":
             # Refresh dashboard
@@ -654,7 +654,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
                 parse_mode=ParseMode.MARKDOWN
             )
     
-    async def _handle_help_callback(self, query, data):
+    async def _handle_help_callback(self, query, data) -> None:
         """Handle help callbacks"""
         if data == "help_register":
             await query.edit_message_text(
@@ -667,7 +667,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
                 parse_mode=ParseMode.MARKDOWN
             )
     
-    async def _handle_verification_callback(self, query, data):
+    async def _handle_verification_callback(self, query, data) -> None:
         """Handle verification button callbacks"""
         try:
             # Parse callback data: verify_approve_TOKEN or verify_deny_TOKEN
@@ -721,7 +721,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
                 parse_mode=ParseMode.MARKDOWN
             )
     
-    async def _handle_duplicate_password_registration(self, result, update, context):
+    async def _handle_duplicate_password_registration(self, result, update, context) -> None:
         """Handle duplicate password registration requiring admin verification"""
         try:
             duplicate_customers = result.get('duplicate_customers', [])
@@ -747,7 +747,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
         except Exception as e:
             logger.error(f"Error handling duplicate password registration: {e}")
     
-    async def _notify_admin_registration(self, result, user, context):
+    async def _notify_admin_registration(self, result, user, context) -> None:
         """Notify admin of successful registration"""
         try:
             admin_text = f"✅ **New Registration**\n\n"
@@ -765,7 +765,7 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
         except Exception as e:
             logger.error(f"Error notifying admin of registration: {e}")
     
-    async def _notify_admin_duplicate_password_risk(self, result, update, context):
+    async def _notify_admin_duplicate_password_risk(self, result, update, context) -> None:
         """Notify admin of duplicate password security risk"""
         try:
             user = update.effective_user

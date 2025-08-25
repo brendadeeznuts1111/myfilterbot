@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useAPI } from '../hooks/useAPI';
-import { useTheme } from '../hooks/useTheme';
-import { useDashboardData } from '../hooks/useEnhancedAPI';
-import { PerformanceKPI } from './analytics/PerformanceKPI';
-import { RecentActivity } from './analytics/RecentActivity';
-import { EquityCurveChart } from './analytics/EquityCurveChart';
 
 export function Dashboard() {
+
+import { EquityCurveChart } from './analytics/EquityCurveChart';
+import { PerformanceKPI } from './analytics/PerformanceKPI';
+import { RecentActivity } from './analytics/RecentActivity';
+import { useAPI } from '../hooks/useAPI';
+import { useAuth } from '../hooks/useAuth';
+import { useDashboardData } from '../hooks/useEnhancedAPI';
+import { useTheme } from '../hooks/useTheme';
+
   const { user, isAuthenticated } = useAuth();
   const { theme } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState('7d');

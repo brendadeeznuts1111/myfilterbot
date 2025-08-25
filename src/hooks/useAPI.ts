@@ -1,5 +1,8 @@
 /**
- * High-Performance API Hook
+ * @fileoverview High-Performance API Hook for Fantdev Trading Bot
+ * @version 2.1.0
+ * @author Fantdev Development Team
+ *
  * Optimized for Bun's sub-millisecond response times
  * Features SWR-like caching with real-time updates
  * Includes rate limiting and circuit breaker protection
@@ -8,21 +11,40 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiRateLimiter } from '../utils/rateLimiter';
 
+/**
+ * Configuration options for API requests
+ */
 interface APIConfig {
+  /** Base URL for API requests (defaults to localhost:3003) */
   baseURL?: string;
+  /** Customer ID for authenticated requests */
   customerId?: string;
+  /** Admin ID for admin-level requests */
   adminId?: string;
+  /** Admin permissions array */
   adminPermissions?: string[];
+  /** Refresh interval in milliseconds (default: 30000) */
   refreshInterval?: number;
+  /** Number of retry attempts (default: 2) */
   retryCount?: number;
+  /** Enable response caching (default: true) */
   cache?: boolean;
 }
 
+/**
+ * API response structure returned by useAPI hook
+ * @template T - Type of the response data
+ */
 interface APIResponse<T> {
+  /** Response data or null if not loaded/error */
   data: T | null;
+  /** Error message or null if no error */
   error: string | null;
+  /** Loading state indicator */
   loading: boolean;
+  /** Function to manually refetch data */
   refetch: () => Promise<void>;
+  /** Timestamp of last successful update */
   lastUpdated: Date | null;
 }
 
@@ -38,21 +60,60 @@ const apiCache = new Map<
 
 // Global config
 let globalConfig: APIConfig = {
-        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003',
   refreshInterval: 30000, // 30 seconds - reduced from 5s to prevent flooding
   retryCount: 2, // Reduced from 3 to prevent excessive retries
   cache: true,
 };
 
+/**
+ * Configure global API settings
+ * @param config - Global configuration options
+ * @example
+ * ```typescript
+ * configureAPI({
+ *   baseURL: 'https://api.fantdev.com',
+ *   refreshInterval: 60000,
+ *   retryCount: 3
+ * });
+ * ```
+ */
 export function configureAPI(config: APIConfig) {
   globalConfig = { ...globalConfig, ...config };
 }
 
+/**
+ * High-performance React hook for API data fetching with caching and real-time updates
+ *
+ * @template T - Type of the expected response data
+ * @param endpoint - API endpoint path (e.g., '/customers', '/stats')
+ * @param options - Configuration options for the request
+ * @returns APIResponse object with data, loading state, error, and refetch function
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const { data, loading, error } = useAPI<Customer[]>('/customers');
+ *
+ * // With options
+ * const { data, refetch } = useAPI<CustomerStats>('/customer/BB1042', {
+ *   customerId: 'BB1042',
+ *   refreshInterval: 10000,
+ *   cache: true
+ * });
+ *
+ * // Manual refetch
+ * const handleRefresh = () => refetch();
+ * ```
+ */
 export function useAPI<T = any>(
   endpoint: string,
   options: APIConfig & {
+    /** Dependencies array - refetch when these change */
     dependencies?: any[];
+    /** Whether to fetch immediately on mount (default: true) */
     immediate?: boolean;
+    /** Cache time-to-live in milliseconds (default: 30000) */
     cacheTTL?: number;
   } = {}
 ): APIResponse<T> {
@@ -105,7 +166,7 @@ export function useAPI<T = any>(
       setError(null);
 
       try {
-        const headers: HeadersInit = {
+        const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
 
@@ -350,7 +411,9 @@ export function clearAPICache(pattern?: string) {
 export function preloadAPI(endpoint: string, options: APIConfig = {}) {
   // Pre-fetch data to warm the cache
   const config = { ...globalConfig, ...options };
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
 
   if (config.customerId) headers['X-Customer-ID'] = config.customerId;
   if (config.adminId) headers['X-Admin-ID'] = config.adminId;

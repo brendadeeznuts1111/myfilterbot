@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useAPI } from '../hooks/useAPI';
 
 export function CustomerPortal() {
+
+import { useAPI } from '../hooks/useAPI';
+import { useAuth } from '../hooks/useAuth';
+
   const { user, isAuthenticated, logout } = useAuth();
   const [selectedTab, setSelectedTab] = useState('dashboard');
 

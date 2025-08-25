@@ -1,4 +1,4 @@
-# 📦 Migration Guide - v3.0.0 Reorganization & Improvements
+# 📦 Migration Guide - v2.1.0 Reorganization & Improvements
 
 This guide helps you migrate from the old structure to the new optimized organization with comprehensive improvements.
 

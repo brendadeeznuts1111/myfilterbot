@@ -1,0 +1,167 @@
+# Feature flags configuration
+features:
+  # Dashboard features
+  newDashboard:
+    enabled: true
+    rolloutPercentage: 100
+    description: New analytics dashboard with enhanced visualizations
+    allowedUsers:
+      - admin@fantdev.com
+      - beta@fantdev.com
+    config:
+      charts: true
+      realTimeUpdates: true
+      exportData: true
+
+  # API features
+  v2Api:
+    enabled: false
+    rolloutPercentage: 0
+    description: Version 2 API endpoints
+    endpoints:
+      - /api/v2/customers
+      - /api/v2/transactions
+      - /api/v2/analytics
+    rateLimits:
+      windowMs: 60000
+      maxRequests: 200
+
+  # Trading features
+  advancedTrading:
+    enabled: true
+    rolloutPercentage: 50
+    description: Advanced trading algorithms and strategies
+    strategies:
+      - momentum
+      - meanReversion
+      - arbitrage
+    config:
+      maxPositions: 10
+      riskLimit: 0.02
+      stopLoss: 0.05
+
+  # UI/UX features
+  darkMode:
+    enabled: true
+    rolloutPercentage: 100
+    description: Dark mode theme support
+    default: auto # auto, light, dark
+    config:
+      storageKey: theme-preference
+      systemDetection: true
+
+  # Notification features
+  pushNotifications:
+    enabled: true
+    rolloutPercentage: 75
+    description: Browser push notifications
+    channels:
+      - trades
+      - alerts
+      - system
+    config:
+      requestPermissionOnLoad: false
+      fallbackToEmail: true
+
+  # Analytics features
+  enhancedAnalytics:
+    enabled: true
+    rolloutPercentage: 100
+    description: Enhanced analytics and reporting
+    metrics:
+      - profitLoss
+      - winRate
+      - sharpeRatio
+      - maxDrawdown
+    exports:
+      - csv
+      - excel
+      - pdf
+
+  # Security features
+  twoFactorAuth:
+    enabled: true
+    rolloutPercentage: 100
+    description: Two-factor authentication
+    methods:
+      - totp
+      - sms
+      - email
+    config:
+      enforceForAdmins: true
+      gracePeriodDays: 7
+
+  # Performance features
+  webSocketCompression:
+    enabled: true
+    rolloutPercentage: 100
+    description: WebSocket message compression
+    config:
+      algorithm: gzip
+      threshold: 1024
+      level: 6
+
+  # Experimental features
+  aiPredictions:
+    enabled: false
+    rolloutPercentage: 0
+    description: AI-powered price predictions
+    models:
+      - lstm
+      - transformer
+    config:
+      confidence_threshold: 0.7
+      max_predictions: 10
+
+  # Mobile features
+  mobileApp:
+    enabled: true
+    rolloutPercentage: 100
+    description: Mobile application support
+    platforms:
+      - ios
+      - android
+    config:
+      minVersion: 1.0.0
+      forceUpdate: false
+
+# Feature dependencies
+dependencies:
+  v2Api:
+    requires:
+      - enhancedAnalytics
+  
+  aiPredictions:
+    requires:
+      - advancedTrading
+      - enhancedAnalytics
+  
+  pushNotifications:
+    requires:
+      - webSocketCompression
+
+# A/B testing configurations
+abTests:
+  dashboardLayout:
+    enabled: true
+    variants:
+      - name: control
+        weight: 50
+        config:
+          layout: classic
+      - name: treatment
+        weight: 50
+        config:
+          layout: modern
+  
+  tradingAlgorithm:
+    enabled: false
+    variants:
+      - name: v1
+        weight: 70
+        config:
+          algorithm: conservative
+      - name: v2
+        weight: 30
+        config:
+          algorithm: aggressive

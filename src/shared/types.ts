@@ -1,27 +1,56 @@
-// Shared types for both bot and Cloudflare Worker
+/**
+ * @fileoverview Shared types for both bot and Cloudflare Worker
+ * @version 2.1.0
+ * @author Fantdev Development Team
+ */
 
+/**
+ * Customer data structure representing a trading bot user
+ */
 export interface Customer {
+  /** Unique customer identifier (e.g., "BB1042") */
   customer_id: string;
+  /** Customer password for authentication */
   password: string;
+  /** Current account balance in USD */
   balance: number;
+  /** Weekly profit/loss in USD */
   weekly_pnl: number;
+  /** Optional phone number */
   phone?: string;
+  /** Optional Telegram user ID */
   telegram_id?: number;
+  /** Optional Telegram username */
   telegram_username?: string;
+  /** Whether the customer account is active */
   active: boolean;
+  /** ISO timestamp of last activity */
   last_activity?: string;
+  /** Total amount deposited (USD) */
   total_deposits?: number;
+  /** Total amount withdrawn (USD) */
   total_withdrawals?: number;
 }
 
+/**
+ * Transaction record representing a customer financial activity
+ */
 export interface Transaction {
+  /** ISO timestamp when transaction occurred */
   timestamp: string;
+  /** Customer ID associated with transaction */
   customer_id: string;
+  /** Type of transaction */
   type: 'deposit' | 'withdrawal' | 'denied' | 'pending' | 'expired' | 'mention';
+  /** Transaction amount in USD (optional for mentions) */
   amount?: number;
+  /** Original message text that triggered transaction */
   message: string;
+  /** Username or ID of message sender */
   from_user: string;
+  /** Telegram chat ID where transaction was detected */
   chat_id: number;
+  /** Current status of the transaction */
   status: 'completed' | 'pending' | 'failed';
 }
 

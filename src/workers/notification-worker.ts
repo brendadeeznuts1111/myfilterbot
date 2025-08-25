@@ -592,7 +592,7 @@ class NotificationWorker {
     if (notifications.length === 0) return { delivered: 0 };
 
     const result = await fetchJSON(
-              `${process.env.PORTAL_SERVER_URL || 'http://localhost:5000'}/api/notifications/batch-deliver`,
+      `${process.env.PORTAL_SERVER_URL || 'http://localhost:5000'}/api/notifications/batch-deliver`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

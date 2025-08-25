@@ -15,14 +15,14 @@ if TYPE_CHECKING:
 
 from services.chat_tracker import chat_tracker
 from services.session_manager import session_manager
-from database import db
+from src.portal.db.repositories import db
 
 logger = logging.getLogger(__name__)
 
 class EnhancedChatHandlers:
     """Handles chat tracking and multi-group management"""
     
-    async def on_chat_join(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def on_chat_join(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Called when bot is added to a new chat/group
         Automatically registers the chat and creates shortlink
@@ -99,7 +99,7 @@ I'll automatically track:
         except Exception as e:
             logger.error(f"Error handling chat join: {e}")
     
-    async def on_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def on_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
         """
         Process all messages to track chat activity
         This runs for EVERY message in EVERY chat
@@ -142,7 +142,7 @@ I'll automatically track:
         except Exception as e:
             logger.error(f"Error processing message for chat tracking: {e}")
     
-    async def stats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def stats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Show statistics for current chat or all chats (admin)
         """
@@ -247,7 +247,7 @@ I'll automatically track:
                 parse_mode=ParseMode.MARKDOWN
             )
     
-    async def link_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def link_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Get shortlink for current chat"""
         try:
             chat = update.effective_chat
@@ -281,7 +281,7 @@ I'll automatically track:
         except Exception as e:
             logger.error(f"Error in link command: {e}")
     
-    async def chats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def chats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         List all chats the bot is in (admin only)
         """
@@ -347,7 +347,7 @@ I'll automatically track:
                 parse_mode=ParseMode.MARKDOWN
             )
     
-    async def broadcast_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def broadcast_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Broadcast message to all active chats (admin only)
         Usage: /broadcast <message>
@@ -403,7 +403,7 @@ I'll automatically track:
         except Exception as e:
             logger.error(f"Error in broadcast command: {e}")
     
-    async def handle_chat_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_chat_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle callbacks related to chat management"""
         try:
             query = update.callback_query
@@ -501,7 +501,7 @@ I'll automatically track:
                 parse_mode=ParseMode.MARKDOWN
             )
     
-    async def _notify_admins_new_chat(self, chat_info: "ChatInfo", context: ContextTypes.DEFAULT_TYPE):
+    async def _notify_admins_new_chat(self, chat_info: "ChatInfo", context: ContextTypes.DEFAULT_TYPE) -> None:
         """Notify all admin chats about a new chat being added"""
         try:
             admin_chats = chat_tracker.get_admin_chats()

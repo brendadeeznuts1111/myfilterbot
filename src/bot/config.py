@@ -33,7 +33,7 @@ class BotConfig:
     enable_analytics: bool = os.getenv("ENABLE_ANALYTICS", "true").lower() == "true"
     
     @classmethod
-    def from_env(cls):
+    def from_env(cls) -> Any:
         """Load configuration from environment variables"""
         return cls(
             token=os.getenv("BOT_TOKEN", cls.token),

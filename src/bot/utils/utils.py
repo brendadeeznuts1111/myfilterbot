@@ -290,8 +290,11 @@ def generate_report_filename(report_type: str = "report") -> str:
 
 class RateLimiter:
     """Simple rate limiter for preventing spam"""
+    max_calls: Any
+    period: Any
+    calls: Any
     
-    def __init__(self, max_calls: int = 10, period: int = 60):
+    def __init__(self, max_calls: int = 10, period: int = 60) -> None:
         self.max_calls = max_calls
         self.period = period  # seconds
         self.calls = {}

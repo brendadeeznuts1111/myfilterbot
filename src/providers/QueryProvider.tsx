@@ -32,21 +32,27 @@ const queryClient = new QueryClient({
   },
 });
 
-// Add performance monitoring to the QueryClient
-if (typeof window !== 'undefined') {
-  queryClient.getQueryCache().subscribe(event => {
-    if (event?.type === 'updated' && event.action?.type === 'success') {
-      const duration = event.query?.state?.dataUpdatedAt
-        ? Date.now() - event.query.state.dataUpdatedAt
-        : 0;
+// Declare static defines for dead code elimination
+declare const ENABLE_CONSOLE_LOGS: boolean;
+declare const ENABLE_DEV_TOOLS: boolean;
 
-      if (duration > 0 && duration < 1000) {
-        console.log(
-          `⚡ Query "${event.query.queryHash}" completed in ${duration}ms`
-        );
+// Add performance monitoring to the QueryClient (eliminated in production)
+if (typeof ENABLE_CONSOLE_LOGS !== 'undefined' ? ENABLE_CONSOLE_LOGS : true) {
+  if (typeof window !== 'undefined') {
+    queryClient.getQueryCache().subscribe(event => {
+      if (event?.type === 'updated' && event.action?.type === 'success') {
+        const duration = event.query?.state?.dataUpdatedAt
+          ? Date.now() - event.query.state.dataUpdatedAt
+          : 0;
+
+        if (duration > 0 && duration < 1000) {
+          console.log(
+            `⚡ Query "${event.query.queryHash}" completed in ${duration}ms`
+          );
+        }
       }
-    }
-  });
+    });
+  }
 }
 
 interface QueryProviderProps {
@@ -57,8 +63,10 @@ export function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* Only show devtools in development */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* Only show devtools in development - eliminated in production builds */}
+      {(typeof ENABLE_DEV_TOOLS !== 'undefined'
+        ? ENABLE_DEV_TOOLS
+        : process.env.NODE_ENV === 'development') && (
         <ReactQueryDevtools
           initialIsOpen={false}
           position='bottom-left'

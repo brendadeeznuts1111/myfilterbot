@@ -1,8 +1,8 @@
 # 🚀 Fantdev Trading Bot - Enterprise Trading Platform
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
-![Bun](https://img.shields.io/badge/bun-1.2.21+-orange)
+![Bun](https://img.shields.io/badge/bun-1.2.20+-orange)
 ![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue)
 ![React](https://img.shields.io/badge/react-19+-cyan)
 ![License](https://img.shields.io/badge/license-MIT-purple)
@@ -42,78 +42,71 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 ## 📦 Installation
 
 ### Prerequisites
-- Python 3.7+
-- Bun runtime 1.2.21+
-- Telegram Bot Token
-- Admin Chat ID
+
+- **Python 3.8+** - Core bot functionality
+- **Bun 1.2.20+** - TypeScript runtime and package management
+- **Telegram Bot Token** - From [@BotFather](https://t.me/botfather)
+- **Admin Chat ID** - Your Telegram chat ID for admin notifications
 
 ### Quick Start
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/fantdev/trading-bot.git
-cd trading-bot
+git clone https://github.com/brendadeeznuts1111/myfilterbot.git
+cd myfilterbot
 
 # 2. Copy environment configuration
-cp config/.env.example .env
-# Edit .env with your configuration
+cp config/env.example .env
 
-# 3. Install Python dependencies
-pip install -r config/requirements_portal_integration.txt
+# 3. Edit environment variables
+nano .env  # Add your BOT_TOKEN and ADMIN_CHAT_ID
 
-# 4. Install Bun dependencies
+# 4. Install dependencies
+pip install -r config/requirements_enhanced.txt
 bun install
 
 # 5. Start all services
 bun run dev
-
-# 6. Or start individual services
-bun run dev:bot       # Bot only
-bun run dev:server    # Admin server only
-bun run dev:web       # React dev server only
 ```
 
 ### Detailed Installation
 
-1. **Clone the repository**
-```bash
-git clone https://github.com/fantdev/myfilterbot.git
-cd myfilterbot
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/brendadeeznuts1111/myfilterbot.git
+   cd myfilterbot
+   ```
 
-2. **Set up environment variables**
-```bash
-# Copy the example environment file
-cp config/.env.example .env
+2. **Set up environment variables:**
+   ```bash
+   # Copy the example environment file
+   cp config/env.example .env
 
-# Edit with your actual values
-nano .env
-```
+   # Edit with your actual values
+   nano .env
+   ```
 
-3. **Install Python dependencies**
-```bash
-# Install python-dotenv for environment variable support
-pip install python-dotenv
+3. **Install Python dependencies:**
+   ```bash
+   # Install all required packages
+   pip install -r config/requirements_enhanced.txt
+   ```
 
-# Install all required packages
-pip install -r config/requirements_portal_integration.txt
-```
+4. **Install Bun dependencies:**
+   ```bash
+   bun install
+   ```
 
-4. **Install Bun dependencies**
-```bash
-bun install
-```
+5. **Start the services:**
+   ```bash
+   # Start everything (recommended for development)
+   bun run dev
 
-5. **Start the services**
-```bash
-# Start everything (recommended for development)
-bun run dev
-
-# Or start individual services:
-python3 src/bot/main.py                    # Main bot
-bun run src/server/admin/index.ts          # Admin server
-bun run src/dev-server.ts                  # React dev server
-```
+   # Or start individual services:
+   bun run dev:bot       # Bot only
+   bun run dev:server    # Admin server only
+   bun run dev:web       # React dev server only
+   ```
 
 ## 🏗️ System Architecture
 
@@ -146,28 +139,30 @@ bun run src/dev-server.ts                  # React dev server
 
 ```
 myfilterbot/
-├── src/
-│   ├── bot/                    # Python bot core
-│   │   ├── main.py            # Main bot entry point
-│   │   ├── handlers/          # Bot command handlers
-│   │   ├── services/          # Bot services
-│   │   └── utils/             # Bot utilities
-│   ├── server/                # TypeScript server code
-│   │   ├── admin/             # Admin server
-│   │   ├── api/               # API endpoints
-│   │   └── workers/           # Worker threads
-│   ├── web/                   # React frontend
-│   │   ├── components/        # 23 React components
-│   │   ├── hooks/             # React hooks
-│   │   └── contexts/          # React contexts
-│   └── shared/                # Shared types and utilities
-├── tests/                     # Comprehensive test suite
-│   ├── python/                # Python tests
-│   └── typescript/            # TypeScript tests
-├── config/                    # Configuration files
-├── public/                    # Static assets and portals
-├── docs/                      # Documentation
-└── scripts/                   # Utility scripts
+├── src/                       # Core source code
+│   ├── bot/                   # Python bot core
+│   │   ├── main.py           # Bot entry point
+│   │   ├── handlers/         # Command handlers
+│   │   └── services/         # Bot services
+│   ├── server/               # TypeScript server code
+│   │   ├── admin/            # Admin server
+│   │   ├── api/              # API endpoints
+│   │   └── workers/          # Worker threads
+│   ├── web/                  # React frontend
+│   │   ├── components/       # React components
+│   │   ├── hooks/            # Custom hooks
+│   │   └── contexts/         # React contexts
+│   ├── client/               # Client applications
+│   ├── shared/               # Shared utilities
+│   └── utils/                # Utility functions
+├── tests/                    # Automated tests
+│   ├── python/               # Python tests
+│   └── typescript/           # TypeScript tests
+├── config/                   # Configuration files
+├── docs/                     # Documentation
+├── public/                   # Static assets
+├── scripts/                  # Utility scripts
+└── templates/                # HTML templates
 ```
 
 ## 🎯 Core Components
@@ -224,6 +219,17 @@ myfilterbot/
 - **Non-blocking** background processing
 - **Automatic batching** for optimal throughput
 - **Native TypeScript** execution without transpilation
+- **Dead code elimination** with `--define` flags (Bun 1.2.20+)
+- **Environment-specific builds** with `--env-file` (Bun 1.2.20+)
+
+### Static Optimization (New in 1.2.20+)
+```bash
+# Development with defines
+bun --env-file=.env.local --define process.env.NODE_ENV="'development'" src/index.ts
+
+# Production build with dead code elimination
+bun build --define ENABLE_CONSOLE_LOGS=false --define process.env.NODE_ENV="'production'" src/index.ts
+```
 
 ### Benchmark Results
 | Operation | Traditional | Bun v1.2.21 | Improvement |
@@ -289,7 +295,6 @@ The platform includes comprehensive monitoring:
 ## 📝 Documentation
 
 - [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Complete migration guide
-- [CLAUDE.md](CLAUDE.md) - AI assistant development guide
 - [docs/](docs/) - Technical documentation
 - [API Documentation](docs/api/) - Complete API reference
 
@@ -308,7 +313,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - High-performance runtime by [Bun](https://bun.sh/)
 - UI components styled with [Tailwind CSS](https://tailwindcss.com/)
 
-## 🆕 Recent Major Improvements (v3.0.0)
+## 🆕 Recent Major Improvements (v2.1.0)
 
 ### TypeScript Configuration
 - ✅ **Resolved bun-types configuration** - Proper TypeScript setup with Bun
@@ -362,4 +367,4 @@ For issues, questions, or suggestions:
 
 ---
 
-**Version 3.0.0** | Last Updated: December 2024 | Built with ❤️ by Fantdev Team
+**Version 2.1.0** | Last Updated: August 25, 2025 | Built with ❤️ by Fantdev Team

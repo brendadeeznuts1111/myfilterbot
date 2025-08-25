@@ -1,0 +1,413 @@
+# Services Configuration
+# Configuration for authentication, notifications, caching, and other services
+
+services:
+  # Authentication Service
+  authentication:
+    enabled: true
+    type: jwt # jwt, session, oauth, multi
+    
+    # JWT Configuration
+    jwt:
+      secret: ${JWT_SECRET:?JWT secret is required}
+      algorithm: ${JWT_ALGORITHM:-HS256}
+      expiresIn: ${JWT_EXPIRES_IN:-1d}
+      refreshExpiresIn: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      issuer: ${JWT_ISSUER:-fantdev-auth}
+      audience: ${JWT_AUDIENCE:-fantdev-users}
+      clockTolerance: 30
+      notBefore: 0
+      
+    # Session Configuration  
+    session:
+      secret: ${SESSION_SECRET:-dev-session-secret}
+      name: ${SESSION_NAME:-fantdev_session}
+      resave: false
+      saveUninitialized: false
+      rolling: true
+      cookie:
+        secure: ${SESSION_SECURE:-false}
+        httpOnly: true
+        maxAge: 86400000 # 24 hours
+        sameSite: strict
+      store:
+        type: ${SESSION_STORE:-memory} # memory, redis, postgres
+        prefix: sess:
+        ttl: 86400
+        
+    # OAuth Providers
+    oauth:
+      google:
+        enabled: ${OAUTH_GOOGLE_ENABLED:-false}
+        clientId: ${OAUTH_GOOGLE_CLIENT_ID}
+        clientSecret: ${OAUTH_GOOGLE_CLIENT_SECRET}
+        callbackUrl: ${OAUTH_GOOGLE_CALLBACK:-/auth/google/callback}
+        scope: [email, profile]
+        
+      github:
+        enabled: ${OAUTH_GITHUB_ENABLED:-false}
+        clientId: ${OAUTH_GITHUB_CLIENT_ID}
+        clientSecret: ${OAUTH_GITHUB_CLIENT_SECRET}
+        callbackUrl: ${OAUTH_GITHUB_CALLBACK:-/auth/github/callback}
+        scope: [user:email]
+        
+      telegram:
+        enabled: ${OAUTH_TELEGRAM_ENABLED:-true}
+        botToken: ${TELEGRAM_BOT_TOKEN}
+        callbackUrl: ${OAUTH_TELEGRAM_CALLBACK:-/auth/telegram/callback}
+        
+    # Two-Factor Authentication
+    twoFactor:
+      enabled: ${2FA_ENABLED:-true}
+      methods:
+        totp:
+          enabled: true
+          issuer: FantDev Trading
+          window: 1
+        sms:
+          enabled: ${2FA_SMS_ENABLED:-false}
+          provider: twilio
+        email:
+          enabled: true
+          
+    # Password Policy
+    passwordPolicy:
+      minLength: 8
+      maxLength: 128
+      requireUppercase: true
+      requireLowercase: true
+      requireNumbers: true
+      requireSpecial: true
+      preventReuse: 5
+      expiryDays: ${PASSWORD_EXPIRY_DAYS:-90}
+      
+    # Account Security
+    security:
+      maxLoginAttempts: ${MAX_LOGIN_ATTEMPTS:-5}
+      lockoutDuration: 900000 # 15 minutes
+      sessionTimeout: ${SESSION_TIMEOUT:-3600000} # 1 hour
+      requireEmailVerification: true
+      requirePhoneVerification: ${REQUIRE_PHONE_VERIFICATION:-false}
+      
+  # Notification Service
+  notifications:
+    enabled: true
+    defaultChannel: ${DEFAULT_NOTIFICATION_CHANNEL:-telegram}
+    
+    # Email Provider
+    email:
+      enabled: ${EMAIL_ENABLED:-true}
+      provider: ${EMAIL_PROVIDER:-sendgrid} # sendgrid, mailgun, ses, smtp
+      from: ${EMAIL_FROM:-noreply@fantdev.com}
+      fromName: ${EMAIL_FROM_NAME:-FantDev Trading}
+      
+      sendgrid:
+        apiKey: ${SENDGRID_API_KEY}
+        sandboxMode: ${SENDGRID_SANDBOX:-false}
+        
+      mailgun:
+        apiKey: ${MAILGUN_API_KEY}
+        domain: ${MAILGUN_DOMAIN}
+        
+      smtp:
+        host: ${SMTP_HOST}
+        port: ${SMTP_PORT:-587}
+        secure: ${SMTP_SECURE:-false}
+        auth:
+          user: ${SMTP_USER}
+          pass: ${SMTP_PASS}
+          
+    # SMS Provider
+    sms:
+      enabled: ${SMS_ENABLED:-false}
+      provider: ${SMS_PROVIDER:-twilio}
+      from: ${SMS_FROM}
+      
+      twilio:
+        accountSid: ${TWILIO_ACCOUNT_SID}
+        authToken: ${TWILIO_AUTH_TOKEN}
+        
+    # Push Notifications
+    push:
+      enabled: ${PUSH_ENABLED:-false}
+      provider: ${PUSH_PROVIDER:-fcm}
+      
+      fcm:
+        serverKey: ${FCM_SERVER_KEY}
+        senderId: ${FCM_SENDER_ID}
+        
+    # Telegram Notifications
+    telegram:
+      enabled: true
+      botToken: ${TELEGRAM_BOT_TOKEN}
+      parseMode: HTML
+      disableNotification: false
+      
+    # Webhook Notifications
+    webhook:
+      enabled: ${WEBHOOK_NOTIFICATIONS_ENABLED:-false}
+      urls: ${WEBHOOK_URLS}
+      headers:
+        Authorization: ${WEBHOOK_AUTH_HEADER}
+      timeout: 5000
+      retries: 3
+      
+    # Templates
+    templates:
+      path: ${TEMPLATE_PATH:-./templates}
+      engine: ${TEMPLATE_ENGINE:-handlebars}
+      cache: ${TEMPLATE_CACHE:-true}
+      
+    # Rate Limiting
+    rateLimit:
+      email:
+        perUser: 10
+        perHour: 100
+      sms:
+        perUser: 5
+        perHour: 50
+      push:
+        perUser: 20
+        perHour: 200
+        
+  # Cache Service
+  cache:
+    enabled: true
+    provider: ${CACHE_PROVIDER:-redis} # redis, memory, memcached
+    
+    redis:
+      host: ${REDIS_HOST:-localhost}
+      port: ${REDIS_PORT:-6379}
+      password: ${REDIS_PASSWORD}
+      db: ${REDIS_DB:-0}
+      keyPrefix: ${REDIS_KEY_PREFIX:-cache:}
+      ttl: ${REDIS_DEFAULT_TTL:-300}
+      
+    memory:
+      max: 100
+      ttl: 300
+      updateAgeOnGet: true
+      
+    strategies:
+      users:
+        ttl: 600
+        prefix: user:
+      sessions:
+        ttl: 3600
+        prefix: session:
+      api:
+        ttl: 60
+        prefix: api:
+      static:
+        ttl: 86400
+        prefix: static:
+        
+  # Queue Service
+  queue:
+    enabled: ${QUEUE_ENABLED:-true}
+    provider: ${QUEUE_PROVIDER:-bull} # bull, bee, kue
+    
+    redis:
+      host: ${REDIS_HOST:-localhost}
+      port: ${REDIS_PORT:-6379}
+      password: ${REDIS_PASSWORD}
+      db: ${QUEUE_REDIS_DB:-1}
+      
+    queues:
+      notifications:
+        concurrency: 5
+        attempts: 3
+        backoff: 5000
+      transactions:
+        concurrency: 10
+        attempts: 5
+        backoff: 10000
+      reports:
+        concurrency: 2
+        attempts: 3
+        backoff: 30000
+      backups:
+        concurrency: 1
+        attempts: 2
+        backoff: 60000
+        
+  # File Storage Service
+  storage:
+    enabled: true
+    provider: ${STORAGE_PROVIDER:-local} # local, s3, gcs, azure
+    
+    local:
+      basePath: ${STORAGE_PATH:-./storage}
+      publicPath: ${PUBLIC_PATH:-./public}
+      
+    s3:
+      bucket: ${S3_BUCKET}
+      region: ${S3_REGION}
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+      endpoint: ${S3_ENDPOINT}
+      
+    limits:
+      maxFileSize: 10485760 # 10MB
+      allowedMimeTypes:
+        - image/jpeg
+        - image/png
+        - image/gif
+        - application/pdf
+        - text/csv
+        - application/json
+        
+  # Search Service
+  search:
+    enabled: ${SEARCH_ENABLED:-true}
+    provider: ${SEARCH_PROVIDER:-postgres} # postgres, elasticsearch, algolia
+    
+    elasticsearch:
+      node: ${ELASTICSEARCH_NODE:-http://localhost:9200}
+      auth:
+        username: ${ELASTICSEARCH_USER}
+        password: ${ELASTICSEARCH_PASS}
+      indices:
+        users: users_v1
+        transactions: transactions_v1
+        logs: logs_v1
+        
+    algolia:
+      applicationId: ${ALGOLIA_APP_ID}
+      apiKey: ${ALGOLIA_API_KEY}
+      indices:
+        users: users
+        transactions: transactions
+        
+  # Analytics Service
+  analytics:
+    enabled: ${ANALYTICS_ENABLED:-true}
+    provider: ${ANALYTICS_PROVIDER:-clickhouse} # clickhouse, bigquery, custom
+    
+    tracking:
+      events: true
+      pageViews: true
+      errors: true
+      performance: true
+      
+    retention:
+      raw: 30 # days
+      aggregated: 365 # days
+      
+  # Monitoring Service
+  monitoring:
+    enabled: true
+    
+    # Error Tracking
+    sentry:
+      enabled: ${SENTRY_ENABLED:-true}
+      dsn: ${SENTRY_DSN}
+      environment: ${NODE_ENV:-development}
+      tracesSampleRate: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+      attachStacktrace: true
+      
+    # Metrics
+    prometheus:
+      enabled: ${PROMETHEUS_ENABLED:-false}
+      port: ${PROMETHEUS_PORT:-9090}
+      path: /metrics
+      
+    # Logging
+    logging:
+      level: ${LOG_LEVEL:-info}
+      format: ${LOG_FORMAT:-json}
+      transports:
+        console:
+          enabled: true
+          level: ${CONSOLE_LOG_LEVEL:-info}
+        file:
+          enabled: ${FILE_LOGGING_ENABLED:-true}
+          level: ${FILE_LOG_LEVEL:-error}
+          filename: ${LOG_FILE:-./logs/app.log}
+          maxSize: 10485760 # 10MB
+          maxFiles: 5
+        cloudwatch:
+          enabled: ${CLOUDWATCH_ENABLED:-false}
+          logGroup: ${CLOUDWATCH_LOG_GROUP}
+          logStream: ${CLOUDWATCH_LOG_STREAM}
+          
+    # Health Checks
+    healthChecks:
+      enabled: true
+      interval: 30000 # 30 seconds
+      timeout: 5000
+      services:
+        - database
+        - redis
+        - telegram
+        - external-api
+        
+  # Backup Service
+  backup:
+    enabled: ${BACKUP_ENABLED:-true}
+    schedule: ${BACKUP_SCHEDULE:-0 2 * * *} # Daily at 2 AM
+    
+    destinations:
+      local:
+        enabled: true
+        path: ${BACKUP_PATH:-./backups}
+        retention: 7 # days
+        
+      s3:
+        enabled: ${BACKUP_S3_ENABLED:-false}
+        bucket: ${BACKUP_S3_BUCKET}
+        region: ${BACKUP_S3_REGION}
+        prefix: backups/
+        retention: 30 # days
+        
+    databases:
+      postgres: true
+      redis: true
+      files: true
+      
+# Environment-specific overrides
+environments:
+  development:
+    services:
+      authentication:
+        jwt:
+          expiresIn: 7d
+        security:
+          maxLoginAttempts: 10
+          requireEmailVerification: false
+      notifications:
+        email:
+          sendgrid:
+            sandboxMode: true
+      cache:
+        redis:
+          ttl: 60
+      monitoring:
+        sentry:
+          enabled: false
+        logging:
+          level: debug
+          
+  production:
+    services:
+      authentication:
+        jwt:
+          expiresIn: 1h
+        twoFactor:
+          enabled: true
+        security:
+          maxLoginAttempts: 3
+          requireEmailVerification: true
+      cache:
+        redis:
+          ttl: 600
+      monitoring:
+        sentry:
+          enabled: true
+          tracesSampleRate: 0.01
+        logging:
+          level: error
+      backup:
+        destinations:
+          s3:
+            enabled: true

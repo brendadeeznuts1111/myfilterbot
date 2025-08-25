@@ -3,8 +3,8 @@
  * Tests the 500x postMessage() performance improvement
  */
 
-import { reportGenerator } from './src/report_worker.ts';
-import type { DatabaseSnapshot } from './src/report_worker.ts';
+import { reportGenerator } from './report_worker';
+import type { DatabaseSnapshot } from './report_worker';
 
 // Generate test data
 function generateTestData(customerCount: number): DatabaseSnapshot {
