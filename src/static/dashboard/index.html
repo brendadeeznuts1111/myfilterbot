@@ -110,6 +110,86 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Cache Performance -->
+                <div class="cache-performance">
+                    <h3><i class="fas fa-tachometer-alt"></i> Cache Performance</h3>
+                    <div class="cache-metrics-grid">
+                        <div class="cache-metric-card">
+                            <div class="cache-metric-header">
+                                <h4>Hit Rate</h4>
+                                <span id="cache-hit-rate" class="metric-value text-success">0%</span>
+                            </div>
+                            <div class="cache-metric-detail">Overall cache effectiveness</div>
+                        </div>
+                        <div class="cache-metric-card">
+                            <div class="cache-metric-header">
+                                <h4>L1 Cache</h4>
+                                <span id="cache-l1-usage" class="metric-value">0/0 (0%)</span>
+                            </div>
+                            <div class="cache-metric-detail">In-memory cache usage</div>
+                        </div>
+                        <div class="cache-metric-card">
+                            <div class="cache-metric-header">
+                                <h4>L2 Redis</h4>
+                                <span id="cache-l2-status" class="metric-value text-secondary">Disabled</span>
+                            </div>
+                            <div class="cache-metric-detail">Distributed cache status</div>
+                        </div>
+                        <div class="cache-metric-card">
+                            <div class="cache-metric-header">
+                                <h4>L3 Files</h4>
+                                <span id="cache-l3-status" class="metric-value">0 files (0% hit rate)</span>
+                            </div>
+                            <div class="cache-metric-detail">File system cache</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cache-stats-row">
+                        <div class="cache-stat">
+                            <span>Total Requests:</span>
+                            <span id="cache-total-requests">0</span>
+                        </div>
+                        <div class="cache-stat">
+                            <span>Memory Usage:</span>
+                            <span id="cache-memory-usage">0KB</span>
+                        </div>
+                        <div class="cache-stat">
+                            <span>Evictions:</span>
+                            <span id="cache-evictions">0</span>
+                        </div>
+                        <div class="cache-stat">
+                            <span>Avg Response:</span>
+                            <span id="cache-avg-response-time" class="text-success">0ms</span>
+                        </div>
+                    </div>
+
+                    <div class="cache-warming-section">
+                        <h4><i class="fas fa-thermometer-half"></i> Cache Warming</h4>
+                        <div class="cache-warming-info">
+                            <div class="warming-stat">
+                                <span>Status:</span>
+                                <span id="cache-warming-status" class="text-success">Ready</span>
+                            </div>
+                            <div class="warming-stat">
+                                <span>Tasks:</span>
+                                <span id="cache-warming-tasks">0/0</span>
+                            </div>
+                            <div class="warming-stat">
+                                <span>Errors:</span>
+                                <span id="cache-warming-errors" class="text-success">No errors</span>
+                            </div>
+                        </div>
+                        <div class="cache-warming-controls">
+                            <button class="btn btn-primary btn-sm" onclick="dashboard.triggerCacheWarming()">
+                                <i class="fas fa-fire"></i> Warm Cache
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="dashboard.clearCache()">
+                                <i class="fas fa-trash"></i> Clear Cache
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Services Tab -->
@@ -183,6 +263,106 @@
                     <button class="btn btn-secondary" id="auto-check-toggle">
                         <i class="fas fa-clock"></i> Auto-Check: OFF
                     </button>
+                </div>
+            </div>
+
+            <!-- Customers Tab -->
+            <div id="customers-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-users"></i> Customer Management</h2>
+                    <div class="tab-actions">
+                        <button class="btn btn-primary" onclick="dashboard.refreshCustomerData()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn btn-success" onclick="dashboard.addNewCustomer()">
+                            <i class="fas fa-user-plus"></i> Add Customer
+                        </button>
+                        <button class="btn btn-info" onclick="dashboard.exportCustomers()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button class="btn btn-warning" onclick="dashboard.syncCustomerBalances()">
+                            <i class="fas fa-balance-scale"></i> Sync Balances
+                        </button>
+                    </div>
+                </div>
+
+                <div class="customer-summary">
+                    <div class="summary-card">
+                        <h4>Total Customers</h4>
+                        <div class="summary-value" id="total-customers">0</div>
+                        <div class="summary-change">+0 this week</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Active Customers</h4>
+                        <div class="summary-value" id="active-customers">0</div>
+                        <div class="summary-change">Last 30 days</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>VIP Customers</h4>
+                        <div class="summary-value" id="vip-customers">0</div>
+                        <div class="summary-change">Premium tier</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Total Balance</h4>
+                        <div class="summary-value" id="customers-total-balance">$0</div>
+                        <div class="summary-change">All accounts</div>
+                    </div>
+                </div>
+
+                <div class="customer-filters">
+                    <div class="filter-section">
+                        <input type="text" id="customer-search" placeholder="Search customers..." class="search-input">
+                        <select id="customer-status-filter" class="filter-select">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="suspended">Suspended</option>
+                            <option value="vip">VIP</option>
+                        </select>
+                        <select id="customer-agent-filter" class="filter-select">
+                            <option value="all">All Agents</option>
+                            <!-- Agents will be loaded dynamically -->
+                        </select>
+                        <button class="btn btn-secondary" onclick="dashboard.resetCustomerFilters()">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+
+                <div class="customers-table-container">
+                    <table id="customers-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Username</th>
+                                <th>Agent</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Last Active</th>
+                                <th>Registration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table-body">
+                            <!-- Customers will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="customers-pagination">
+                    <div class="pagination-info">
+                        <span id="customers-count-info">Showing 0 of 0 customers</span>
+                    </div>
+                    <div class="pagination-controls">
+                        <button id="customers-prev-btn" class="btn btn-sm" onclick="dashboard.loadCustomersPage('prev')">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span id="customers-page-info">Page 1 of 1</span>
+                        <button id="customers-next-btn" class="btn btn-sm" onclick="dashboard.loadCustomersPage('next')">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -595,6 +775,9 @@ const cfg = schema.parse(
                         <button class="btn btn-success" onclick="dashboard.calculateCommissions()">
                             <i class="fas fa-calculator"></i> Calculate Commissions
                         </button>
+                        <button class="btn btn-info" onclick="dashboard.editAgentConfig()">
+                            <i class="fas fa-cog"></i> Edit Config
+                        </button>
                     </div>
                 </div>
 
@@ -617,25 +800,72 @@ const cfg = schema.parse(
                     </div>
                 </div>
 
+                <!-- Configuration Management Section -->
+                <div class="config-management" style="margin-bottom: 20px;">
+                    <div class="config-section">
+                        <h3><i class="fas fa-tools"></i> Agent Configuration Management</h3>
+                        <div class="config-status" id="agent-config-status">
+                            <div class="status-item">
+                                <span class="label">Config File:</span>
+                                <span class="value" id="config-file-status">Loading...</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="label">Total Agents:</span>
+                                <span class="value" id="config-agent-count">0</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="label">Total Masters:</span>
+                                <span class="value" id="config-master-count">0</span>
+                            </div>
+                        </div>
+                        <div class="config-actions" style="margin-top: 10px;">
+                            <button class="btn btn-warning" onclick="dashboard.validateAgentConfig()">
+                                <i class="fas fa-check-circle"></i> Validate Config
+                            </button>
+                            <button class="btn btn-secondary" onclick="dashboard.reloadAgentConfig()">
+                                <i class="fas fa-refresh"></i> Reload Config
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="agent-tables">
                     <div class="agent-table-section">
                         <h3>Agents</h3>
-                        <table id="agents-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Master</th>
-                                    <th>Customers</th>
-                                    <th>Volume</th>
-                                    <th>Commission</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Agents will be loaded dynamically -->
-                            </tbody>
-                        </table>
+                        <div class="agents-list" id="agents-list">
+                            <!-- Agents will be loaded dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="masters-table-section">
+                        <h3>Master Agents</h3>
+                        <div class="masters-list" id="masters-list">
+                            <!-- Masters will be loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuration Editor Modal -->
+                <div id="config-editor-modal" class="modal" style="display: none;">
+                    <div class="modal-content" style="width: 80%; max-width: 800px;">
+                        <div class="modal-header">
+                            <h3>Agent Configuration Editor</h3>
+                            <button class="modal-close" onclick="dashboard.closeConfigEditor()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <textarea id="agent-config-editor" rows="25" style="width: 100%; font-family: monospace; font-size: 12px;"></textarea>
+                            <div class="config-validation" id="config-validation" style="margin-top: 10px;">
+                                <!-- Validation messages will appear here -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-success" onclick="dashboard.saveAgentConfig()">
+                                <i class="fas fa-save"></i> Save Configuration
+                            </button>
+                            <button class="btn btn-secondary" onclick="dashboard.closeConfigEditor()">
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

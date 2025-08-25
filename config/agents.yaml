@@ -1,0 +1,57 @@
+# Agents Configuration
+agents:
+  list:
+    - id: "AG001"
+      name: "John Smith"
+      code: "JS001"
+      commission_rate: 0.05
+      status: "active"
+      customers: [1, 2, 3, 4, 5]
+      balance: 15000
+      master: "MA001"
+    - id: "AG002" 
+      name: "Sarah Johnson"
+      code: "SJ002"
+      commission_rate: 0.045
+      status: "active"
+      customers: [6, 7, 8, 9, 10]
+      balance: 12000
+      master: "MA001"
+    - id: "AG003"
+      name: "Mike Wilson"
+      code: "MW003"
+      commission_rate: 0.055
+      status: "active"
+      customers: [11, 12, 13, 14, 15]
+      balance: 18000
+      master: "MA002"
+
+masters:
+  list:
+    - id: "MA001"
+      name: "Robert Davis"
+      commission_rate: 0.02
+      override_rate: 0.01
+      agents: ["AG001", "AG002"]
+      status: "active"
+    - id: "MA002"
+      name: "Lisa Brown"
+      commission_rate: 0.025
+      override_rate: 0.015
+      agents: ["AG003"]
+      status: "active"
+
+commission:
+  performance_tiers:
+    - min_volume: 0
+      rate_multiplier: 1.0
+      agent_bonus: 0
+      master_bonus: 0
+    - min_volume: 10000
+      rate_multiplier: 1.2
+      agent_bonus: 0.005
+      master_bonus: 0.002
+    - min_volume: 50000
+      rate_multiplier: 1.5
+      agent_bonus: 0.01
+      master_bonus: 0.005
