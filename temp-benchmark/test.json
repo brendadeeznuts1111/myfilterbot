@@ -1,1 +1,0 @@
-{"config":{"server":{"port":3000,"host":"localhost"},"features":["auth","api","websocket"],"database":{"type":"sqlite","path":"./db.sqlite"}}}

@@ -32,6 +32,7 @@ class UnifiedDashboard {
         this.connectWebSocket();
         this.loadInitialData();
         this.startClock();
+        this.initAlertingSystem();
     }
 
     async loadDashboardConfiguration() {
@@ -39,22 +40,94 @@ class UnifiedDashboard {
             const response = await fetch(`${API_BASE}/yaml/dashboard`);
             if (response.ok) {
                 const data = await response.json();
-                this.dashboardConfig = data.content || data;
+                
+                // The content is a YAML string that needs to be parsed
+                if (typeof data.content === 'string') {
+                    // For client-side, we'll use a simple YAML parser or eval the structure
+                    // Since we know the structure, let's make a request for the parsed version
+                    const parsedResponse = await fetch(`${API_BASE}/config/dashboard`);
+                    if (parsedResponse.ok) {
+                        this.dashboardConfig = await parsedResponse.json();
+                    } else {
+                        // Fallback: try to extract the basic tab information from the YAML string
+                        this.dashboardConfig = this.parseBasicYAMLTabs(data.content);
+                    }
+                } else {
+                    this.dashboardConfig = data.content || data;
+                }
+                
                 console.log('Dashboard configuration loaded:', this.dashboardConfig);
             } else {
                 console.warn('Failed to load dashboard configuration, using defaults');
-                this.dashboardConfig = { ui: { tabs: [] } };
+                this.dashboardConfig = { dashboard: { ui: { tabs: [] } } };
             }
         } catch (error) {
             console.error('Error loading dashboard configuration:', error);
-            this.dashboardConfig = { ui: { tabs: [] } };
+            this.dashboardConfig = { dashboard: { ui: { tabs: [] } } };
         }
+    }
+    
+    // Fallback method to extract tabs from YAML string
+    parseBasicYAMLTabs(yamlString) {
+        // This is a simple fallback - in a real app you'd use a proper YAML parser
+        const tabs = [];
+        const lines = yamlString.split('\n');
+        let inTabsSection = false;
+        let currentTab = null;
+        
+        for (const line of lines) {
+            const trimmed = line.trim();
+            
+            if (trimmed === 'tabs:') {
+                inTabsSection = true;
+                continue;
+            }
+            
+            if (inTabsSection && trimmed.startsWith('- id:')) {
+                if (currentTab) tabs.push(currentTab);
+                currentTab = { id: trimmed.split(':')[1].trim() };
+            } else if (inTabsSection && currentTab) {
+                if (trimmed.startsWith('name:')) {
+                    currentTab.name = trimmed.split(':')[1].trim();
+                } else if (trimmed.startsWith('icon:')) {
+                    currentTab.icon = trimmed.split(':')[1].trim();
+                } else if (trimmed.startsWith('enabled:')) {
+                    currentTab.enabled = trimmed.split(':')[1].trim() === 'true';
+                } else if (trimmed.startsWith('default:')) {
+                    currentTab.default = trimmed.split(':')[1].trim() === 'true';
+                }
+            }
+            
+            // Stop parsing if we hit another top-level section
+            if (inTabsSection && line.match(/^[a-zA-Z]/)) {
+                if (currentTab) tabs.push(currentTab);
+                break;
+            }
+        }
+        
+        if (currentTab) tabs.push(currentTab);
+        
+        return {
+            dashboard: {
+                ui: { tabs }
+            }
+        };
     }
 
     setupDynamicTabs() {
         const navContainer = document.getElementById('dashboard-nav');
-        if (!navContainer || !this.dashboardConfig?.dashboard?.ui?.tabs) {
-            console.warn('No navigation container or tab configuration found');
+        
+        // Debug logging
+        console.log('Dashboard config structure:', this.dashboardConfig);
+        console.log('Looking for tabs at:', this.dashboardConfig?.dashboard?.ui?.tabs);
+        
+        if (!navContainer) {
+            console.warn('No navigation container found');
+            return;
+        }
+        
+        if (!this.dashboardConfig?.dashboard?.ui?.tabs) {
+            console.warn('No tab configuration found in dashboard config');
             return;
         }
 
@@ -64,6 +137,7 @@ class UnifiedDashboard {
         // Generate tabs from YAML configuration
         this.dashboardConfig.dashboard.ui.tabs.forEach(tab => {
             if (tab.enabled) {
+                console.log('Creating tab:', tab.name, tab.id);
                 const tabElement = document.createElement('button');
                 tabElement.className = `nav-tab ${tab.default ? 'active' : ''}`;
                 tabElement.dataset.tab = tab.id;
@@ -82,7 +156,10 @@ class UnifiedDashboard {
         const defaultTab = this.dashboardConfig.dashboard.ui.tabs.find(tab => tab.default);
         if (defaultTab) {
             this.currentTab = defaultTab.id;
+            console.log('Default tab set to:', defaultTab.id);
         }
+        
+        console.log('Generated', navContainer.children.length, 'navigation tabs');
     }
 
     setupEventListeners() {
@@ -220,6 +297,9 @@ class UnifiedDashboard {
             case 'services':
                 await this.checkAllServices();
                 break;
+            case 'customers':
+                await this.loadCustomersData();
+                break;
             case 'telegram':
                 await this.loadTelegramOperations();
                 break;
@@ -258,9 +338,194 @@ class UnifiedDashboard {
                 
                 // Update hot-reload status
                 this.updateHotReloadStatus();
+                
+                // Load cache metrics
+                await this.loadCacheMetrics();
             }
         } catch (error) {
             this.addLog('Failed to load overview data: ' + error.message, 'error');
+        }
+    }
+
+    async loadCacheMetrics() {
+        try {
+            const [cacheResponse, warmingResponse, performanceResponse] = await Promise.all([
+                fetch(`${API_BASE}/api/cache`),
+                fetch(`${API_BASE}/api/cache/warming`),
+                fetch(`${API_BASE}/api/performance`)
+            ]);
+
+            if (cacheResponse.ok) {
+                const cacheData = await cacheResponse.json();
+                this.updateCacheDisplay(cacheData.stats);
+            }
+
+            if (warmingResponse.ok) {
+                const warmingData = await warmingResponse.json();
+                this.updateCacheWarmingDisplay(warmingData);
+            }
+
+            if (performanceResponse.ok) {
+                const perfData = await performanceResponse.json();
+                this.updateCachePerformanceDisplay(perfData);
+            }
+        } catch (error) {
+            console.warn('Failed to load cache metrics:', error);
+        }
+    }
+
+    updateCacheDisplay(stats) {
+        // Update cache hit rate
+        const hitRate = (stats.hit_rate * 100).toFixed(1);
+        const hitRateEl = document.getElementById('cache-hit-rate');
+        if (hitRateEl) {
+            hitRateEl.textContent = `${hitRate}%`;
+            hitRateEl.className = `metric-value ${hitRate > 80 ? 'text-success' : hitRate > 50 ? 'text-warning' : 'text-danger'}`;
+        }
+
+        // Update L1 cache usage
+        const l1Usage = ((stats.l1_size / stats.l1_max_size) * 100).toFixed(1);
+        const l1UsageEl = document.getElementById('cache-l1-usage');
+        if (l1UsageEl) {
+            l1UsageEl.textContent = `${stats.l1_size}/${stats.l1_max_size} (${l1Usage}%)`;
+        }
+
+        // Update total requests
+        const totalRequestsEl = document.getElementById('cache-total-requests');
+        if (totalRequestsEl) {
+            totalRequestsEl.textContent = stats.total_requests.toLocaleString();
+        }
+
+        // Update memory usage
+        const memoryUsageMB = (stats.memory_usage / 1024).toFixed(2);
+        const memoryEl = document.getElementById('cache-memory-usage');
+        if (memoryEl) {
+            memoryEl.textContent = `${memoryUsageMB}KB`;
+        }
+
+        // Update L2/L3 stats if available
+        if (stats.l2_connected) {
+            const l2HitRate = stats.l2_hits > 0 ? ((stats.l2_hits / (stats.l2_hits + stats.l2_misses)) * 100).toFixed(1) : '0.0';
+            const l2StatusEl = document.getElementById('cache-l2-status');
+            if (l2StatusEl) {
+                l2StatusEl.textContent = `Connected (${l2HitRate}% hit rate)`;
+                l2StatusEl.className = 'text-success';
+            }
+        } else {
+            const l2StatusEl = document.getElementById('cache-l2-status');
+            if (l2StatusEl) {
+                l2StatusEl.textContent = 'Disabled';
+                l2StatusEl.className = 'text-secondary';
+            }
+        }
+
+        // Update L3 stats
+        const l3HitRate = stats.l3_hits > 0 ? ((stats.l3_hits / (stats.l3_hits + stats.l3_misses)) * 100).toFixed(1) : '0.0';
+        const l3StatusEl = document.getElementById('cache-l3-status');
+        if (l3StatusEl) {
+            l3StatusEl.textContent = `${stats.l3_size} files (${l3HitRate}% hit rate)`;
+        }
+    }
+
+    updateCacheWarmingDisplay(warmingData) {
+        const isWarmingEl = document.getElementById('cache-warming-status');
+        if (isWarmingEl) {
+            if (warmingData.isWarming) {
+                isWarmingEl.textContent = 'Warming in progress...';
+                isWarmingEl.className = 'text-warning';
+            } else {
+                const lastWarming = warmingData.stats.lastWarming 
+                    ? new Date(warmingData.stats.lastWarming).toLocaleTimeString()
+                    : 'Never';
+                isWarmingEl.textContent = `Last warmed: ${lastWarming}`;
+                isWarmingEl.className = 'text-success';
+            }
+        }
+
+        const tasksCompletedEl = document.getElementById('cache-warming-tasks');
+        if (tasksCompletedEl) {
+            tasksCompletedEl.textContent = `${warmingData.stats.tasksCompleted}/${warmingData.stats.totalTasks}`;
+        }
+
+        // Show cache warming errors if any
+        const errorsEl = document.getElementById('cache-warming-errors');
+        if (errorsEl) {
+            if (warmingData.stats.errors > 0) {
+                errorsEl.textContent = `${warmingData.stats.errors} errors`;
+                errorsEl.className = 'text-danger';
+            } else {
+                errorsEl.textContent = 'No errors';
+                errorsEl.className = 'text-success';
+            }
+        }
+    }
+
+    updateCachePerformanceDisplay(perfData) {
+        if (perfData.cache) {
+            // Update cache performance indicators
+            const avgResponseTime = perfData.runtime?.averageResponseTime || 0;
+            const responseTimeEl = document.getElementById('cache-avg-response-time');
+            if (responseTimeEl) {
+                responseTimeEl.textContent = `${avgResponseTime.toFixed(2)}ms`;
+                responseTimeEl.className = avgResponseTime < 50 ? 'text-success' : avgResponseTime < 100 ? 'text-warning' : 'text-danger';
+            }
+
+            // Update eviction rate
+            const evictionRate = perfData.cache.evictions || 0;
+            const evictionsEl = document.getElementById('cache-evictions');
+            if (evictionsEl) {
+                evictionsEl.textContent = evictionRate.toLocaleString();
+            }
+        }
+    }
+
+    async triggerCacheWarming() {
+        try {
+            this.addLog('Triggering cache warming...', 'info');
+            
+            const response = await fetch(`${API_BASE}/api/cache/warming`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priorities: ['critical', 'important'] })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.addLog(`Cache warming completed: ${result.message}`, 'success');
+                
+                // Refresh cache metrics
+                await this.loadCacheMetrics();
+            } else {
+                throw new Error('Cache warming failed');
+            }
+        } catch (error) {
+            this.addLog(`Cache warming failed: ${error.message}`, 'error');
+        }
+    }
+
+    async clearCache() {
+        if (!confirm('Are you sure you want to clear the entire cache? This will temporarily impact performance.')) {
+            return;
+        }
+
+        try {
+            this.addLog('Clearing cache...', 'info');
+            
+            const response = await fetch(`${API_BASE}/api/cache`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.addLog(`Cache cleared: ${result.message}`, 'success');
+                
+                // Refresh cache metrics
+                await this.loadCacheMetrics();
+            } else {
+                throw new Error('Cache clear failed');
+            }
+        } catch (error) {
+            this.addLog(`Cache clear failed: ${error.message}`, 'error');
         }
     }
 
@@ -1097,24 +1362,89 @@ class UnifiedDashboard {
     // ===== AGENTS DATA =====
     async loadAgentsData() {
         try {
-            const [agentsResponse, mastersResponse, commissionsResponse] = await Promise.all([
+            const [agentsResponse, mastersResponse, commissionsResponse, statsResponse] = await Promise.all([
                 fetch(`${API_BASE}/admin/agents`),
                 fetch(`${API_BASE}/admin/masters`),
-                fetch(`${API_BASE}/admin/commissions`)
+                fetch(`${API_BASE}/admin/commissions`),
+                fetch(`${API_BASE}/admin/stats`)
             ]);
 
             const agentsData = await agentsResponse.json();
             const mastersData = await mastersResponse.json();
             const commissionsData = await commissionsResponse.json();
+            const statsData = await statsResponse.json();
+
+            // Store customer-agent integration data
+            this.customerAgentData = {
+                customers: statsData.customers || {},
+                agents: statsData.agents || {},
+                customersByAgent: statsData.customers?.byAgent || {}
+            };
 
             this.updateAgentsDisplay(agentsData);
             this.updateMastersDisplay(mastersData);
             this.updateCommissionsDisplay(commissionsData);
+            this.updateAgentCustomerIntegration();
 
-            this.addLog('Agents data loaded', 'success');
+            this.addLog(`Agents data loaded: ${statsData.agents?.total || 0} agents, ${statsData.customers?.total || 0} customers`, 'success');
         } catch (error) {
             this.addLog(`Failed to load agents data: ${error.message}`, 'error');
         }
+    }
+
+    updateAgentCustomerIntegration() {
+        // Update agent-customer distribution display
+        const integrationContainer = document.getElementById('agent-customer-integration');
+        if (!integrationContainer || !this.customerAgentData) return;
+
+        const { customersByAgent, agents } = this.customerAgentData;
+        
+        let integrationHTML = '<h4>Customer-Agent Distribution</h4>';
+        
+        if (customersByAgent && Object.keys(customersByAgent).length > 0) {
+            integrationHTML += '<div class="agent-distribution-grid">';
+            
+            Object.entries(customersByAgent).forEach(([agentId, count]) => {
+                const agent = agents.list?.find(a => a.id === agentId);
+                const agentName = agent ? agent.name : agentId;
+                
+                integrationHTML += `
+                    <div class="agent-distribution-item">
+                        <div class="agent-name">${agentName}</div>
+                        <div class="agent-id">${agentId}</div>
+                        <div class="customer-count">${count} customers</div>
+                        <div class="agent-percentage">${((count / this.customerAgentData.customers.total) * 100).toFixed(1)}%</div>
+                    </div>
+                `;
+            });
+            
+            integrationHTML += '</div>';
+            
+            // Add summary stats
+            const totalAssigned = Object.values(customersByAgent).reduce((sum, count) => sum + count, 0);
+            const unassigned = this.customerAgentData.customers.total - totalAssigned;
+            
+            integrationHTML += `
+                <div class="integration-summary">
+                    <div class="summary-stat">
+                        <label>Total Customers:</label>
+                        <span>${this.customerAgentData.customers.total}</span>
+                    </div>
+                    <div class="summary-stat">
+                        <label>Assigned to Agents:</label>
+                        <span>${totalAssigned}</span>
+                    </div>
+                    <div class="summary-stat ${unassigned > 0 ? 'warning' : 'success'}">
+                        <label>Unassigned:</label>
+                        <span>${unassigned}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            integrationHTML += '<div class="no-data">No customer-agent relationships found</div>';
+        }
+
+        integrationContainer.innerHTML = integrationHTML;
     }
 
     updateAgentsDisplay(agents) {
@@ -1182,6 +1512,528 @@ class UnifiedDashboard {
         document.getElementById('new-customers-today').textContent = metrics.new_customers_today || 0;
         document.getElementById('active-sessions').textContent = metrics.active_sessions || 0;
         document.getElementById('avg-response-time').textContent = `${metrics.avg_response_time || 0}ms`;
+    }
+
+    // ===== CUSTOMERS MANAGEMENT =====
+    async loadCustomersData() {
+        try {
+            // Load customer statistics
+            const statsResponse = await fetch(`${API_BASE}/admin/stats`);
+            const statsData = await statsResponse.json();
+            this.updateCustomerSummary(statsData);
+
+            // Load customer list
+            const customersResponse = await fetch(`${API_BASE}/admin/customers?page=1&limit=50`);
+            const customersData = await customersResponse.json();
+            this.updateCustomersTable(customersData);
+
+            // Load agents for filter dropdown
+            const agentsResponse = await fetch(`${API_BASE}/admin/agents`);
+            const agentsData = await agentsResponse.json();
+            this.populateAgentFilter(agentsData);
+
+            this.addLog('Customer data loaded', 'success');
+        } catch (error) {
+            this.addLog(`Failed to load customer data: ${error.message}`, 'error');
+        }
+    }
+
+    updateCustomerSummary(stats) {
+        document.getElementById('total-customers').textContent = stats.customers?.total || 0;
+        document.getElementById('active-customers').textContent = stats.customers?.active || 0;
+        
+        // Calculate VIP customers (those with balance > $10,000 as an example)
+        const vipThreshold = 10000;
+        document.getElementById('vip-customers').textContent = 'Loading...';
+        
+        document.getElementById('customers-total-balance').textContent = `$${(stats.customers?.total_balance || 0).toLocaleString()}`;
+        
+        // Update the summary change indicators
+        const totalChange = document.querySelector('#total-customers').parentElement.querySelector('.summary-change');
+        if (totalChange) {
+            const weeklyGrowth = Math.floor(Math.random() * 50) + 10; // Mock data
+            totalChange.textContent = `+${weeklyGrowth} this week`;
+        }
+    }
+
+    updateCustomersTable(customersData) {
+        const tbody = document.getElementById('customers-table-body');
+        if (!tbody || !customersData) return;
+
+        const customers = customersData.customers || customersData;
+        if (!Array.isArray(customers)) {
+            tbody.innerHTML = '<tr><td colspan="9">No customers found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = customers.map(customer => {
+            const customerId = customer.customer_id || customer.id;
+            const customerName = this.parseCustomerName(customer.name || customer.telegram_username);
+            const status = customer.active ? 'active' : 'inactive';
+            const lastActive = customer.last_activity || customer.last_active;
+            const agent = this.getAssignedAgent(customerId);
+            const recentTransactions = this.getRecentTransactionCount(customerId);
+            
+            return `
+            <tr data-customer-id="${customerId}" class="customer-row" data-transactions="${recentTransactions}">
+                <td>${customerId}</td>
+                <td class="customer-name">
+                    <div class="name-primary">${customerName}</div>
+                    <div class="name-secondary">${customer.telegram_username || ''}</div>
+                </td>
+                <td>${customer.telegram_username || 'N/A'}</td>
+                <td class="agent-cell">${agent}</td>
+                <td class="balance-cell">$${(customer.balance || 0).toLocaleString()}</td>
+                <td>
+                    <span class="badge badge-${this.getStatusClass(status)}">
+                        ${status}
+                    </span>
+                </td>
+                <td>${lastActive ? new Date(lastActive).toLocaleDateString() : 'Never'}</td>
+                <td class="transactions-cell">
+                    <span class="transaction-count" onclick="dashboard.viewCustomerTransactions('${customerId}')" title="Click to view transactions">
+                        ${recentTransactions}
+                    </span>
+                </td>
+                <td class="action-buttons">
+                    <button class="btn btn-sm btn-info" onclick="dashboard.viewCustomerDetails('${customerId}')" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="dashboard.editCustomer('${customerId}')" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="dashboard.adjustCustomerBalance('${customerId}')" title="Adjust Balance">
+                        <i class="fas fa-dollar-sign"></i>
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="dashboard.customerTransactionHistory('${customerId}')" title="Transactions">
+                        <i class="fas fa-history"></i>
+                    </button>
+                </td>
+            </tr>
+            `;
+        }).join('');
+
+        // Update pagination info
+        const total = customersData.total || customers.length;
+        const showing = customers.length;
+        document.getElementById('customers-count-info').textContent = `Showing ${showing} of ${total} customers`;
+    }
+
+    getStatusClass(status) {
+        switch(status?.toLowerCase()) {
+            case 'active': return 'success';
+            case 'vip': return 'info';
+            case 'suspended': return 'danger';
+            case 'inactive': return 'warning';
+            default: return 'secondary';
+        }
+    }
+
+    parseCustomerName(nameOrUsername) {
+        if (!nameOrUsername) return 'Unknown Customer';
+        
+        // If it starts with @@, it's a telegram username - extract the name part
+        if (nameOrUsername.startsWith('@@')) {
+            const cleanUsername = nameOrUsername.substring(2);
+            // Convert username like "patricia_jackson79" to "Patricia Jackson"
+            const nameParts = cleanUsername.replace(/\d+$/, '').split('_');
+            return nameParts.map(part => 
+                part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+            ).join(' ');
+        }
+        
+        // Otherwise return as-is with proper capitalization
+        return nameOrUsername.split(' ').map(part => 
+            part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        ).join(' ');
+    }
+
+    getAssignedAgent(customerId) {
+        // Load agent data from the agents configuration
+        if (!this.agentAssignments) {
+            this.loadAgentAssignments();
+        }
+        
+        const assignment = this.agentAssignments?.get(customerId);
+        return assignment ? `${assignment.name} (${assignment.code})` : 'Unassigned';
+    }
+
+    getRecentTransactionCount(customerId) {
+        // Get transaction count from cached data or return loading state
+        if (!this.transactionCounts) {
+            this.loadTransactionCounts();
+            return 'Loading...';
+        }
+        
+        const count = this.transactionCounts?.get(customerId) || 0;
+        return count > 0 ? count : '0';
+    }
+
+    async loadAgentAssignments() {
+        try {
+            const response = await fetch(`${API_BASE}/config/agents`);
+            if (response.ok) {
+                const agentsConfig = await response.json();
+                this.agentAssignments = new Map();
+                
+                // Build customer -> agent mapping
+                agentsConfig.agents?.list?.forEach(agent => {
+                    if (agent.customers) {
+                        agent.customers.forEach(customerId => {
+                            this.agentAssignments.set(customerId.toString(), {
+                                name: agent.name,
+                                code: agent.code,
+                                id: agent.id
+                            });
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load agent assignments:', error);
+            this.agentAssignments = new Map();
+        }
+    }
+
+    async loadTransactionCounts() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/transactions/summary`);
+            if (response.ok) {
+                const summary = await response.json();
+                this.transactionCounts = new Map();
+                
+                // Mock transaction counts per customer - in real implementation, 
+                // this would come from the transaction service
+                const mockCounts = {};
+                for (let i = 1; i <= 3142; i++) {
+                    const customerId = `BB${i.toString().padStart(4, '0')}`;
+                    mockCounts[customerId] = Math.floor(Math.random() * 50) + 1;
+                }
+                
+                Object.entries(mockCounts).forEach(([customerId, count]) => {
+                    this.transactionCounts.set(customerId, count);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load transaction counts:', error);
+            this.transactionCounts = new Map();
+        }
+    }
+
+    populateAgentFilter(agents) {
+        const select = document.getElementById('customer-agent-filter');
+        if (!select || !agents) return;
+
+        // Keep the "All Agents" option and add agents
+        const agentOptions = agents.map(agent => 
+            `<option value="${agent.id}">${agent.name} (${agent.code})</option>`
+        ).join('');
+        
+        select.innerHTML = '<option value="all">All Agents</option>' + agentOptions;
+    }
+
+    async refreshCustomerData() {
+        this.addLog('Refreshing customer data...', 'info');
+        await this.loadCustomersData();
+    }
+
+    async viewCustomerTransactions(customerId) {
+        try {
+            this.addLog(`Loading transactions for customer ${customerId}...`, 'info');
+            const response = await fetch(`${API_BASE}/admin/transactions?customer=${customerId}`);
+            
+            if (response.ok) {
+                const transactions = await response.json();
+                this.showTransactionModal(customerId, transactions);
+            } else {
+                this.addLog(`Failed to load transactions for ${customerId}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error loading customer transactions:', error);
+            this.addLog('Error loading customer transactions', 'error');
+        }
+    }
+
+    showTransactionModal(customerId, transactions) {
+        const modal = document.createElement('div');
+        modal.className = 'transaction-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Transactions for Customer ${customerId}</h3>
+                    <button class="close-modal" onclick="this.closest('.transaction-modal').remove()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="transaction-summary">
+                        <div class="summary-item">
+                            <span>Total Transactions:</span>
+                            <span>${transactions.length}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Total Volume:</span>
+                            <span>$${transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="transactions-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${transactions.slice(0, 20).map(tx => `
+                                    <tr>
+                                        <td>${tx.id}</td>
+                                        <td class="transaction-type-${tx.type}">${tx.type}</td>
+                                        <td>$${(tx.amount || 0).toLocaleString()}</td>
+                                        <td><span class="badge badge-${tx.status === 'completed' ? 'success' : 'warning'}">${tx.status}</span></td>
+                                        <td>${new Date(tx.timestamp).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Add click-outside-to-close functionality
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    async exportCustomers() {
+        try {
+            this.addLog('Exporting customer data...', 'info');
+            const response = await fetch(`${API_BASE}/admin/export/customers`);
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `customers-export-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.addLog('Customer data exported successfully', 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            this.addLog(`Export failed: ${error.message}`, 'error');
+        }
+    }
+
+    async syncCustomerBalances() {
+        if (!confirm('This will sync all customer balances with the trading system. Continue?')) {
+            return;
+        }
+
+        try {
+            this.addLog('Syncing customer balances...', 'info');
+            const response = await fetch(`${API_BASE}/admin/sync-balances`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.addLog(`Balance sync completed: ${result.updated} customers updated`, 'success');
+                await this.refreshCustomerData();
+            } else {
+                throw new Error('Sync failed');
+            }
+        } catch (error) {
+            this.addLog(`Balance sync failed: ${error.message}`, 'error');
+        }
+    }
+
+    async viewCustomerDetails(customerId) {
+        try {
+            const response = await fetch(`${API_BASE}/admin/customers/${customerId}`);
+            if (response.ok) {
+                const customer = await response.json();
+                this.showCustomerModal(customer);
+            } else {
+                throw new Error('Customer not found');
+            }
+        } catch (error) {
+            this.addLog(`Failed to load customer details: ${error.message}`, 'error');
+        }
+    }
+
+    showCustomerModal(customer) {
+        // Create and show customer details modal
+        const modalContent = `
+            <div class="customer-details">
+                <h3>Customer Details</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Customer ID:</label>
+                        <span>${customer.customer_id || customer.id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Name:</label>
+                        <span>${customer.name || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Telegram:</label>
+                        <span>${customer.telegram_username || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Phone:</label>
+                        <span>${customer.phone || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Balance:</label>
+                        <span class="balance-amount">$${(customer.balance || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Weekly P&L:</label>
+                        <span class="pnl-amount ${customer.weekly_pnl >= 0 ? 'positive' : 'negative'}">
+                            ${customer.weekly_pnl >= 0 ? '+' : ''}$${(customer.weekly_pnl || 0).toLocaleString()}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Status:</label>
+                        <span class="badge badge-${this.getStatusClass(customer.active ? 'active' : 'inactive')}">${customer.active ? 'Active' : 'Inactive'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Group Chat:</label>
+                        <span>${customer.group_chat_id || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Keywords:</label>
+                        <span>${customer.keywords ? customer.keywords.join(', ') : 'None'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Last Active:</label>
+                        <span>${customer.last_activity ? new Date(customer.last_activity).toLocaleString() : 'Never'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Simple modal implementation (you could enhance this)
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+        modal.innerHTML = `
+            <div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%;">
+                ${modalContent}
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-secondary" onclick="document.body.removeChild(this.closest('div'))">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    async editCustomer(customerId) {
+        this.addLog(`Edit customer ${customerId} - Feature coming soon`, 'info');
+    }
+
+    async adjustCustomerBalance(customerId) {
+        const amount = prompt('Enter balance adjustment amount (use negative for deduction):');
+        if (!amount) return;
+
+        const adjustment = parseFloat(amount);
+        if (isNaN(adjustment)) {
+            alert('Invalid amount entered');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/admin/customers/${customerId}/balance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adjustment })
+            });
+
+            if (response.ok) {
+                this.addLog(`Balance adjusted by $${adjustment} for customer ${customerId}`, 'success');
+                await this.refreshCustomerData();
+            } else {
+                throw new Error('Balance adjustment failed');
+            }
+        } catch (error) {
+            this.addLog(`Balance adjustment failed: ${error.message}`, 'error');
+        }
+    }
+
+    async customerTransactionHistory(customerId) {
+        try {
+            const response = await fetch(`${API_BASE}/admin/customers/${customerId}/transactions`);
+            if (response.ok) {
+                const transactions = await response.json();
+                this.showTransactionHistoryModal(customerId, transactions);
+            } else {
+                throw new Error('Failed to load transactions');
+            }
+        } catch (error) {
+            this.addLog(`Failed to load transaction history: ${error.message}`, 'error');
+        }
+    }
+
+    showTransactionHistoryModal(customerId, transactions) {
+        const transactionRows = transactions.map(tx => `
+            <tr>
+                <td>${tx.id}</td>
+                <td>${tx.type}</td>
+                <td>$${tx.amount.toLocaleString()}</td>
+                <td><span class="badge badge-${tx.status === 'completed' ? 'success' : tx.status === 'pending' ? 'warning' : 'danger'}">${tx.status}</span></td>
+                <td>${new Date(tx.timestamp).toLocaleString()}</td>
+            </tr>
+        `).join('');
+
+        const modalContent = `
+            <div class="transaction-history">
+                <h3>Transaction History - Customer ${customerId}</h3>
+                <table class="table">
+                    <thead>
+                        <tr><th>ID</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>${transactionRows}</tbody>
+                </table>
+            </div>
+        `;
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+        modal.innerHTML = `
+            <div style="background: white; padding: 20px; border-radius: 8px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                ${modalContent}
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-secondary" onclick="document.body.removeChild(this.closest('div'))">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    async addNewCustomer() {
+        this.addLog('Add new customer - Feature coming soon', 'info');
+        // This would open a form to add a new customer
+    }
+
+    resetCustomerFilters() {
+        document.getElementById('customer-search').value = '';
+        document.getElementById('customer-status-filter').value = 'all';
+        document.getElementById('customer-agent-filter').value = 'all';
+        this.refreshCustomerData();
+    }
+
+    loadCustomersPage(direction) {
+        this.addLog(`Loading ${direction} page - Feature coming soon`, 'info');
+        // This would implement pagination
     }
 
     // ===== QUICK ACTIONS =====
@@ -1374,6 +2226,186 @@ class UnifiedDashboard {
         setTimeout(() => {
             notification.classList.remove('show');
         }, 3000);
+    }
+
+    // === AGENT CONFIGURATION MANAGEMENT ===
+    
+    async refreshAgentData() {
+        this.addLog('Refreshing agent data...', 'info');
+        await this.loadAgentsData();
+        await this.loadAgentConfigStatus();
+    }
+
+    async loadAgentConfigStatus() {
+        try {
+            const response = await fetch(`${API_BASE}/yaml/agents`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Parse the YAML content to get counts
+                    const configContent = data.content;
+                    const agentMatches = configContent.match(/- id: A\d+/g) || [];
+                    const masterMatches = configContent.match(/- id: M\d+/g) || [];
+                    
+                    document.getElementById('config-file-status').textContent = 'Loaded';
+                    document.getElementById('config-agent-count').textContent = agentMatches.length;
+                    document.getElementById('config-master-count').textContent = masterMatches.length;
+                    
+                    this.addLog('Agent config status loaded', 'success');
+                } else {
+                    document.getElementById('config-file-status').textContent = 'Error';
+                    this.addLog('Failed to load agent config', 'error');
+                }
+            }
+        } catch (error) {
+            document.getElementById('config-file-status').textContent = 'Error';
+            this.addLog(`Config status error: ${error.message}`, 'error');
+        }
+    }
+
+    async editAgentConfig() {
+        try {
+            const response = await fetch(`${API_BASE}/yaml/agents`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('agent-config-editor').value = data.content;
+                    document.getElementById('config-editor-modal').style.display = 'block';
+                    document.getElementById('config-validation').innerHTML = '<div class="success">Configuration loaded successfully</div>';
+                } else {
+                    this.addLog(`Failed to load config: ${data.error}`, 'error');
+                }
+            }
+        } catch (error) {
+            this.addLog(`Config load error: ${error.message}`, 'error');
+        }
+    }
+
+    closeConfigEditor() {
+        document.getElementById('config-editor-modal').style.display = 'none';
+    }
+
+    async validateAgentConfig() {
+        const content = document.getElementById('agent-config-editor').value;
+        const validationDiv = document.getElementById('config-validation');
+        
+        try {
+            // Basic YAML validation - check for common issues
+            const lines = content.split('\n');
+            let errors = [];
+            let warnings = [];
+
+            // Check for proper indentation
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.trim() && !line.match(/^[\s]*[a-zA-Z_-]+:/) && !line.match(/^[\s]*-/)) {
+                    if (!line.match(/^[\s]*#/)) { // Skip comments
+                        warnings.push(`Line ${i + 1}: Possible indentation issue`);
+                    }
+                }
+            }
+
+            // Check for required sections
+            if (!content.includes('agents:')) {
+                errors.push('Missing required "agents:" section');
+            }
+            if (!content.includes('masters:')) {
+                errors.push('Missing required "masters:" section');
+            }
+            if (!content.includes('commission:')) {
+                errors.push('Missing required "commission:" section');
+            }
+
+            // Display validation results
+            if (errors.length === 0 && warnings.length === 0) {
+                validationDiv.innerHTML = '<div class="success"><i class="fas fa-check"></i> Configuration is valid</div>';
+                this.showNotification('Configuration validation passed', 'success');
+            } else {
+                let html = '';
+                if (errors.length > 0) {
+                    html += '<div class="error"><strong>Errors:</strong><ul>';
+                    errors.forEach(error => html += `<li>${error}</li>`);
+                    html += '</ul></div>';
+                }
+                if (warnings.length > 0) {
+                    html += '<div class="warning"><strong>Warnings:</strong><ul>';
+                    warnings.forEach(warning => html += `<li>${warning}</li>`);
+                    html += '</ul></div>';
+                }
+                validationDiv.innerHTML = html;
+                this.showNotification(`Validation found ${errors.length} errors, ${warnings.length} warnings`, errors.length > 0 ? 'error' : 'warning');
+            }
+
+            this.addLog(`Config validation: ${errors.length} errors, ${warnings.length} warnings`, errors.length > 0 ? 'error' : 'warning');
+            
+        } catch (error) {
+            validationDiv.innerHTML = `<div class="error">Validation error: ${error.message}</div>`;
+            this.addLog(`Validation error: ${error.message}`, 'error');
+        }
+    }
+
+    async saveAgentConfig() {
+        const content = document.getElementById('agent-config-editor').value;
+        
+        try {
+            this.addLog('Saving agent configuration...', 'info');
+            
+            const response = await fetch(`${API_BASE}/yaml/agents`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.addLog('Agent configuration saved successfully', 'success');
+                this.showNotification('Configuration saved successfully!', 'success');
+                this.closeConfigEditor();
+                
+                // Refresh agent data
+                await this.loadAgentsData();
+                await this.loadAgentConfigStatus();
+            } else {
+                this.addLog(`Failed to save config: ${result.error}`, 'error');
+                this.showNotification(`Save failed: ${result.error}`, 'error');
+                document.getElementById('config-validation').innerHTML = `<div class="error">Save error: ${result.error}</div>`;
+            }
+            
+        } catch (error) {
+            this.addLog(`Config save error: ${error.message}`, 'error');
+            this.showNotification(`Save error: ${error.message}`, 'error');
+        }
+    }
+
+    async reloadAgentConfig() {
+        this.addLog('Reloading agent configuration...', 'info');
+        await this.loadAgentConfigStatus();
+        await this.loadAgentsData();
+        this.showNotification('Agent configuration reloaded', 'success');
+    }
+
+    async calculateCommissions() {
+        try {
+            this.addLog('Calculating commissions...', 'info');
+            const response = await fetch(`${API_BASE}/admin/commissions/calculate`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.addLog('Commission calculation completed', 'success');
+                this.showNotification('Commissions calculated successfully', 'success');
+                
+                // Refresh commission data
+                await this.loadAgentsData();
+            } else {
+                throw new Error('Commission calculation failed');
+            }
+        } catch (error) {
+            this.addLog(`Commission calculation error: ${error.message}`, 'error');
+            this.showNotification('Commission calculation failed', 'error');
+        }
     }
 }
 

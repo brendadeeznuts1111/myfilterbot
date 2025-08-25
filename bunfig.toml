@@ -269,8 +269,12 @@ preload = [
 ]
 
 [install.security]
-# Enable security scanning for packages (optional)
-# scanner = "@my-company/bun-security-scanner"
+# Enable security scanning for packages
+scanner = "audit-ci"
+# Fail installation if critical vulnerabilities are found
+failOnError = true
+# Audit level - fail on high and critical vulnerabilities
+auditLevel = "high"
 
 [install.lockfile]
 # Generate lockfile with native SQL/YAML dependencies

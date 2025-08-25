@@ -117,7 +117,7 @@ const ClickHouseConfigSchema = z.object({
     .optional(),
 });
 
-const DatabaseConnectionSchema = z.union([
+export const DatabaseConnectionSchema = z.union([
   PostgresConfigSchema,
   RedisConfigSchema,
   ClickHouseConfigSchema,

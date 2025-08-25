@@ -4,11 +4,10 @@
  * Leverages Bun v1.2.21+ ReadableStream features for optimal performance
  */
 
-import { parentPort, workerData } from 'worker_threads';
+import { parentPort } from 'worker_threads';
 import {
   spawnPythonJSON,
   DatabaseOperations,
-  BotOperations,
 } from '../utils/spawn-utils';
 import { fetchJSON, StreamUtils } from '../utils/stream-helpers';
 
@@ -91,7 +90,13 @@ class NotificationWorker {
           const processingTime = performance.now() - startTime;
           this.updateStats(processingTime, true);
         } catch (error: any) {
-          console.error('[NotificationWorker] Task processing error:', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error('[NotificationWorker] Task processing error:', {
+            error: errorMessage,
+            stack: error instanceof Error ? error.stack : undefined,
+            taskType: task.type,
+            priority: task.priority
+          });
           this.updateStats(0, false);
 
           this.sendError({
@@ -149,10 +154,17 @@ class NotificationWorker {
         );
         deliveryResults.push(result);
       } catch (error: any) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('[NotificationWorker] Channel delivery error:', {
+          channel,
+          notificationId: notification.id,
+          error: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined
+        });
         deliveryResults.push({
           channel,
           success: false,
-          error: error.message,
+          error: errorMessage,
           latency: 0,
         });
       }
@@ -224,7 +236,7 @@ class NotificationWorker {
     let totalDelivered = 0;
     const totalAttempted = notifications.length;
 
-    batchResults.forEach((result, index) => {
+    batchResults.forEach((result, _index) => {
       if (result.status === 'fulfilled') {
         totalDelivered += result.value.delivered;
       }
@@ -371,7 +383,7 @@ class NotificationWorker {
       }
     } else {
       // Traditional approach
-      const telegramData = {
+      const _telegramData = {
         userId: notification.userId,
         title: notification.title,
         message: notification.message,
@@ -541,7 +553,13 @@ class NotificationWorker {
 
         delivered += userNotifications.length;
       } catch (error: any) {
-        console.error(`Batch WebSocket delivery failed for ${userKey}:`, error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Batch WebSocket delivery failed for ${userKey}:`, {
+          error: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+          userKey,
+          notificationCount: userNotifications.length
+        });
       }
     }
 
@@ -632,7 +650,12 @@ class NotificationWorker {
         });
       }
     } catch (error: any) {
-      console.error('[NotificationWorker] Cleanup error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('[NotificationWorker] Cleanup error:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
     }
   }
 
@@ -677,7 +700,13 @@ class NotificationWorker {
         deliveryResults: results,
       });
     } catch (error: any) {
-      console.error('Failed to update delivery status:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to update delivery status:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        notificationId,
+        resultsCount: results.length
+      });
     }
   }
 
@@ -758,7 +787,7 @@ class NotificationWorker {
 }
 
 // Initialize worker
-const worker = new NotificationWorker();
+const _worker = new NotificationWorker();
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
