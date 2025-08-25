@@ -82,18 +82,22 @@
 ## 🔧 **CRITICAL SYSTEM COMPONENTS**
 
 ### **1. YAML Configuration System** ⚙️
-**Location:** `src/utils/yaml-config.ts`
-**Status:** ✅ **PRODUCTION READY**
+**Location:** `src/utils/yaml-config.ts` + **Bun Native Support**
+**Status:** ✅ **PRODUCTION READY** + **NATIVE CAPABILITIES**
 **Features:**
-- Environment variable interpolation: `${VAR:-default}`
-- Hot-reload with file watching
-- Environment-specific overrides
-- Feature flag system
-- Automatic caching and validation
+- **Bun Native**: Direct YAML imports with hot reloading
+- **Bun Native**: Environment variable interpolation: `${VAR:-default}`
+- **Bun Native**: Build-time optimization and zero runtime overhead
+- **Custom System**: Advanced caching, validation, and feature flags
+- **Custom System**: Environment-specific overrides and complex merging
 
-**Usage:**
+**Usage Options:**
 ```typescript
-// ✅ CORRECT: Use existing system
+// ✅ OPTION 1: Bun's native YAML support (recommended for new code)
+import config from "./config.yaml";
+import { database, features } from "./config.yaml";
+
+// ✅ OPTION 2: Existing system for advanced features
 import { getConfig } from '@/utils/yaml-config';
 const appConfig = await getConfig('app.yaml');
 ```
@@ -134,7 +138,17 @@ const appConfig = await getConfig('app.yaml');
 ### **1. Configuration Duplication** ❌
 **Problem:** Multiple YAML configuration systems
 **Impact:** Confusion, maintenance overhead, conflicts
-**Solution:** Use only `src/utils/yaml-config.ts`
+**Solution:** Use **Bun's native YAML support** for new configs, **existing system** for advanced features
+
+### **2. Ignoring Bun's Native Capabilities** ❌
+**Problem:** Not leveraging Bun's built-in YAML support
+**Impact:** Missing hot reloading, build optimization, environment interpolation
+**Solution:** Use `import config from "./config.yaml"` for new configurations
+
+### **3. Creating Custom YAML Parsers** ❌
+**Problem:** Building new YAML parsing systems
+**Impact:** Duplicates Bun's native functionality, loses hot reloading
+**Solution:** Use Bun's `YAML.parse()` or direct imports
 
 ### **2. New YAML Parsers** ❌
 **Problem:** Creating simple YAML parsers
@@ -154,12 +168,13 @@ const appConfig = await getConfig('app.yaml');
 ## ✅ **BEST PRACTICES SUMMARY**
 
 ### **Configuration Management**
-- ✅ Use existing YAML system at `src/utils/yaml-config.ts`
+- ✅ **For new code**: Use Bun's native YAML support (`import config from "./config.yaml"`)
+- ✅ **For existing code**: Use existing system at `src/utils/yaml-config.ts`
 - ✅ Use environment variable interpolation: `${VAR:-default}`
 - ✅ Use feature flags for conditional functionality
 - ✅ Use hot-reload for development
-- ❌ Don't create new configuration systems
-- ❌ Don't import YAML files directly
+- ❌ Don't create new custom YAML parsers
+- ❌ Don't ignore Bun's native capabilities
 - ❌ Don't hardcode configuration values
 
 ### **Development Workflow**
@@ -321,6 +336,32 @@ bun test tests/typescript/
 - [ ] Advanced analytics dashboard
 - [ ] Mobile application
 - [ ] Multi-tenant support
+
+## 🚀 **BUN'S NATIVE YAML CAPABILITIES**
+
+### **Leverage Bun's Built-in Features** ✅
+Based on [Bun's YAML documentation](https://bun.com/docs/api/yaml), we have access to powerful native capabilities:
+
+**Key Native Features:**
+- **Direct imports**: `import config from "./config.yaml"`
+- **Hot reloading**: Automatic with `bun --hot`
+- **Environment variables**: `${VAR:-default}` syntax support
+- **Build optimization**: Zero runtime parsing overhead
+- **YAML 1.2 compliance**: 90%+ specification coverage
+
+**Usage Examples:**
+```typescript
+// ✅ NATIVE: Direct YAML imports
+import config from "./config.yaml";
+import { database, features } from "./config.yaml";
+
+// ✅ NATIVE: Hot reloading works automatically
+// Changes to config.yaml automatically reload with bun --hot
+
+// ✅ NATIVE: Environment variable interpolation
+// config.yaml: host: ${DB_HOST:-localhost}
+// Automatically handled by Bun
+```
 
 ## 📞 **SUPPORT & RESOURCES**
 

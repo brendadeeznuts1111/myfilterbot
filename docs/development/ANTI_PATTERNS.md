@@ -19,10 +19,12 @@ config/*.yaml                     // Direct imports
 
 **Best Practice:**
 ```typescript
-// ✅ Use single unified config system
-import { configManager } from '@/utils/yaml-config';
+// ✅ OPTION 1: Use Bun's native YAML support (recommended for new code)
+import config from "./config.yaml";
+import { database, features } from "./config.yaml";
 
-// Single source of truth for all configs
+// ✅ OPTION 2: Use existing system for advanced features
+import { configManager } from '@/utils/yaml-config';
 const appConfig = await configManager.get('app.yaml');
 ```
 
@@ -135,12 +137,37 @@ const JWT_SECRET = new TextEncoder().encode(ENV.JWT_SECRET);
 const COOKIE_NAME = ENV.COOKIE_NAME;
 ```
 
+## 🚀 **BUN'S NATIVE YAML CAPABILITIES**
+
+### **Leverage Bun's Built-in Features** ✅
+Based on [Bun's YAML documentation](https://bun.com/docs/api/yaml), we have access to powerful native capabilities:
+
+```typescript
+// ✅ NATIVE: Direct YAML imports with hot reloading
+import config from "./config.yaml";
+import { database, features } from "./config.yaml";
+
+// ✅ NATIVE: Environment variable interpolation
+// config.yaml: host: ${DB_HOST:-localhost}
+// Automatically handled by Bun
+
+// ✅ NATIVE: Hot reloading with bun --hot
+// Changes to YAML files automatically reload
+```
+
+**Native Features Available:**
+- **Direct imports**: `import config from "./config.yaml"`
+- **Hot reloading**: Automatic with `bun --hot`
+- **Environment variables**: `${VAR:-default}` syntax
+- **Build optimization**: Zero runtime parsing overhead
+- **YAML 1.2 compliance**: 90%+ specification coverage
+
 ## 🛠️ **RECOMMENDED REFACTORING PLAN**
 
 ### Phase 1: Configuration Consolidation (Priority 1)
 1. **Audit all configuration files**
-2. **Consolidate into single system**
-3. **Remove duplicate implementations**
+2. **Use Bun's native YAML for new configs**
+3. **Migrate existing configs to native where possible**
 4. **Update all imports**
 
 ### Phase 2: Environment Standardization (Priority 2)

@@ -6,9 +6,38 @@ This document outlines the **correct** way to handle configuration in the Fantde
 
 ## ✅ **RECOMMENDED CONFIGURATION SYSTEM**
 
-### **Use the Existing System: `src/utils/yaml-config.ts`**
+### **Option 1: Use Bun's Native YAML Support (Recommended for New Code)**
 
-The codebase already has a **comprehensive, production-ready** YAML configuration system. **DO NOT** create new configuration systems.
+Bun provides **first-class YAML support** with built-in features. This is the **preferred approach** for new configuration needs:
+
+```typescript
+// ✅ NATIVE: Use Bun's built-in YAML capabilities
+import config from "./config.yaml";
+import { database, features } from "./config.yaml";
+
+// Hot reloading works automatically with bun --hot
+// Environment variables supported natively
+// Zero runtime parsing overhead
+```
+
+**Native Features:**
+- Direct YAML file imports
+- Automatic hot reloading
+- Environment variable interpolation
+- Build-time optimization
+- 90%+ YAML 1.2 specification compliance
+
+### **Option 2: Use the Existing System: `src/utils/yaml-config.ts`**
+
+The codebase also has a **comprehensive, production-ready** custom YAML configuration system. Use this for **existing functionality** or when you need custom features:
+
+```typescript
+// ✅ EXISTING: Use existing system for advanced features
+import { configManager, getConfig } from '@/utils/yaml-config';
+
+// Advanced features like custom caching, validation, etc.
+const config = await configManager.get('app.yaml');
+```
 
 ```typescript
 // ✅ CORRECT: Use existing system
@@ -31,8 +60,32 @@ const config = await configManager.get('app.yaml');
 ```
 
 ### **2. Environment Variable Interpolation**
+
+#### **Option 1: Bun's Native Support (Recommended)**
 ```yaml
-# ✅ CORRECT: Use ${VAR:-default} syntax
+# ✅ NATIVE: Environment variables in YAML
+# config/app.yaml
+app:
+  port: ${PORT:-3000}
+  database:
+    host: ${DB_HOST:-localhost}
+    port: ${DB_PORT:-5432}
+    name: ${DB_NAME:-fantdev}
+    password: ${DB_PASSWORD}
+```
+
+**Usage with Bun:**
+```typescript
+// ✅ NATIVE: Environment variables automatically interpolated
+import config from "./config/app.yaml";
+
+console.log(`Port: ${config.app.port}`);           // Uses ${PORT:-3000}
+console.log(`DB Host: ${config.app.database.host}`); // Uses ${DB_HOST:-localhost}
+```
+
+#### **Option 2: Custom Interpolation (Advanced)**
+```yaml
+# ✅ CUSTOM: Advanced environment variable handling
 # config/app.yaml
 app:
   port: ${PORT:-3000}
@@ -81,9 +134,58 @@ config/
 
 ## 🔧 **USING THE CONFIGURATION SYSTEM**
 
-### **Basic Configuration Loading**
+### **Option 1: Bun's Native YAML Support (Recommended)**
+
+#### **Basic Configuration Loading**
 ```typescript
-// ✅ CORRECT: Basic usage
+// ✅ NATIVE: Direct YAML import
+import config from "./config.yaml";
+
+console.log(`Server port: ${config.server.port}`);
+console.log(`Database: ${config.database.host}:${config.database.port}`);
+```
+
+#### **Named Imports for Destructuring**
+```typescript
+// ✅ NATIVE: Destructure top-level properties
+import { database, server, features } from "./config.yaml";
+
+if (features.auth) {
+  setupAuthentication(database);
+}
+
+const serverConfig = {
+  port: server.port,
+  timeout: server.timeout
+};
+```
+
+#### **Import Attributes Syntax**
+```typescript
+// ✅ NATIVE: Explicit YAML type declaration
+import config from "./config.yaml" with { type: "yaml" };
+
+// This ensures Bun treats the file as YAML
+```
+
+#### **Runtime YAML Parsing**
+```typescript
+// ✅ NATIVE: Parse YAML strings at runtime
+import { YAML } from "bun";
+
+const yamlString = `
+database:
+  host: localhost
+  port: 5432
+`;
+
+const config = YAML.parse(yamlString);
+console.log(config.database.host); // => "localhost"
+```
+
+### **Option 2: Existing Custom System (For Advanced Features)**
+```typescript
+// ✅ EXISTING: Use existing system for advanced features
 import { getConfig } from '@/utils/yaml-config';
 
 const appConfig = await getConfig('app.yaml');
@@ -178,20 +280,49 @@ const COOKIE_NAME = "dashboard_session";
 
 ## 🔄 **CONFIGURATION HOT-RELOAD**
 
-### **Automatic Hot-Reload**
-The existing system automatically watches for configuration changes:
+### **Option 1: Bun's Native Hot-Reload (Automatic)**
+
+Bun provides **automatic hot-reload** when running with `bun --hot`:
 
 ```typescript
-// ✅ CORRECT: Hot-reload is automatic
+// ✅ NATIVE: Automatic hot-reload with bun --hot
+import { server, features } from "./config/server.yaml";
+
+console.log(`Server port: ${server.port}`);
+
+// Run with: bun --hot server.ts
+// Changes to config/server.yaml automatically reload!
+```
+
+**Start with Hot-Reload:**
+```bash
+# Enable hot-reload for automatic configuration updates
+bun --hot server.ts
+
+# Now edit config/server.yaml and see changes instantly
+echo "port: 4000" >> config/server.yaml
+# Server automatically uses new port 4000
+```
+
+### **Option 2: Custom Hot-Reload System (Advanced Features)**
+
+The existing system provides **custom hot-reload logic** for complex scenarios:
+
+```typescript
+// ✅ EXISTING: Custom hot-reload with advanced features
 import { configManager } from '@/utils/yaml-config';
 
 // Configuration automatically reloads when files change
 const config = await configManager.get('app.yaml');
 
-// Subscribe to changes
+// Subscribe to changes with custom logic
 configManager.watch('app.yaml', (newConfig) => {
   console.log('Configuration updated!');
-  // Apply new configuration
+  
+  // Apply new configuration with validation
+  if (validateConfig(newConfig)) {
+    updateServerConfig(newConfig);
+  }
 });
 ```
 
@@ -294,9 +425,64 @@ const config = await getConfig('app.yaml');
 const validatedConfig = AppConfigSchema.parse(config);
 ```
 
-## 📚 **EXAMPLES**
+## 📚 **PRACTICAL EXAMPLES**
 
-### **Complete Configuration Example**
+### **Example 1: Server Configuration with Bun Native Support**
+```yaml
+# config/server.yaml
+server:
+  port: 3000
+  host: localhost
+  timeout: 30
+
+database:
+  host: localhost
+  port: 5432
+  name: fantdev
+  pool:
+    min: 2
+    max: 10
+
+features:
+  auth: true
+  rateLimit: true
+  debug: false
+```
+
+**Usage in Server Code:**
+```typescript
+// server.ts
+import { server, database, features } from "./config/server.yaml";
+
+console.log(`Starting server on ${server.host}:${server.port}`);
+
+// Database connection
+const dbConfig = {
+  host: database.host,
+  port: database.port,
+  database: database.name,
+  pool: database.pool
+};
+
+// Feature flags
+if (features.debug) {
+  console.log("Debug mode enabled");
+}
+
+// Start server
+Bun.serve({
+  port: server.port,
+  hostname: server.host,
+  fetch(req) {
+    if (features.rateLimit) {
+      // Apply rate limiting
+    }
+    return new Response("Hello World");
+  },
+});
+```
+
+### **Example 2: Feature Flags with Bun Native Support**
 ```yaml
 # config/app.yaml
 app:
@@ -306,32 +492,108 @@ app:
   environment: ${NODE_ENV:-development}
   
   database:
-    url: ${DATABASE_URL:-postgresql://localhost:5432/fantdev}
-    max_connections: ${MAX_CONNECTIONS:-10}
-    timeout: ${DB_TIMEOUT:-5000}
+    host: localhost
+    port: 5432
+    name: fantdev
+    max_connections: 10
+    timeout: 5000
   
-  telegram:
-    bot_token: ${BOT_TOKEN}
-    admin_chat_id: ${ADMIN_CHAT_ID}
-    webhook_secret: ${WEBHOOK_SECRET}
+  server:
+    port: 3000
+    timeout: 30
   
-  security:
-    jwt_secret: ${JWT_SECRET}
-    session_secret: ${SESSION_SECRET}
-    rate_limit: ${RATE_LIMIT:-100}
-
-environments:
-  development:
-    debug: true
-    log_level: debug
-    database:
-      url: "postgresql://localhost:5432/fantdev_dev"
-  
-  production:
+  features:
+    auth: true
+    rateLimit: true
     debug: false
-    log_level: warn
-    database:
-      max_connections: 50
+```
+
+**Usage with Bun Native Support:**
+```typescript
+// ✅ NATIVE: Direct import (recommended)
+import config from "./config.yml" with { type: "yaml" };
+
+// Access nested properties
+config.database.host; // => "localhost"
+config.server.port;   // => 3000
+config.features.auth; // => true
+
+// ✅ NATIVE: Named imports for destructuring
+import { database, server, features } from "./config.yml" with { type: "yaml" };
+
+console.log(database.name);      // => "fantdev"
+console.log(server.timeout);     // => 30
+console.log(features.rateLimit); // => true
+
+// ✅ NATIVE: Runtime parsing for dynamic YAML
+const yamlString = `
+name: John Doe
+age: 30
+hobbies:
+  - reading
+  - coding
+`;
+
+const data = Bun.YAML.parse(yamlString);
+console.log(data.name);     // => "John Doe"
+console.log(data.hobbies);  // => ["reading", "coding"]
+
+// Hot reloading works automatically with bun --hot
+console.log(`Server starting on port ${config.server.port}`);
+```
+
+### **Feature Flags with Bun Native Support**
+```yaml
+# config/features.yaml
+features:
+  newDashboard:
+    enabled: true
+    rolloutPercentage: 50
+    allowedUsers:
+      - admin@example.com
+      - beta@example.com
+
+  experimentalAPI:
+    enabled: false
+    endpoints:
+      - /api/v2/experimental
+      - /api/v2/beta
+
+  darkMode:
+    enabled: true
+    default: auto
+```
+
+**Usage:**
+```typescript
+// ✅ NATIVE: Feature flag management
+import { features } from "./config/features.yaml";
+
+export function isFeatureEnabled(featureName: string, userEmail?: string): boolean {
+  const feature = features[featureName];
+  
+  if (!feature?.enabled) return false;
+  
+  // Check rollout percentage
+  if (feature.rolloutPercentage < 100) {
+    const hash = hashCode(userEmail || "anonymous");
+    if (hash % 100 >= feature.rolloutPercentage) return false;
+  }
+  
+  // Check allowed users
+  if (feature.allowedUsers && userEmail) {
+    return feature.allowedUsers.includes(userEmail);
+  }
+  
+  return true;
+}
+
+// Hot reloading works automatically!
+if (isFeatureEnabled("newDashboard", user.email)) {
+  renderNewDashboard();
+} else {
+  renderLegacyDashboard();
+}
 ```
 
 ### **Usage in Code**
@@ -369,22 +631,142 @@ class AppServer {
 }
 ```
 
+## 🎯 **WHEN TO USE EACH APPROACH**
+
+### **Use Bun's Native YAML Support When:**
+- ✅ **New configuration files** are needed
+- ✅ **Simple configuration** without custom logic
+- ✅ **Hot reloading** is the primary requirement
+- ✅ **Environment variables** need interpolation
+- ✅ **Build-time optimization** is desired
+- ✅ **Direct imports** are preferred
+
+### **Use Existing Custom System When:**
+- ✅ **Advanced features** are needed (custom caching, validation)
+- ✅ **Existing functionality** must be maintained
+- ✅ **Custom hot-reload logic** is required
+- ✅ **Feature flag management** with rollout percentages
+- ✅ **Complex configuration merging** is needed
+- ✅ **Backward compatibility** is critical
+
+## 🚀 **COMPLETE BUN YAML IMPORT GUIDE**
+
+### **Copy-Paste Ready Examples (No External Packages)**
+
+#### **✅ 1. Import YAML directly (ESM)**
+```typescript
+// config.yml
+// port: 3000
+// debug: true
+
+import config from "./config.yml" with { type: "yaml" };
+console.log(config.port); // 3000
+```
+
+**Rules:**
+- File must end in `.yml` or `.yaml`
+- `with { type: "yaml" }` is **required** for ESM
+- Works for **both** `import` and `require`
+
+#### **✅ 2. Dynamic loading (CommonJS)**
+```typescript
+const config = require("./config.yml");
+console.log(config.debug); // true
+```
+
+#### **✅ 3. Hot-reload YAML (dev only)**
+```typescript
+// auto-reload on edit
+Bun.watch("config.yml", () => {
+  const cfg = await import("./config.yml", { with: { type: "yaml" } });
+  console.log("Reloaded", cfg.default);
+});
+```
+
+#### **✅ 4. Environment variables inside YAML**
+```typescript
+// config.yml
+// port: ${PORT:-3000}
+
+const cfg = await import("./config.yml", { with: { type: "yaml" } });
+// cfg.default.port === process.env.PORT || 3000
+```
+
+#### **✅ 5. Save YAML back to disk**
+```typescript
+import { stringify } from "yaml";
+await Bun.write("config.yml", stringify(cfg, { indent: 2 }));
+```
+
+#### **✅ 6. Bundle-time optimization**
+```bash
+bun build app.ts --outdir=dist
+```
+
+YAML is **parsed at build time** → zero runtime cost.
+
+---
+
+**That's it**—import, hot-reload, bundle, done.
+
+## 🚀 **MIGRATION GUIDE**
+
+### **From Custom System to Bun Native**
+
+#### **Step 1: Identify Simple Configurations**
+```typescript
+// Before: Custom system
+import { getConfig } from '@/utils/yaml-config';
+const config = await getConfig('app.yaml');
+
+// After: Bun native
+import config from "./config.yml" with { type: "yaml" };
+```
+
+#### **Step 2: Update Import Statements**
+```typescript
+// Before: Complex import
+const { database, server } = await getConfig('app.yaml');
+
+// After: Direct destructuring
+import { database, server } from "./config/app.yaml";
+```
+
+#### **Step 3: Enable Hot-Reloading**
+```bash
+# Before: Manual reloading
+await configManager.reload('app.yaml');
+
+# After: Automatic with bun --hot
+bun --hot server.ts
+# Changes to YAML files automatically reload
+```
+
+### **When to Keep Custom System**
+- **Complex validation logic** required
+- **Custom caching strategies** needed
+- **Advanced feature flag management**
+- **Backward compatibility** requirements
+- **Custom hot-reload logic** needed
+
 ## 🎯 **SUMMARY**
 
 ### **✅ DO:**
-- Use the existing `src/utils/yaml-config.ts` system
+- **For new code**: Use Bun's native YAML support (`import config from "./config.yaml"`)
+- **For existing code**: Use the existing `src/utils/yaml-config.ts` system
 - Use environment variable interpolation: `${VAR:-default}`
 - Use environment-specific overrides
 - Use feature flags for conditional functionality
-- Use hot-reload for development
+- Use hot-reload for development (`bun --hot`)
 - Validate configuration with schemas
 
 ### **❌ DON'T:**
-- Create new YAML parsers
-- Import YAML files directly
+- Create new custom YAML parsers
+- Ignore Bun's native capabilities
 - Hardcode configuration values
 - Duplicate configuration logic
-- Ignore the existing robust system
+- Mix approaches inconsistently
+- Forget to use `bun --hot` for development
 
 ---
 

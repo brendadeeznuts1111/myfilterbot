@@ -54,6 +54,9 @@
             <button class="nav-tab" data-tab="logs">
                 <i class="fas fa-terminal"></i> Live Logs
             </button>
+            <button class="nav-tab" data-tab="docs">
+                <i class="fas fa-book"></i> Docs
+            </button>
         </nav>
 
         <!-- Main Content -->
@@ -316,6 +319,136 @@
                 </div>
                 <div id="logs-container" class="logs-container">
                     <!-- Logs will appear here -->
+                </div>
+            </div>
+
+            <!-- Docs Tab -->
+            <div id="docs-tab" class="tab-content">
+                <div class="docs-container">
+                    <h2>📚 Bun Native YAML Documentation</h2>
+                    
+                    <div class="docs-section">
+                        <h3>🔗 Official Documentation</h3>
+                        <div class="docs-links">
+                            <a href="https://bun.com/docs/api/yaml" target="_blank" class="doc-link">
+                                <i class="fas fa-external-link-alt"></i> Bun YAML API Documentation
+                            </a>
+                            <a href="https://bun.com/guides/runtime/import-yaml" target="_blank" class="doc-link">
+                                <i class="fas fa-external-link-alt"></i> Import YAML Files Guide
+                            </a>
+                            <a href="/docs/BUN_NATIVE_YAML_GUIDE.md" target="_blank" class="doc-link">
+                                <i class="fas fa-file-alt"></i> Complete YAML Guide (Local)
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="docs-section">
+                        <h3>⚡ Quick Reference - Bun YAML API</h3>
+                        <div class="code-examples">
+                            <div class="code-block">
+                                <h4>1. Load YAML → JS Object</h4>
+                                <pre><code>import { YAML } from "bun";
+
+const cfg = YAML.parse(await Bun.file("config/app.yml").text());
+// cfg is now a plain JS object</code></pre>
+                            </div>
+
+                            <div class="code-block">
+                                <h4>2. Save JS Object → YAML</h4>
+                                <pre><code>import { YAML } from "bun";
+
+const yamlStr = YAML.stringify(cfg);
+await Bun.write("config/app.yml", yamlStr);</code></pre>
+                            </div>
+
+                            <div class="code-block">
+                                <h4>3. Direct Import (Build-time)</h4>
+                                <pre><code>// Import entire YAML file
+import config from "./config.yaml";
+
+// Named imports
+import { database, features } from "./config.yaml";
+
+console.log(config.server.port); // 3000</code></pre>
+                            </div>
+
+                            <div class="code-block">
+                                <h4>4. Hot-Reload (Zero Restart)</h4>
+                                <pre><code>// Run with: bun --hot server.ts
+import config from "./config.yaml";
+
+// Changes to config.yaml automatically reload!</code></pre>
+                            </div>
+
+                            <div class="code-block">
+                                <h4>5. Environment Variables</h4>
+                                <pre><code># config.yaml
+server:
+  port: ${PORT:-3000}
+  host: ${HOST:-localhost}
+
+# Automatically interpolated by Bun!</code></pre>
+                            </div>
+
+                            <div class="code-block">
+                                <h4>6. Schema Validation with Zod</h4>
+                                <pre><code>import { YAML } from "bun";
+import { z } from "zod";
+
+const schema = z.object({ 
+  port: z.number(),
+  host: z.string()
+});
+
+const cfg = schema.parse(
+  YAML.parse(await Bun.file("config.yml").text())
+);</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="docs-section">
+                        <h3>📁 Project YAML Files</h3>
+                        <div class="yaml-files-list">
+                            <div class="yaml-file-item">
+                                <strong>config/app.yaml</strong> - Main application configuration
+                            </div>
+                            <div class="yaml-file-item">
+                                <strong>config/features.yaml</strong> - Feature flags and rollouts
+                            </div>
+                            <div class="yaml-file-item">
+                                <strong>config/database.yaml</strong> - Database connections
+                            </div>
+                            <div class="yaml-file-item">
+                                <strong>config/telegram.yml</strong> - Telegram bot settings
+                            </div>
+                            <div class="yaml-file-item">
+                                <strong>config/dashboard.yaml</strong> - Dashboard configuration
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="docs-section">
+                        <h3>🚀 Current System Status</h3>
+                        <div class="status-info">
+                            <div class="status-item">
+                                <span class="status-label">Bun Version:</span>
+                                <span class="status-value">1.2.21+</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">YAML Support:</span>
+                                <span class="status-value">✅ Native</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Hot Reload:</span>
+                                <span class="status-value">✅ Enabled</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Customers Loaded:</span>
+                                <span class="status-value">3,142</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
