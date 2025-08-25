@@ -181,8 +181,10 @@ features:
 
 - [YAML Configuration Guide](./YAML_CONFIGURATION.md)
 - [Bun YAML Reference](./BUN_YAML_REFERENCE.md)
-- [Config Validator](../src/utils/config-validator.ts)
-- [Integration Tests](../tests/typescript/yaml-integration.test.ts)
+- [YAML Formatting API](../API_YAML_FORMATTING.md) ⭐ **NEW**
+- [Config Validator](../../src/utils/config-validator.ts)
+- [YAML Formatter Utility](../../src/utils/yaml-formatter.ts) ⭐ **NEW**
+- [Integration Tests](../../tests/typescript/yaml-integration.test.ts)
 
 ## 🎉 Benefits Achieved
 

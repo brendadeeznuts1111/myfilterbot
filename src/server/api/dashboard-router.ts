@@ -22,6 +22,11 @@ class DashboardRouter {
   };
   private responseCache: ResponseCacheMiddleware;
 
+  /**
+   * Create a new dashboard router with caching middleware
+   * 
+   * @param responseCache - Response caching middleware instance
+   */
   constructor(responseCache: ResponseCacheMiddleware) {
     this.responseCache = responseCache;
     this.initializeRoutes();

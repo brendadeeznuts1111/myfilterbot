@@ -29,8 +29,9 @@ class UnifiedDashboard {
         this.setupDynamicTabs();
         this.setupEventListeners();
         this.setupServerSentEvents();
-        this.connectWebSocket();
+        this.initializeWebSocket();
         this.loadInitialData();
+        this.initializeCharts();
         this.startClock();
         this.initAlertingSystem();
     }
@@ -1517,22 +1518,38 @@ class UnifiedDashboard {
     // ===== CUSTOMERS MANAGEMENT =====
     async loadCustomersData() {
         try {
-            // Load customer statistics
+            this.addLog('Loading enhanced customer data...', 'info');
+            
+            // Load customer statistics with transaction summaries
             const statsResponse = await fetch(`${API_BASE}/admin/stats`);
             const statsData = await statsResponse.json();
             this.updateCustomerSummary(statsData);
 
-            // Load customer list
-            const customersResponse = await fetch(`${API_BASE}/admin/customers?page=1&limit=50`);
+            // Load customer list with enhanced data
+            const customersResponse = await fetch(`${API_BASE}/admin/customers?page=1&limit=50&include=transactions,bets,risk`);
             const customersData = await customersResponse.json();
-            this.updateCustomersTable(customersData);
+            
+            // Load transaction summaries for each customer
+            const transactionSummaryResponse = await fetch(`${API_BASE}/admin/transactions/customer-summaries`);
+            const transactionSummaries = await transactionSummaryResponse.json();
+            
+            // Load betting summaries for each customer
+            const bettingSummaryResponse = await fetch(`${API_BASE}/admin/bets/customer-summaries`);
+            const bettingSummaries = await bettingSummaryResponse.json();
+
+            // Merge customer data with transaction and betting summaries
+            const enhancedCustomers = this.enhanceCustomerData(customersData, transactionSummaries, bettingSummaries);
+            this.updateCustomersTable(enhancedCustomers);
 
             // Load agents for filter dropdown
             const agentsResponse = await fetch(`${API_BASE}/admin/agents`);
             const agentsData = await agentsResponse.json();
             this.populateAgentFilter(agentsData);
 
-            this.addLog('Customer data loaded', 'success');
+            // Load real-time activity feed
+            await this.loadCustomerActivityFeed();
+
+            this.addLog('Enhanced customer data loaded successfully', 'success');
         } catch (error) {
             this.addLog(`Failed to load customer data: ${error.message}`, 'error');
         }
@@ -1570,30 +1587,56 @@ class UnifiedDashboard {
             const customerId = customer.customer_id || customer.id;
             const customerName = this.parseCustomerName(customer.name || customer.telegram_username);
             const status = customer.active ? 'active' : 'inactive';
-            const lastActive = customer.last_activity || customer.last_active;
+            const lastActive = customer.last_activity_enhanced || customer.last_activity || customer.last_active;
             const agent = this.getAssignedAgent(customerId);
-            const recentTransactions = this.getRecentTransactionCount(customerId);
+            
+            // Enhanced transaction and betting data
+            const transactionSummary = customer.transaction_summary || {};
+            const bettingSummary = customer.betting_summary || {};
+            const riskScore = customer.risk_score || 0;
+            const lifetimeValue = customer.customer_lifetime_value || 0;
             
             return `
-            <tr data-customer-id="${customerId}" class="customer-row" data-transactions="${recentTransactions}">
+            <tr data-customer-id="${customerId}" class="customer-row enhanced-row" 
+                data-transactions="${transactionSummary.total_transactions || 0}"
+                data-bets="${bettingSummary.total_bets || 0}"
+                data-risk="${riskScore}">
                 <td>${customerId}</td>
                 <td class="customer-name">
                     <div class="name-primary">${customerName}</div>
                     <div class="name-secondary">${customer.telegram_username || ''}</div>
+                    <div class="customer-clv">CLV: $${lifetimeValue.toLocaleString()}</div>
                 </td>
                 <td>${customer.telegram_username || 'N/A'}</td>
                 <td class="agent-cell">${agent}</td>
-                <td class="balance-cell">$${(customer.balance || 0).toLocaleString()}</td>
+                <td class="balance-cell">
+                    <div class="balance-amount">$${(customer.balance || 0).toLocaleString()}</div>
+                    <div class="balance-net">Net: $${(transactionSummary.net_position || 0).toLocaleString()}</div>
+                </td>
                 <td>
                     <span class="badge badge-${this.getStatusClass(status)}">
                         ${status}
                     </span>
+                    <div class="risk-indicator risk-${this.getRiskLevel(riskScore)}" title="Risk Score: ${riskScore}">
+                        ${this.getRiskLevel(riskScore).toUpperCase()}
+                    </div>
                 </td>
-                <td>${lastActive ? new Date(lastActive).toLocaleDateString() : 'Never'}</td>
+                <td>
+                    <div class="last-active">${lastActive ? new Date(lastActive).toLocaleDateString() : 'Never'}</div>
+                    <div class="activity-type">${this.getLastActivityType(lastActive, transactionSummary.last_transaction, bettingSummary.last_bet)}</div>
+                </td>
                 <td class="transactions-cell">
-                    <span class="transaction-count" onclick="dashboard.viewCustomerTransactions('${customerId}')" title="Click to view transactions">
-                        ${recentTransactions}
-                    </span>
+                    <div class="transaction-stats">
+                        <span class="transaction-count" onclick="dashboard.viewCustomerTransactions('${customerId}')" title="Total Transactions">
+                            <i class="fas fa-exchange-alt"></i> ${transactionSummary.total_transactions || 0}
+                        </span>
+                        <span class="bet-count" onclick="dashboard.viewCustomerBets('${customerId}')" title="Total Bets">
+                            <i class="fas fa-dice"></i> ${bettingSummary.total_bets || 0}
+                        </span>
+                    </div>
+                    <div class="transaction-summary">
+                        <small>Avg: $${(transactionSummary.avg_transaction_size || 0).toLocaleString()}</small>
+                    </div>
                 </td>
                 <td class="action-buttons">
                     <button class="btn btn-sm btn-info" onclick="dashboard.viewCustomerDetails('${customerId}')" title="View Details">
@@ -1730,6 +1773,661 @@ class UnifiedDashboard {
         ).join('');
         
         select.innerHTML = '<option value="all">All Agents</option>' + agentOptions;
+    }
+
+    enhanceCustomerData(customersData, transactionSummaries, bettingSummaries) {
+        const customers = customersData.customers || customersData;
+        if (!Array.isArray(customers)) return [];
+
+        return customers.map(customer => {
+            const customerId = customer.customer_id || customer.id;
+            
+            // Find transaction summary for this customer
+            const transactionSummary = transactionSummaries?.find(t => t.customer_id === customerId) || {
+                total_deposits: 0,
+                total_withdrawals: 0,
+                total_transactions: 0,
+                net_position: 0,
+                last_transaction: null,
+                avg_transaction_size: 0
+            };
+
+            // Find betting summary for this customer
+            const bettingSummary = bettingSummaries?.find(b => b.customer_id === customerId) || {
+                total_bets: 0,
+                total_stake: 0,
+                total_winnings: 0,
+                win_rate: 0,
+                avg_stake: 0,
+                last_bet: null,
+                profit_loss: 0
+            };
+
+            // Calculate risk score based on transaction and betting patterns
+            const riskScore = this.calculateRiskScore(customer, transactionSummary, bettingSummary);
+
+            return {
+                ...customer,
+                transaction_summary: transactionSummary,
+                betting_summary: bettingSummary,
+                risk_score: riskScore,
+                customer_lifetime_value: transactionSummary.total_deposits + bettingSummary.total_stake,
+                last_activity_enhanced: this.getLastActivity(customer.last_activity, transactionSummary.last_transaction, bettingSummary.last_bet)
+            };
+        });
+    }
+
+    calculateRiskScore(customer, transactionSummary, bettingSummary) {
+        let score = 0;
+        
+        // High transaction volume increases risk
+        if (transactionSummary.total_transactions > 100) score += 20;
+        
+        // Negative net position increases risk
+        if (transactionSummary.net_position < -1000) score += 30;
+        
+        // High betting frequency with poor win rate
+        if (bettingSummary.total_bets > 50 && bettingSummary.win_rate < 0.3) score += 25;
+        
+        // Large average stake relative to balance
+        if (bettingSummary.avg_stake > (customer.balance || 0) * 0.1) score += 15;
+        
+        // Rapid recent activity (mock calculation)
+        const daysSinceLastActivity = customer.last_activity ? 
+            Math.floor((Date.now() - new Date(customer.last_activity).getTime()) / (1000 * 60 * 60 * 24)) : 999;
+        
+        if (daysSinceLastActivity < 1 && transactionSummary.total_transactions > 10) score += 10;
+
+        return Math.min(100, Math.max(0, score)); // Clamp between 0-100
+    }
+
+    getLastActivity(lastActivity, lastTransaction, lastBet) {
+        const activities = [
+            lastActivity ? new Date(lastActivity) : null,
+            lastTransaction ? new Date(lastTransaction) : null,
+            lastBet ? new Date(lastBet) : null
+        ].filter(date => date !== null);
+
+        if (activities.length === 0) return null;
+        
+        return new Date(Math.max(...activities.map(d => d.getTime()))).toISOString();
+    }
+
+    async loadCustomerActivityFeed() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/customer-activity/recent?limit=20`);
+            const activities = await response.json();
+            this.updateCustomerActivityFeed(activities);
+        } catch (error) {
+            console.error('Failed to load customer activity feed:', error);
+        }
+    }
+
+    updateCustomerActivityFeed(activities) {
+        const feedContainer = document.getElementById('customer-activity-feed');
+        if (!feedContainer || !activities) return;
+
+        const activityItems = activities.map(activity => `
+            <div class="activity-item ${activity.type}">
+                <div class="activity-icon">
+                    <i class="fas fa-${this.getActivityIcon(activity.type)}"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">${activity.title}</div>
+                    <div class="activity-details">${activity.details}</div>
+                    <div class="activity-time">${this.formatTimeAgo(activity.timestamp)}</div>
+                </div>
+                <div class="activity-amount ${activity.amount > 0 ? 'positive' : 'negative'}">
+                    ${activity.amount ? '$' + Math.abs(activity.amount).toLocaleString() : ''}
+                </div>
+            </div>
+        `).join('');
+
+        feedContainer.innerHTML = activityItems || '<div class="no-activity">No recent activity</div>';
+    }
+
+    getActivityIcon(type) {
+        const iconMap = {
+            'deposit': 'arrow-down',
+            'withdrawal': 'arrow-up', 
+            'bet': 'dice',
+            'payout': 'trophy',
+            'login': 'sign-in-alt',
+            'registration': 'user-plus'
+        };
+        return iconMap[type] || 'circle';
+    }
+
+    formatTimeAgo(timestamp) {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffMs = now - time;
+        
+        const minutes = Math.floor(diffMs / 60000);
+        const hours = Math.floor(diffMs / 3600000);
+        const days = Math.floor(diffMs / 86400000);
+
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        return `${days}d ago`;
+    }
+
+    // WebSocket Real-time Updates
+    initializeWebSocket() {
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/api/ws`;
+        
+        try {
+            this.websocket = new WebSocket(wsUrl);
+            
+            this.websocket.onopen = (event) => {
+                console.log('🔗 WebSocket connected');
+                this.addLog('Real-time updates connected', 'success');
+                
+                // Subscribe to customer activity and stats updates
+                this.websocket.send(JSON.stringify({
+                    type: 'subscribe',
+                    channels: ['customer_activity', 'stats', 'transactions', 'bets']
+                }));
+                
+                // Update connection status indicator
+                this.updateWebSocketStatus('connected');
+            };
+            
+            this.websocket.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    this.handleWebSocketMessage(message);
+                } catch (error) {
+                    console.error('WebSocket message parse error:', error);
+                }
+            };
+            
+            this.websocket.onclose = (event) => {
+                console.log('🔌 WebSocket disconnected');
+                this.addLog('Real-time updates disconnected', 'warning');
+                this.updateWebSocketStatus('disconnected');
+                
+                // Attempt to reconnect after 5 seconds
+                setTimeout(() => {
+                    this.addLog('Attempting to reconnect...', 'info');
+                    this.initializeWebSocket();
+                }, 5000);
+            };
+            
+            this.websocket.onerror = (error) => {
+                console.error('❌ WebSocket error:', error);
+                this.addLog('WebSocket connection error', 'error');
+                this.updateWebSocketStatus('error');
+            };
+            
+        } catch (error) {
+            console.error('Failed to initialize WebSocket:', error);
+            this.addLog('Failed to connect to real-time updates', 'error');
+        }
+    }
+
+    handleWebSocketMessage(message) {
+        switch (message.type) {
+            case 'connected':
+                console.log(`WebSocket connected with ID: ${message.id}`);
+                break;
+                
+            case 'subscription_confirmed':
+                console.log(`Subscribed to channels: ${message.channels.join(', ')}`);
+                break;
+                
+            case 'customer_activity':
+                this.handleRealTimeActivity(message.data);
+                break;
+                
+            case 'stats_update':
+                this.handleRealTimeStats(message.data);
+                break;
+                
+            case 'transaction_update':
+                this.handleRealTimeTransaction(message.data);
+                break;
+                
+            case 'bet_update':
+                this.handleRealTimeBet(message.data);
+                break;
+                
+            default:
+                console.log('Unknown WebSocket message type:', message.type);
+        }
+    }
+
+    handleRealTimeActivity(activity) {
+        // Add to activity feed
+        const feedContainer = document.getElementById('customer-activity-feed');
+        if (feedContainer) {
+            const activityElement = this.createActivityElement(activity);
+            feedContainer.insertBefore(activityElement, feedContainer.firstChild);
+            
+            // Keep only the most recent 20 activities
+            const activities = feedContainer.querySelectorAll('.activity-item');
+            if (activities.length > 20) {
+                activities[activities.length - 1].remove();
+            }
+            
+            // Add visual notification
+            activityElement.style.background = 'rgba(29, 161, 242, 0.3)';
+            setTimeout(() => {
+                activityElement.style.background = 'rgba(34, 41, 58, 0.5)';
+            }, 2000);
+        }
+        
+        // Show toast notification for high-value activities
+        if (Math.abs(activity.amount) > 500) {
+            this.showToastNotification(
+                `High Value ${activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}`,
+                `Customer ${activity.customer_id}: $${Math.abs(activity.amount).toLocaleString()}`,
+                'info'
+            );
+        }
+    }
+
+    createActivityElement(activity) {
+        const element = document.createElement('div');
+        element.className = `activity-item ${activity.type}`;
+        element.innerHTML = `
+            <div class="activity-icon">
+                <i class="fas fa-${this.getActivityIcon(activity.type)}"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-title">${activity.title}</div>
+                <div class="activity-details">${activity.details}</div>
+                <div class="activity-time">${this.formatTimeAgo(activity.timestamp)}</div>
+            </div>
+            <div class="activity-amount ${activity.amount > 0 ? 'positive' : 'negative'}">
+                ${activity.amount ? '$' + Math.abs(activity.amount).toLocaleString() : ''}
+            </div>
+        `;
+        return element;
+    }
+
+    handleRealTimeStats(stats) {
+        // Update dashboard statistics
+        if (stats.total_customers) {
+            document.getElementById('total-customers').textContent = stats.total_customers;
+        }
+        if (stats.active_customers) {
+            document.getElementById('active-customers').textContent = stats.active_customers;
+        }
+        if (stats.total_balance) {
+            document.getElementById('customers-total-balance').textContent = `$${stats.total_balance.toLocaleString()}`;
+        }
+        if (stats.total_transactions) {
+            document.getElementById('total-transactions').textContent = stats.total_transactions;
+        }
+    }
+
+    updateWebSocketStatus(status) {
+        const indicator = document.getElementById('websocket-status');
+        if (indicator) {
+            indicator.className = `websocket-status ${status}`;
+            indicator.textContent = status === 'connected' ? '🟢 Live' : 
+                                   status === 'disconnected' ? '🟡 Reconnecting' : '🔴 Error';
+        }
+    }
+
+    showToastNotification(title, message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => toast.classList.add('show'), 100);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    // Data Visualization Methods
+    initializeCharts() {
+        this.initializeCustomerSegmentChart();
+        this.initializeTransactionTrendChart();
+        this.initializeBettingPatternChart();
+        this.initializeRiskDistributionChart();
+    }
+
+    initializeCustomerSegmentChart() {
+        const container = document.getElementById('customer-segment-chart');
+        if (!container) return;
+
+        // Simple canvas-based pie chart
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 200;
+        container.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        
+        // Sample data - in real implementation, this would come from API
+        const segments = [
+            { label: 'VIP', value: 15, color: '#00d084' },
+            { label: 'Active', value: 65, color: '#1da1f2' },
+            { label: 'Inactive', value: 20, color: '#8899a6' }
+        ];
+
+        this.drawPieChart(ctx, segments, 200, 200);
+        this.addChartLegend(container, segments);
+    }
+
+    drawPieChart(ctx, data, width, height) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) / 2 - 10;
+        
+        let total = data.reduce((sum, item) => sum + item.value, 0);
+        let currentAngle = 0;
+
+        data.forEach(segment => {
+            const sliceAngle = (segment.value / total) * 2 * Math.PI;
+            
+            // Draw slice
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fillStyle = segment.color;
+            ctx.fill();
+            
+            // Draw label
+            const labelAngle = currentAngle + sliceAngle / 2;
+            const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+            const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${segment.value}%`, labelX, labelY);
+            
+            currentAngle += sliceAngle;
+        });
+    }
+
+    addChartLegend(container, data) {
+        const legend = document.createElement('div');
+        legend.className = 'chart-legend';
+        
+        data.forEach(item => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'legend-item';
+            legendItem.innerHTML = `
+                <span class="legend-color" style="background-color: ${item.color}"></span>
+                <span class="legend-label">${item.label}: ${item.value}%</span>
+            `;
+            legend.appendChild(legendItem);
+        });
+        
+        container.appendChild(legend);
+    }
+
+    initializeTransactionTrendChart() {
+        const container = document.getElementById('transaction-trend-chart');
+        if (!container) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 200;
+        container.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        
+        // Sample trend data
+        const trendData = [
+            { label: 'Mon', deposits: 1200, withdrawals: 800, bets: 2500 },
+            { label: 'Tue', deposits: 1500, withdrawals: 900, bets: 3200 },
+            { label: 'Wed', deposits: 1100, withdrawals: 1200, bets: 2800 },
+            { label: 'Thu', deposits: 1800, withdrawals: 1000, bets: 3500 },
+            { label: 'Fri', deposits: 2200, withdrawals: 1500, bets: 4200 },
+            { label: 'Sat', deposits: 2800, withdrawals: 2000, bets: 5100 },
+            { label: 'Sun', deposits: 2100, withdrawals: 1800, bets: 4500 }
+        ];
+
+        this.drawLineChart(ctx, trendData, 400, 200);
+    }
+
+    drawLineChart(ctx, data, width, height) {
+        const padding = 40;
+        const chartWidth = width - 2 * padding;
+        const chartHeight = height - 2 * padding;
+        
+        // Find max value for scaling
+        const maxValue = Math.max(
+            ...data.flatMap(d => [d.deposits, d.withdrawals, d.bets])
+        );
+        
+        // Draw axes
+        ctx.strokeStyle = '#38444d';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // Draw data lines
+        const colors = ['#00d084', '#ff4458', '#ffcc00'];
+        const keys = ['deposits', 'withdrawals', 'bets'];
+        
+        keys.forEach((key, index) => {
+            ctx.strokeStyle = colors[index];
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            data.forEach((point, i) => {
+                const x = padding + (i * chartWidth) / (data.length - 1);
+                const y = height - padding - (point[key] / maxValue) * chartHeight;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+        });
+        
+        // Draw labels
+        ctx.fillStyle = '#8899a6';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        
+        data.forEach((point, i) => {
+            const x = padding + (i * chartWidth) / (data.length - 1);
+            ctx.fillText(point.label, x, height - padding + 15);
+        });
+    }
+
+    initializeBettingPatternChart() {
+        const container = document.getElementById('betting-pattern-chart');
+        if (!container) return;
+
+        // Create a simple bar chart
+        const bettingPatterns = [
+            { sport: 'Football', percentage: 45 },
+            { sport: 'Basketball', percentage: 25 },
+            { sport: 'Baseball', percentage: 15 },
+            { sport: 'Tennis', percentage: 10 },
+            { sport: 'Other', percentage: 5 }
+        ];
+
+        const chart = document.createElement('div');
+        chart.className = 'bar-chart';
+        
+        bettingPatterns.forEach(pattern => {
+            const bar = document.createElement('div');
+            bar.className = 'bar-item';
+            bar.innerHTML = `
+                <div class="bar-label">${pattern.sport}</div>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: ${pattern.percentage}%"></div>
+                </div>
+                <div class="bar-value">${pattern.percentage}%</div>
+            `;
+            chart.appendChild(bar);
+        });
+        
+        container.appendChild(chart);
+    }
+
+    initializeRiskDistributionChart() {
+        const container = document.getElementById('risk-distribution-chart');
+        if (!container) return;
+
+        const riskData = [
+            { level: 'Low Risk', count: 1847, color: '#00d084' },
+            { level: 'Medium Risk', count: 432, color: '#ffcc00' },
+            { level: 'High Risk', count: 89, color: '#ff4458' }
+        ];
+
+        const total = riskData.reduce((sum, item) => sum + item.count, 0);
+        
+        const chart = document.createElement('div');
+        chart.className = 'risk-chart';
+        
+        riskData.forEach(risk => {
+            const percentage = ((risk.count / total) * 100).toFixed(1);
+            const item = document.createElement('div');
+            item.className = 'risk-item';
+            item.innerHTML = `
+                <div class="risk-color" style="background-color: ${risk.color}"></div>
+                <div class="risk-info">
+                    <div class="risk-label">${risk.level}</div>
+                    <div class="risk-stats">${risk.count} customers (${percentage}%)</div>
+                </div>
+            `;
+            chart.appendChild(item);
+        });
+        
+        container.appendChild(chart);
+    }
+
+    updateChartsWithRealTimeData(data) {
+        // Update charts when new data arrives via WebSocket
+        if (data.customer_segments) {
+            this.updateCustomerSegmentChart(data.customer_segments);
+        }
+        if (data.transaction_trends) {
+            this.updateTransactionTrendChart(data.transaction_trends);
+        }
+    }
+
+    getRiskLevel(riskScore) {
+        if (riskScore >= 70) return 'high';
+        if (riskScore >= 40) return 'medium';
+        return 'low';
+    }
+
+    getLastActivityType(lastActivity, lastTransaction, lastBet) {
+        if (!lastActivity && !lastTransaction && !lastBet) return '';
+        
+        const activities = [];
+        if (lastTransaction) activities.push({ type: 'Transaction', time: new Date(lastTransaction) });
+        if (lastBet) activities.push({ type: 'Bet', time: new Date(lastBet) });
+        if (lastActivity) activities.push({ type: 'Login', time: new Date(lastActivity) });
+        
+        if (activities.length === 0) return '';
+        
+        activities.sort((a, b) => b.time - a.time);
+        return activities[0].type;
+    }
+
+    async viewCustomerBets(customerId) {
+        try {
+            this.addLog(`Loading bets for customer ${customerId}...`, 'info');
+            const response = await fetch(`${API_BASE}/admin/bets?customer=${customerId}`);
+            
+            if (response.ok) {
+                const bets = await response.json();
+                this.showBetsModal(customerId, bets);
+            } else {
+                this.addLog(`Failed to load bets for ${customerId}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error loading customer bets:', error);
+            this.addLog('Error loading customer bets', 'error');
+        }
+    }
+
+    showBetsModal(customerId, bets) {
+        const modal = document.createElement('div');
+        modal.className = 'transaction-modal bets-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Betting History for Customer ${customerId}</h3>
+                    <button class="close-modal" onclick="this.closest('.transaction-modal').remove()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="betting-summary">
+                        <div class="summary-item">
+                            <span>Total Bets:</span>
+                            <span>${bets.length}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Total Stake:</span>
+                            <span>$${bets.reduce((sum, bet) => sum + (bet.stake || 0), 0).toLocaleString()}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Total Winnings:</span>
+                            <span>$${bets.reduce((sum, bet) => sum + (bet.win || 0), 0).toLocaleString()}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Win Rate:</span>
+                            <span>${bets.length > 0 ? Math.round((bets.filter(bet => bet.win > 0).length / bets.length) * 100) : 0}%</span>
+                        </div>
+                    </div>
+                    <div class="bets-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Bet ID</th>
+                                    <th>Sport/Event</th>
+                                    <th>Stake</th>
+                                    <th>Odds</th>
+                                    <th>Win</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${bets.slice(0, 20).map(bet => `
+                                    <tr>
+                                        <td>${bet.bet_id || bet.id}</td>
+                                        <td>
+                                            <div class="bet-event">${bet.sport || 'Sports'}</div>
+                                            <div class="bet-selection">${bet.event || bet.selection || 'Event'}</div>
+                                        </td>
+                                        <td>$${(bet.stake || 0).toLocaleString()}</td>
+                                        <td>${bet.odds || 0}</td>
+                                        <td class="${bet.win > 0 ? 'win' : 'loss'}">$${(bet.win || 0).toLocaleString()}</td>
+                                        <td><span class="badge badge-${bet.status === 'settled' ? 'success' : 'warning'}">${bet.status}</span></td>
+                                        <td>${new Date(bet.timestamp).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                                ${bets.length > 20 ? `<tr><td colspan="7" class="more-items">... and ${bets.length - 20} more bets</td></tr>` : ''}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
     }
 
     async refreshCustomerData() {

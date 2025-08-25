@@ -109,6 +109,7 @@ telegram:
       - callback_query
       - inline_query
       - channel_post
-# Test hot-reload
-testValue: hotreload-working
-vipThreshold: 1000
+# Hot Reload Test Settings
+hotReload:
+  testValue: "hotreload-working"        # Test value for hot reload functionality
+  lastReloaded: "2025-08-25T14:30:00Z" # Timestamp of last reload
