@@ -4,8 +4,8 @@
 telegram:
   # Bot credentials
   bot:
-    token: ${TELEGRAM_BOT_TOKEN:?Bot token is required}
-    username: ${TELEGRAM_BOT_USERNAME:-fantdev_trading_bot}
+    token: 8039557687:AAEaDQUYya1H0y7qv4tmhYsCSqGrzpS-heU
+    username: Firesupportcs_bot
     
   # Webhook configuration
   webhook:

@@ -68,6 +68,37 @@ dashboard:
         name: Customers
         icon: users
         enabled: true
+      - id: telegram
+        name: Telegram Operations
+        icon: telegram
+        enabled: true
+        description: Telegram bot management, group monitoring, and message operations
+        features:
+          - bot_management
+          - group_monitoring
+          - message_operations
+          - member_approval
+          - cashier_operations
+      - id: transactions
+        name: Transactions
+        icon: exchange-alt
+        enabled: true
+        description: Transaction monitoring, betting operations, and financial management
+        features:
+          - transaction_history
+          - bet_management
+          - fraud_detection
+          - commission_tracking
+      - id: agents
+        name: Agents & Masters
+        icon: user-tie
+        enabled: true
+        description: Agent hierarchy management and commission calculation
+        features:
+          - agent_management
+          - master_management
+          - commission_calculation
+          - performance_tracking
       - id: api
         name: API Testing
         icon: code
@@ -87,13 +118,20 @@ dashboard:
       - id: analytics
         name: Analytics
         icon: chart-bar
-        enabled: false
+        enabled: true
+        description: Advanced analytics and reporting
+        features:
+          - performance_metrics
+          - fraud_analytics
+          - revenue_tracking
+          - customer_insights
   
   # Metrics & Monitoring
   metrics:
     refreshInterval: 30000 # 30 seconds
     retentionDays: 30
     enabledMetrics:
+      # Core System Metrics
       - activeUsers
       - totalTransactions
       - totalBalance
@@ -101,6 +139,33 @@ dashboard:
       - serviceHealth
       - apiLatency
       - errorRate
+      
+      # Telegram Specific Metrics
+      - telegramBotStatus
+      - telegramGroupMembers
+      - telegramMessagesPerHour
+      - telegramCommandsExecuted
+      - pendingMemberApprovals
+      - cashierBotTransactions
+      - groupMonitoringAlerts
+      - telegramApiLatency
+      
+      # Financial Metrics
+      - hourlyTransactionVolume
+      - depositSuccessRate
+      - withdrawalPendingCount
+      - fraudDetectionAlerts
+      - commissionCalculations
+      - agentPerformance
+      - customerBalanceChanges
+      
+      # Service Performance
+      - databaseConnections
+      - redisHitRate
+      - websocketConnections
+      - apiRequestsPerMinute
+      - backgroundJobsQueued
+      - logErrorsPerHour
     
     # Alert thresholds
     alerts:
@@ -141,12 +206,51 @@ dashboard:
     
     # Channels to subscribe
     channels:
+      # Configuration Channels
       - config:changed
       - feature:toggled
       - hotreload:triggered
+      
+      # Customer & Data Channels  
       - customer:updated
+      - customer:created
+      - customer:balance:changed
+      
+      # Service Status Channels
       - service:status
+      - service:health:changed
+      - database:connection:status
+      - redis:connection:status
+      
+      # Telegram Operation Channels
+      - telegram:bot:status
+      - telegram:bot:command:received
+      - telegram:group:member:joined
+      - telegram:group:member:left
+      - telegram:group:message:received
+      - telegram:cashier:transaction:pending
+      - telegram:cashier:transaction:completed
+      - telegram:member:approval:pending
+      - telegram:member:approved
+      - telegram:member:denied
+      
+      # Transaction & Financial Channels
+      - transaction:created
+      - transaction:completed
+      - transaction:failed
+      - deposit:received
+      - withdrawal:requested
+      - bet:placed
+      - bet:settled
+      - fraud:alert:triggered
+      - commission:calculated
+      
+      # System Monitoring Channels
       - system:alert
+      - system:error
+      - system:performance:warning
+      - log:error:critical
+      - api:rate:limit:exceeded
   
   # Logging
   logging:
@@ -206,50 +310,171 @@ dashboard:
   
   # Service Endpoints
   services:
-    telegram:
-      name: Telegram Bot
+    # Core Services
+    telegram_bot:
+      name: Telegram Main Bot
       endpoint: /api/bot/status
       healthCheck: true
       icon: telegram
+      description: Primary trading bot for customer interactions
+      operations:
+        - send_message: /api/admin/telegram/send
+        - get_messages: /api/admin/telegram/messages  
+        - get_chats: /api/admin/telegram/chats
+        - bot_status: /api/admin/telegram/bot/status
+    
+    telegram_cashier:
+      name: Telegram Cashier Bot
+      endpoint: /api/admin/telegram/cashier/status
+      healthCheck: true
+      icon: credit-card
+      description: Payment processing bot
+      operations:
+        - payment_status: /api/admin/telegram/cashier/status
+        - process_deposit: /api/admin/deposits
+        - process_withdrawal: /api/admin/transactions
+    
+    telegram_groups:
+      name: Telegram Group Management
+      endpoint: /api/admin/telegram/groups
+      healthCheck: true
+      icon: users
+      description: Trading group monitoring and management
+      operations:
+        - list_groups: /api/admin/telegram/groups
+        - group_messages: /api/admin/telegram/group/{group_id}
+        - member_management: /api/admin/members
+        - approve_member: /api/admin/members/{id}/approve
+        - deny_member: /api/admin/members/{id}/deny
     
     portal:
       name: Portal Server
       endpoint: /api/health
       healthCheck: true
       icon: globe
+      description: Customer portal and web interface
+      operations:
+        - customer_portal: /api/remote/customers
+        - p2p_deposits: /api/remote/p2p/deposits
+        - p2p_withdrawals: /api/remote/p2p/withdrawals
     
     admin:
       name: Admin Server
       endpoint: /api/health
       healthCheck: true
       icon: user-shield
+      description: Administrative interface and API
+      operations:
+        - admin_stats: /api/admin/stats
+        - system_health: /api/admin/health
+        - export_data: /api/admin/export/customers
+        - sync_balances: /api/admin/sync-balances
     
     websocket:
       name: WebSocket Server
       endpoint: /api/ws/status
       healthCheck: true
       icon: plug
+      description: Real-time communication service
+      operations:
+        - live_stream: /api/dashboard/stream
+        - real_time_updates: /api/ws
     
     database:
-      name: Database
+      name: Database Service
       endpoint: /api/db/status
       healthCheck: true
       icon: database
+      description: PostgreSQL database connection
+      operations:
+        - health_check: /api/admin/health/db
+        - data_reload: /api/admin/data/reload
+        - customer_data: /api/admin/customers
     
     redis:
       name: Redis Cache
       endpoint: /api/redis/status
       healthCheck: true
       icon: bolt
+      description: In-memory caching and session storage
+      operations:
+        - cache_health: /api/admin/health/redis
+        - session_management: /api/auth/login
+        - rate_limiting: built-in
+    
+    # Additional Services
+    fraud_detection:
+      name: Fraud Detection
+      endpoint: /api/admin/fraud/scores
+      healthCheck: false
+      icon: shield-alt
+      description: Real-time fraud monitoring and scoring
+      operations:
+        - fraud_scores: /api/admin/fraud/scores
+        - flag_customer: /api/admin/fraud/flag/{customer_id}
+        - fraud_logs: /api/admin/fraud/logs
+    
+    transaction_engine:
+      name: Transaction Engine
+      endpoint: /api/admin/transactions
+      healthCheck: false
+      icon: exchange-alt
+      description: Transaction processing and management
+      operations:
+        - list_transactions: /api/admin/transactions
+        - create_transaction: /api/admin/transactions
+        - transaction_summary: /api/admin/transactions/summary
+        - bets: /api/admin/bets
+        - settle_bet: /api/admin/bets/{bet_id}/settle
+        - bet_stats: /api/admin/bets/stats
+    
+    agent_management:
+      name: Agent Management
+      endpoint: /api/admin/agents
+      healthCheck: false
+      icon: user-tie
+      description: Agent and master agent management
+      operations:
+        - list_agents: /api/admin/agents
+        - agent_details: /api/admin/agents/{agent_id}
+        - list_masters: /api/admin/masters
+        - master_details: /api/admin/masters/{master_id}
+        - commissions: /api/admin/commissions
+        - calculate_commissions: /api/admin/commissions/calculate
+    
+    logging_service:
+      name: Logging Service
+      endpoint: /api/admin/logs
+      healthCheck: false
+      icon: file-alt
+      description: System logging and monitoring
+      operations:
+        - system_logs: /api/admin/logs
+        - web_logs: /api/admin/logs/web
+        - service_logs: /api/admin/logs/service/{service_name}
+    
+    remote_dashboard:
+      name: Remote Dashboard
+      endpoint: /api/remote/stats
+      healthCheck: false
+      icon: chart-line
+      description: Remote dashboard integration (fire22.ag)
+      operations:
+        - remote_customers: /api/remote/customers
+        - remote_transactions: /api/remote/transactions
+        - remote_telegram: /api/remote/telegram/groups
+        - remote_messages: /api/remote/telegram/messages
   
   # Quick Actions
   quickActions:
+    # System Control
     - id: start-all
       name: Start All Services
       icon: play
       action: /api/services/start
       method: POST
       confirmRequired: true
+      category: system
     
     - id: stop-all
       name: Stop All Services
@@ -257,6 +482,7 @@ dashboard:
       action: /api/services/stop
       method: POST
       confirmRequired: true
+      category: system
     
     - id: restart-services
       name: Restart Services
@@ -264,27 +490,115 @@ dashboard:
       action: /api/services/restart
       method: POST
       confirmRequired: true
+      category: system
     
     - id: health-check
-      name: Health Check
+      name: Full Health Check
       icon: heartbeat
       action: /api/health/full
       method: GET
       confirmRequired: false
+      category: system
     
+    # Data Management
     - id: export-data
-      name: Export Data
+      name: Export All Data
       icon: download
       action: /api/export/all
       method: GET
       confirmRequired: false
+      category: data
     
     - id: sync-balances
-      name: Sync Balances
+      name: Sync Customer Balances
       icon: refresh
       action: /api/admin/sync-balances
       method: POST
       confirmRequired: true
+      category: data
+      
+    - id: reload-data
+      name: Reload Database
+      icon: database
+      action: /api/admin/data/reload
+      method: POST
+      confirmRequired: false
+      category: data
+    
+    # Telegram Operations
+    - id: telegram-status
+      name: Check Bot Status
+      icon: telegram
+      action: /api/admin/telegram/bot/status
+      method: GET
+      confirmRequired: false
+      category: telegram
+      
+    - id: telegram-groups
+      name: List Active Groups
+      icon: users
+      action: /api/admin/telegram/groups
+      method: GET
+      confirmRequired: false
+      category: telegram
+      
+    - id: approve-pending
+      name: View Pending Members
+      icon: user-check
+      action: /api/admin/members?status=pending
+      method: GET
+      confirmRequired: false
+      category: telegram
+      
+    - id: telegram-messages
+      name: Recent Messages
+      icon: message-circle
+      action: /api/admin/telegram/messages?limit=50
+      method: GET
+      confirmRequired: false
+      category: telegram
+    
+    # Financial Operations
+    - id: transaction-summary
+      name: Transaction Summary
+      icon: bar-chart
+      action: /api/admin/transactions/summary
+      method: GET
+      confirmRequired: false
+      category: financial
+      
+    - id: fraud-check
+      name: Check Fraud Scores
+      icon: shield
+      action: /api/admin/fraud/scores
+      method: GET
+      confirmRequired: false
+      category: financial
+      
+    - id: calculate-commissions
+      name: Calculate Commissions
+      icon: calculator
+      action: /api/admin/commissions/calculate
+      method: POST
+      confirmRequired: true
+      category: financial
+    
+    # System Monitoring
+    - id: view-logs
+      name: Recent System Logs
+      icon: file-text
+      action: /api/admin/logs/web?tail=100
+      method: GET
+      confirmRequired: false
+      category: monitoring
+      
+    - id: system-metrics
+      name: Performance Metrics
+      icon: activity
+      action: /api/admin/metrics
+      method: GET
+      confirmRequired: false
+      category: monitoring
   
   # Permissions
   permissions:

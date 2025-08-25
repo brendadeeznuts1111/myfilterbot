@@ -18,12 +18,15 @@ class UnifiedDashboard {
         this.refreshIntervals = {};
         this.apiBaseUrl = API_BASE;
         this.wsUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws`;
+        this.dashboardConfig = null;
+        this.quickActions = {};
         
-        this.init();
+        // Don't call init() here since it's async - it will be called from DOMContentLoaded
     }
 
-    init() {
-        this.setupTabs();
+    async init() {
+        await this.loadDashboardConfiguration();
+        this.setupDynamicTabs();
         this.setupEventListeners();
         this.setupServerSentEvents();
         this.connectWebSocket();
@@ -31,13 +34,55 @@ class UnifiedDashboard {
         this.startClock();
     }
 
-    setupTabs() {
-        const tabs = document.querySelectorAll('.nav-tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                this.switchTab(tab.dataset.tab);
-            });
+    async loadDashboardConfiguration() {
+        try {
+            const response = await fetch(`${API_BASE}/yaml/dashboard`);
+            if (response.ok) {
+                const data = await response.json();
+                this.dashboardConfig = data.content || data;
+                console.log('Dashboard configuration loaded:', this.dashboardConfig);
+            } else {
+                console.warn('Failed to load dashboard configuration, using defaults');
+                this.dashboardConfig = { ui: { tabs: [] } };
+            }
+        } catch (error) {
+            console.error('Error loading dashboard configuration:', error);
+            this.dashboardConfig = { ui: { tabs: [] } };
+        }
+    }
+
+    setupDynamicTabs() {
+        const navContainer = document.getElementById('dashboard-nav');
+        if (!navContainer || !this.dashboardConfig?.dashboard?.ui?.tabs) {
+            console.warn('No navigation container or tab configuration found');
+            return;
+        }
+
+        // Clear existing navigation
+        navContainer.innerHTML = '';
+
+        // Generate tabs from YAML configuration
+        this.dashboardConfig.dashboard.ui.tabs.forEach(tab => {
+            if (tab.enabled) {
+                const tabElement = document.createElement('button');
+                tabElement.className = `nav-tab ${tab.default ? 'active' : ''}`;
+                tabElement.dataset.tab = tab.id;
+                tabElement.innerHTML = `
+                    <i class="fas fa-${tab.icon}"></i>
+                    <span>${tab.name}</span>
+                `;
+                tabElement.addEventListener('click', () => {
+                    this.switchTab(tab.id);
+                });
+                navContainer.appendChild(tabElement);
+            }
         });
+
+        // Set default tab
+        const defaultTab = this.dashboardConfig.dashboard.ui.tabs.find(tab => tab.default);
+        if (defaultTab) {
+            this.currentTab = defaultTab.id;
+        }
     }
 
     setupEventListeners() {
@@ -174,6 +219,18 @@ class UnifiedDashboard {
                 break;
             case 'services':
                 await this.checkAllServices();
+                break;
+            case 'telegram':
+                await this.loadTelegramOperations();
+                break;
+            case 'transactions':
+                await this.loadTransactionsData();
+                break;
+            case 'agents':
+                await this.loadAgentsData();
+                break;
+            case 'analytics':
+                await this.loadAnalyticsData();
                 break;
             case 'config':
                 await this.loadConfigFile(this.currentConfig);
@@ -808,12 +865,525 @@ class UnifiedDashboard {
                 .catch(() => {});
         }, 5000);
     }
+
+    // ===== TELEGRAM OPERATIONS =====
+    async loadTelegramOperations() {
+        try {
+            // Load bot status
+            const botStatus = await fetch(`${API_BASE}/admin/telegram/bot/status`);
+            const botData = await botStatus.json();
+            this.updateTelegramBotStatus(botData);
+
+            // Load group information
+            const groupsResponse = await fetch(`${API_BASE}/admin/telegram/groups`);
+            const groupsData = await groupsResponse.json();
+            this.updateTelegramGroups(groupsData);
+
+            // Load pending member approvals
+            const membersResponse = await fetch(`${API_BASE}/admin/members?status=pending`);
+            const membersData = await membersResponse.json();
+            this.updatePendingMembers(membersData);
+
+            // Load recent messages
+            const messagesResponse = await fetch(`${API_BASE}/admin/telegram/messages?limit=20`);
+            const messagesData = await messagesResponse.json();
+            this.updateTelegramMessages(messagesData);
+
+            this.addLog('Telegram operations data loaded', 'success');
+        } catch (error) {
+            this.addLog(`Failed to load Telegram data: ${error.message}`, 'error');
+        }
+    }
+
+    updateTelegramBotStatus(botData) {
+        const statusEl = document.getElementById('telegram-bot-status');
+        const usernameEl = document.getElementById('telegram-bot-username');
+        const uptimeEl = document.getElementById('telegram-bot-uptime');
+        
+        if (statusEl) {
+            statusEl.className = `badge badge-${botData.online ? 'success' : 'danger'}`;
+            statusEl.textContent = botData.online ? 'Online' : 'Offline';
+        }
+        if (usernameEl) usernameEl.textContent = botData.username || 'N/A';
+        if (uptimeEl) uptimeEl.textContent = botData.uptime || 'Unknown';
+    }
+
+    updateTelegramGroups(groupsData) {
+        const container = document.getElementById('telegram-groups-list');
+        if (!container || !groupsData) return;
+
+        container.innerHTML = groupsData.map(group => `
+            <div class="group-item" data-group-id="${group.id}">
+                <div class="group-info">
+                    <div class="group-name">${group.title}</div>
+                    <div class="group-stats">
+                        <span class="member-count">${group.member_count} members</span>
+                        <span class="group-type">${group.type}</span>
+                    </div>
+                </div>
+                <div class="group-actions">
+                    <button class="btn btn-sm" onclick="dashboard.viewGroupMessages('${group.id}')">Messages</button>
+                    <button class="btn btn-sm" onclick="dashboard.manageGroupMembers('${group.id}')">Members</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updatePendingMembers(membersData) {
+        const container = document.getElementById('pending-members-list');
+        if (!container || !membersData) return;
+
+        if (membersData.length === 0) {
+            container.innerHTML = '<div class="no-data">No pending member approvals</div>';
+            return;
+        }
+
+        container.innerHTML = membersData.map(member => `
+            <div class="member-approval-item" data-member-id="${member.id}">
+                <div class="member-info">
+                    <div class="member-name">${member.first_name} ${member.last_name || ''}</div>
+                    <div class="member-username">@${member.username || 'N/A'}</div>
+                    <div class="member-date">Requested: ${new Date(member.request_date).toLocaleDateString()}</div>
+                </div>
+                <div class="approval-actions">
+                    <button class="btn btn-success btn-sm" onclick="dashboard.approveMember('${member.id}')">Approve</button>
+                    <button class="btn btn-danger btn-sm" onclick="dashboard.denyMember('${member.id}')">Deny</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updateTelegramMessages(messagesData) {
+        const container = document.getElementById('telegram-messages-list');
+        if (!container || !messagesData) return;
+
+        container.innerHTML = messagesData.map(message => `
+            <div class="message-item">
+                <div class="message-header">
+                    <span class="message-sender">${message.from?.first_name || 'Unknown'}</span>
+                    <span class="message-time">${new Date(message.date * 1000).toLocaleTimeString()}</span>
+                </div>
+                <div class="message-text">${message.text || '[Media/Sticker/Other]'}</div>
+                <div class="message-meta">
+                    <span class="chat-title">${message.chat?.title || 'Private'}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async sendTelegramMessage(chatId, message) {
+        try {
+            const response = await fetch(`${API_BASE}/admin/telegram/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: message })
+            });
+            
+            if (response.ok) {
+                this.addLog(`Message sent to chat ${chatId}`, 'success');
+                return true;
+            } else {
+                throw new Error('Failed to send message');
+            }
+        } catch (error) {
+            this.addLog(`Failed to send message: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    async approveMember(memberId) {
+        try {
+            const response = await fetch(`${API_BASE}/admin/members/${memberId}/approve`, {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                this.addLog(`Member ${memberId} approved`, 'success');
+                await this.loadTelegramOperations(); // Refresh the data
+            } else {
+                throw new Error('Failed to approve member');
+            }
+        } catch (error) {
+            this.addLog(`Failed to approve member: ${error.message}`, 'error');
+        }
+    }
+
+    async denyMember(memberId) {
+        try {
+            const response = await fetch(`${API_BASE}/admin/members/${memberId}/deny`, {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                this.addLog(`Member ${memberId} denied`, 'success');
+                await this.loadTelegramOperations(); // Refresh the data
+            } else {
+                throw new Error('Failed to deny member');
+            }
+        } catch (error) {
+            this.addLog(`Failed to deny member: ${error.message}`, 'error');
+        }
+    }
+
+    async viewGroupMessages(groupId) {
+        try {
+            const response = await fetch(`${API_BASE}/admin/telegram/group/${groupId}`);
+            const messages = await response.json();
+            
+            // You could open a modal or update a section with group messages
+            this.addLog(`Loaded ${messages.length} messages from group ${groupId}`, 'info');
+        } catch (error) {
+            this.addLog(`Failed to load group messages: ${error.message}`, 'error');
+        }
+    }
+
+    async manageGroupMembers(groupId) {
+        try {
+            const response = await fetch(`${API_BASE}/admin/telegram/group/${groupId}/members`);
+            const members = await response.json();
+            
+            this.addLog(`Loaded ${members.length} members from group ${groupId}`, 'info');
+        } catch (error) {
+            this.addLog(`Failed to load group members: ${error.message}`, 'error');
+        }
+    }
+
+    // ===== TRANSACTIONS DATA =====
+    async loadTransactionsData() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/transactions`);
+            const data = await response.json();
+            this.updateTransactionsDisplay(data);
+
+            // Load transaction summary
+            const summaryResponse = await fetch(`${API_BASE}/admin/transactions/summary`);
+            const summaryData = await summaryResponse.json();
+            this.updateTransactionsSummary(summaryData);
+
+            this.addLog('Transaction data loaded', 'success');
+        } catch (error) {
+            this.addLog(`Failed to load transaction data: ${error.message}`, 'error');
+        }
+    }
+
+    updateTransactionsDisplay(transactions) {
+        const container = document.getElementById('transactions-list');
+        if (!container || !transactions) return;
+
+        container.innerHTML = transactions.map(tx => `
+            <div class="transaction-item" data-tx-id="${tx.id}">
+                <div class="transaction-info">
+                    <div class="transaction-type">${tx.type}</div>
+                    <div class="transaction-amount">$${tx.amount.toLocaleString()}</div>
+                    <div class="transaction-customer">Customer: ${tx.customer_id}</div>
+                    <div class="transaction-date">${new Date(tx.timestamp).toLocaleDateString()}</div>
+                </div>
+                <div class="transaction-status">
+                    <span class="badge badge-${tx.status === 'completed' ? 'success' : tx.status === 'pending' ? 'warning' : 'danger'}">
+                        ${tx.status}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updateTransactionsSummary(summary) {
+        document.getElementById('total-transactions-count').textContent = summary.total_count || 0;
+        document.getElementById('total-volume').textContent = `$${(summary.total_volume || 0).toLocaleString()}`;
+        document.getElementById('pending-transactions').textContent = summary.pending_count || 0;
+        document.getElementById('failed-transactions').textContent = summary.failed_count || 0;
+    }
+
+    // ===== AGENTS DATA =====
+    async loadAgentsData() {
+        try {
+            const [agentsResponse, mastersResponse, commissionsResponse] = await Promise.all([
+                fetch(`${API_BASE}/admin/agents`),
+                fetch(`${API_BASE}/admin/masters`),
+                fetch(`${API_BASE}/admin/commissions`)
+            ]);
+
+            const agentsData = await agentsResponse.json();
+            const mastersData = await mastersResponse.json();
+            const commissionsData = await commissionsResponse.json();
+
+            this.updateAgentsDisplay(agentsData);
+            this.updateMastersDisplay(mastersData);
+            this.updateCommissionsDisplay(commissionsData);
+
+            this.addLog('Agents data loaded', 'success');
+        } catch (error) {
+            this.addLog(`Failed to load agents data: ${error.message}`, 'error');
+        }
+    }
+
+    updateAgentsDisplay(agents) {
+        const container = document.getElementById('agents-list');
+        if (!container || !agents) return;
+
+        container.innerHTML = agents.map(agent => `
+            <div class="agent-item" data-agent-id="${agent.id}">
+                <div class="agent-info">
+                    <div class="agent-name">${agent.name}</div>
+                    <div class="agent-code">${agent.code}</div>
+                    <div class="agent-customers">${agent.customers?.length || 0} customers</div>
+                </div>
+                <div class="agent-performance">
+                    <div class="monthly-volume">$${(agent.monthly_volume || 0).toLocaleString()}</div>
+                    <div class="commission-rate">${((agent.commission_rate || 0) * 100).toFixed(2)}%</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updateMastersDisplay(masters) {
+        const container = document.getElementById('masters-list');
+        if (!container || !masters) return;
+
+        container.innerHTML = masters.map(master => `
+            <div class="master-item" data-master-id="${master.id}">
+                <div class="master-info">
+                    <div class="master-name">${master.name}</div>
+                    <div class="master-agents">${master.agents?.length || 0} agents</div>
+                </div>
+                <div class="master-performance">
+                    <div class="total-volume">$${(master.total_volume || 0).toLocaleString()}</div>
+                    <div class="commission-rate">${((master.commission_rate || 0) * 100).toFixed(2)}%</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updateCommissionsDisplay(commissions) {
+        const container = document.getElementById('commissions-summary');
+        if (!container || !commissions) return;
+
+        document.getElementById('total-commissions').textContent = `$${(commissions.total || 0).toLocaleString()}`;
+        document.getElementById('agent-commissions').textContent = `$${(commissions.agents || 0).toLocaleString()}`;
+        document.getElementById('master-commissions').textContent = `$${(commissions.masters || 0).toLocaleString()}`;
+    }
+
+    // ===== ANALYTICS DATA =====
+    async loadAnalyticsData() {
+        try {
+            const metricsResponse = await fetch(`${API_BASE}/admin/metrics`);
+            const metricsData = await metricsResponse.json();
+            this.updateAnalyticsDisplay(metricsData);
+
+            this.addLog('Analytics data loaded', 'success');
+        } catch (error) {
+            this.addLog(`Failed to load analytics data: ${error.message}`, 'error');
+        }
+    }
+
+    updateAnalyticsDisplay(metrics) {
+        // Update key performance indicators
+        document.getElementById('revenue-today').textContent = `$${(metrics.revenue_today || 0).toLocaleString()}`;
+        document.getElementById('new-customers-today').textContent = metrics.new_customers_today || 0;
+        document.getElementById('active-sessions').textContent = metrics.active_sessions || 0;
+        document.getElementById('avg-response-time').textContent = `${metrics.avg_response_time || 0}ms`;
+    }
+
+    // ===== QUICK ACTIONS =====
+    async executeQuickAction(actionId) {
+        const action = this.dashboardConfig?.dashboard?.quickActions?.find(a => a.id === actionId);
+        if (!action) {
+            this.addLog(`Quick action ${actionId} not found`, 'error');
+            return;
+        }
+
+        if (action.confirmRequired && !confirm(`Execute ${action.name}?`)) {
+            return;
+        }
+
+        try {
+            this.addLog(`Executing: ${action.name}`, 'info');
+            
+            const response = await fetch(action.action, {
+                method: action.method || 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.addLog(`${action.name} completed successfully`, 'success');
+                
+                // If it returns data, you might want to display it
+                if (result && typeof result === 'object') {
+                    console.log(`${action.name} result:`, result);
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch (error) {
+            this.addLog(`${action.name} failed: ${error.message}`, 'error');
+        }
+    }
+
+    // === TELEGRAM BOT MANAGEMENT METHODS ===
+    
+    async refreshTelegramData() {
+        this.addLog('Refreshing Telegram data...', 'info');
+        await this.checkBotStatus();
+        await this.loadBotDashboardStats();
+    }
+
+    async checkBotStatus() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/telegram/bot/status`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('bot-status-value').textContent = data.status || 'Unknown';
+                document.getElementById('bot-commands').textContent = data.commands_enabled || 0;
+                this.addLog(`Bot status: ${data.status}`, 'success');
+            } else {
+                document.getElementById('bot-status-value').textContent = 'Error';
+                this.addLog('Failed to get bot status', 'error');
+            }
+        } catch (error) {
+            document.getElementById('bot-status-value').textContent = 'Offline';
+            this.addLog(`Bot status check failed: ${error.message}`, 'error');
+        }
+    }
+
+    async loadBotDashboardStats() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/telegram/bot/dashboard/stats`);
+            const data = await response.json();
+            
+            if (response.ok && data.bot) {
+                document.getElementById('bot-name').textContent = data.bot.name || 'Firesupportcs_bot';
+                document.getElementById('bot-username').textContent = data.bot.username || '@Firesupportcs_bot';
+                document.getElementById('bot-dashboard-status').textContent = 'Connected';
+                this.addLog('Bot dashboard stats loaded', 'success');
+            } else {
+                document.getElementById('bot-dashboard-status').textContent = 'Unavailable';
+                this.addLog('Bot dashboard unavailable', 'warning');
+            }
+        } catch (error) {
+            document.getElementById('bot-dashboard-status').textContent = 'Error';
+            this.addLog(`Dashboard stats failed: ${error.message}`, 'error');
+        }
+    }
+
+    async testBotAPI() {
+        this.addLog('Testing bot API...', 'info');
+        try {
+            const response = await fetch(`${API_BASE}/admin/telegram/bot/dashboard/test`);
+            const data = await response.json();
+            
+            if (response.ok && data.ok) {
+                this.addLog('✅ Bot API test successful', 'success');
+                this.showNotification('Bot API test passed!', 'success');
+            } else {
+                this.addLog(`❌ Bot API test failed: ${data.error || 'Unknown error'}`, 'error');
+                this.showNotification('Bot API test failed!', 'error');
+            }
+        } catch (error) {
+            this.addLog(`❌ Bot API test error: ${error.message}`, 'error');
+            this.showNotification('Bot API test error!', 'error');
+        }
+    }
+
+    async startTelegramBot() {
+        this.addLog('Starting Telegram bot...', 'info');
+        this.showNotification('Starting bot service...', 'info');
+        // This would typically call a start endpoint
+        setTimeout(() => {
+            this.checkBotStatus();
+        }, 2000);
+    }
+
+    async stopTelegramBot() {
+        this.addLog('Stopping Telegram bot...', 'info');
+        this.showNotification('Stopping bot service...', 'warning');
+        // This would typically call a stop endpoint
+        setTimeout(() => {
+            this.checkBotStatus();
+        }, 2000);
+    }
+
+    async loadTelegramGroups() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/telegram/groups`);
+            const data = await response.json();
+            
+            const groupsList = document.getElementById('telegram-groups');
+            if (response.ok && Array.isArray(data)) {
+                groupsList.innerHTML = data.map(group => `
+                    <div class="group-item">
+                        <strong>${group.title || 'Unnamed Group'}</strong>
+                        <span class="group-members">${group.member_count || 0} members</span>
+                    </div>
+                `).join('');
+                this.addLog(`Loaded ${data.length} Telegram groups`, 'success');
+            } else {
+                groupsList.innerHTML = '<div class="error">Failed to load groups</div>';
+                this.addLog('Failed to load Telegram groups', 'error');
+            }
+        } catch (error) {
+            this.addLog(`Groups loading error: ${error.message}`, 'error');
+        }
+    }
+
+    async showPendingMembers() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/members?status=pending`);
+            const data = await response.json();
+            
+            const pendingList = document.getElementById('pending-members');
+            if (response.ok && Array.isArray(data)) {
+                pendingList.innerHTML = data.map(member => `
+                    <div class="member-item">
+                        <strong>${member.first_name || 'Unknown'} ${member.last_name || ''}</strong>
+                        <span class="member-username">@${member.username || 'no_username'}</span>
+                        <div class="member-actions">
+                            <button class="btn btn-sm btn-success" onclick="dashboard.approveMember(${member.id})">
+                                Approve
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="dashboard.denyMember(${member.id})">
+                                Deny
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                this.addLog(`Found ${data.length} pending members`, 'info');
+            } else {
+                pendingList.innerHTML = '<div class="info">No pending members</div>';
+            }
+        } catch (error) {
+            this.addLog(`Pending members error: ${error.message}`, 'error');
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById('notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'notification';
+            notification.className = 'notification';
+            document.body.appendChild(notification);
+        }
+
+        notification.textContent = message;
+        notification.className = `notification ${type} show`;
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
+    }
 }
 
 // Initialize dashboard when DOM is loaded
 let dashboard;
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     dashboard = new UnifiedDashboard();
+    
+    // Wait for initialization to complete
+    await dashboard.init();
     
     // Initial log entry
     dashboard.addLog('Dashboard initialized', 'success');

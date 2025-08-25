@@ -4,10 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 // Import YAML configurations using Bun's native support
 import appConfig from '../config/app.yaml';
 import featuresConfig from '../config/features.yaml';
-import telegramConfig from '../config/telegram.yml';
-import fraudConfig from '../config/fraud.yml';
-import transactionsConfig from '../config/transactions.yml';
-import agentsConfig from '../config/agents.yml';
+import telegramConfig from '../config/telegram.yaml';
 
 import enhancedAdminPortal from '../public/portals/admin-portal.html';
 import { apiRouter } from './server/api/router';
@@ -19,7 +16,7 @@ import { MultiLevelCache } from './services/multi-level-cache';
 import { ResponseCacheMiddleware } from './middleware/response-cache';
 import { commissionCalculator } from './lib/commission';
 import { db } from './lib/data';
-import { buildTable, exportToCSV, calculateStats } from './lib/table';
+import { buildTable, exportToCSV } from './lib/table';
 import { telegramBridge } from './lib/telegram-bridge';
 
 // Initialize services
@@ -27,6 +24,18 @@ const customerLoader = new LazyCustomerLoader();
 const performanceMonitor = new PerformanceMonitor();
 const cache = new MultiLevelCache(2000); // 2000 items max in L1 cache
 const responseCache = new ResponseCacheMiddleware(cache);
+
+// Load agents and masters configuration dynamically
+let agentsConfig: any = { agents: { list: [] }, masters: { list: [] }, commission: {} };
+try {
+  const { YAML } = await import('bun');
+  const agentsFile = Bun.file('./config/agents.yml');
+  if (await agentsFile.exists()) {
+    agentsConfig = YAML.parse(await agentsFile.text());
+  }
+} catch (error) {
+  console.warn('⚠️ agents.yml config missing or invalid - using empty agent list');
+}
 
 // Track startup performance
 performanceMonitor.startMetric('total_startup');
@@ -1020,6 +1029,43 @@ const server = serve({
         }
         
         // TELEGRAM ENDPOINTS
+        // Bot Dashboard Integration - Proxy to dashboard server (port 3001)
+        if (url.pathname === "/api/admin/telegram/bot/dashboard/stats") {
+          try {
+            const response = await fetch("http://localhost:3001/api/dashboard/stats");
+            const data = await response.json();
+            return new Response(JSON.stringify(data), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          } catch (error) {
+            return new Response(JSON.stringify({ 
+              error: "Dashboard service unavailable",
+              details: error.message
+            }), {
+              status: 503,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          }
+        }
+
+        if (url.pathname === "/api/admin/telegram/bot/dashboard/test") {
+          try {
+            const response = await fetch("http://localhost:3001/api/dashboard/bot/test");
+            const data = await response.json();
+            return new Response(JSON.stringify(data), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          } catch (error) {
+            return new Response(JSON.stringify({ 
+              error: "Bot test service unavailable",
+              details: error.message
+            }), {
+              status: 503,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          }
+        }
+
         if (url.pathname === "/api/admin/telegram/bot/status") {
           return Response.json({
             status: "active",

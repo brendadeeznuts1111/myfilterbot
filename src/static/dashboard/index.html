@@ -34,29 +34,9 @@
             </div>
         </header>
 
-        <!-- Navigation Tabs -->
-        <nav class="dashboard-nav">
-            <button class="nav-tab active" data-tab="overview">
-                <i class="fas fa-chart-line"></i> Overview
-            </button>
-            <button class="nav-tab" data-tab="services">
-                <i class="fas fa-server"></i> Services
-            </button>
-            <button class="nav-tab" data-tab="api">
-                <i class="fas fa-code"></i> API Testing
-            </button>
-            <button class="nav-tab" data-tab="config">
-                <i class="fas fa-cog"></i> YAML Config
-            </button>
-            <button class="nav-tab" data-tab="features">
-                <i class="fas fa-toggle-on"></i> Feature Flags
-            </button>
-            <button class="nav-tab" data-tab="logs">
-                <i class="fas fa-terminal"></i> Live Logs
-            </button>
-            <button class="nav-tab" data-tab="docs">
-                <i class="fas fa-book"></i> Docs
-            </button>
+        <!-- Navigation Tabs (dynamically generated) -->
+        <nav class="dashboard-nav" id="dashboard-nav">
+            <!-- Tabs will be dynamically generated from YAML configuration -->
         </nav>
 
         <!-- Main Content -->
@@ -446,6 +426,258 @@ const cfg = schema.parse(
                             <div class="status-item">
                                 <span class="status-label">Customers Loaded:</span>
                                 <span class="status-value">3,142</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Telegram Operations Tab -->
+            <div id="telegram-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fab fa-telegram"></i> Telegram Operations</h2>
+                    <div class="tab-actions">
+                        <button class="btn btn-primary" onclick="dashboard.refreshTelegramData()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="telegram-grid">
+                    <div class="telegram-section bot-management">
+                        <h3><i class="fas fa-robot"></i> Bot Management</h3>
+                        <div class="bot-overview">
+                            <div class="bot-status" id="bot-status">
+                                <div class="status-item">
+                                    <span class="label">Bot Name:</span>
+                                    <span class="value" id="bot-name">Firesupportcs_bot</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="label">Status:</span>
+                                    <span class="value" id="bot-status-value">Loading...</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="label">Username:</span>
+                                    <span class="value" id="bot-username">@Firesupportcs_bot</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="label">Commands:</span>
+                                    <span class="value" id="bot-commands">0</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="label">Dashboard:</span>
+                                    <span class="value" id="bot-dashboard-status">Checking...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bot-actions">
+                            <button class="btn btn-success" onclick="dashboard.startTelegramBot()">
+                                <i class="fas fa-play"></i> Start Bot
+                            </button>
+                            <button class="btn btn-danger" onclick="dashboard.stopTelegramBot()">
+                                <i class="fas fa-stop"></i> Stop Bot
+                            </button>
+                            <button class="btn btn-info" onclick="dashboard.checkBotStatus()">
+                                <i class="fas fa-heartbeat"></i> Check Status
+                            </button>
+                            <button class="btn btn-primary" onclick="dashboard.testBotAPI()">
+                                <i class="fas fa-vial"></i> Test Bot API
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.open('http://localhost:3001/dashboard', '_blank')">
+                                <i class="fas fa-external-link-alt"></i> Open Bot Dashboard
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="telegram-section group-management">
+                        <h3><i class="fas fa-users"></i> Group Management</h3>
+                        <div class="groups-list" id="telegram-groups">
+                            <!-- Groups will be loaded dynamically -->
+                        </div>
+                        <div class="group-actions">
+                            <button class="btn btn-primary" onclick="dashboard.loadTelegramGroups()">
+                                <i class="fas fa-list"></i> Load Groups
+                            </button>
+                            <button class="btn btn-warning" onclick="dashboard.showPendingMembers()">
+                                <i class="fas fa-clock"></i> Pending Members
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="telegram-section message-operations">
+                        <h3><i class="fas fa-comments"></i> Message Operations</h3>
+                        <div class="message-compose">
+                            <textarea id="telegram-message" placeholder="Enter message to send..." rows="3"></textarea>
+                            <div class="message-controls">
+                                <select id="telegram-chat-select">
+                                    <option value="">Select Chat...</option>
+                                </select>
+                                <button class="btn btn-success" onclick="dashboard.sendTelegramMessage()">
+                                    <i class="fas fa-paper-plane"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                        <div class="recent-messages" id="recent-messages">
+                            <!-- Recent messages will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div class="telegram-section member-approval">
+                        <h3><i class="fas fa-user-check"></i> Member Approvals</h3>
+                        <div class="pending-members" id="pending-members">
+                            <!-- Pending member approvals will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div id="transactions-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-exchange-alt"></i> Transactions</h2>
+                    <div class="tab-actions">
+                        <button class="btn btn-primary" onclick="dashboard.refreshTransactionData()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn btn-info" onclick="dashboard.exportTransactions()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="transaction-summary">
+                    <div class="summary-card">
+                        <h4>Today's Transactions</h4>
+                        <div class="summary-value" id="daily-transactions">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Total Volume</h4>
+                        <div class="summary-value" id="transaction-volume">$0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Success Rate</h4>
+                        <div class="summary-value" id="success-rate">0%</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Fraud Alerts</h4>
+                        <div class="summary-value" id="fraud-alerts">0</div>
+                    </div>
+                </div>
+
+                <div class="transaction-table">
+                    <table id="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Customer</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Transactions will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Agents & Masters Tab -->
+            <div id="agents-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-user-tie"></i> Agents & Masters</h2>
+                    <div class="tab-actions">
+                        <button class="btn btn-primary" onclick="dashboard.refreshAgentData()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn btn-success" onclick="dashboard.calculateCommissions()">
+                            <i class="fas fa-calculator"></i> Calculate Commissions
+                        </button>
+                    </div>
+                </div>
+
+                <div class="agent-summary">
+                    <div class="summary-card">
+                        <h4>Total Agents</h4>
+                        <div class="summary-value" id="total-agents">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Total Masters</h4>
+                        <div class="summary-value" id="total-masters">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Total Commissions</h4>
+                        <div class="summary-value" id="total-commissions">$0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Performance Score</h4>
+                        <div class="summary-value" id="performance-score">0</div>
+                    </div>
+                </div>
+
+                <div class="agent-tables">
+                    <div class="agent-table-section">
+                        <h3>Agents</h3>
+                        <table id="agents-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Master</th>
+                                    <th>Customers</th>
+                                    <th>Volume</th>
+                                    <th>Commission</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Agents will be loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-chart-bar"></i> Analytics</h2>
+                    <div class="tab-actions">
+                        <button class="btn btn-primary" onclick="dashboard.refreshAnalytics()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn btn-info" onclick="dashboard.exportAnalytics()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-section performance-metrics">
+                        <h3><i class="fas fa-tachometer-alt"></i> Performance Metrics</h3>
+                        <div class="metrics-cards">
+                            <div class="metric-card">
+                                <h4>Response Time</h4>
+                                <div class="metric-value" id="avg-response-time">0ms</div>
+                            </div>
+                            <div class="metric-card">
+                                <h4>Memory Usage</h4>
+                                <div class="metric-value" id="memory-usage-analytics">0MB</div>
+                            </div>
+                            <div class="metric-card">
+                                <h4>Cache Hit Rate</h4>
+                                <div class="metric-value" id="cache-hit-rate">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-section fraud-analytics">
+                        <h3><i class="fas fa-shield-alt"></i> Fraud Analytics</h3>
+                        <div class="fraud-metrics">
+                            <div class="fraud-score-display" id="fraud-score-display">
+                                <!-- Fraud scores will be displayed here -->
                             </div>
                         </div>
                     </div>

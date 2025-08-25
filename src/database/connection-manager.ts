@@ -7,11 +7,11 @@ import { Pool } from 'pg';
 import Redis from 'ioredis';
 import { ClickHouse } from 'clickhouse';
 import { enhancedConfig } from '../config/enhanced-config-service';
-import type { 
-  PostgresConfig, 
-  RedisConfig, 
+import type {
+  PostgresConfig,
+  RedisConfig,
   ClickHouseConfig,
-  DatabaseConfig 
+  DatabaseConfig,
 } from '../config/schemas';
 
 // ============================================================================
@@ -20,23 +20,23 @@ import type {
 
 export class DatabaseConnectionManager {
   private static instance: DatabaseConnectionManager;
-  
+
   private pgPool: Pool | null = null;
   private redisClient: Redis | null = null;
   private clickhouseClient: any | null = null;
   private config: DatabaseConfig | null = null;
   private isInitialized = false;
   private reconnectTimers = new Map<string, NodeJS.Timeout>();
-  
+
   private constructor() {}
-  
+
   public static getInstance(): DatabaseConnectionManager {
     if (!DatabaseConnectionManager.instance) {
       DatabaseConnectionManager.instance = new DatabaseConnectionManager();
     }
     return DatabaseConnectionManager.instance;
   }
-  
+
   /**
    * Initialize all database connections
    */
@@ -45,27 +45,26 @@ export class DatabaseConnectionManager {
       console.log('Database connections already initialized');
       return;
     }
-    
+
     try {
       console.log('🔌 Initializing database connections from YAML config...');
-      
+
       // Load configuration
       this.config = await enhancedConfig.getDatabaseConfig();
-      
+
       // Initialize connections
       await this.initializePostgres();
       await this.initializeRedis();
       await this.initializeClickHouse();
-      
+
       this.isInitialized = true;
       console.log('✅ All database connections initialized successfully');
-      
     } catch (error) {
       console.error('❌ Failed to initialize database connections:', error);
       throw error;
     }
   }
-  
+
   /**
    * Initialize PostgreSQL connection
    */
@@ -74,9 +73,9 @@ export class DatabaseConnectionManager {
       console.log('PostgreSQL configuration not found, skipping');
       return;
     }
-    
+
     const pgConfig = this.config.connections.postgres;
-    
+
     try {
       // Create connection pool
       this.pgPool = new Pool({
@@ -89,31 +88,32 @@ export class DatabaseConnectionManager {
         max: pgConfig.pool?.max || 10,
         idleTimeoutMillis: pgConfig.pool?.idleTimeout || 30000,
         connectionTimeoutMillis: pgConfig.pool?.connectionTimeout || 30000,
-        ssl: pgConfig.ssl?.enabled ? {
-          rejectUnauthorized: pgConfig.ssl.rejectUnauthorized,
-          ca: pgConfig.ssl.ca,
-          cert: pgConfig.ssl.cert,
-          key: pgConfig.ssl.key,
-        } : undefined,
+        ssl: pgConfig.ssl?.enabled
+          ? {
+              rejectUnauthorized: pgConfig.ssl.rejectUnauthorized,
+              ca: pgConfig.ssl.ca,
+              cert: pgConfig.ssl.cert,
+              key: pgConfig.ssl.key,
+            }
+          : undefined,
       });
-      
+
       // Test connection
       await this.pgPool.query('SELECT NOW()');
       console.log('✅ PostgreSQL connected successfully');
-      
+
       // Setup error handling
-      this.pgPool.on('error', (err) => {
+      this.pgPool.on('error', err => {
         console.error('PostgreSQL pool error:', err);
         this.handleConnectionError('postgres');
       });
-      
     } catch (error) {
       console.error('Failed to connect to PostgreSQL:', error);
       this.scheduleReconnect('postgres');
       throw error;
     }
   }
-  
+
   /**
    * Initialize Redis connection
    */
@@ -122,9 +122,9 @@ export class DatabaseConnectionManager {
       console.log('Redis configuration not found, skipping');
       return;
     }
-    
+
     const redisConfig = this.config.connections.redis;
-    
+
     try {
       // Create Redis client
       this.redisClient = new Redis({
@@ -134,40 +134,41 @@ export class DatabaseConnectionManager {
         db: redisConfig.db || 0,
         keyPrefix: redisConfig.keyPrefix,
         family: redisConfig.family || 4,
-        retryStrategy: (times) => {
+        retryStrategy: times => {
           const delay = Math.min(times * 1000, 30000);
           console.log(`Redis reconnecting in ${delay}ms...`);
           return delay;
         },
-        tls: redisConfig.tls?.enabled ? {
-          cert: redisConfig.tls.cert,
-          key: redisConfig.tls.key,
-          ca: redisConfig.tls.ca,
-        } : undefined,
+        tls: redisConfig.tls?.enabled
+          ? {
+              cert: redisConfig.tls.cert,
+              key: redisConfig.tls.key,
+              ca: redisConfig.tls.ca,
+            }
+          : undefined,
       });
-      
+
       // Test connection
       await this.redisClient.ping();
       console.log('✅ Redis connected successfully');
-      
+
       // Setup event handlers
-      this.redisClient.on('error', (err) => {
+      this.redisClient.on('error', err => {
         console.error('Redis error:', err);
         this.handleConnectionError('redis');
       });
-      
+
       this.redisClient.on('connect', () => {
         console.log('Redis reconnected');
         this.clearReconnectTimer('redis');
       });
-      
     } catch (error) {
       console.error('Failed to connect to Redis:', error);
       this.scheduleReconnect('redis');
       throw error;
     }
   }
-  
+
   /**
    * Initialize ClickHouse connection
    */
@@ -176,9 +177,9 @@ export class DatabaseConnectionManager {
       console.log('ClickHouse configuration not found, skipping');
       return;
     }
-    
+
     const chConfig = this.config.connections.clickhouse;
-    
+
     try {
       // Create ClickHouse client
       this.clickhouseClient = new ClickHouse({
@@ -189,18 +190,17 @@ export class DatabaseConnectionManager {
         password: chConfig.password,
         requestTimeout: chConfig.requestTimeout || 30000,
       });
-      
+
       // Test connection
       await this.clickhouseClient.query('SELECT 1').toPromise();
       console.log('✅ ClickHouse connected successfully');
-      
     } catch (error) {
       console.error('Failed to connect to ClickHouse:', error);
       this.scheduleReconnect('clickhouse');
       // Don't throw as ClickHouse might be optional
     }
   }
-  
+
   /**
    * Get PostgreSQL pool
    */
@@ -210,7 +210,7 @@ export class DatabaseConnectionManager {
     }
     return this.pgPool;
   }
-  
+
   /**
    * Get Redis client
    */
@@ -220,7 +220,7 @@ export class DatabaseConnectionManager {
     }
     return this.redisClient;
   }
-  
+
   /**
    * Get ClickHouse client
    */
@@ -230,13 +230,13 @@ export class DatabaseConnectionManager {
     }
     return this.clickhouseClient;
   }
-  
+
   /**
    * Execute PostgreSQL query with error handling
    */
   async query(sql: string, params?: any[]): Promise<any> {
     const pool = this.getPostgres();
-    
+
     try {
       const result = await pool.query(sql, params);
       return result.rows;
@@ -245,14 +245,14 @@ export class DatabaseConnectionManager {
       throw error;
     }
   }
-  
+
   /**
    * Execute PostgreSQL transaction
    */
   async transaction<T>(callback: (client: any) => Promise<T>): Promise<T> {
     const pool = this.getPostgres();
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
       const result = await callback(client);
@@ -265,13 +265,13 @@ export class DatabaseConnectionManager {
       client.release();
     }
   }
-  
+
   /**
    * Get cache value from Redis
    */
   async getCached<T>(key: string): Promise<T | null> {
     const redis = this.getRedis();
-    
+
     try {
       const value = await redis.get(key);
       return value ? JSON.parse(value) : null;
@@ -280,13 +280,13 @@ export class DatabaseConnectionManager {
       return null;
     }
   }
-  
+
   /**
    * Set cache value in Redis
    */
   async setCached(key: string, value: any, ttl?: number): Promise<void> {
     const redis = this.getRedis();
-    
+
     try {
       const serialized = JSON.stringify(value);
       if (ttl) {
@@ -298,13 +298,13 @@ export class DatabaseConnectionManager {
       console.error('Cache set error:', error);
     }
   }
-  
+
   /**
    * Delete cache value from Redis
    */
   async deleteCached(key: string | string[]): Promise<void> {
     const redis = this.getRedis();
-    
+
     try {
       if (Array.isArray(key)) {
         await redis.del(...key);
@@ -315,13 +315,13 @@ export class DatabaseConnectionManager {
       console.error('Cache delete error:', error);
     }
   }
-  
+
   /**
    * Clear all cache with pattern
    */
   async clearCache(pattern: string = '*'): Promise<void> {
     const redis = this.getRedis();
-    
+
     try {
       const keys = await redis.keys(pattern);
       if (keys.length > 0) {
@@ -332,7 +332,7 @@ export class DatabaseConnectionManager {
       console.error('Cache clear error:', error);
     }
   }
-  
+
   /**
    * Health check for all connections
    */
@@ -346,7 +346,7 @@ export class DatabaseConnectionManager {
       redis: false,
       clickhouse: false,
     };
-    
+
     // Check PostgreSQL
     try {
       if (this.pgPool) {
@@ -356,7 +356,7 @@ export class DatabaseConnectionManager {
     } catch (error) {
       console.error('PostgreSQL health check failed:', error);
     }
-    
+
     // Check Redis
     try {
       if (this.redisClient) {
@@ -366,7 +366,7 @@ export class DatabaseConnectionManager {
     } catch (error) {
       console.error('Redis health check failed:', error);
     }
-    
+
     // Check ClickHouse
     try {
       if (this.clickhouseClient) {
@@ -376,10 +376,10 @@ export class DatabaseConnectionManager {
     } catch (error) {
       console.error('ClickHouse health check failed:', error);
     }
-    
+
     return health;
   }
-  
+
   /**
    * Get connection statistics
    */
@@ -389,7 +389,7 @@ export class DatabaseConnectionManager {
       redis: null,
       clickhouse: null,
     };
-    
+
     // PostgreSQL stats
     if (this.pgPool) {
       stats.postgres = {
@@ -398,7 +398,7 @@ export class DatabaseConnectionManager {
         waitingCount: this.pgPool.waitingCount,
       };
     }
-    
+
     // Redis stats
     if (this.redisClient) {
       const info = await this.redisClient.info();
@@ -408,35 +408,35 @@ export class DatabaseConnectionManager {
         connectedClients: info.match(/connected_clients:(\d+)/)?.[1],
       };
     }
-    
+
     return stats;
   }
-  
+
   /**
    * Handle connection errors
    */
   private handleConnectionError(service: string): void {
     console.error(`Connection error for ${service}`);
-    
+
     // Don't schedule reconnect if already scheduled
     if (!this.reconnectTimers.has(service)) {
       this.scheduleReconnect(service);
     }
   }
-  
+
   /**
    * Schedule reconnection attempt
    */
   private scheduleReconnect(service: string): void {
     // Clear existing timer if any
     this.clearReconnectTimer(service);
-    
+
     const delay = 5000; // 5 seconds
     console.log(`Scheduling reconnect for ${service} in ${delay}ms`);
-    
+
     const timer = setTimeout(async () => {
       console.log(`Attempting to reconnect ${service}...`);
-      
+
       try {
         switch (service) {
           case 'postgres':
@@ -449,20 +449,19 @@ export class DatabaseConnectionManager {
             await this.initializeClickHouse();
             break;
         }
-        
+
         console.log(`✅ ${service} reconnected successfully`);
         this.reconnectTimers.delete(service);
-        
       } catch (error) {
         console.error(`Failed to reconnect ${service}:`, error);
         // Schedule another attempt
         this.scheduleReconnect(service);
       }
     }, delay);
-    
+
     this.reconnectTimers.set(service, timer);
   }
-  
+
   /**
    * Clear reconnect timer
    */
@@ -473,34 +472,34 @@ export class DatabaseConnectionManager {
       this.reconnectTimers.delete(service);
     }
   }
-  
+
   /**
    * Gracefully close all connections
    */
   async close(): Promise<void> {
     console.log('Closing database connections...');
-    
+
     // Clear all reconnect timers
     for (const timer of this.reconnectTimers.values()) {
       clearTimeout(timer);
     }
     this.reconnectTimers.clear();
-    
+
     // Close PostgreSQL
     if (this.pgPool) {
       await this.pgPool.end();
       this.pgPool = null;
     }
-    
+
     // Close Redis
     if (this.redisClient) {
       this.redisClient.disconnect();
       this.redisClient = null;
     }
-    
+
     // Close ClickHouse
     this.clickhouseClient = null;
-    
+
     this.isInitialized = false;
     console.log('All database connections closed');
   }
@@ -513,10 +512,13 @@ export const dbManager = DatabaseConnectionManager.getInstance();
 export const getDB = () => dbManager.getPostgres();
 export const getRedis = () => dbManager.getRedis();
 export const getClickHouse = () => dbManager.getClickHouse();
-export const query = (sql: string, params?: any[]) => dbManager.query(sql, params);
-export const transaction = <T>(callback: (client: any) => Promise<T>) => dbManager.transaction(callback);
+export const query = (sql: string, params?: any[]) =>
+  dbManager.query(sql, params);
+export const transaction = <T>(callback: (client: any) => Promise<T>) =>
+  dbManager.transaction(callback);
 export const getCached = <T>(key: string) => dbManager.getCached<T>(key);
-export const setCached = (key: string, value: any, ttl?: number) => dbManager.setCached(key, value, ttl);
+export const setCached = (key: string, value: any, ttl?: number) =>
+  dbManager.setCached(key, value, ttl);
 export const clearCache = (pattern?: string) => dbManager.clearCache(pattern);
 
 export default dbManager;

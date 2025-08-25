@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCustomer } from '../contexts/CustomerContext';
-import { useCustomerBalance, useCustomerAnalytics, useTransactionHistory, useAPIPerformance } from '../hooks/useEnhancedAPI';
+import { useCustomerBalance, useCustomerAnalytics, useTransactionHistory, useAPIPerformance } from '../../hooks/useEnhancedAPI';
 
 export const DataFlowDebugger: React.FC = () => {
   const { customerId, apiClient, isReady } = useCustomer();

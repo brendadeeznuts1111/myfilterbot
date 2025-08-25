@@ -17,7 +17,7 @@ import {
   AreaChart,
   ReferenceLine,
 } from 'recharts';
-import { useCustomerAnalytics } from '../../hooks/useEnhancedAPI';
+import { useCustomerAnalytics } from '../../../hooks/useEnhancedAPI';
 
 interface EquityCurveChartProps {
   customerId?: string;

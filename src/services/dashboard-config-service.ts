@@ -33,13 +33,13 @@ class DashboardConfigService extends EventEmitter {
     active: false,
     filesWatching: 0,
     configChanges: 0,
-    lastReload: null
+    lastReload: null,
   };
   private debounceTimeouts: Map<string, NodeJS.Timeout> = new Map();
-  
+
   constructor() {
     super();
-    // Initialize configs asynchronously 
+    // Initialize configs asynchronously
     this.initializeConfigs().catch(error => {
       console.error('Failed to initialize configurations:', error);
     });
@@ -49,24 +49,40 @@ class DashboardConfigService extends EventEmitter {
     // Initialize configuration files with parallel loading
     const configFiles: ConfigFile[] = [
       { name: 'app', path: './config/app.yaml', content: appConfig },
-      { name: 'features', path: './config/features.yaml', content: featuresConfig },
-      { name: 'services', path: './config/services.yaml', content: servicesConfig },
-      { name: 'telegram', path: './config/telegram.yaml', content: telegramConfig },
-      { name: 'database', path: './config/database.yaml', content: databaseConfig }
+      {
+        name: 'features',
+        path: './config/features.yaml',
+        content: featuresConfig,
+      },
+      {
+        name: 'services',
+        path: './config/services.yaml',
+        content: servicesConfig,
+      },
+      {
+        name: 'telegram',
+        path: './config/telegram.yaml',
+        content: telegramConfig,
+      },
+      {
+        name: 'database',
+        path: './config/database.yaml',
+        content: databaseConfig,
+      },
     ];
 
     // Load all configs in parallel for better performance
-    const loadPromises = configFiles.map(async (config) => {
+    const loadPromises = configFiles.map(async config => {
       try {
         // Validate config content exists
         if (!config.content || Object.keys(config.content).length === 0) {
           console.warn(`⚠️ Config file ${config.name} appears to be empty`);
         }
-        
+
         // Pre-compute config size for monitoring
         const configSize = JSON.stringify(config.content).length;
         console.log(`📝 Loaded config: ${config.name} (${configSize} bytes)`);
-        
+
         return config;
       } catch (error) {
         console.error(`❌ Failed to process config: ${config.name}`, error);
@@ -75,7 +91,7 @@ class DashboardConfigService extends EventEmitter {
     });
 
     const loadedConfigs = await Promise.all(loadPromises);
-    
+
     loadedConfigs.forEach(config => {
       this.configs.set(config.name, config);
     });
@@ -119,12 +135,15 @@ class DashboardConfigService extends EventEmitter {
   /**
    * Update configuration from YAML string
    */
-  async updateConfigFromYaml(name: string, yamlContent: string): Promise<boolean> {
+  async updateConfigFromYaml(
+    name: string,
+    yamlContent: string
+  ): Promise<boolean> {
     try {
       // Parse YAML using Bun's native parser
       const { YAML } = await import('bun');
       const parsed = YAML.parse(yamlContent);
-      
+
       // Validate the parsed content
       if (!this.validateConfig(name, parsed)) {
         throw new Error('Invalid configuration structure');
@@ -143,7 +162,7 @@ class DashboardConfigService extends EventEmitter {
 
       // Emit change event
       this.emit('config:changed', { file: name, content: parsed });
-      
+
       // Update hot-reload status
       this.hotReloadStatus.configChanges++;
       this.hotReloadStatus.lastReload = new Date();
@@ -178,7 +197,11 @@ class DashboardConfigService extends EventEmitter {
   /**
    * Debounced configuration reload
    */
-  private debounceReload(configName: string, reloadFn: () => void, delay: number = 500) {
+  private debounceReload(
+    configName: string,
+    reloadFn: () => void,
+    delay: number = 500
+  ) {
     // Clear existing timeout
     const existingTimeout = this.debounceTimeouts.get(configName);
     if (existingTimeout) {
@@ -206,35 +229,42 @@ class DashboardConfigService extends EventEmitter {
 
     this.configs.forEach((config, name) => {
       const configPath = `./config/${name}.yaml`;
-      
+
       try {
         const watcher = watch(configPath, async (event, filename) => {
           if (event === 'change') {
             console.log(`📝 Configuration file changed: ${filename}`);
-            
+
             // Debounce rapid file changes
             this.debounceReload(name, async () => {
               try {
                 performance.mark(`config-reload-${name}-start`);
-                
+
                 // Re-import the configuration using dynamic import
                 const newConfig = await import(`../../config/${name}.yaml`);
-                
+
                 // Update in-memory config
                 config.content = newConfig.default || newConfig;
                 this.configs.set(name, config);
-                
+
                 // Emit change event
-                this.emit('config:changed', { file: name, content: config.content });
+                this.emit('config:changed', {
+                  file: name,
+                  content: config.content,
+                });
                 this.emit('hotreload:triggered', { file: name });
-                
+
                 // Update status
                 this.hotReloadStatus.configChanges++;
                 this.hotReloadStatus.lastReload = new Date();
-                
+
                 performance.mark(`config-reload-${name}-end`);
-                performance.measure(`config-reload-${name}`, `config-reload-${name}-start`, `config-reload-${name}-end`);
-                
+                performance.measure(
+                  `config-reload-${name}`,
+                  `config-reload-${name}-start`,
+                  `config-reload-${name}-end`
+                );
+
                 console.log(`🔄 Hot-reloaded: ${name}.yaml`);
               } catch (error) {
                 console.error(`❌ Failed to hot-reload ${name}.yaml:`, error);
@@ -251,7 +281,9 @@ class DashboardConfigService extends EventEmitter {
 
     this.hotReloadStatus.active = true;
     this.hotReloadStatus.filesWatching = this.watchers.size;
-    console.log(`Watching ${this.watchers.size} configuration files for changes`);
+    console.log(
+      `Watching ${this.watchers.size} configuration files for changes`
+    );
   }
 
   /**
@@ -262,7 +294,7 @@ class DashboardConfigService extends EventEmitter {
       watcher.close();
       console.log(`Stopped watching ${name}.yaml`);
     });
-    
+
     this.watchers.clear();
     this.hotReloadStatus.active = false;
     this.hotReloadStatus.filesWatching = 0;
@@ -294,20 +326,25 @@ class DashboardConfigService extends EventEmitter {
       }
 
       // Toggle the enabled state
-      features.features[featureName].enabled = !features.features[featureName].enabled;
+      features.features[featureName].enabled =
+        !features.features[featureName].enabled;
 
       // Convert to YAML and save (Note: Bun doesn't have YAML.stringify, so we'll use JSON for now)
       // In a real implementation, you'd want to use a YAML library like js-yaml
       const yamlContent = JSON.stringify(features, null, 2);
-      
+
       // For now, just update the in-memory config and emit events
       // In production, you'd write back to the YAML file properly
-      this.configs.set('features', { name: 'features', path: './config/features.yaml', content: features });
+      this.configs.set('features', {
+        name: 'features',
+        path: './config/features.yaml',
+        content: features,
+      });
 
       // Emit feature toggle event
-      this.emit('feature:toggled', { 
-        feature: featureName, 
-        enabled: features.features[featureName].enabled 
+      this.emit('feature:toggled', {
+        feature: featureName,
+        enabled: features.features[featureName].enabled,
       });
 
       return features.features[featureName].enabled;
@@ -320,15 +357,17 @@ class DashboardConfigService extends EventEmitter {
   /**
    * Validate YAML syntax
    */
-  async validateYaml(yamlContent: string): Promise<{ valid: boolean; error?: string }> {
+  async validateYaml(
+    yamlContent: string
+  ): Promise<{ valid: boolean; error?: string }> {
     try {
       const { YAML } = await import('bun');
       YAML.parse(yamlContent);
       return { valid: true };
     } catch (error: any) {
-      return { 
-        valid: false, 
-        error: error.message || 'Invalid YAML syntax' 
+      return {
+        valid: false,
+        error: error.message || 'Invalid YAML syntax',
       };
     }
   }
@@ -350,7 +389,7 @@ class DashboardConfigService extends EventEmitter {
   getEnvironmentConfig(environment: string = 'development'): any {
     const appConfig = this.getConfig('app');
     const envConfig = appConfig?.environments?.[environment];
-    
+
     if (!envConfig) {
       console.warn(`No configuration found for environment: ${environment}`);
       return appConfig;
@@ -365,15 +404,19 @@ class DashboardConfigService extends EventEmitter {
    */
   private deepMerge(target: any, source: any): any {
     const result = { ...target };
-    
+
     for (const key in source) {
-      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (
+        source[key] &&
+        typeof source[key] === 'object' &&
+        !Array.isArray(source[key])
+      ) {
         result[key] = this.deepMerge(result[key] || {}, source[key]);
       } else {
         result[key] = source[key];
       }
     }
-    
+
     return result;
   }
 
@@ -385,7 +428,7 @@ class DashboardConfigService extends EventEmitter {
     return {
       app: appConfig?.app?.version || '3.0.0',
       bun: Bun.version,
-      node: process.version
+      node: process.version,
     };
   }
 
@@ -397,12 +440,12 @@ class DashboardConfigService extends EventEmitter {
       // Bun's native YAML.parse automatically handles multi-document YAML
       const { YAML } = await import('bun');
       const documents = YAML.parse(yamlContent);
-      
+
       // If it's an array, it was a multi-document YAML
       if (Array.isArray(documents)) {
         return documents;
       }
-      
+
       // Single document
       return [documents];
     } catch (error) {

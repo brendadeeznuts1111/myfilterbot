@@ -5,9 +5,9 @@
 
 import { YAML } from 'bun';
 import crypto from 'crypto';
-import { 
-  AppConfig, 
-  DatabaseConfig, 
+import {
+  AppConfig,
+  DatabaseConfig,
   FeaturesConfig,
   validateAppConfig,
   validateDatabaseConfig,
@@ -15,7 +15,7 @@ import {
   validateProductionConfig,
   validateDevelopmentConfig,
   safeParseAppConfig,
-  type FeatureConfig
+  type FeatureConfig,
 } from './schemas';
 
 // ============================================================================
@@ -78,19 +78,22 @@ class ConfigEncryption {
 
   constructor(encryptionKey?: string) {
     // Use provided key or generate from environment
-    const keyString = encryptionKey || process.env.CONFIG_ENCRYPTION_KEY || 'default-dev-key-32-chars-long!!!!';
+    const keyString =
+      encryptionKey ||
+      process.env.CONFIG_ENCRYPTION_KEY ||
+      'default-dev-key-32-chars-long!!!!';
     this.key = crypto.scryptSync(keyString, 'salt', 32);
   }
 
   encrypt(text: string): string {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(this.algorithm, this.key, iv);
-    
+
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    
+
     const authTag = cipher.getAuthTag();
-    
+
     return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
   }
 
@@ -99,13 +102,13 @@ class ConfigEncryption {
     const iv = Buffer.from(parts[0], 'hex');
     const authTag = Buffer.from(parts[1], 'hex');
     const encrypted = parts[2];
-    
+
     const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
     decipher.setAuthTag(authTag);
-    
+
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
-    
+
     return decrypted;
   }
 
@@ -128,44 +131,43 @@ class EnvParser {
    */
   static parse(value: any): any {
     if (typeof value === 'string') {
-      return value.replace(
-        /\${([^}]+)}/g,
-        (_, expr) => {
-          // Handle complex expressions: ${VAR:-default}, ${VAR:?error}, ${VAR:+replacement}
-          const colonIndex = expr.indexOf(':');
-          
-          if (colonIndex === -1) {
-            // Simple variable
-            const envValue = process.env[expr];
-            if (envValue === undefined) {
-              console.warn(`Warning: Environment variable ${expr} is not set`);
-            }
-            return envValue ?? '';
-          }
+      return value.replace(/\${([^}]+)}/g, (_, expr) => {
+        // Handle complex expressions: ${VAR:-default}, ${VAR:?error}, ${VAR:+replacement}
+        const colonIndex = expr.indexOf(':');
 
-          const varName = expr.substring(0, colonIndex);
-          const operator = expr[colonIndex + 1];
-          const operand = expr.substring(colonIndex + 2);
-          const envValue = process.env[varName];
-
-          switch (operator) {
-            case '-': // Use default if not set
-              return envValue ?? operand;
-            
-            case '?': // Error if not set
-              if (!envValue) {
-                throw new Error(operand || `Environment variable ${varName} is required`);
-              }
-              return envValue;
-            
-            case '+': // Use replacement if set
-              return envValue ? operand : '';
-            
-            default:
-              return envValue ?? '';
+        if (colonIndex === -1) {
+          // Simple variable
+          const envValue = process.env[expr];
+          if (envValue === undefined) {
+            console.warn(`Warning: Environment variable ${expr} is not set`);
           }
+          return envValue ?? '';
         }
-      );
+
+        const varName = expr.substring(0, colonIndex);
+        const operator = expr[colonIndex + 1];
+        const operand = expr.substring(colonIndex + 2);
+        const envValue = process.env[varName];
+
+        switch (operator) {
+          case '-': // Use default if not set
+            return envValue ?? operand;
+
+          case '?': // Error if not set
+            if (!envValue) {
+              throw new Error(
+                operand || `Environment variable ${varName} is required`
+              );
+            }
+            return envValue;
+
+          case '+': // Use replacement if set
+            return envValue ? operand : '';
+
+          default:
+            return envValue ?? '';
+        }
+      });
     }
 
     if (Array.isArray(value)) {
@@ -190,7 +192,7 @@ class EnvParser {
 
 export class EnhancedConfigService {
   private static instance: EnhancedConfigService;
-  
+
   private cache: ConfigCache;
   private encryption: ConfigEncryption;
   private environment: string;
@@ -200,11 +202,11 @@ export class EnhancedConfigService {
   private constructor() {
     this.environment = process.env.NODE_ENV || 'development';
     this.configDir = process.env.CONFIG_DIR || 'config';
-    
+
     // Initialize cache with different TTL for production
     const cacheTTL = this.environment === 'production' ? 3600 : 60;
     this.cache = new ConfigCache(cacheTTL);
-    
+
     // Initialize encryption
     this.encryption = new ConfigEncryption();
   }
@@ -221,7 +223,7 @@ export class EnhancedConfigService {
    */
   async getAppConfig(): Promise<AppConfig> {
     const cacheKey = 'app:config';
-    
+
     // Check cache first in production
     if (this.environment === 'production' && this.cache.has(cacheKey)) {
       return this.cache.get<AppConfig>(cacheKey)!;
@@ -230,24 +232,24 @@ export class EnhancedConfigService {
     try {
       // Load YAML
       const config = await import(`../../${this.configDir}/app.yaml`);
-      
+
       // Parse environment variables
       const parsed = EnvParser.parse(config.default || config);
-      
+
       // Validate with Zod
       const validated = validateAppConfig(parsed);
-      
+
       // Environment-specific validation
       if (this.environment === 'production') {
         validateProductionConfig(validated);
       } else if (this.environment === 'development') {
         validateDevelopmentConfig(validated);
       }
-      
+
       // Cache the result
       this.cache.set(cacheKey, validated);
       this.validatedConfigs.add('app');
-      
+
       return validated;
     } catch (error) {
       console.error('Failed to load app configuration:', error);
@@ -260,7 +262,7 @@ export class EnhancedConfigService {
    */
   async getDatabaseConfig(): Promise<DatabaseConfig> {
     const cacheKey = 'database:config';
-    
+
     if (this.environment === 'production' && this.cache.has(cacheKey)) {
       return this.cache.get<DatabaseConfig>(cacheKey)!;
     }
@@ -269,16 +271,17 @@ export class EnhancedConfigService {
       const config = await import(`../../${this.configDir}/database.yaml`);
       const parsed = EnvParser.parse(config.default || config);
       const validated = validateDatabaseConfig(parsed);
-      
+
       // Decrypt sensitive fields if encrypted
       if (validated.connections.postgres?.password?.startsWith('encrypted:')) {
         const encrypted = validated.connections.postgres.password.substring(10);
-        validated.connections.postgres.password = this.encryption.decrypt(encrypted);
+        validated.connections.postgres.password =
+          this.encryption.decrypt(encrypted);
       }
-      
+
       this.cache.set(cacheKey, validated);
       this.validatedConfigs.add('database');
-      
+
       return validated;
     } catch (error) {
       console.error('Failed to load database configuration:', error);
@@ -291,7 +294,7 @@ export class EnhancedConfigService {
    */
   async getFeaturesConfig(): Promise<FeaturesConfig> {
     const cacheKey = 'features:config';
-    
+
     // Features might change more frequently, shorter cache
     if (this.cache.has(cacheKey)) {
       return this.cache.get<FeaturesConfig>(cacheKey)!;
@@ -301,10 +304,10 @@ export class EnhancedConfigService {
       const config = await import(`../../${this.configDir}/features.yaml`);
       const parsed = EnvParser.parse(config.default || config);
       const validated = validateFeaturesConfig(parsed);
-      
+
       this.cache.set(cacheKey, validated);
       this.validatedConfigs.add('features');
-      
+
       return validated;
     } catch (error) {
       console.error('Failed to load features configuration:', error);
@@ -315,10 +318,13 @@ export class EnhancedConfigService {
   /**
    * Check if a feature is enabled with improved logic
    */
-  async isFeatureEnabled(featureName: string, userId?: string): Promise<boolean> {
+  async isFeatureEnabled(
+    featureName: string,
+    userId?: string
+  ): Promise<boolean> {
     const config = await this.getFeaturesConfig();
     const feature = config.features[featureName];
-    
+
     if (!feature || !feature.enabled) {
       return false;
     }
@@ -327,7 +333,7 @@ export class EnhancedConfigService {
     if (config.dependencies?.[featureName]) {
       const deps = config.dependencies[featureName].requires;
       for (const dep of deps) {
-        if (!await this.isFeatureEnabled(dep, userId)) {
+        if (!(await this.isFeatureEnabled(dep, userId))) {
           return false;
         }
       }
@@ -353,17 +359,20 @@ export class EnhancedConfigService {
   /**
    * Get A/B test variant with consistent assignment
    */
-  async getABTestVariant(testName: string, userId: string): Promise<string | null> {
+  async getABTestVariant(
+    testName: string,
+    userId: string
+  ): Promise<string | null> {
     const config = await this.getFeaturesConfig();
     const test = config.abTests?.[testName];
-    
+
     if (!test?.enabled || !test.variants?.length) {
       return null;
     }
 
     const hash = this.hashUserId(userId + testName);
     const bucket = hash % 100;
-    
+
     let accumulated = 0;
     for (const variant of test.variants) {
       accumulated += variant.weight;
@@ -417,7 +426,7 @@ export class EnhancedConfigService {
     let hash = 0;
     for (let i = 0; i < userId.length; i++) {
       const char = userId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash);
@@ -472,15 +481,24 @@ export async function getFeaturesConfig(): Promise<FeaturesConfig> {
   return enhancedConfig.getFeaturesConfig();
 }
 
-export async function isFeatureEnabled(feature: string, userId?: string): Promise<boolean> {
+export async function isFeatureEnabled(
+  feature: string,
+  userId?: string
+): Promise<boolean> {
   return enhancedConfig.isFeatureEnabled(feature, userId);
 }
 
-export async function getABTestVariant(test: string, userId: string): Promise<string | null> {
+export async function getABTestVariant(
+  test: string,
+  userId: string
+): Promise<string | null> {
   return enhancedConfig.getABTestVariant(test, userId);
 }
 
-export async function validateConfigs(): Promise<{ valid: boolean; errors: string[] }> {
+export async function validateConfigs(): Promise<{
+  valid: boolean;
+  errors: string[];
+}> {
   return enhancedConfig.validateAll();
 }
 

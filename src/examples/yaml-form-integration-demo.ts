@@ -4,13 +4,13 @@
  * Shows complete bidirectional integration between YAML configs and forms
  */
 
-import { 
-  yamlFormIntegration, 
+import {
+  yamlFormIntegration,
   registerYAMLForm,
   getYAMLForm,
   updateYAMLForm,
   validateYAMLForm,
-  enableYAMLFormSync
+  enableYAMLFormSync,
 } from '../services/yaml-form-integration';
 import { bunYAMLService } from '../services/bun-yaml-service';
 import { parseFormSmart, buildForm, validateForm } from '../utils/form-utils';
@@ -145,22 +145,22 @@ bunYAMLService.registerSchema('app-config', {
     app: {
       type: 'object',
       required: true,
-      validate: (value) => value.name && value.version
+      validate: value => value.name && value.version,
     },
     server: {
       type: 'object',
       required: true,
-      validate: (value) => value.host && value.port
+      validate: value => value.host && value.port,
     },
     features: {
       type: 'object',
-      required: false
+      required: false,
     },
     database: {
       type: 'object',
-      required: false
-    }
-  }
+      required: false,
+    },
+  },
 });
 
 bunYAMLService.registerSchema('user-config', {
@@ -169,17 +169,17 @@ bunYAMLService.registerSchema('user-config', {
     profile: {
       type: 'object',
       required: true,
-      validate: (value) => value.username && value.email
+      validate: value => value.username && value.email,
     },
     preferences: {
       type: 'object',
-      required: false
+      required: false,
     },
     dashboard: {
       type: 'object',
-      required: false
-    }
-  }
+      required: false,
+    },
+  },
 });
 
 console.log('✅ Validation schemas registered:');
@@ -202,21 +202,30 @@ registerYAMLForm('app-config', {
     required: ['app.name', 'server.host', 'server.port'],
     sanitize: true,
     allowedKeys: [
-      'app.name', 'app.version', 'app.environment', 'app.debug',
-      'server.host', 'server.port', 'server.ssl',
-      'features.trading', 'features.analytics', 'features.notifications',
-      'database.host', 'database.port', 'database.name'
-    ]
+      'app.name',
+      'app.version',
+      'app.environment',
+      'app.debug',
+      'server.host',
+      'server.port',
+      'server.ssl',
+      'features.trading',
+      'features.analytics',
+      'features.notifications',
+      'database.host',
+      'database.port',
+      'database.name',
+    ],
   },
   transform: {
-    toForm: (yamlData) => {
+    toForm: yamlData => {
       // Custom transformation: flatten with custom separator
       return bunYAMLService.flattenYAMLData(yamlData, '', '.');
     },
-    toYAML: (formData) => {
+    toYAML: formData => {
       // Custom transformation: unflatten with validation
       const unflattened = bunYAMLService.unflattenFormData(formData);
-      
+
       // Ensure numeric types for ports
       if (unflattened.server?.port) {
         unflattened.server.port = parseInt(unflattened.server.port, 10);
@@ -224,10 +233,10 @@ registerYAMLForm('app-config', {
       if (unflattened.database?.port) {
         unflattened.database.port = parseInt(unflattened.database.port, 10);
       }
-      
+
       return unflattened;
-    }
-  }
+    },
+  },
 });
 
 // Register user configuration
@@ -237,8 +246,8 @@ registerYAMLForm('user-config', {
   autoSave: true,
   validation: {
     required: ['profile.username', 'profile.email'],
-    sanitize: true
-  }
+    sanitize: true,
+  },
 });
 
 console.log('✅ Configurations registered with form integration:');
@@ -256,21 +265,33 @@ const appFormData = getYAMLForm('app-config');
 const userFormData = getYAMLForm('user-config');
 
 console.log('App config as form data (sample):');
-console.log(JSON.stringify({
-  'app.name': appFormData?.['app.name'],
-  'app.version': appFormData?.['app.version'],
-  'server.host': appFormData?.['server.host'],
-  'server.port': appFormData?.['server.port'],
-  'features.trading': appFormData?.['features.trading']
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      'app.name': appFormData?.['app.name'],
+      'app.version': appFormData?.['app.version'],
+      'server.host': appFormData?.['server.host'],
+      'server.port': appFormData?.['server.port'],
+      'features.trading': appFormData?.['features.trading'],
+    },
+    null,
+    2
+  )
+);
 
 console.log('\nUser config as form data (sample):');
-console.log(JSON.stringify({
-  'profile.username': userFormData?.['profile.username'],
-  'profile.email': userFormData?.['profile.email'],
-  'profile.role': userFormData?.['profile.role'],
-  'preferences.theme': userFormData?.['preferences.theme']
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      'profile.username': userFormData?.['profile.username'],
+      'profile.email': userFormData?.['profile.email'],
+      'profile.role': userFormData?.['profile.role'],
+      'preferences.theme': userFormData?.['preferences.theme'],
+    },
+    null,
+    2
+  )
+);
 
 console.log('✅ YAML successfully converted to form-compatible format!');
 
@@ -288,7 +309,7 @@ const updatedAppForm = {
   'app.version': '2.2.0',
   'server.port': 8080,
   'features.notifications': true,
-  'limits.max_connections': 200
+  'limits.max_connections': 200,
 };
 
 const updatedUserForm = {
@@ -296,19 +317,25 @@ const updatedUserForm = {
   'profile.username': 'updated_user',
   'preferences.theme': 'light',
   'dashboard.refresh_rate': 3000,
-  'trading.auto_trade': true
+  'trading.auto_trade': true,
 };
 
 // Validate form updates
 const appValidation = validateYAMLForm('app-config', updatedAppForm);
 const userValidation = validateYAMLForm('user-config', updatedUserForm);
 
-console.log('App config validation:', appValidation.valid ? '✅ VALID' : '❌ INVALID');
+console.log(
+  'App config validation:',
+  appValidation.valid ? '✅ VALID' : '❌ INVALID'
+);
 if (!appValidation.valid) {
   console.log('Errors:', JSON.stringify(appValidation.errors, null, 2));
 }
 
-console.log('User config validation:', userValidation.valid ? '✅ VALID' : '❌ INVALID');
+console.log(
+  'User config validation:',
+  userValidation.valid ? '✅ VALID' : '❌ INVALID'
+);
 if (!userValidation.valid) {
   console.log('Errors:', JSON.stringify(userValidation.errors, null, 2));
 }
@@ -340,7 +367,7 @@ const urlEncodedForm = buildForm({
   'features.analytics': 'false',
   'database.host': 'prod-db.example.com',
   'notifications.email.enabled': 'true',
-  'notifications.telegram.enabled': 'false'
+  'notifications.telegram.enabled': 'false',
 });
 
 console.log('URL-encoded form data:');
@@ -370,14 +397,14 @@ enableYAMLFormSync('app-config', {
   bidirectional: true,
   debounce: 1000,
   validate: true,
-  sanitize: true
+  sanitize: true,
 });
 
 enableYAMLFormSync('user-config', {
   bidirectional: true,
   debounce: 500,
   validate: true,
-  sanitize: false
+  sanitize: false,
 });
 
 console.log('✅ Live sync enabled for both configurations');
@@ -399,11 +426,13 @@ yamlFormIntegration.on('yaml-form:live:error', ({ name, error }) => {
 // Simulate external YAML file modification
 console.log('\n🔄 Simulating external YAML file modification...');
 setTimeout(async () => {
-  const currentAppConfig = await bunYAMLService.loadYAML('./temp/app-config.yaml');
+  const currentAppConfig = await bunYAMLService.loadYAML(
+    './temp/app-config.yaml'
+  );
   currentAppConfig.app.name = 'Externally Modified Bot';
   currentAppConfig.server.port = 7777;
   currentAppConfig.features.backup = false;
-  
+
   await bunYAMLService.saveYAML('./temp/app-config.yaml', currentAppConfig);
   console.log('✅ External YAML modification completed');
 }, 2000);
@@ -411,13 +440,13 @@ setTimeout(async () => {
 // Simulate form data updates that should sync to YAML
 setTimeout(async () => {
   console.log('\n📝 Simulating form data updates...');
-  
+
   const currentFormData = getYAMLForm('user-config');
   if (currentFormData) {
     currentFormData['profile.username'] = 'sync_test_user';
     currentFormData['preferences.language'] = 'es';
     currentFormData['dashboard.layout'] = 'list';
-    
+
     await updateYAMLForm('user-config', currentFormData);
     console.log('✅ Form data updates submitted');
   }
@@ -456,12 +485,12 @@ server:
 try {
   await yamlFormIntegration.importYAMLToForm('app-config', importYAML);
   console.log('✅ YAML successfully imported to form data');
-  
+
   const importedFormData = getYAMLForm('app-config');
   console.log('Imported form data sample:', {
     'app.name': importedFormData?.['app.name'],
     'server.host': importedFormData?.['server.host'],
-    'server.ssl': importedFormData?.['server.ssl']
+    'server.ssl': importedFormData?.['server.ssl'],
   });
 } catch (error) {
   console.log('❌ Import failed:', error);
@@ -479,7 +508,9 @@ setTimeout(() => {
   const cacheStats = bunYAMLService.getCacheStats();
   console.log('YAML cache statistics:');
   console.log(`  • Cache size: ${cacheStats.size} entries`);
-  console.log(`  • Cache entries: ${cacheStats.entries.map(e => e.path).join(', ')}`);
+  console.log(
+    `  • Cache entries: ${cacheStats.entries.map(e => e.path).join(', ')}`
+  );
 
   // Get registered configurations
   const registeredConfigs = yamlFormIntegration.getRegisteredConfigs();
@@ -492,15 +523,17 @@ setTimeout(() => {
   // Performance test
   console.log('\n⚡ Performance test - 100 form conversions:');
   const start = performance.now();
-  
+
   for (let i = 0; i < 100; i++) {
     const yamlData = { test: `iteration_${i}`, value: i, active: i % 2 === 0 };
     const formData = yamlFormIntegration.yamlToForm(yamlData);
     const backToYAML = yamlFormIntegration.formToYAML(formData);
   }
-  
+
   const end = performance.now();
-  console.log(`✅ Completed in ${(end - start).toFixed(2)}ms (${((end - start) / 100).toFixed(3)}ms per conversion)`);
+  console.log(
+    `✅ Completed in ${(end - start).toFixed(2)}ms (${((end - start) / 100).toFixed(3)}ms per conversion)`
+  );
 }, 6000);
 
 // ═══════════════════════════════════════════════════════════════
@@ -510,7 +543,7 @@ setTimeout(() => {
 setTimeout(() => {
   console.log('\n🔟 Demo Summary');
   console.log('─────────────────────────────────────────────');
-  
+
   console.log('Integration features demonstrated:');
   console.log('• ✅ YAML ↔ Form bidirectional conversion');
   console.log('• ✅ Schema validation and type coercion');
@@ -524,16 +557,20 @@ setTimeout(() => {
   console.log('• ✅ Zero external dependencies');
 
   console.log('\n🎉 YAML-Form Integration Demo Complete!');
-  console.log('═════════════════════════════════════════════════════════════════════');
-  console.log('Your YAML configs are now fully integrated with form utilities! 🚀');
-  
+  console.log(
+    '═════════════════════════════════════════════════════════════════════'
+  );
+  console.log(
+    'Your YAML configs are now fully integrated with form utilities! 🚀'
+  );
+
   // Cleanup
   yamlFormIntegration.disableLiveSync('app-config');
   yamlFormIntegration.disableLiveSync('user-config');
-  
+
   setTimeout(() => {
     process.exit(0);
   }, 1000);
 }, 8000);
 
-export { };  // Make this a module
+export {}; // Make this a module

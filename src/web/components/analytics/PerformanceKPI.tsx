@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useCustomerBalance, useCustomerAnalytics, useAPIPerformance } from '../../hooks/useEnhancedAPI';
+import { useCustomerBalance, useCustomerAnalytics, useAPIPerformance } from '../../../hooks/useEnhancedAPI';
 
 interface PerformanceKPIProps {
   customerId?: string;

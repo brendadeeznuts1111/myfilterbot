@@ -61,14 +61,15 @@ export class EnhancedWebSocketService {
   private async initializeWebSocket() {
     // Check if WebSocket compression feature is enabled
     this.compressionEnabled = await checkFeature('webSocketCompression');
-    
+
     this.io = new SocketIOServer(this.httpServer, {
       cors: {
         origin: this.corsConfig?.origins || '*',
         methods: ['GET', 'POST'],
         credentials: this.corsConfig?.credentials || true,
       },
-      compression: this.compressionEnabled && this.wsConfig?.compression !== false,
+      compression:
+        this.compressionEnabled && this.wsConfig?.compression !== false,
       pingTimeout: 60000,
       pingInterval: 25000,
       maxHttpBufferSize: 1e6, // 1MB

@@ -31,7 +31,7 @@ export class FileScanner {
     const {
       includeDirectories = true, // Now true by default in Bun v1.2.18
       excludePatterns = [],
-      maxDepth
+      maxDepth,
     } = options;
 
     try {
@@ -39,7 +39,7 @@ export class FileScanner {
       const allPaths = await glob(pattern, {
         // Bun v1.2.18: Directories are now included by default
         withFileTypes: false,
-        exclude: excludePatterns
+        exclude: excludePatterns,
       });
 
       const files: string[] = [];
@@ -50,7 +50,7 @@ export class FileScanner {
       for (const filePath of allPaths) {
         try {
           const stats = await stat(filePath);
-          
+
           if (stats.isDirectory()) {
             if (includeDirectories) {
               directories.push(filePath);
@@ -69,7 +69,7 @@ export class FileScanner {
         directories,
         totalSize,
         fileCount: files.length,
-        directoryCount: directories.length
+        directoryCount: directories.length,
       };
     } catch (error) {
       console.error('Scan failed:', error);
@@ -78,7 +78,7 @@ export class FileScanner {
         directories: [],
         totalSize: 0,
         fileCount: 0,
-        directoryCount: 0
+        directoryCount: 0,
       };
     }
   }
@@ -87,12 +87,9 @@ export class FileScanner {
    * Find all TypeScript files including directories
    */
   static async findTypeScriptFiles(rootDir: string): Promise<ScanResult> {
-    return this.scanDirectory(
-      path.join(rootDir, '**/*.{ts,tsx}'),
-      {
-        excludePatterns: ['node_modules/**', 'dist/**', '.git/**']
-      }
-    );
+    return this.scanDirectory(path.join(rootDir, '**/*.{ts,tsx}'), {
+      excludePatterns: ['node_modules/**', 'dist/**', '.git/**'],
+    });
   }
 
   /**
@@ -102,7 +99,7 @@ export class FileScanner {
     return this.scanDirectory(
       path.join(rootDir, '**/*.{test,spec}.{ts,tsx,js,jsx}'),
       {
-        excludePatterns: ['node_modules/**', 'dist/**']
+        excludePatterns: ['node_modules/**', 'dist/**'],
       }
     );
   }
@@ -116,14 +113,14 @@ export class FileScanner {
       '.*.{json,yml,yaml}',
       'package.json',
       'tsconfig.json',
-      'bunfig.toml'
+      'bunfig.toml',
     ];
 
     const results = await Promise.all(
-      patterns.map(pattern => 
+      patterns.map(pattern =>
         glob(path.join(rootDir, pattern), {
           // Include dot files
-          dot: true
+          dot: true,
         })
       )
     );
@@ -148,11 +145,13 @@ export class FileScanner {
     const [sourceFiles, testFiles, configFiles] = await Promise.all([
       this.scanDirectory(path.join(rootDir, 'src/**/*')),
       this.findTestFiles(rootDir),
-      this.findConfigFiles(rootDir)
+      this.findConfigFiles(rootDir),
     ]);
 
-    const totalFiles = sourceFiles.fileCount + testFiles.fileCount + configFiles.length;
-    const totalDirectories = sourceFiles.directoryCount + testFiles.directoryCount;
+    const totalFiles =
+      sourceFiles.fileCount + testFiles.fileCount + configFiles.length;
+    const totalDirectories =
+      sourceFiles.directoryCount + testFiles.directoryCount;
     const totalSize = sourceFiles.totalSize + testFiles.totalSize;
 
     return {
@@ -163,8 +162,8 @@ export class FileScanner {
         totalFiles,
         totalDirectories,
         totalSizeKB: totalSize / 1024,
-        averageFileSizeKB: totalFiles > 0 ? (totalSize / 1024) / totalFiles : 0
-      }
+        averageFileSizeKB: totalFiles > 0 ? totalSize / 1024 / totalFiles : 0,
+      },
     };
   }
 
@@ -176,22 +175,22 @@ export class FileScanner {
     callback?: (event: 'add' | 'change' | 'delete', filePath: string) => void
   ): AsyncGenerator<{ event: string; path: string }> {
     const { watch } = await import('fs/promises');
-    
+
     // Get initial file list
     const initialFiles = await glob(pattern);
     const fileSet = new Set(initialFiles);
-    
+
     // Watch parent directory
     const baseDir = pattern.split('*')[0] || '.';
     const watcher = watch(baseDir, { recursive: true });
-    
+
     for await (const event of watcher) {
       const fullPath = path.join(baseDir, event.filename!);
-      
+
       // Check if file matches pattern
       const matches = await glob(pattern);
       const matchSet = new Set(matches);
-      
+
       // Detect additions
       for (const file of matchSet) {
         if (!fileSet.has(file)) {
@@ -200,7 +199,7 @@ export class FileScanner {
           yield { event: 'add', path: file };
         }
       }
-      
+
       // Detect deletions
       for (const file of fileSet) {
         if (!matchSet.has(file)) {
@@ -209,7 +208,7 @@ export class FileScanner {
           yield { event: 'delete', path: file };
         }
       }
-      
+
       // Detect changes (files that still exist)
       if (matchSet.has(fullPath)) {
         callback?.('change', fullPath);
@@ -233,7 +232,7 @@ export class FileScanner {
       '**/node_modules/.cache/**',
       '**/*.log',
       '**/coverage/**',
-      '**/.turbo/**'
+      '**/.turbo/**',
     ];
 
     const deletedFiles: string[] = [];
@@ -242,10 +241,9 @@ export class FileScanner {
 
     for (const pattern of patterns) {
       try {
-        const result = await this.scanDirectory(
-          path.join(rootDir, pattern),
-          { includeDirectories: true }
-        );
+        const result = await this.scanDirectory(path.join(rootDir, pattern), {
+          includeDirectories: true,
+        });
 
         // Note: In production, you would actually delete these files
         // For safety, we're just collecting them here
@@ -260,7 +258,7 @@ export class FileScanner {
     return {
       deletedFiles,
       deletedDirectories,
-      freedSpaceKB: freedSpace / 1024
+      freedSpaceKB: freedSpace / 1024,
     };
   }
 }
@@ -271,28 +269,30 @@ export class FileScanner {
 export async function demonstrateFileScanning() {
   // Scan for all TypeScript files
   const tsFiles = await FileScanner.findTypeScriptFiles('.');
-  console.log(`Found ${tsFiles.fileCount} TypeScript files in ${tsFiles.directoryCount} directories`);
-  
+  console.log(
+    `Found ${tsFiles.fileCount} TypeScript files in ${tsFiles.directoryCount} directories`
+  );
+
   // Get project structure
   const structure = await FileScanner.getProjectStructure('.');
   console.log('Project structure:', {
     sourceFiles: structure.sourceFiles.fileCount,
     testFiles: structure.testFiles.fileCount,
     configFiles: structure.configFiles.length,
-    totalSizeMB: (structure.statistics.totalSizeKB / 1024).toFixed(2)
+    totalSizeMB: (structure.statistics.totalSizeKB / 1024).toFixed(2),
   });
-  
+
   // Watch for changes (example)
   const watcher = FileScanner.watchFiles('src/**/*.ts', (event, path) => {
     console.log(`File ${event}: ${path}`);
   });
-  
+
   // Process first 5 events
   let count = 0;
   for await (const event of watcher) {
     console.log('Watch event:', event);
     if (++count >= 5) break;
   }
-  
+
   return structure;
 }

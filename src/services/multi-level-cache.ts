@@ -32,17 +32,18 @@ class LRUCache<T = any> {
   private stats = {
     hits: 0,
     misses: 0,
-    evictions: 0
+    evictions: 0,
   };
 
   constructor(maxSize: number = 1000) {
     this.maxSize = maxSize;
   }
 
-  set(key: string, value: T, ttl: number = 300000): void { // 5 min default TTL
+  set(key: string, value: T, ttl: number = 300000): void {
+    // 5 min default TTL
     const now = Date.now();
     const size = this.estimateSize(value);
-    
+
     // Remove expired entry if exists
     if (this.cache.has(key)) {
       this.cache.delete(key);
@@ -59,15 +60,15 @@ class LRUCache<T = any> {
       timestamp: now,
       ttl,
       hits: 0,
-      size
+      size,
     });
-    
+
     this.accessOrder.set(key, ++this.accessCounter);
   }
 
   get(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.stats.misses++;
       return null;
@@ -85,21 +86,21 @@ class LRUCache<T = any> {
     entry.hits++;
     this.accessOrder.set(key, ++this.accessCounter);
     this.stats.hits++;
-    
+
     return entry.value;
   }
 
   has(key: string): boolean {
     const entry = this.cache.get(key);
     if (!entry) return false;
-    
+
     // Check if expired
     if (Date.now() > entry.timestamp + entry.ttl) {
       this.cache.delete(key);
       this.accessOrder.delete(key);
       return false;
     }
-    
+
     return true;
   }
 
@@ -144,7 +145,7 @@ class LRUCache<T = any> {
   getStats(): CacheStats {
     const totalRequests = this.stats.hits + this.stats.misses;
     let memoryUsage = 0;
-    
+
     for (const entry of this.cache.values()) {
       memoryUsage += entry.size;
     }
@@ -157,7 +158,7 @@ class LRUCache<T = any> {
       total_requests: totalRequests,
       hit_rate: totalRequests > 0 ? this.stats.hits / totalRequests : 0,
       evictions: this.stats.evictions,
-      memory_usage: memoryUsage
+      memory_usage: memoryUsage,
     };
   }
 
@@ -177,7 +178,9 @@ class LRUCache<T = any> {
     });
 
     if (keysToDelete.length > 0) {
-      console.log(`🧹 Cache cleanup: removed ${keysToDelete.length} expired entries`);
+      console.log(
+        `🧹 Cache cleanup: removed ${keysToDelete.length} expired entries`
+      );
     }
   }
 }
@@ -188,7 +191,7 @@ class MultiLevelCache {
 
   constructor(l1MaxSize: number = 1000) {
     this.l1Cache = new LRUCache(l1MaxSize);
-    
+
     // Periodic cleanup every 5 minutes
     this.cleanupInterval = setInterval(() => {
       this.l1Cache.cleanup();
@@ -253,7 +256,7 @@ class MultiLevelCache {
    */
   async clear(): Promise<void> {
     this.l1Cache.clear();
-    
+
     // TODO: Clear L2 (Redis) cache
     // TODO: Clear L3 (File system) cache
   }
@@ -287,10 +290,10 @@ class MultiLevelCache {
 
     // Compute the value
     const value = await computeFn();
-    
+
     // Store in cache
     await this.set(key, value, ttl);
-    
+
     return value;
   }
 
@@ -299,18 +302,21 @@ class MultiLevelCache {
    */
   async getBatch<T>(keys: string[]): Promise<Map<string, T | null>> {
     const result = new Map<string, T | null>();
-    
+
     for (const key of keys) {
       result.set(key, await this.get<T>(key));
     }
-    
+
     return result;
   }
 
   /**
    * Batch set multiple key-value pairs
    */
-  async setBatch<T>(entries: Map<string, T>, ttl: number = 300000): Promise<void> {
+  async setBatch<T>(
+    entries: Map<string, T>,
+    ttl: number = 300000
+  ): Promise<void> {
     for (const [key, value] of entries) {
       await this.set(key, value, ttl);
     }

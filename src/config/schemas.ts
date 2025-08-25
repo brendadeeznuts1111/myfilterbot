@@ -24,10 +24,12 @@ const RateLimitSchema = z.object({
 
 const ApiServerConfigSchema = ServerConfigSchema.extend({
   rateLimit: RateLimitSchema.optional(),
-  cors: z.object({
-    origins: z.array(z.string()).optional(),
-    credentials: z.boolean().optional(),
-  }).optional(),
+  cors: z
+    .object({
+      origins: z.array(z.string()).optional(),
+      credentials: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 const WebSocketConfigSchema = z.object({
@@ -88,12 +90,14 @@ const RedisConfigSchema = z.object({
   db: z.number().int().min(0).max(15).default(0),
   keyPrefix: z.string().optional(),
   family: z.union([z.literal(4), z.literal(6)]).default(4),
-  tls: z.object({
-    enabled: z.boolean().default(false),
-    cert: z.string().optional(),
-    key: z.string().optional(),
-    ca: z.string().optional(),
-  }).optional(),
+  tls: z
+    .object({
+      enabled: z.boolean().default(false),
+      cert: z.string().optional(),
+      key: z.string().optional(),
+      ca: z.string().optional(),
+    })
+    .optional(),
 });
 
 const ClickHouseConfigSchema = z.object({
@@ -105,10 +109,12 @@ const ClickHouseConfigSchema = z.object({
   password: z.string().optional(),
   protocol: z.enum(['http', 'https']).default('http'),
   requestTimeout: z.number().int().min(0).optional(),
-  compression: z.object({
-    request: z.boolean(),
-    response: z.boolean(),
-  }).optional(),
+  compression: z
+    .object({
+      request: z.boolean(),
+      response: z.boolean(),
+    })
+    .optional(),
 });
 
 const DatabaseConnectionSchema = z.union([
@@ -123,18 +129,24 @@ const DatabaseConfigSchema = z.object({
     redis: RedisConfigSchema.optional(),
     clickhouse: ClickHouseConfigSchema.optional(),
   }),
-  migrations: z.object({
-    autoRun: z.boolean().default(false),
-    directory: z.string(),
-  }).optional(),
-  backup: z.object({
-    enabled: z.boolean().default(true),
-    schedule: z.string().optional(),
-    retention: z.object({
-      days: z.number().int().min(1).optional(),
-      count: z.number().int().min(1).optional(),
-    }).optional(),
-  }).optional(),
+  migrations: z
+    .object({
+      autoRun: z.boolean().default(false),
+      directory: z.string(),
+    })
+    .optional(),
+  backup: z
+    .object({
+      enabled: z.boolean().default(true),
+      schedule: z.string().optional(),
+      retention: z
+        .object({
+          days: z.number().int().min(1).optional(),
+          count: z.number().int().min(1).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 // ============================================================================
@@ -167,12 +179,14 @@ const SecurityConfigSchema = z.object({
     window: z.number().int().min(0),
     max: z.number().int().min(1),
   }),
-  headers: z.object({
-    hsts: z.boolean().optional(),
-    xssProtection: z.boolean().optional(),
-    noSniff: z.boolean().optional(),
-    frameOptions: z.enum(['DENY', 'SAMEORIGIN']).optional(),
-  }).optional(),
+  headers: z
+    .object({
+      hsts: z.boolean().optional(),
+      xssProtection: z.boolean().optional(),
+      noSniff: z.boolean().optional(),
+      frameOptions: z.enum(['DENY', 'SAMEORIGIN']).optional(),
+    })
+    .optional(),
 });
 
 // ============================================================================
@@ -200,9 +214,13 @@ const ABTestSchema = z.object({
 
 const FeaturesConfigSchema = z.object({
   features: z.record(FeatureConfigSchema),
-  dependencies: z.record(z.object({
-    requires: z.array(z.string()),
-  })).optional(),
+  dependencies: z
+    .record(
+      z.object({
+        requires: z.array(z.string()),
+      })
+    )
+    .optional(),
   abTests: z.record(ABTestSchema).optional(),
 });
 
@@ -242,20 +260,26 @@ const FirebaseConfigSchema = z.object({
 });
 
 const MonitoringConfigSchema = z.object({
-  sentry: z.object({
-    dsn: z.string().optional(),
-    environment: z.string().optional(),
-    tracesSampleRate: z.number().min(0).max(1).optional(),
-  }).optional(),
-  prometheus: z.object({
-    enabled: z.boolean().default(false),
-    port: z.number().int().min(1).max(65535).optional(),
-  }).optional(),
-  logging: z.object({
-    level: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-    format: z.enum(['json', 'pretty']).default('json'),
-    destination: z.string().default('stdout'),
-  }).optional(),
+  sentry: z
+    .object({
+      dsn: z.string().optional(),
+      environment: z.string().optional(),
+      tracesSampleRate: z.number().min(0).max(1).optional(),
+    })
+    .optional(),
+  prometheus: z
+    .object({
+      enabled: z.boolean().default(false),
+      port: z.number().int().min(1).max(65535).optional(),
+    })
+    .optional(),
+  logging: z
+    .object({
+      level: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+      format: z.enum(['json', 'pretty']).default('json'),
+      destination: z.string().default('stdout'),
+    })
+    .optional(),
 });
 
 const PathsConfigSchema = z.object({
@@ -321,10 +345,16 @@ export function validateFeaturesConfig(config: unknown): FeaturesConfig {
   return FeaturesConfigSchema.parse(config);
 }
 
-export function validateServerConfig(config: unknown, type: keyof ServersConfig): ServerConfig {
-  const schema = type === 'api' ? ApiServerConfigSchema : 
-                 type === 'websocket' ? WebSocketConfigSchema :
-                 ServerConfigSchema;
+export function validateServerConfig(
+  config: unknown,
+  type: keyof ServersConfig
+): ServerConfig {
+  const schema =
+    type === 'api'
+      ? ApiServerConfigSchema
+      : type === 'websocket'
+        ? WebSocketConfigSchema
+        : ServerConfigSchema;
   return schema.parse(config);
 }
 
@@ -357,7 +387,10 @@ export function validateProductionConfig(config: AppConfig): void {
   }
 
   // Database password validation
-  if (config.database?.connections.postgres && !config.database.connections.postgres.password) {
+  if (
+    config.database?.connections.postgres &&
+    !config.database.connections.postgres.password
+  ) {
     errors.push('PostgreSQL password is required in production');
   }
 
@@ -377,7 +410,9 @@ export function validateProductionConfig(config: AppConfig): void {
   }
 
   if (errors.length > 0) {
-    throw new Error(`Production configuration validation failed:\n${errors.join('\n')}`);
+    throw new Error(
+      `Production configuration validation failed:\n${errors.join('\n')}`
+    );
   }
 }
 
@@ -407,7 +442,11 @@ export const defaultAppConfig: Partial<AppConfig> = {
   server: {
     bot: { host: 'localhost', port: 8080 },
     admin: { host: 'localhost', port: 3000, debug: false },
-    api: { host: 'localhost', port: 3001, rateLimit: { windowMs: 60000, maxRequests: 100 } },
+    api: {
+      host: 'localhost',
+      port: 3001,
+      rateLimit: { windowMs: 60000, maxRequests: 100 },
+    },
     websocket: { port: 3002, compression: true, maxConnections: 1000 },
   },
   paths: {

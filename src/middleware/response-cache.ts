@@ -36,7 +36,7 @@ class ResponseCacheMiddleware {
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
       const char = content.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return `"${Math.abs(hash).toString(16)}"`;
@@ -91,7 +91,10 @@ class ResponseCacheMiddleware {
     return async (...args: T): Promise<Response> => {
       const request = args[0] as Request;
       const url = new URL(request.url);
-      const cacheKey = this.createCacheKey(url.pathname + url.search, request.method);
+      const cacheKey = this.createCacheKey(
+        url.pathname + url.search,
+        request.method
+      );
 
       // Only cache GET requests by default
       if (request.method !== 'GET') {
@@ -108,10 +111,10 @@ class ResponseCacheMiddleware {
             return new Response(null, {
               status: 304,
               headers: {
-                'ETag': cached.etag,
+                ETag: cached.etag,
                 'Cache-Control': this.buildCacheControl(config),
-                'X-Cache': 'HIT-304'
-              }
+                'X-Cache': 'HIT-304',
+              },
             });
           }
 
@@ -123,13 +126,13 @@ class ResponseCacheMiddleware {
 
           return new Response(cached.body, {
             status: cached.status,
-            headers
+            headers,
           });
         }
 
         // Cache miss - execute handler
         const response = await handler(...args);
-        
+
         // Only cache successful responses
         if (response.status >= 200 && response.status < 300) {
           const body = await response.text();
@@ -141,7 +144,7 @@ class ResponseCacheMiddleware {
             headers: Object.fromEntries(response.headers.entries()),
             body,
             etag,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           };
 
           // Store in cache
@@ -155,12 +158,11 @@ class ResponseCacheMiddleware {
 
           return new Response(body, {
             status: response.status,
-            headers: newHeaders
+            headers: newHeaders,
           });
         }
 
         return response;
-
       } catch (error) {
         console.error('Response cache error:', error);
         // Fall back to uncached response on error
@@ -175,18 +177,20 @@ class ResponseCacheMiddleware {
   async invalidate(pattern: string): Promise<number> {
     // This would need to be implemented based on cache backend
     // For now, just clear all cache entries with the pattern
-    let invalidated = 0;
-    
+    const invalidated = 0;
+
     // TODO: Implement pattern-based cache invalidation
     console.log(`Cache invalidation requested for pattern: ${pattern}`);
-    
+
     return invalidated;
   }
 
   /**
    * Warm cache with pre-computed responses
    */
-  async warmCache(entries: Array<{ key: string; response: Response; config?: CacheConfig }>): Promise<void> {
+  async warmCache(
+    entries: Array<{ key: string; response: Response; config?: CacheConfig }>
+  ): Promise<void> {
     for (const entry of entries) {
       const body = await entry.response.text();
       const etag = this.generateETag(body);
@@ -196,7 +200,7 @@ class ResponseCacheMiddleware {
         headers: Object.fromEntries(entry.response.headers.entries()),
         body,
         etag,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       await this.cache.set(

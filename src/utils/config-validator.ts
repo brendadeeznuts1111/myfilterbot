@@ -3,10 +3,10 @@
  * Validates configuration on startup and provides helpful error messages
  */
 
-import { yamlConfigService } from "../services/yaml-config-service";
-import { YAML } from "bun";
-import { existsSync } from "fs";
-import { join } from "path";
+import { yamlConfigService } from '../services/yaml-config-service';
+import { YAML } from 'bun';
+import { existsSync } from 'fs';
+import { join } from 'path';
 
 interface ValidationResult {
   valid: boolean;
@@ -22,34 +22,34 @@ export class ConfigValidator {
    * Validate all configuration files
    */
   async validateAll(): Promise<ValidationResult> {
-    console.log("🔍 Validating YAML configurations...");
-    
+    console.log('🔍 Validating YAML configurations...');
+
     this.errors = [];
     this.warnings = [];
 
     // Check if config files exist
     await this.checkConfigFiles();
-    
+
     // Validate app configuration
     await this.validateAppConfig();
-    
+
     // Validate database configuration
     await this.validateDatabaseConfig();
-    
+
     // Validate feature flags
     await this.validateFeatures();
-    
+
     // Validate environment-specific configs
     await this.validateEnvironmentConfig();
 
     const result = {
       valid: this.errors.length === 0,
       errors: this.errors,
-      warnings: this.warnings
+      warnings: this.warnings,
     };
 
     this.printResults(result);
-    
+
     return result;
   }
 
@@ -60,13 +60,13 @@ export class ConfigValidator {
     const requiredFiles = [
       'config/app.yaml',
       'config/database.yaml',
-      'config/features.yaml'
+      'config/features.yaml',
     ];
 
     const optionalFiles = [
       'config/environments/development.yaml',
       'config/environments/production.yaml',
-      'config/environments/staging.yaml'
+      'config/environments/staging.yaml',
     ];
 
     for (const file of requiredFiles) {
@@ -90,19 +90,27 @@ export class ConfigValidator {
   private async validateAppConfig() {
     try {
       const config = await yamlConfigService.getAppConfig();
-      
+
       // Check required fields
       if (!config?.app?.name) {
-        this.errors.push("app.name is required in app.yaml");
+        this.errors.push('app.name is required in app.yaml');
       }
 
       // Validate server configurations
       const serverTypes = ['bot', 'admin', 'api', 'websocket'];
       for (const type of serverTypes) {
-        const serverConfig = await yamlConfigService.getServerConfig(type as any).catch(() => null);
+        const serverConfig = await yamlConfigService
+          .getServerConfig(type as any)
+          .catch(() => null);
         if (serverConfig) {
-          if (!serverConfig.port || serverConfig.port < 1 || serverConfig.port > 65535) {
-            this.errors.push(`Invalid port for server.${type}: ${serverConfig.port}`);
+          if (
+            !serverConfig.port ||
+            serverConfig.port < 1 ||
+            serverConfig.port > 65535
+          ) {
+            this.errors.push(
+              `Invalid port for server.${type}: ${serverConfig.port}`
+            );
           }
         }
       }
@@ -110,11 +118,16 @@ export class ConfigValidator {
       // Validate security configuration
       const security = await yamlConfigService.getSecurityConfig();
       if (security) {
-        if (!security.jwt?.secret || security.jwt.secret === 'dev-secret-key-change-in-production') {
+        if (
+          !security.jwt?.secret ||
+          security.jwt.secret === 'dev-secret-key-change-in-production'
+        ) {
           if (process.env.NODE_ENV === 'production') {
-            this.errors.push("JWT secret must be changed in production");
+            this.errors.push('JWT secret must be changed in production');
           } else {
-            this.warnings.push("Using default JWT secret - change before production");
+            this.warnings.push(
+              'Using default JWT secret - change before production'
+            );
           }
         }
       }
@@ -139,10 +152,12 @@ export class ConfigValidator {
   private async validateDatabaseConfig() {
     try {
       const connections = ['postgres', 'redis', 'clickhouse'];
-      
+
       for (const conn of connections) {
-        const config = await yamlConfigService.getDatabase(conn).catch(() => null);
-        
+        const config = await yamlConfigService
+          .getDatabase(conn)
+          .catch(() => null);
+
         if (config) {
           // Check required fields
           if (!config.host) {
@@ -151,18 +166,22 @@ export class ConfigValidator {
           if (!config.port) {
             this.errors.push(`Database ${conn}: port is required`);
           }
-          
+
           // Check for missing credentials in production
           if (process.env.NODE_ENV === 'production') {
             if (conn !== 'redis' && !config.password) {
-              this.errors.push(`Database ${conn}: password is required in production`);
+              this.errors.push(
+                `Database ${conn}: password is required in production`
+              );
             }
           }
-          
+
           // Validate connection pool settings
           if (config.pool) {
             if (config.pool.min > config.pool.max) {
-              this.errors.push(`Database ${conn}: pool.min cannot be greater than pool.max`);
+              this.errors.push(
+                `Database ${conn}: pool.min cannot be greater than pool.max`
+              );
             }
           }
         } else if (conn === 'postgres') {
@@ -181,29 +200,33 @@ export class ConfigValidator {
   private async validateFeatures() {
     try {
       const features = await yamlConfigService.getFeatureFlags();
-      
+
       // Check for feature dependencies
-      const config = await import("../../config/features.yaml");
+      const config = await import('../../config/features.yaml');
       const dependencies = config.dependencies || {};
-      
+
       for (const [feature, deps] of Object.entries(dependencies)) {
         if (features[feature]) {
           const requires = (deps as any).requires || [];
           for (const required of requires) {
             if (!features[required]) {
-              this.warnings.push(`Feature ${feature} requires ${required} to be enabled`);
+              this.warnings.push(
+                `Feature ${feature} requires ${required} to be enabled`
+              );
             }
           }
         }
       }
-      
+
       // Validate rollout percentages
       for (const [name, enabled] of Object.entries(features)) {
         const featureConfig = await yamlConfigService.getFeatureConfig(name);
         if (featureConfig) {
           const rollout = featureConfig.rolloutPercentage;
           if (rollout !== undefined && (rollout < 0 || rollout > 100)) {
-            this.errors.push(`Invalid rollout percentage for feature ${name}: ${rollout}`);
+            this.errors.push(
+              `Invalid rollout percentage for feature ${name}: ${rollout}`
+            );
           }
         }
       }
@@ -217,35 +240,39 @@ export class ConfigValidator {
    */
   private async validateEnvironmentConfig() {
     const env = process.env.NODE_ENV || 'development';
-    
+
     // Production-specific checks
     if (env === 'production') {
       // Check for debug mode
       const debugMode = process.env.ENABLE_DEBUG_MODE === 'true';
       if (debugMode) {
-        this.warnings.push("Debug mode is enabled in production");
+        this.warnings.push('Debug mode is enabled in production');
       }
-      
+
       // Check for required environment variables
       const requiredEnvVars = [
         'JWT_SECRET',
         'DB_HOST',
         'DB_PASS',
-        'TELEGRAM_BOT_TOKEN'
+        'TELEGRAM_BOT_TOKEN',
       ];
-      
+
       for (const envVar of requiredEnvVars) {
         if (!process.env[envVar]) {
-          this.errors.push(`Required environment variable missing in production: ${envVar}`);
+          this.errors.push(
+            `Required environment variable missing in production: ${envVar}`
+          );
         }
       }
     }
-    
+
     // Development-specific checks
     if (env === 'development') {
       // Check for hot reload
       if (!import.meta.hot) {
-        this.warnings.push("Hot reload not enabled - use 'bun --hot' for better development experience");
+        this.warnings.push(
+          "Hot reload not enabled - use 'bun --hot' for better development experience"
+        );
       }
     }
   }
@@ -254,32 +281,34 @@ export class ConfigValidator {
    * Print validation results
    */
   private printResults(result: ValidationResult) {
-    console.log("\n" + "=".repeat(60));
-    console.log("📋 YAML Configuration Validation Results");
-    console.log("=".repeat(60));
-    
+    console.log('\n' + '='.repeat(60));
+    console.log('📋 YAML Configuration Validation Results');
+    console.log('='.repeat(60));
+
     if (result.errors.length > 0) {
-      console.log("\n❌ Errors:");
+      console.log('\n❌ Errors:');
       result.errors.forEach(error => {
         console.log(`   • ${error}`);
       });
     }
-    
+
     if (result.warnings.length > 0) {
-      console.log("\n⚠️  Warnings:");
+      console.log('\n⚠️  Warnings:');
       result.warnings.forEach(warning => {
         console.log(`   • ${warning}`);
       });
     }
-    
+
     if (result.valid) {
-      console.log("\n✅ Configuration is valid!");
+      console.log('\n✅ Configuration is valid!');
     } else {
-      console.log("\n❌ Configuration validation failed!");
-      console.log("   Please fix the errors above before starting the application.");
+      console.log('\n❌ Configuration validation failed!');
+      console.log(
+        '   Please fix the errors above before starting the application.'
+      );
     }
-    
-    console.log("=".repeat(60) + "\n");
+
+    console.log('='.repeat(60) + '\n');
   }
 
   /**
@@ -287,9 +316,9 @@ export class ConfigValidator {
    */
   async validateOrExit(): Promise<void> {
     const result = await this.validateAll();
-    
+
     if (!result.valid) {
-      console.error("💥 Exiting due to configuration errors");
+      console.error('💥 Exiting due to configuration errors');
       process.exit(1);
     }
   }

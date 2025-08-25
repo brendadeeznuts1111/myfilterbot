@@ -20,7 +20,13 @@ interface Customer {
 }
 
 interface LoadingStatus {
-  phase: 'initializing' | 'loading_config' | 'loading_database' | 'processing' | 'completed' | 'error';
+  phase:
+    | 'initializing'
+    | 'loading_config'
+    | 'loading_database'
+    | 'processing'
+    | 'completed'
+    | 'error';
   progress: number;
   total: number;
   currentItem?: string;
@@ -34,7 +40,7 @@ class LazyCustomerLoader extends EventEmitter {
     phase: 'initializing',
     progress: 0,
     total: 0,
-    startTime: Date.now()
+    startTime: Date.now(),
   };
   private loadingPromise: Promise<Customer[]> | null = null;
 
@@ -81,13 +87,13 @@ class LazyCustomerLoader extends EventEmitter {
       this.updateStatus('loading_config', 0, 1, 'customer_config.json');
 
       // Load configuration file
-      const configFile = await Bun.file("./customer_config.json");
+      const configFile = await Bun.file('./customer_config.json');
       const customerConfig = await configFile.json();
-      
+
       this.updateStatus('loading_database', 0, 1, 'customer_database.json');
 
-      // Load database file  
-      const databaseFile = await Bun.file("./customer_database.json");
+      // Load database file
+      const databaseFile = await Bun.file('./customer_database.json');
       const customerDatabase = await databaseFile.json();
 
       const configCustomers = customerConfig.customers || {};
@@ -96,8 +102,15 @@ class LazyCustomerLoader extends EventEmitter {
       const customerIds = Object.keys(configCustomers);
       this.status.total = customerIds.length;
 
-      console.log(`🏆 Processing ${customerIds.length} Fantasy402.com customers`);
-      this.updateStatus('processing', 0, customerIds.length, 'Processing customers');
+      console.log(
+        `🏆 Processing ${customerIds.length} Fantasy402.com customers`
+      );
+      this.updateStatus(
+        'processing',
+        0,
+        customerIds.length,
+        'Processing customers'
+      );
 
       // Process customers in batches for better performance
       const batchSize = 50;
@@ -105,11 +118,11 @@ class LazyCustomerLoader extends EventEmitter {
 
       for (let i = 0; i < customerIds.length; i += batchSize) {
         const batch = customerIds.slice(i, i + batchSize);
-        
+
         const batchCustomers = batch.map(customerId => {
           const configCustomer = configCustomers[customerId];
           const dbCustomer = databaseCustomers[customerId] || {};
-          
+
           const customer: Customer = {
             customer_id: customerId,
             password: configCustomer.password,
@@ -121,7 +134,7 @@ class LazyCustomerLoader extends EventEmitter {
             active: configCustomer.active,
             last_activity: dbCustomer.last_activity || new Date().toISOString(),
             keywords: configCustomer.keywords || [],
-            group_chat_id: configCustomer.group_chat_id
+            group_chat_id: configCustomer.group_chat_id,
           };
 
           return customer;
@@ -129,37 +142,51 @@ class LazyCustomerLoader extends EventEmitter {
 
         customers.push(...batchCustomers);
         this.customers = customers;
-        
-        this.updateStatus('processing', i + batch.length, customerIds.length, 
-          `Processed ${i + batch.length}/${customerIds.length} customers`);
+
+        this.updateStatus(
+          'processing',
+          i + batch.length,
+          customerIds.length,
+          `Processed ${i + batch.length}/${customerIds.length} customers`
+        );
 
         // Emit progress event
         this.emit('progress', this.getStatus());
 
         // Allow other operations to run
         if (i + batchSize < customerIds.length) {
-          await new Promise(resolve => setImmediate(resolve));
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
       }
 
       const loadTime = Date.now() - this.status.startTime;
       console.log(`✅ Loaded ${customers.length} customers in ${loadTime}ms`);
 
-      this.updateStatus('completed', customers.length, customers.length, 'Loading complete');
+      this.updateStatus(
+        'completed',
+        customers.length,
+        customers.length,
+        'Loading complete'
+      );
       this.emit('completed', customers);
 
       return customers;
-
     } catch (error) {
       console.error('❌ Customer loading failed:', error);
       this.status.phase = 'error';
-      this.status.error = error instanceof Error ? error.message : 'Unknown error';
+      this.status.error =
+        error instanceof Error ? error.message : 'Unknown error';
       this.emit('error', error);
       throw error;
     }
   }
 
-  private updateStatus(phase: LoadingStatus['phase'], progress: number, total: number, currentItem?: string) {
+  private updateStatus(
+    phase: LoadingStatus['phase'],
+    progress: number,
+    total: number,
+    currentItem?: string
+  ) {
     this.status.phase = phase;
     this.status.progress = progress;
     this.status.total = total;

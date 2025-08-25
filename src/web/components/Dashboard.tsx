@@ -5,10 +5,10 @@ export function Dashboard() {
 import { EquityCurveChart } from './analytics/EquityCurveChart';
 import { PerformanceKPI } from './analytics/PerformanceKPI';
 import { RecentActivity } from './analytics/RecentActivity';
-import { useAPI } from '../hooks/useAPI';
-import { useAuth } from '../hooks/useAuth';
-import { useDashboardData } from '../hooks/useEnhancedAPI';
-import { useTheme } from '../hooks/useTheme';
+import { useAPI } from '../../hooks/useAPI';
+import { useAuth } from '../../hooks/useAuth';
+import { useDashboardData } from '../../hooks/useEnhancedAPI';
+import { useTheme } from '../../hooks/useTheme';
 
   const { user, isAuthenticated } = useAuth();
   const { theme } = useTheme();

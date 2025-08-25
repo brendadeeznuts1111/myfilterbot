@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTransactionHistory, useRealTimeUpdates } from '../../hooks/useEnhancedAPI';
+import { useTransactionHistory, useRealTimeUpdates } from '../../../hooks/useEnhancedAPI';
 
 interface RecentActivityProps {
   customerId?: string;

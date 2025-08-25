@@ -13,7 +13,10 @@ declare module 'react-dom/client' {
   }
 
   export function createRoot(container: Element | DocumentFragment): Root;
-  export function hydrateRoot(container: Element, initialChildren: ReactNode): Root;
+  export function hydrateRoot(
+    container: Element,
+    initialChildren: ReactNode
+  ): Root;
 }
 
 // Testing library types
@@ -80,7 +83,10 @@ declare module '../hooks/useMediaQuery' {
 }
 
 declare module '../hooks/useAPI' {
-  export function useAPI<T = any>(endpoint: string, options?: any): {
+  export function useAPI<T = any>(
+    endpoint: string,
+    options?: any
+  ): {
     data: T | null;
     loading: boolean;
     error: string | null;

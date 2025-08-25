@@ -251,6 +251,59 @@ MAX_CONCURRENT_REQUESTS = "50"
 CACHE_TTL = "300"
 
 # =============================================================================
+# BUN v1.2.21 NATIVE FEATURES CONFIGURATION
+# =============================================================================
+
+# Test preload configuration
+preload = [
+  # Native Bun modules for faster test execution  
+  "bun:sql",
+  "bun:yaml",
+  "bun:secrets",
+  # Configuration files
+  "./config/app.yaml",
+  "./config/database.yaml", 
+  "./config/features.yaml",
+  # Test utilities
+  "./tests/utils/test-helpers.ts"
+]
+
+[install.security]
+# Enable security scanning for packages (optional)
+# scanner = "@my-company/bun-security-scanner"
+
+[install.lockfile]
+# Generate lockfile with native SQL/YAML dependencies
+print = "bun"
+
+# =============================================================================
+# YAML IMPORT CONFIGURATION
+# =============================================================================
+
+# Enable native YAML imports
+[loader]
+".yaml" = "file"
+".yml" = "file"
+
+# =============================================================================
+# SQL DATABASE CONFIGURATION  
+# =============================================================================
+
+[sql]
+# Default SQLite configuration for tests
+default_timeout = 30000
+default_busy_timeout = 10000
+
+# =============================================================================
+# SECRETS CONFIGURATION
+# =============================================================================
+
+[secrets]
+# Secrets service configuration for tests
+test_service = "bun-native-test-suite"
+cleanup_on_exit = true
+
+# =============================================================================
 # PROJECT STATUS
 # =============================================================================
 # 
@@ -261,6 +314,10 @@ CACHE_TTL = "300"
 # ✅ CI/CD pipeline optimized
 # ✅ Performance optimizations implemented
 # ✅ Security improvements completed
+# ✅ Bun v1.2.21 native SQL, YAML, and secrets integrated
+# ✅ Comprehensive test suite for native features
+# ✅ Migration scripts for legacy code upgrade
 # 
 # The project is now production-ready with comprehensive testing,
-# proper TypeScript support, and optimized Bun runtime configuration.
+# proper TypeScript support, optimized Bun runtime configuration,
+# and full utilization of Bun's native database and YAML features.

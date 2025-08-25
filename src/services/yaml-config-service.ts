@@ -3,8 +3,13 @@
  * Provides centralized access to all YAML configurations
  */
 
-import { getAppConfig, getDatabaseConfig, isFeatureEnabled, configManager } from "../utils/yaml-config";
-import type { YAML } from "bun";
+import {
+  getAppConfig,
+  getDatabaseConfig,
+  isFeatureEnabled,
+  configManager,
+} from '../utils/yaml-config';
+import type { YAML } from 'bun';
 
 export interface ServerConfig {
   host: string;
@@ -42,7 +47,7 @@ class YamlConfigService {
   private environment: string;
 
   private constructor() {
-    this.environment = process.env.NODE_ENV || "development";
+    this.environment = process.env.NODE_ENV || 'development';
     this.initialize();
   }
 
@@ -57,12 +62,14 @@ class YamlConfigService {
     try {
       // Load all configurations
       this.appConfig = await getAppConfig();
-      this.featuresConfig = await import("../../config/features.yaml");
-      this.databaseConfig = await import("../../config/database.yaml");
-      
-      console.log(`✅ YAML configurations loaded for environment: ${this.environment}`);
+      this.featuresConfig = await import('../../config/features.yaml');
+      this.databaseConfig = await import('../../config/database.yaml');
+
+      console.log(
+        `✅ YAML configurations loaded for environment: ${this.environment}`
+      );
     } catch (error) {
-      console.error("❌ Failed to load YAML configurations:", error);
+      console.error('❌ Failed to load YAML configurations:', error);
     }
   }
 
@@ -77,53 +84,64 @@ class YamlConfigService {
   /**
    * Get server configuration
    */
-  public async getServerConfig(serverType: "bot" | "admin" | "api" | "websocket"): Promise<ServerConfig> {
+  public async getServerConfig(
+    serverType: 'bot' | 'admin' | 'api' | 'websocket'
+  ): Promise<ServerConfig> {
     if (!this.appConfig) await this.initialize();
-    
+
     const config = this.appConfig?.server?.[serverType];
     if (!config) {
       throw new Error(`Server configuration not found for: ${serverType}`);
     }
-    
+
     return config;
   }
 
   /**
    * Get database configuration by connection name
    */
-  public async getDatabase(connectionName: string = "postgres"): Promise<DatabaseConnection> {
+  public async getDatabase(
+    connectionName: string = 'postgres'
+  ): Promise<DatabaseConnection> {
     return getDatabaseConfig(connectionName);
   }
 
   /**
    * Check if a feature is enabled for a user
    */
-  public async isFeatureEnabled(featureName: string, userId?: string): Promise<boolean> {
+  public async isFeatureEnabled(
+    featureName: string,
+    userId?: string
+  ): Promise<boolean> {
     return isFeatureEnabled(featureName, userId);
   }
 
   /**
    * Get all feature flags status for a user
    */
-  public async getFeatureFlags(userId?: string): Promise<Record<string, boolean>> {
+  public async getFeatureFlags(
+    userId?: string
+  ): Promise<Record<string, boolean>> {
     if (!this.featuresConfig) await this.initialize();
-    
+
     const features = this.featuresConfig?.features?.features || {};
     const result: Record<string, boolean> = {};
-    
+
     for (const featureName of Object.keys(features)) {
       result[featureName] = await this.isFeatureEnabled(featureName, userId);
     }
-    
+
     return result;
   }
 
   /**
    * Get feature configuration
    */
-  public async getFeatureConfig(featureName: string): Promise<FeatureConfig | null> {
+  public async getFeatureConfig(
+    featureName: string
+  ): Promise<FeatureConfig | null> {
     if (!this.featuresConfig) await this.initialize();
-    
+
     return this.featuresConfig?.features?.features?.[featureName] || null;
   }
 
@@ -132,7 +150,7 @@ class YamlConfigService {
    */
   public async getSecurityConfig(): Promise<any> {
     if (!this.appConfig) await this.initialize();
-    
+
     return this.appConfig?.security || {};
   }
 
@@ -141,7 +159,7 @@ class YamlConfigService {
    */
   public async getMonitoringConfig(): Promise<any> {
     if (!this.appConfig) await this.initialize();
-    
+
     return this.appConfig?.monitoring || {};
   }
 
@@ -150,7 +168,7 @@ class YamlConfigService {
    */
   public async getPathsConfig(): Promise<any> {
     if (!this.appConfig) await this.initialize();
-    
+
     return this.appConfig?.paths || {};
   }
 
@@ -159,23 +177,28 @@ class YamlConfigService {
    */
   public async getTelegramConfig(): Promise<any> {
     if (!this.appConfig) await this.initialize();
-    
+
     return this.appConfig?.telegram || {};
   }
 
   /**
    * Get cloud services configuration
    */
-  public async getCloudConfig(service: "cloudflare" | "firebase"): Promise<any> {
+  public async getCloudConfig(
+    service: 'cloudflare' | 'firebase'
+  ): Promise<any> {
     if (!this.appConfig) await this.initialize();
-    
+
     return this.appConfig?.[service] || {};
   }
 
   /**
    * Watch configuration changes
    */
-  public watchConfig(filename: string, callback: (config: any) => void): () => void {
+  public watchConfig(
+    filename: string,
+    callback: (config: any) => void
+  ): () => void {
     return configManager.watch(filename, callback);
   }
 
@@ -183,12 +206,12 @@ class YamlConfigService {
    * Reload all configurations
    */
   public async reloadAll(): Promise<void> {
-    await configManager.reload("app.yaml");
-    await configManager.reload("features.yaml");
-    await configManager.reload("database.yaml");
+    await configManager.reload('app.yaml');
+    await configManager.reload('features.yaml');
+    await configManager.reload('database.yaml');
     await this.initialize();
-    
-    console.log("🔄 All YAML configurations reloaded");
+
+    console.log('🔄 All YAML configurations reloaded');
   }
 
   /**
@@ -216,51 +239,59 @@ class YamlConfigService {
   /**
    * Get A/B test variant for a user
    */
-  public async getABTestVariant(testName: string, userId: string): Promise<string | null> {
+  public async getABTestVariant(
+    testName: string,
+    userId: string
+  ): Promise<string | null> {
     if (!this.featuresConfig) await this.initialize();
-    
+
     const test = this.featuresConfig?.features?.abTests?.[testName];
     if (!test?.enabled || !test?.variants) {
       return null;
     }
-    
+
     // Simple hash-based assignment
     let hash = 0;
     for (let i = 0; i < userId.length; i++) {
-      hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+      hash = (hash << 5) - hash + userId.charCodeAt(i);
       hash = hash & hash;
     }
-    
+
     const bucketValue = Math.abs(hash) % 100;
     let accumulatedWeight = 0;
-    
+
     for (const variant of test.variants) {
       accumulatedWeight += variant.weight;
       if (bucketValue < accumulatedWeight) {
         return variant.name;
       }
     }
-    
+
     return test.variants[0]?.name || null;
   }
 
   /**
    * Validate database connection
    */
-  public async validateDatabaseConnection(connectionName: string): Promise<boolean> {
+  public async validateDatabaseConnection(
+    connectionName: string
+  ): Promise<boolean> {
     try {
       const config = await this.getDatabase(connectionName);
-      
+
       // Check required fields
       if (!config.host || !config.port || !config.database) {
         console.error(`Invalid database configuration for: ${connectionName}`);
         return false;
       }
-      
+
       console.log(`✅ Database configuration valid for: ${connectionName}`);
       return true;
     } catch (error) {
-      console.error(`❌ Database configuration error for ${connectionName}:`, error);
+      console.error(
+        `❌ Database configuration error for ${connectionName}:`,
+        error
+      );
       return false;
     }
   }
@@ -274,7 +305,7 @@ class YamlConfigService {
     max: number;
   }> {
     const security = await this.getSecurityConfig();
-    
+
     return {
       enabled: security?.rateLimit?.enabled || false,
       window: security?.rateLimit?.window || 60000,
@@ -290,9 +321,9 @@ class YamlConfigService {
     credentials: boolean;
   }> {
     const security = await this.getSecurityConfig();
-    
+
     return {
-      origins: security?.cors?.origins || ["http://localhost:3000"],
+      origins: security?.cors?.origins || ['http://localhost:3000'],
       credentials: security?.cors?.credentials !== false,
     };
   }
@@ -302,16 +333,16 @@ class YamlConfigService {
 export const yamlConfigService = YamlConfigService.getInstance();
 
 // Export convenience functions
-export const getServerConfig = (serverType: "bot" | "admin" | "api" | "websocket") => 
-  yamlConfigService.getServerConfig(serverType);
+export const getServerConfig = (
+  serverType: 'bot' | 'admin' | 'api' | 'websocket'
+) => yamlConfigService.getServerConfig(serverType);
 
-export const getFeatureFlags = (userId?: string) => 
+export const getFeatureFlags = (userId?: string) =>
   yamlConfigService.getFeatureFlags(userId);
 
-export const checkFeature = (featureName: string, userId?: string) => 
+export const checkFeature = (featureName: string, userId?: string) =>
   yamlConfigService.isFeatureEnabled(featureName, userId);
 
-export const reloadConfigs = () => 
-  yamlConfigService.reloadAll();
+export const reloadConfigs = () => yamlConfigService.reloadAll();
 
 export default yamlConfigService;

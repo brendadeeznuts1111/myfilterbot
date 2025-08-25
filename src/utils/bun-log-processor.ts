@@ -41,22 +41,26 @@ export class BunLogProcessor {
     const clean = stripANSI(message);
     const cleanedLength = clean.length;
     const hasAnsi = originalLength !== cleanedLength;
-    
+
     return {
       clean,
       hasAnsi,
       originalLength,
       cleanedLength,
-      savedBytes: originalLength - cleanedLength
+      savedBytes: originalLength - cleanedLength,
     };
   }
 
   /**
    * Process log entry and clean ANSI codes
    */
-  processLogEntry(rawMessage: string, level: LogEntry['level'] = 'info', metadata?: Record<string, any>): LogEntry {
+  processLogEntry(
+    rawMessage: string,
+    level: LogEntry['level'] = 'info',
+    metadata?: Record<string, any>
+  ): LogEntry {
     const processed = this.cleanLogMessage(rawMessage);
-    
+
     return {
       timestamp: new Date().toISOString(),
       level,
@@ -65,8 +69,8 @@ export class BunLogProcessor {
       metadata: {
         ...metadata,
         ansiCleaned: processed.hasAnsi,
-        bytesReduced: processed.savedBytes
-      }
+        bytesReduced: processed.savedBytes,
+      },
     };
   }
 
@@ -89,45 +93,49 @@ export class BunLogProcessor {
     };
   } {
     const processed = this.cleanLogMessage(terminalOutput);
-    
+
     return {
       cleaned: processed.clean,
       compressionInfo: {
         originalSize: processed.originalLength,
         cleanedSize: processed.cleanedLength,
-        compressionRatio: processed.originalLength > 0 
-          ? processed.savedBytes / processed.originalLength 
-          : 0
-      }
+        compressionRatio:
+          processed.originalLength > 0
+            ? processed.savedBytes / processed.originalLength
+            : 0,
+      },
     };
   }
 
   /**
    * Extract and clean log levels from colored output
    */
-  extractLogLevel(message: string): { level: LogEntry['level']; cleanMessage: string } {
+  extractLogLevel(message: string): {
+    level: LogEntry['level'];
+    cleanMessage: string;
+  } {
     const cleaned = stripANSI(message);
-    
+
     // Common log level patterns
     const levelPatterns = {
       error: /\b(ERROR|ERR|FATAL)\b/i,
       warn: /\b(WARN|WARNING)\b/i,
       info: /\b(INFO|LOG)\b/i,
-      debug: /\b(DEBUG|DBG|TRACE)\b/i
+      debug: /\b(DEBUG|DBG|TRACE)\b/i,
     };
 
     for (const [level, pattern] of Object.entries(levelPatterns)) {
       if (pattern.test(cleaned)) {
         return {
           level: level as LogEntry['level'],
-          cleanMessage: cleaned
+          cleanMessage: cleaned,
         };
       }
     }
 
     return {
       level: 'info',
-      cleanMessage: cleaned
+      cleanMessage: cleaned,
     };
   }
 
@@ -139,16 +147,16 @@ export class BunLogProcessor {
     onLogEntry: (entry: LogEntry) => void
   ): Promise<void> {
     const reader = logStream.getReader();
-    
+
     try {
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
-        
+
         // Split by newlines and process each line
         const lines = value.split('\n').filter(line => line.trim());
-        
+
         for (const line of lines) {
           const { level, cleanMessage } = this.extractLogLevel(line);
           const logEntry = this.processLogEntry(line, level);
@@ -163,22 +171,27 @@ export class BunLogProcessor {
   /**
    * Format clean logs for different outputs
    */
-  formatForOutput(entry: LogEntry, format: 'json' | 'text' | 'structured' = 'text'): string {
+  formatForOutput(
+    entry: LogEntry,
+    format: 'json' | 'text' | 'structured' = 'text'
+  ): string {
     switch (format) {
       case 'json':
         return JSON.stringify({
           timestamp: entry.timestamp,
           level: entry.level,
           message: entry.message,
-          ...entry.metadata
+          ...entry.metadata,
         });
-        
+
       case 'structured':
-        const metaStr = entry.metadata 
-          ? ` ${Object.entries(entry.metadata).map(([k, v]) => `${k}=${v}`).join(' ')}`
+        const metaStr = entry.metadata
+          ? ` ${Object.entries(entry.metadata)
+              .map(([k, v]) => `${k}=${v}`)
+              .join(' ')}`
           : '';
         return `[${entry.timestamp}] ${entry.level.toUpperCase()}: ${entry.message}${metaStr}`;
-        
+
       case 'text':
       default:
         return `${entry.message}`;
@@ -196,10 +209,10 @@ export class BunLogProcessor {
     processingTimeMs: number;
   } {
     const startTime = performance.now();
-    
+
     let messagesWithAnsi = 0;
     let totalBytesReduced = 0;
-    
+
     const results = messages.map(message => {
       const processed = this.cleanLogMessage(message);
       if (processed.hasAnsi) {
@@ -208,25 +221,30 @@ export class BunLogProcessor {
       }
       return processed;
     });
-    
+
     const processingTime = performance.now() - startTime;
-    const totalOriginalBytes = results.reduce((sum, r) => sum + r.originalLength, 0);
-    
+    const totalOriginalBytes = results.reduce(
+      (sum, r) => sum + r.originalLength,
+      0
+    );
+
     return {
       totalMessages: messages.length,
       messagesWithAnsi,
       totalBytesReduced,
-      averageCompressionRatio: totalOriginalBytes > 0 
-        ? totalBytesReduced / totalOriginalBytes 
-        : 0,
-      processingTimeMs: processingTime
+      averageCompressionRatio:
+        totalOriginalBytes > 0 ? totalBytesReduced / totalOriginalBytes : 0,
+      processingTimeMs: processingTime,
     };
   }
 
   /**
    * Clean logs from various common sources
    */
-  cleanSourceLogs(source: 'docker' | 'systemd' | 'pm2' | 'generic', logs: string[]): ProcessedLog[] {
+  cleanSourceLogs(
+    source: 'docker' | 'systemd' | 'pm2' | 'generic',
+    logs: string[]
+  ): ProcessedLog[] {
     // Could add source-specific parsing logic here
     return this.batchCleanLogs(logs);
   }
@@ -241,12 +259,12 @@ export class BunLogProcessor {
     originalMessage?: string;
   } {
     const processed = this.cleanLogMessage(logEntry.message);
-    
+
     return {
       message: processed.clean,
       hasAnsi: processed.hasAnsi,
       bytesReduced: processed.savedBytes,
-      originalMessage: processed.hasAnsi ? logEntry.rawMessage : undefined
+      originalMessage: processed.hasAnsi ? logEntry.rawMessage : undefined,
     };
   }
 
@@ -265,21 +283,21 @@ export class BunLogProcessor {
       const startTime = performance.now();
       const cleaned = stripANSI(testMessage);
       const processingTime = performance.now() - startTime;
-      
+
       return {
         available: true,
         performance: {
           stripAnsiAvailable: cleaned === 'Error: Something went wrong',
-          sampleProcessingTime: processingTime
-        }
+          sampleProcessingTime: processingTime,
+        },
       };
     } catch (error) {
       return {
         available: false,
         performance: {
           stripAnsiAvailable: false,
-          sampleProcessingTime: 0
-        }
+          sampleProcessingTime: 0,
+        },
       };
     }
   }
@@ -289,16 +307,19 @@ export class BunLogProcessor {
 export const bunLogProcessor = BunLogProcessor.getInstance();
 
 // Convenience functions
-export const cleanLogMessage = (message: string) => 
+export const cleanLogMessage = (message: string) =>
   bunLogProcessor.cleanLogMessage(message);
 
-export const processLogEntry = (rawMessage: string, level?: LogEntry['level'], metadata?: Record<string, any>) => 
-  bunLogProcessor.processLogEntry(rawMessage, level, metadata);
+export const processLogEntry = (
+  rawMessage: string,
+  level?: LogEntry['level'],
+  metadata?: Record<string, any>
+) => bunLogProcessor.processLogEntry(rawMessage, level, metadata);
 
-export const batchCleanLogs = (messages: string[]) => 
+export const batchCleanLogs = (messages: string[]) =>
   bunLogProcessor.batchCleanLogs(messages);
 
-export const prepareForStorage = (terminalOutput: string) => 
+export const prepareForStorage = (terminalOutput: string) =>
   bunLogProcessor.prepareForStorage(terminalOutput);
 
 // Direct access to Bun's stripANSI for simple use cases

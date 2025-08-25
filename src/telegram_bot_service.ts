@@ -6,8 +6,8 @@
 import { serve } from 'bun';
 import { config } from '../config/env.config';
 
-// Bot configuration from src/config.py
-const BOT_TOKEN = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0";
+// Bot configuration - Fire Support CS Bot
+const BOT_TOKEN = "8039557687:AAEaDQUYya1H0y7qv4tmhYsCSqGrzpS-heU";
 const ADMIN_CHAT_ID = "-2714719687";
 const WEBHOOK_URL = `${config.WEBSOCKET_URL}/webhook`;
 

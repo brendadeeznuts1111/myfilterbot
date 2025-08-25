@@ -24,7 +24,7 @@ class PerformanceMonitor {
   private metrics: Map<string, PerformanceMetric> = new Map();
   private startupPhases: StartupPhase[] = [];
   private startupStartTime: number;
-  
+
   constructor() {
     this.startupStartTime = Date.now();
     this.startPhase('initialization');
@@ -37,7 +37,7 @@ class PerformanceMonitor {
     this.metrics.set(name, {
       name,
       startTime: Date.now(),
-      metadata
+      metadata,
     });
   }
 
@@ -73,7 +73,7 @@ class PerformanceMonitor {
     this.startupPhases.push({
       phase,
       startTime: Date.now(),
-      status: 'running'
+      status: 'running',
     });
 
     console.log(`🚀 Starting phase: ${phase}`);
@@ -83,7 +83,9 @@ class PerformanceMonitor {
    * End a startup phase
    */
   endPhase(phase: string, error?: string): void {
-    const phaseIndex = this.startupPhases.findIndex(p => p.phase === phase && p.status === 'running');
+    const phaseIndex = this.startupPhases.findIndex(
+      p => p.phase === phase && p.status === 'running'
+    );
     if (phaseIndex === -1) {
       console.warn(`Startup phase '${phase}' not found or already completed`);
       return;
@@ -124,9 +126,15 @@ class PerformanceMonitor {
     startup_status: 'running' | 'completed' | 'failed';
   } {
     const totalTime = Date.now() - this.startupStartTime;
-    const completedPhases = this.startupPhases.filter(p => p.status === 'completed').length;
-    const failedPhases = this.startupPhases.filter(p => p.status === 'error').length;
-    const currentPhase = this.startupPhases.find(p => p.status === 'running')?.phase;
+    const completedPhases = this.startupPhases.filter(
+      p => p.status === 'completed'
+    ).length;
+    const failedPhases = this.startupPhases.filter(
+      p => p.status === 'error'
+    ).length;
+    const currentPhase = this.startupPhases.find(
+      p => p.status === 'running'
+    )?.phase;
 
     let startupStatus: 'running' | 'completed' | 'failed' = 'running';
     if (failedPhases > 0) {
@@ -141,7 +149,7 @@ class PerformanceMonitor {
       completed_phases: completedPhases,
       failed_phases: failedPhases,
       current_phase: currentPhase,
-      startup_status: startupStatus
+      startup_status: startupStatus,
     };
   }
 
@@ -167,16 +175,20 @@ class PerformanceMonitor {
     completed_metrics: number;
     average_metric_time: number;
   } {
-    const completedMetrics = Array.from(this.metrics.values()).filter(m => m.duration !== undefined);
-    const avgTime = completedMetrics.length > 0 
-      ? completedMetrics.reduce((sum, m) => sum + (m.duration || 0), 0) / completedMetrics.length 
-      : 0;
+    const completedMetrics = Array.from(this.metrics.values()).filter(
+      m => m.duration !== undefined
+    );
+    const avgTime =
+      completedMetrics.length > 0
+        ? completedMetrics.reduce((sum, m) => sum + (m.duration || 0), 0) /
+          completedMetrics.length
+        : 0;
 
     return {
       uptime: Date.now() - this.startupStartTime,
       memory_usage: process.memoryUsage(),
       completed_metrics: completedMetrics.length,
-      average_metric_time: Math.round(avgTime)
+      average_metric_time: Math.round(avgTime),
     };
   }
 
@@ -186,7 +198,9 @@ class PerformanceMonitor {
   warnIfSlow(name: string, thresholdMs: number = 1000): boolean {
     const metric = this.metrics.get(name);
     if (metric?.duration && metric.duration > thresholdMs) {
-      console.warn(`⚠️ Slow performance: ${name} took ${metric.duration}ms (threshold: ${thresholdMs}ms)`);
+      console.warn(
+        `⚠️ Slow performance: ${name} took ${metric.duration}ms (threshold: ${thresholdMs}ms)`
+      );
       return true;
     }
     return false;
@@ -195,7 +209,8 @@ class PerformanceMonitor {
   /**
    * Clear old metrics to prevent memory leaks
    */
-  clearOldMetrics(maxAge: number = 300000): void { // 5 minutes default
+  clearOldMetrics(maxAge: number = 300000): void {
+    // 5 minutes default
     const cutoff = Date.now() - maxAge;
     const toDelete: string[] = [];
 
@@ -206,7 +221,7 @@ class PerformanceMonitor {
     });
 
     toDelete.forEach(name => this.metrics.delete(name));
-    
+
     if (toDelete.length > 0) {
       console.log(`🧹 Cleared ${toDelete.length} old performance metrics`);
     }
