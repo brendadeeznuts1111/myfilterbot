@@ -1,0 +1,331 @@
+# Telegram Bot Configuration
+# Complete settings for Telegram bot functionality
+
+telegram:
+  # Bot credentials
+  bot:
+    token: ${TELEGRAM_BOT_TOKEN:?Bot token is required}
+    username: ${TELEGRAM_BOT_USERNAME:-fantdev_trading_bot}
+    
+  # Webhook configuration
+  webhook:
+    enabled: ${WEBHOOK_ENABLED:-false}
+    url: ${TELEGRAM_WEBHOOK_URL}
+    port: ${WEBHOOK_PORT:-8443}
+    certificate: ${WEBHOOK_CERT_PATH}
+    maxConnections: ${WEBHOOK_MAX_CONNECTIONS:-40}
+    allowedUpdates:
+      - message
+      - callback_query
+      - inline_query
+      - channel_post
+      - edited_message
+    
+  # Polling configuration (if webhook disabled)
+  polling:
+    enabled: ${POLLING_ENABLED:-true}
+    interval: ${POLLING_INTERVAL:-1000}
+    timeout: ${POLLING_TIMEOUT:-30}
+    limit: ${POLLING_LIMIT:-100}
+    
+  # API configuration
+  api:
+    id: ${TELEGRAM_API_ID}
+    hash: ${TELEGRAM_API_HASH}
+    sessionName: ${TELEGRAM_SESSION_NAME:-fantdev_session}
+    baseUrl: ${TELEGRAM_API_URL:-https://api.telegram.org}
+    localMode: ${TELEGRAM_LOCAL_MODE:-false}
+    testMode: ${TELEGRAM_TEST_MODE:-false}
+    
+  # Admin settings
+  admin:
+    chatId: ${TELEGRAM_ADMIN_CHAT_ID:?Admin chat ID is required}
+    userIds: ${TELEGRAM_ADMIN_USERS}
+    notifications:
+      errors: true
+      newUsers: true
+      transactions: true
+      systemAlerts: true
+      dailyReports: true
+    
+  # Command configuration
+  commands:
+    # Public commands (available to all users)
+    public:
+      start:
+        enabled: true
+        description: Start the bot and see welcome message
+        aliases: [help]
+      register:
+        enabled: true
+        description: Register as a new customer
+        rateLimit: 5
+      balance:
+        enabled: true
+        description: Check your current balance
+        requiresAuth: true
+      transactions:
+        enabled: true
+        description: View recent transactions
+        requiresAuth: true
+        limit: 10
+      help:
+        enabled: true
+        description: Show available commands
+      settings:
+        enabled: true
+        description: Manage your settings
+        requiresAuth: true
+        
+    # Admin commands
+    admin:
+      broadcast:
+        enabled: true
+        description: Send message to all users
+        roles: [admin]
+      stats:
+        enabled: true
+        description: View system statistics
+        roles: [admin]
+      users:
+        enabled: true
+        description: Manage users
+        roles: [admin]
+      backup:
+        enabled: true
+        description: Create database backup
+        roles: [admin]
+      config:
+        enabled: true
+        description: View/edit configuration
+        roles: [admin]
+      logs:
+        enabled: true
+        description: View system logs
+        roles: [admin]
+        
+    # Customer-specific commands
+    customer:
+      deposit:
+        enabled: true
+        description: Make a deposit
+        requiresAuth: true
+        features: [payments]
+      withdraw:
+        enabled: true
+        description: Request withdrawal
+        requiresAuth: true
+        features: [payments]
+        minAmount: 10
+      report:
+        enabled: true
+        description: Generate trading report
+        requiresAuth: true
+        features: [reporting]
+        
+  # Message templates
+  messages:
+    welcome: |
+      🎉 Welcome to ${app.name}!
+      
+      Your premier trading platform for automated trading and portfolio management.
+      
+      Use /help to see available commands.
+      
+    help: |
+      📚 Available Commands:
+      
+      Public:
+      /start - Start the bot
+      /register - Register as new customer
+      /help - Show this message
+      
+      Customer:
+      /balance - Check balance
+      /transactions - View transactions
+      /settings - Manage settings
+      
+    unauthorized: ⛔ You need to be registered to use this command. Use /register to get started.
+    
+    error: ❌ An error occurred. Please try again or contact support.
+    
+    maintenance: 🔧 The bot is currently under maintenance. Please try again later.
+    
+    rateLimit: ⏱️ Too many requests. Please wait before trying again.
+    
+    success: ✅ Operation completed successfully!
+    
+    insufficientBalance: 💰 Insufficient balance for this operation.
+    
+    transactionSuccess: |
+      ✅ Transaction Successful!
+      Type: {type}
+      Amount: ${amount}
+      Balance: ${balance}
+      Time: {timestamp}
+      
+    registrationSuccess: |
+      ✅ Registration Complete!
+      Customer ID: {customer_id}
+      Welcome bonus: ${bonus}
+      
+      You can now use all customer commands!
+    
+  # Inline query settings
+  inline:
+    enabled: ${INLINE_QUERIES_ENABLED:-true}
+    cacheTime: ${INLINE_CACHE_TIME:-300}
+    isPersonal: true
+    nextOffset: 20
+    switchPmText: Go to bot
+    switchPmParameter: start
+    
+  # Callback query settings
+  callbacks:
+    answerCacheTime: 5
+    showAlert: false
+    
+  # Media settings
+  media:
+    maxFileSize: 20971520 # 20MB
+    allowedTypes:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - application/pdf
+      - text/csv
+    uploadPath: ${TELEGRAM_UPLOAD_PATH:-./uploads/telegram}
+    
+  # Rate limiting
+  rateLimit:
+    enabled: true
+    window: 60000 # 1 minute
+    maxMessages: 30
+    maxCallbacks: 60
+    maxInline: 20
+    banDuration: 300000 # 5 minutes
+    
+  # Anti-spam settings
+  antiSpam:
+    enabled: true
+    maxDuplicates: 3
+    duplicateWindow: 10000
+    blacklist: ${SPAM_BLACKLIST}
+    whitelist: ${SPAM_WHITELIST}
+    
+  # Notification settings
+  notifications:
+    # Transaction notifications
+    transactions:
+      enabled: true
+      minAmount: ${NOTIFICATION_MIN_AMOUNT:-100}
+      template: transaction_notification
+      
+    # Balance alerts
+    balanceAlerts:
+      enabled: true
+      lowBalance: ${LOW_BALANCE_THRESHOLD:-100}
+      highBalance: ${HIGH_BALANCE_THRESHOLD:-10000}
+      
+    # System notifications
+    system:
+      enabled: true
+      maintenanceWarning: 3600000 # 1 hour before
+      dailyReport: '09:00'
+      weeklyReport: 'monday 09:00'
+      
+  # Payment settings
+  payments:
+    enabled: ${PAYMENTS_ENABLED:-false}
+    provider: ${PAYMENT_PROVIDER:-stripe}
+    currency: ${PAYMENT_CURRENCY:-USD}
+    minAmount: ${PAYMENT_MIN_AMOUNT:-10}
+    maxAmount: ${PAYMENT_MAX_AMOUNT:-10000}
+    
+  # Group chat monitoring
+  groups:
+    enabled: ${GROUP_MONITORING_ENABLED:-true}
+    chats: ${MONITORED_CHAT_IDS}
+    keywords: ${MONITOR_KEYWORDS}
+    logChannel: ${LOG_CHANNEL_ID}
+    features:
+      autoDelete: false
+      autoWarn: true
+      autoBan: false
+      
+  # Bot features
+  features:
+    registration: true
+    payments: ${FEATURE_PAYMENTS:-false}
+    trading: ${FEATURE_TRADING:-true}
+    reporting: ${FEATURE_REPORTING:-true}
+    notifications: true
+    inlineMode: true
+    groupMonitoring: true
+    autoBackup: ${FEATURE_AUTO_BACKUP:-true}
+    analytics: ${FEATURE_ANALYTICS:-true}
+    
+  # Logging configuration
+  logging:
+    level: ${TELEGRAM_LOG_LEVEL:-info}
+    logCommands: true
+    logErrors: true
+    logTransactions: true
+    logRegistrations: true
+    saveToFile: ${TELEGRAM_LOG_TO_FILE:-true}
+    filePath: ${TELEGRAM_LOG_PATH:-./logs/telegram.log}
+    
+  # Security settings
+  security:
+    requirePhone: ${REQUIRE_PHONE:-false}
+    requireUsername: ${REQUIRE_USERNAME:-false}
+    blockForwardedMessages: false
+    sessionTimeout: 3600000 # 1 hour
+    maxLoginAttempts: 5
+    
+  # Backup settings
+  backup:
+    enabled: ${BACKUP_ENABLED:-true}
+    schedule: ${BACKUP_SCHEDULE:-0 2 * * *} # Daily at 2 AM
+    retention: ${BACKUP_RETENTION:-7} # Keep 7 backups
+    path: ${BACKUP_PATH:-./backups/telegram}
+    
+# Environment-specific overrides
+environments:
+  development:
+    telegram:
+      polling:
+        enabled: true
+      webhook:
+        enabled: false
+      api:
+        testMode: true
+      features:
+        payments: false
+        autoBackup: false
+      logging:
+        level: debug
+        logCommands: true
+      security:
+        requirePhone: false
+        requireUsername: false
+        
+  production:
+    telegram:
+      polling:
+        enabled: false
+      webhook:
+        enabled: true
+        url: ${TELEGRAM_WEBHOOK_URL:?Webhook URL required in production}
+      api:
+        testMode: false
+      features:
+        payments: true
+        autoBackup: true
+      logging:
+        level: error
+        logCommands: false
+      security:
+        requirePhone: true
+        requireUsername: true
+        maxLoginAttempts: 3

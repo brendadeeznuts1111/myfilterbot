@@ -457,6 +457,6 @@ export PORT=5000
 
 ---
 
-**API Version:** 1.0.0  
-**Last Updated:** August 23, 2025  
-**Contact:** admin@fantdev.trading
+**API Version:** 1.0.0
+**Last Updated:** August 25, 2025
+**Maintained By:** Fantdev Development Team
