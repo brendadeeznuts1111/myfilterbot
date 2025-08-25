@@ -1,141 +1,221 @@
-# User-Agent Customization with Bun CLI
-
-Bun CLI provides a powerful `--user-agent` flag that allows you to override the default User-Agent header for all HTTP requests made using `fetch()` within your application.
+# 🚀 User-Agent Customization with Bun CLI
 
 ## Overview
 
-The `--user-agent` flag is useful for:
-- Identifying your application to external services
-- APIs that require a specific User-Agent
-- Testing different User-Agent behaviors
-- Compliance with service requirements
+Bun CLI now supports the `--user-agent` flag, allowing you to customize the User-Agent header for HTTP requests made with `fetch()`. This feature is particularly useful for:
 
-## Basic Usage
+- **Service Identification**: Distinguish between different services making API calls
+- **API Rate Limiting**: Better control over external API requests
+- **Monitoring & Debugging**: Easy identification of request sources
+- **Testing**: Simulate different client types
 
-```bash
-# Run with a custom user agent
-bun --user-agent "MyCustomApp/1.0" your-script.ts
+## 🆕 New: bunx --package Support
 
-# Without the flag, it uses the default
-bun your-script.ts
-```
+Bun now supports the `--package` (or `-p`) flag with `bunx`, bringing functionality in line with `npx` and `yarn dlx`. This is perfect for packages with multiple binaries or scoped packages.
 
-## Examples
-
-### 1. Custom Application Identity
+### Examples with --package Flag
 
 ```bash
-bun --user-agent "Fantdev-Trading-Bot/2.1.0" src/server/dashboard-server.ts
+# Run renovate-config-validator from renovate package
+bunx --package renovate renovate-config-validator
+
+# Use ng binary from @angular/cli package
+bunx -p @angular/cli ng new my-app
+
+# Run TypeScript compiler with custom User-Agent
+bunx --package typescript --user-agent "Fantdev-Build-System/2.2.0" tsc --noEmit
+
+# Use wrangler with custom User-Agent for Cloudflare deployment
+bunx -p wrangler --user-agent "Fantdev-Deploy/2.2.0" wrangler deploy
 ```
 
-### 2. Testing Different User-Agents
+## 🎯 Basic Usage
+
+### Setting Custom User-Agent
 
 ```bash
-# Test as a mobile app
-bun --user-agent "MobileApp/1.0" examples/user-agent-demo.ts
+# Basic usage
+bun --user-agent "MyCustomApp/1.0" script.ts
 
-# Test as a web crawler
-bun --user-agent "WebCrawler/2.0" examples/user-agent-demo.ts
+# With specific version
+bun --user-agent "Fantdev-Trading-Bot/2.2.0" src/start-event-driven-bot.ts start
 
-# Test as a specific bot
-bun --user-agent "TradingBot/3.0" examples/user-agent-demo.ts
+# For development
+bun --user-agent "Fantdev-Dev/2.2.0" --hot src/server/dashboard-server.ts
 ```
 
-### 3. API Compliance
-
-Some APIs require specific User-Agent strings:
-
-```bash
-# GitHub API compliance
-bun --user-agent "MyApp/1.0 (contact@example.com)" src/github-integration.ts
-
-# Twitter API compliance
-bun --user-agent "MyBot/1.0" src/twitter-bot.ts
-```
-
-## Code Example
+### In Your Code
 
 ```typescript
-// agent.js
-const response = await fetch("https://httpbin.org/user-agent");
-const data = await response.json();
-console.log(data["user-agent"]);
-
-// Run with: bun --user-agent "MyCustomApp/1.0" agent.js
-// Output: MyCustomApp/1.0
-
-// Run without flag: bun agent.js
-// Output: Bun/1.2.18
+// The User-Agent is automatically set for all fetch() calls
+const response = await fetch('https://api.example.com/data');
+console.log('Request made with custom User-Agent');
 ```
 
-## Integration with Existing Code
+## 🔧 Integration Examples
 
-Our application already supports custom User-Agent headers in tests:
+### 1. Service Management Scripts
+
+Our service management scripts now use `bunx --package` for better reliability:
+
+```bash
+# Start services with custom User-Agents
+./scripts/start-services-with-user-agents.sh
+
+# Stop all services
+./scripts/stop-services.sh
+```
+
+### 2. Development Workflow
+
+```bash
+# Type checking with custom User-Agent
+bunx --package typescript --user-agent "Fantdev-TypeCheck/2.2.0" tsc --noEmit
+
+# Linting with custom User-Agent
+bunx --package eslint --user-agent "Fantdev-Lint/2.2.0" eslint src/
+
+# Testing with custom User-Agent
+bunx --package jest --user-agent "Fantdev-Test/2.2.0" jest --coverage
+```
+
+### 3. CI/CD Pipeline
+
+```bash
+# Build with custom User-Agent
+bunx --package typescript --user-agent "Fantdev-CI/2.2.0" tsc --build
+
+# Deploy with custom User-Agent
+bunx -p wrangler --user-agent "Fantdev-Deploy/2.2.0" wrangler deploy
+
+# Run security scans
+bunx --package audit-ci --user-agent "Fantdev-Security/2.2.0" audit-ci
+```
+
+## 🚀 Advanced Usage
+
+### Environment-Specific User-Agents
+
+```bash
+# Development
+export DEV_USER_AGENT="Fantdev-Dev/2.2.0"
+bun --user-agent "$DEV_USER_AGENT" src/dev-server.ts
+
+# Staging
+export STAGING_USER_AGENT="Fantdev-Staging/2.2.0"
+bun --user-agent "$STAGING_USER_AGENT" src/staging-server.ts
+
+# Production
+export PROD_USER_AGENT="Fantdev-Prod/2.2.0"
+bun --user-agent "$PROD_USER_AGENT" src/prod-server.ts
+```
+
+### Package-Specific User-Agents
+
+```bash
+# TypeScript operations
+bunx --package typescript --user-agent "Fantdev-TS/2.2.0" tsc --noEmit
+
+# ESLint operations
+bunx --package eslint --user-agent "Fantdev-Lint/2.2.0" eslint src/
+
+# Prettier operations
+bunx --package prettier --user-agent "Fantdev-Format/2.2.0" prettier --write src/
+```
+
+## 📊 Monitoring & Analytics
+
+### Request Tracking
+
+With custom User-Agents, you can easily track requests in your analytics:
 
 ```typescript
-// From tests/integration/api-endpoints.test.ts
-const response = await fetch(`${baseURL}/api/customers`, {
-  headers: {
-    'User-Agent': 'Fantdev-Trading-Bot-Test/2.1.0',
-    'Authorization': `Bearer ${authToken}`
-  }
+// Example: Track different service types
+const userAgent = process.env.USER_AGENT || 'Fantdev-Unknown/2.2.0';
+
+// Log all requests with User-Agent
+console.log(`📡 Request from: ${userAgent}`);
+
+// Track in analytics
+analytics.track('api_request', {
+  userAgent,
+  endpoint: '/api/data',
+  timestamp: new Date().toISOString()
 });
 ```
 
-## Best Practices
-
-1. **Use Semantic Versioning**: Include version numbers in your User-Agent
-   ```
-   MyApp/1.2.3
-   ```
-
-2. **Include Contact Information**: For production APIs, consider including contact info
-   ```
-   MyApp/1.0 (support@myapp.com)
-   ```
-
-3. **Be Descriptive**: Use names that clearly identify your application
-   ```
-   Fantdev-Trading-Bot/2.1.0
-   ```
-
-4. **Test Different Values**: Use the flag to test how your app behaves with different User-Agents
-
-## Demo Script
-
-Run the included demo script to see User-Agent customization in action:
+### Service Health Monitoring
 
 ```bash
-# See current User-Agent
-bun examples/user-agent-demo.ts
+# Check service health with custom User-Agent
+bunx --package curl --user-agent "Fantdev-HealthCheck/2.2.0" \
+  -H "Authorization: Bearer $TOKEN" \
+  https://api.fantdev.com/health
 
-# Test with custom User-Agent
-bun --user-agent "MyCustomApp/1.0" examples/user-agent-demo.ts
+# Monitor specific services
+bunx --package curl --user-agent "Fantdev-Monitor/2.2.0" \
+  -H "Authorization: Bearer $TOKEN" \
+  https://api.fantdev.com/metrics
 ```
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
-### User-Agent Not Changing
+### Common Issues
 
-- Ensure you're using the `--user-agent` flag before the script name
-- Check that your script uses `fetch()` for HTTP requests
-- Verify the flag is supported in your Bun version (v1.2.0+)
+1. **Package Not Found**: Use `--package` flag for packages with different binary names
+   ```bash
+   # ❌ This might fail
+   bunx tsc --noEmit
+   
+   # ✅ This will work
+   bunx --package typescript tsc --noEmit
+   ```
 
-### Multiple User-Agent Headers
+2. **User-Agent Not Set**: Ensure the flag is placed before the script name
+   ```bash
+   # ❌ Wrong order
+   bun script.ts --user-agent "MyApp/1.0"
+   
+   # ✅ Correct order
+   bun --user-agent "MyApp/1.0" script.ts
+   ```
 
-If you're setting User-Agent in both the flag and headers, the flag takes precedence:
+3. **Permission Issues**: Some packages may require additional setup
+   ```bash
+   # For global packages, ensure proper permissions
+   bunx --package @angular/cli --user-agent "Fantdev-CLI/2.2.0" ng version
+   ```
 
-```typescript
-// This will use the --user-agent flag value, not the header
-const response = await fetch(url, {
-  headers: {
-    'User-Agent': 'This will be ignored' // Flag overrides this
-  }
-});
+### Debug Mode
+
+Enable debug mode to see what's happening:
+
+```bash
+# Enable Bun debug mode
+BUN_DEBUG=1 bun --user-agent "Fantdev-Debug/2.2.0" script.ts
+
+# Check User-Agent in requests
+curl -H "User-Agent: Fantdev-Test/2.2.0" https://httpbin.org/user-agent
 ```
 
-## Related Documentation
+## 🔗 Related Documentation
 
-- [Bun CLI Documentation](https://bun.sh/docs/cli)
-- [HTTP User-Agent Header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent)
-- [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+- [Bun CLI Documentation](https://bun.sh/docs/cli/bun)
+- [Bun Package Management](https://bun.sh/docs/cli/bunx)
+- [FantDev Trading Bot README](../readme.md)
+- [Service Management Scripts](../scripts/start-services-with-user-agents.sh)
+
+## 📝 Changelog
+
+### v2.2.0
+- ✅ Added `--user-agent` flag support
+- ✅ Added `--package` flag support for bunx
+- ✅ Service management scripts with custom User-Agents
+- ✅ Comprehensive documentation and examples
+- ✅ Integration with existing development workflow
+
+---
+
+**Last Updated**: August 25, 2025  
+**Bun Version**: 1.2.20+  
+**FantDev Version**: 2.2.0

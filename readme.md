@@ -241,6 +241,8 @@ myfilterbot/
 - **Reliable Package Execution**: Explicit package specification prevents binary resolution conflicts
 - **Optimized Cloudflare Deployment**: `bunx --package wrangler wrangler deploy`
 - **Reduced Execution Time**: Eliminates package lookup overhead
+- **Multiple Binary Support**: Run binaries with different names from packages (e.g., `bunx --package renovate renovate-config-validator`)
+- **Scoped Package Support**: Use `bunx -p @angular/cli ng new my-app` for scoped packages
 
 ### Native Bun Features Integration
 - **Tree-shaking Optimization**: `sideEffects` glob patterns reduce bundle sizes
@@ -259,6 +261,11 @@ myfilterbot/
 bunx --package typescript tsc --noEmit --skipLibCheck    # Fast type checking
 bunx --package wrangler wrangler deploy                  # Reliable deployment
 bun test --coverage --timeout=30000                     # Efficient testing
+
+# New: Multiple binary support with --package flag
+bunx --package renovate renovate-config-validator        # Renovate config validation
+bunx -p @angular/cli ng new my-app                      # Angular CLI with scoped package
+bunx --package typescript --user-agent "Fantdev-Build/2.2.0" tsc --noEmit  # Custom User-Agent
 ```
 
 ## 🔌 API Endpoints
@@ -401,6 +408,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ### User-Agent Customization
 - ✅ **Bun CLI Integration** - `--user-agent` flag support for custom HTTP headers
+- ✅ **bunx --package Support** - New `--package` flag for multiple binary packages
 - ✅ **Service Management Scripts** - Automated service startup with unique identifiers
 - ✅ **API Rate Limiting** - Better control over external API requests
 - ✅ **Monitoring & Debugging** - Easy identification of request sources
@@ -460,6 +468,11 @@ bun run event-bot:simulate
 
 # Custom User-Agent for specific scripts
 bun --user-agent "MyCustomApp/1.0" examples/user-agent-demo.ts
+
+# New: bunx --package with custom User-Agent
+bunx --package typescript --user-agent "Fantdev-TypeCheck/2.2.0" tsc --noEmit
+bunx -p eslint --user-agent "Fantdev-Lint/2.2.0" eslint src/
+bunx --package prettier --user-agent "Fantdev-Format/2.2.0" prettier --write src/
 ```
 
 ## 🔍 Quick Verification
