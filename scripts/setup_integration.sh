@@ -23,7 +23,7 @@ if ! command -v bun &> /dev/null; then
 fi
 
 # Check if wrangler is available
-if ! command -v bunx wrangler &> /dev/null; then
+if ! command -v bunx &> /dev/null || ! bunx --package wrangler wrangler --version &> /dev/null; then
     echo "⚠️  Wrangler not found. Installing..."
     bun add -D wrangler@latest
 fi
@@ -39,8 +39,8 @@ echo "   bun run worker:kv:create"
 echo "   (Update wrangler.toml with the returned namespace ID)"
 echo ""
 echo "3. Set Cloudflare Secrets:"
-echo "   bunx wrangler secret put BOT_TOKEN"
-echo "   bunx wrangler secret put WEBHOOK_SECRET"
+echo "   bunx --package wrangler wrangler secret put BOT_TOKEN"
+echo "   bunx --package wrangler wrangler secret put WEBHOOK_SECRET"
 echo ""
 echo "4. Test Worker Locally:"
 echo "   bun run worker:dev"
@@ -89,9 +89,9 @@ case $choice in
     3)
         echo "🔑 Setting up secrets..."
         echo "Enter your Telegram Bot Token:"
-        bunx wrangler secret put BOT_TOKEN
+        bunx --package wrangler wrangler secret put BOT_TOKEN
         echo "Enter your webhook secret (generate a secure random string):"
-        bunx wrangler secret put WEBHOOK_SECRET
+        bunx --package wrangler wrangler secret put WEBHOOK_SECRET
         ;;
     4)
         echo "🧪 Starting Worker in development mode..."

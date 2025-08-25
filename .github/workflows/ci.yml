@@ -85,7 +85,7 @@ jobs:
     
     - name: Verify TypeScript configuration
       run: |
-        bunx tsc --noEmit
+        bunx --package typescript tsc --noEmit
     
     - name: Run TypeScript tests
       run: |

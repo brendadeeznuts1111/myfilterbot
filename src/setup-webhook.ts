@@ -241,8 +241,8 @@ class WebhookSetup {
         console.log(`\nBOT_TOKEN=${this.botToken}`);
         console.log(`WEBHOOK_SECRET=${this.webhookSecret}`);
         console.log('\nRun these commands:');
-        console.log(`bunx wrangler secret put BOT_TOKEN`);
-        console.log(`bunx wrangler secret put WEBHOOK_SECRET`);
+        console.log(`bunx --package wrangler wrangler secret put BOT_TOKEN`);
+        console.log(`bunx --package wrangler wrangler secret put WEBHOOK_SECRET`);
         
         console.log('\n✅ Setup complete!');
       } else {

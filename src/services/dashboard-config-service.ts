@@ -95,7 +95,8 @@ class DashboardConfigService extends EventEmitter {
   async updateConfigFromYaml(name: string, yamlContent: string): Promise<boolean> {
     try {
       // Parse YAML using Bun's native parser
-      const parsed = Bun.YAML.parse(yamlContent);
+      const { YAML } = await import('bun');
+      const parsed = YAML.parse(yamlContent);
       
       // Validate the parsed content
       if (!this.validateConfig(name, parsed)) {
@@ -264,9 +265,10 @@ class DashboardConfigService extends EventEmitter {
   /**
    * Validate YAML syntax
    */
-  validateYaml(yamlContent: string): { valid: boolean; error?: string } {
+  async validateYaml(yamlContent: string): Promise<{ valid: boolean; error?: string }> {
     try {
-      Bun.YAML.parse(yamlContent);
+      const { YAML } = await import('bun');
+      YAML.parse(yamlContent);
       return { valid: true };
     } catch (error: any) {
       return { 
@@ -337,8 +339,9 @@ class DashboardConfigService extends EventEmitter {
    */
   async parseMultiDocumentYaml(yamlContent: string): Promise<any[]> {
     try {
-      // Bun.YAML.parse automatically handles multi-document YAML
-      const documents = Bun.YAML.parse(yamlContent);
+      // Bun's native YAML.parse automatically handles multi-document YAML
+      const { YAML } = await import('bun');
+      const documents = YAML.parse(yamlContent);
       
       // If it's an array, it was a multi-document YAML
       if (Array.isArray(documents)) {

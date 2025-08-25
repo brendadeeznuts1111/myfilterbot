@@ -346,7 +346,7 @@ After setup, verify everything works:
 python3 -c "from dotenv import load_dotenv; load_dotenv(); import os; print('BOT_TOKEN:', 'SET' if os.getenv('BOT_TOKEN') else 'NOT_SET')"
 
 # Check TypeScript configuration
-bunx tsc --noEmit
+bunx --package typescript tsc --noEmit
 
 # Check test suite
 bun test

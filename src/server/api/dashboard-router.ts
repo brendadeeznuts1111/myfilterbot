@@ -162,7 +162,7 @@ class DashboardRouter {
       return this.errorResponse('Content is required', 400);
     }
 
-    const validation = dashboardConfigService.validateYaml(content);
+    const validation = await dashboardConfigService.validateYaml(content);
     
     return Response.json(validation, { headers: this.corsHeaders });
   }

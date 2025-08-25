@@ -1,7 +1,7 @@
 /**
  * Type-Level Tests using expectTypeOf
  * New in Bun v1.2.30 - compile-time type assertions
- * Run: bunx tsc --noEmit to verify types
+ * Run: bunx --package typescript tsc --noEmit to verify types
  */
 
 import { test, expectTypeOf } from 'bun:test';
