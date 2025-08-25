@@ -9,16 +9,6 @@
  * - ReadableStream.prototype.blob()
  */
 
-// Extend ReadableStream interface to include Bun's methods
-declare module 'stream/web' {
-  interface ReadableStream<R = any> {
-    json(): Promise<any>;
-    text(): Promise<string>;
-    bytes(): Promise<Uint8Array>;
-    blob(): Promise<Blob>;
-  }
-}
-
 export interface StreamOptions {
   timeout?: number;
   signal?: AbortSignal;

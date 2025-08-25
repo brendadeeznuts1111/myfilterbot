@@ -40,7 +40,10 @@
     "format:python:check": "black --check src/bot tests/python && isort --check-only src/bot tests/python",
     "quality": "bun run lint && bun run format:check",
     "quality:python": "bun run lint:python && bun run format:python:check",
-    "quality:all": "bun run quality && bun run quality:python"
+    "quality:all": "bun run quality && bun run quality:python",
+    "metrics:baseline": "bun run scripts/collect_metrics.ts --collect-baseline",
+    "metrics:compare": "bun run scripts/collect_metrics.ts --compare",
+    "metrics:monitor": "bun run scripts/collect_metrics.ts --monitor"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.85.5",
