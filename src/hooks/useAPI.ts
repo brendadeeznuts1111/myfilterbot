@@ -2,9 +2,11 @@
  * High-Performance API Hook
  * Optimized for Bun's sub-millisecond response times
  * Features SWR-like caching with real-time updates
+ * Includes rate limiting and circuit breaker protection
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { apiRateLimiter } from '../utils/rateLimiter';
 
 interface APIConfig {
   baseURL?: string;
@@ -25,18 +27,21 @@ interface APIResponse<T> {
 }
 
 // Global cache for API responses
-const apiCache = new Map<string, {
-  data: any;
-  timestamp: number;
-  expiry: number;
-}>();
+const apiCache = new Map<
+  string,
+  {
+    data: any;
+    timestamp: number;
+    expiry: number;
+  }
+>();
 
 // Global config
 let globalConfig: APIConfig = {
   baseURL: 'http://localhost:3003',
-  refreshInterval: 5000, // 5 seconds for real-time feel
-  retryCount: 3,
-  cache: true
+  refreshInterval: 30000, // 30 seconds - reduced from 5s to prevent flooding
+  retryCount: 2, // Reduced from 3 to prevent excessive retries
+  cache: true,
 };
 
 export function configureAPI(config: APIConfig) {
@@ -44,8 +49,8 @@ export function configureAPI(config: APIConfig) {
 }
 
 export function useAPI<T = any>(
-  endpoint: string, 
-  options: APIConfig & { 
+  endpoint: string,
+  options: APIConfig & {
     dependencies?: any[];
     immediate?: boolean;
     cacheTTL?: number;
@@ -55,7 +60,7 @@ export function useAPI<T = any>(
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  
+
   const fetchTimeoutRef = useRef<NodeJS.Timeout>();
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const mountedRef = useRef(true);
@@ -64,104 +69,146 @@ export function useAPI<T = any>(
   const cacheKey = `${endpoint}:${JSON.stringify(options)}`;
   const cacheTTL = options.cacheTTL || 30000; // 30 seconds default
 
-  const fetchData = useCallback(async (retryAttempt = 0) => {
-    if (!mountedRef.current) return;
+  const fetchData = useCallback(
+    async (retryAttempt = 0) => {
+      if (!mountedRef.current) return;
 
-    // Check cache first
-    if (config.cache) {
-      const cached = apiCache.get(cacheKey);
-      if (cached && Date.now() < cached.expiry) {
-        setData(cached.data);
-        setLastUpdated(new Date(cached.timestamp));
+      // Check rate limiter first
+      const rateLimitCheck = apiRateLimiter.shouldAllow(endpoint);
+      if (!rateLimitCheck.allowed) {
+        console.warn(`🚫 Rate limited: ${endpoint} - ${rateLimitCheck.reason}`);
+        setError(rateLimitCheck.reason || 'Rate limited');
+        setLoading(false);
+
+        // Schedule retry after rate limit window
+        if (rateLimitCheck.retryAfter && retryAttempt < 2) {
+          retryTimeoutRef.current = setTimeout(() => {
+            if (mountedRef.current) {
+              fetchData(retryAttempt + 1);
+            }
+          }, rateLimitCheck.retryAfter * 1000);
+        }
         return;
       }
-    }
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
-      if (config.customerId) {
-        headers['X-Customer-ID'] = config.customerId;
-        headers['X-User-ID'] = config.customerId; // Also add X-User-ID for auth middleware
-      }
-
-      if (config.adminId) {
-        headers['X-Admin-ID'] = config.adminId;
-        headers['X-User-ID'] = config.adminId; // Also add X-User-ID for auth middleware
-        if (config.adminPermissions?.length) {
-          headers['X-Admin-Permissions'] = config.adminPermissions.join(',');
+      // Check cache first
+      if (config.cache) {
+        const cached = apiCache.get(cacheKey);
+        if (cached && Date.now() < cached.expiry) {
+          setData(cached.data);
+          setLastUpdated(new Date(cached.timestamp));
+          return;
         }
       }
 
-      // If no specific user provided, default to a customer ID for demo
-      if (!config.customerId && !config.adminId) {
-        headers['X-Customer-ID'] = 'BB1042';
-        headers['X-User-ID'] = 'BB1042';
-      }
+      setLoading(true);
+      setError(null);
 
-      const startTime = performance.now();
-      const response = await fetch(`${config.baseURL}/api${endpoint}`, {
-        method: 'GET',
-        headers,
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-      const endTime = performance.now();
+      try {
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const responseData = result.success ? (result.data || result) : result;
-
-      if (mountedRef.current) {
-        setData(responseData);
-        setLastUpdated(new Date());
-        setError(null);
-
-        // Cache the response
-        if (config.cache) {
-          apiCache.set(cacheKey, {
-            data: responseData,
-            timestamp: Date.now(),
-            expiry: Date.now() + cacheTTL
-          });
+        if (config.customerId) {
+          headers['X-Customer-ID'] = config.customerId;
+          headers['X-User-ID'] = config.customerId; // Also add X-User-ID for auth middleware
         }
 
-        // Log performance for sub-millisecond tracking
-        const responseTime = endTime - startTime;
-        if (responseTime < 5) {
-          console.log(`⚡ Ultra-fast API response: ${endpoint} in ${responseTime.toFixed(2)}ms`);
+        if (config.adminId) {
+          headers['X-Admin-ID'] = config.adminId;
+          headers['X-User-ID'] = config.adminId; // Also add X-User-ID for auth middleware
+          if (config.adminPermissions?.length) {
+            headers['X-Admin-Permissions'] = config.adminPermissions.join(',');
+          }
         }
-      }
 
-    } catch (err) {
-      if (mountedRef.current) {
-        const errorMessage = err instanceof Error ? err.message : 'Network error';
-        
-        // Retry logic for failed requests
-        if (retryAttempt < (config.retryCount || 0)) {
-          console.log(`🔄 Retrying API call to ${endpoint} (attempt ${retryAttempt + 1})`);
-          retryTimeoutRef.current = setTimeout(() => {
-            fetchData(retryAttempt + 1);
-          }, Math.pow(2, retryAttempt) * 1000); // Exponential backoff
-        } else {
-          setError(errorMessage);
-          console.error(`❌ API Error for ${endpoint}:`, errorMessage);
+        // If no specific user provided, default to a customer ID for demo
+        if (!config.customerId && !config.adminId) {
+          headers['X-Customer-ID'] = 'BB1042';
+          headers['X-User-ID'] = 'BB1042';
+        }
+
+        const startTime = performance.now();
+        const response = await fetch(`${config.baseURL}/api${endpoint}`, {
+          method: 'GET',
+          headers,
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        });
+        const endTime = performance.now();
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+          );
+        }
+
+        const result = await response.json();
+        const responseData = result.success ? result.data || result : result;
+
+        if (mountedRef.current) {
+          setData(responseData);
+          setLastUpdated(new Date());
+          setError(null);
+
+          // Cache the response
+          if (config.cache) {
+            apiCache.set(cacheKey, {
+              data: responseData,
+              timestamp: Date.now(),
+              expiry: Date.now() + cacheTTL,
+            });
+          }
+
+          // Log performance for sub-millisecond tracking
+          const responseTime = endTime - startTime;
+          if (responseTime < 5) {
+            console.log(
+              `⚡ Ultra-fast API response: ${endpoint} in ${responseTime.toFixed(2)}ms`
+            );
+          }
+
+          // Record successful request
+          apiRateLimiter.recordResult(endpoint, true);
+        }
+      } catch (err) {
+        if (mountedRef.current) {
+          const errorMessage =
+            err instanceof Error ? err.message : 'Network error';
+
+          // Record failed request for circuit breaker
+          apiRateLimiter.recordResult(endpoint, false);
+
+          // Implement exponential backoff with jitter
+          if (retryAttempt < (config.retryCount || 0)) {
+            const baseDelay = Math.min(1000 * Math.pow(2, retryAttempt), 30000); // Max 30 seconds
+            const jitter = Math.random() * 1000; // Add 0-1 second jitter
+            const delay = baseDelay + jitter;
+
+            console.log(
+              `🔄 Retrying API call to ${endpoint} in ${Math.round(delay)}ms (attempt ${retryAttempt + 1}/${config.retryCount})`
+            );
+
+            retryTimeoutRef.current = setTimeout(() => {
+              if (mountedRef.current) {
+                fetchData(retryAttempt + 1);
+              }
+            }, delay);
+          } else {
+            setError(errorMessage);
+            console.error(`❌ API Error for ${endpoint}:`, errorMessage);
+          }
+        }
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false);
         }
       }
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [endpoint, cacheKey, cacheTTL, config]);
+    },
+    [endpoint, cacheKey, cacheTTL, config]
+  );
 
   // Setup automatic refresh for real-time data
   useEffect(() => {
@@ -201,7 +248,7 @@ export function useAPI<T = any>(
     error,
     loading,
     refetch,
-    lastUpdated
+    lastUpdated,
   };
 }
 
@@ -216,7 +263,7 @@ export function useCustomerBalance(customerId?: string) {
   }>('/customer/balance', {
     customerId,
     refreshInterval: 2000, // Ultra-fast updates for balance
-    cacheTTL: 5000
+    cacheTTL: 5000,
   });
 }
 
@@ -235,11 +282,15 @@ export function useCustomerAnalytics(customerId?: string) {
   }>('/customer/analytics', {
     customerId,
     refreshInterval: 10000, // 10 seconds for analytics
-    cacheTTL: 15000
+    cacheTTL: 15000,
   });
 }
 
-export function useTransactionHistory(customerId?: string, page = 1, limit = 20) {
+export function useTransactionHistory(
+  customerId?: string,
+  page = 1,
+  limit = 20
+) {
   return useAPI<{
     transactions: Array<{
       id: string;
@@ -259,7 +310,7 @@ export function useTransactionHistory(customerId?: string, page = 1, limit = 20)
     customerId,
     refreshInterval: 5000, // 5 seconds for transaction updates
     cacheTTL: 10000,
-    dependencies: [page, limit]
+    dependencies: [page, limit],
   });
 }
 
@@ -277,7 +328,7 @@ export function useSystemHealth() {
   }>('/health', {
     refreshInterval: 30000, // 30 seconds for health check
     cacheTTL: 10000,
-    cache: false // Always fresh health data
+    cache: false, // Always fresh health data
   });
 }
 
@@ -300,7 +351,7 @@ export function preloadAPI(endpoint: string, options: APIConfig = {}) {
   // Pre-fetch data to warm the cache
   const config = { ...globalConfig, ...options };
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
-  
+
   if (config.customerId) headers['X-Customer-ID'] = config.customerId;
   if (config.adminId) headers['X-Admin-ID'] = config.adminId;
 
@@ -309,9 +360,9 @@ export function preloadAPI(endpoint: string, options: APIConfig = {}) {
     .then(data => {
       const cacheKey = `${endpoint}:${JSON.stringify(options)}`;
       apiCache.set(cacheKey, {
-        data: data.success ? (data.data || data) : data,
+        data: data.success ? data.data || data : data,
         timestamp: Date.now(),
-        expiry: Date.now() + 30000
+        expiry: Date.now() + 30000,
       });
     })
     .catch(console.error);

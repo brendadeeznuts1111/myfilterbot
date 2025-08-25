@@ -1,10 +1,10 @@
 /**
  * Stream Helper Utilities
  * Leverages Bun v1.2.21+ ReadableStream enhancements for cleaner code
- * 
+ *
  * New features:
  * - ReadableStream.prototype.text()
- * - ReadableStream.prototype.json()  
+ * - ReadableStream.prototype.json()
  * - ReadableStream.prototype.bytes()
  * - ReadableStream.prototype.blob()
  */
@@ -31,23 +31,23 @@ export async function consumeStreamAsJSON<T = any>(
   options: StreamOptions = {}
 ): Promise<StreamResult<T>> {
   const startTime = performance.now();
-  
+
   try {
     // Use Bun's optimized direct consumption
     const data = await stream.json();
     const duration = performance.now() - startTime;
-    
+
     return {
       success: true,
       data,
       duration,
-      size: JSON.stringify(data).length
+      size: JSON.stringify(data).length,
     };
   } catch (error: any) {
     return {
       success: false,
       error: error.message || 'Failed to parse stream as JSON',
-      duration: performance.now() - startTime
+      duration: performance.now() - startTime,
     };
   }
 }
@@ -60,23 +60,23 @@ export async function consumeStreamAsText(
   options: StreamOptions = {}
 ): Promise<StreamResult<string>> {
   const startTime = performance.now();
-  
+
   try {
     // Use Bun's optimized direct consumption
     const text = await stream.text();
     const duration = performance.now() - startTime;
-    
+
     return {
       success: true,
       data: text,
       duration,
-      size: text.length
+      size: text.length,
     };
   } catch (error: any) {
     return {
       success: false,
       error: error.message || 'Failed to read stream as text',
-      duration: performance.now() - startTime
+      duration: performance.now() - startTime,
     };
   }
 }
@@ -89,23 +89,23 @@ export async function consumeStreamAsBytes(
   options: StreamOptions = {}
 ): Promise<StreamResult<Uint8Array>> {
   const startTime = performance.now();
-  
+
   try {
     // Use Bun's optimized direct consumption
     const bytes = await stream.bytes();
     const duration = performance.now() - startTime;
-    
+
     return {
       success: true,
       data: bytes,
       duration,
-      size: bytes.length
+      size: bytes.length,
     };
   } catch (error: any) {
     return {
       success: false,
       error: error.message || 'Failed to read stream as bytes',
-      duration: performance.now() - startTime
+      duration: performance.now() - startTime,
     };
   }
 }
@@ -120,34 +120,35 @@ export async function fetchJSON<T = any>(
   options: StreamOptions = {}
 ): Promise<StreamResult<T>> {
   const startTime = performance.now();
-  
+
   try {
     const response = await fetch(input, init);
-    
+
     if (!response.ok) {
       return {
         success: false,
         error: `HTTP ${response.status}: ${response.statusText}`,
-        duration: performance.now() - startTime
+        duration: performance.now() - startTime,
       };
     }
-    
+
     // Direct stream consumption without Response wrapper
     const data = await response.body?.json();
     const duration = performance.now() - startTime;
-    
+
     return {
       success: true,
       data,
       duration,
-      size: response.headers.get('content-length') ? 
-        parseInt(response.headers.get('content-length')!) : undefined
+      size: response.headers.get('content-length')
+        ? parseInt(response.headers.get('content-length')!)
+        : undefined,
     };
   } catch (error: any) {
     return {
       success: false,
       error: error.message || 'Fetch operation failed',
-      duration: performance.now() - startTime
+      duration: performance.now() - startTime,
     };
   }
 }
@@ -161,33 +162,33 @@ export async function fetchText(
   options: StreamOptions = {}
 ): Promise<StreamResult<string>> {
   const startTime = performance.now();
-  
+
   try {
     const response = await fetch(input, init);
-    
+
     if (!response.ok) {
       return {
         success: false,
         error: `HTTP ${response.status}: ${response.statusText}`,
-        duration: performance.now() - startTime
+        duration: performance.now() - startTime,
       };
     }
-    
+
     // Direct stream consumption
     const text = await response.body?.text();
     const duration = performance.now() - startTime;
-    
+
     return {
       success: true,
       data: text || '',
       duration,
-      size: text?.length
+      size: text?.length,
     };
   } catch (error: any) {
     return {
       success: false,
       error: error.message || 'Fetch operation failed',
-      duration: performance.now() - startTime
+      duration: performance.now() - startTime,
     };
   }
 }
@@ -204,10 +205,10 @@ export class StreamUtils {
       start(controller) {
         controller.enqueue(new TextEncoder().encode(text));
         controller.close();
-      }
+      },
     });
   }
-  
+
   /**
    * Convert JSON object to a ReadableStream
    */
@@ -215,7 +216,7 @@ export class StreamUtils {
     const json = JSON.stringify(obj);
     return StreamUtils.fromString(json);
   }
-  
+
   /**
    * Measure stream consumption performance
    */
@@ -226,9 +227,9 @@ export class StreamUtils {
     const start = performance.now();
     const result = await streamConsumer();
     const duration = performance.now() - start;
-    
+
     console.log(`[StreamUtils] ${label}: ${duration.toFixed(2)}ms`);
-    
+
     return { result, duration, label };
   }
 }
@@ -237,8 +238,9 @@ export class StreamUtils {
  * Performance comparison utilities
  */
 export class StreamBenchmark {
-  private results: Array<{ method: string; duration: number; size?: number }> = [];
-  
+  private results: Array<{ method: string; duration: number; size?: number }> =
+    [];
+
   /**
    * Compare old vs new stream consumption methods
    */
@@ -253,53 +255,55 @@ export class StreamBenchmark {
       const oldResponse = new Response(stream1);
       const oldData = await oldResponse.json();
       const oldDuration = performance.now() - oldStart;
-      
+
       this.results.push({
         method: 'Response wrapper',
         duration: oldDuration,
-        size: JSON.stringify(oldData).length
+        size: JSON.stringify(oldData).length,
       });
     } catch (error) {
       console.error('Old method failed:', error);
     }
-    
+
     // New method (direct consumption)
     const newStart = performance.now();
     try {
       const newData = await stream2.json();
       const newDuration = performance.now() - newStart;
-      
+
       this.results.push({
         method: 'Direct consumption',
         duration: newDuration,
-        size: JSON.stringify(newData).length
+        size: JSON.stringify(newData).length,
       });
     } catch (error) {
       console.error('New method failed:', error);
     }
-    
+
     return this.results;
   }
-  
+
   /**
    * Get performance summary
    */
   getSummary() {
     if (this.results.length < 2) return null;
-    
+
     const [old, current] = this.results;
-    const improvement = ((old.duration - current.duration) / old.duration) * 100;
-    
+    const improvement =
+      ((old.duration - current.duration) / old.duration) * 100;
+
     return {
       oldMethod: old,
       newMethod: current,
       improvementPercent: improvement.toFixed(2),
-      summary: improvement > 0 ? 
-        `New method is ${improvement.toFixed(2)}% faster` :
-        `Old method was ${Math.abs(improvement).toFixed(2)}% faster`
+      summary:
+        improvement > 0
+          ? `New method is ${improvement.toFixed(2)}% faster`
+          : `Old method was ${Math.abs(improvement).toFixed(2)}% faster`,
     };
   }
-  
+
   /**
    * Clear results
    */
@@ -315,5 +319,5 @@ export default {
   fetchJSON,
   fetchText,
   StreamUtils,
-  StreamBenchmark
+  StreamBenchmark,
 };

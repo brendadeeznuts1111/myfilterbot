@@ -5,7 +5,10 @@
 
 import { DatabaseOperations, spawnPythonJSON } from '../utils/spawn-utils';
 import { StreamUtils, fetchJSON } from '../utils/stream-helpers';
-import type { StreamNotification, NotificationPreferences } from './enhanced_notification_service';
+import type {
+  StreamNotification,
+  NotificationPreferences,
+} from './enhanced_notification_service';
 
 export interface NotificationHistoryEntry {
   id: string;
@@ -42,11 +45,14 @@ export interface NotificationAnalytics {
   readNotifications: number;
   averageReadTime: number;
   averageDeliveryLatency: number;
-  channelPerformance: Record<string, {
-    delivered: number;
-    failed: number;
-    averageLatency: number;
-  }>;
+  channelPerformance: Record<
+    string,
+    {
+      delivered: number;
+      failed: number;
+      averageLatency: number;
+    }
+  >;
   typeBreakdown: Record<string, number>;
   priorityBreakdown: Record<string, number>;
   streamOptimizedPercentage: number;
@@ -75,7 +81,10 @@ export interface HistoryQueryOptions {
 
 export class NotificationHistoryService {
   private cacheMap = new Map<string, NotificationHistoryEntry[]>();
-  private analyticsCache: { data: NotificationAnalytics; timestamp: number } | null = null;
+  private analyticsCache: {
+    data: NotificationAnalytics;
+    timestamp: number;
+  } | null = null;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private readonly MAX_CACHE_SIZE = 1000;
 
@@ -93,7 +102,10 @@ export class NotificationHistoryService {
       if (result.success) {
         console.log('✅ Notification history database initialized');
       } else {
-        console.error('❌ Failed to initialize notification history database:', result.error);
+        console.error(
+          '❌ Failed to initialize notification history database:',
+          result.error
+        );
       }
     } catch (error: any) {
       console.error('Database initialization error:', error);
@@ -120,12 +132,13 @@ export class NotificationHistoryService {
         deliveryStatus: 'pending',
         deliveryLatency: notification.deliveryLatency,
         streamOptimized: notification.streamOptimized || false,
-        deliveryResults: []
+        deliveryResults: [],
       };
 
       // Use stream-optimized database operation
-      const result = await DatabaseOperations.storeNotificationHistory(historyEntry);
-      
+      const result =
+        await DatabaseOperations.storeNotificationHistory(historyEntry);
+
       if (result.success) {
         // Update cache
         this.updateCache(historyEntry);
@@ -154,15 +167,18 @@ export class NotificationHistoryService {
         notificationId,
         deliveryStatus,
         deliveryResults,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
-      const result = await DatabaseOperations.updateNotificationDeliveryStatus(updateData);
-      
+      const result =
+        await DatabaseOperations.updateNotificationDeliveryStatus(updateData);
+
       if (result.success) {
         // Update cache
         this.invalidateCacheForNotification(notificationId);
-        console.log(`📊 Delivery status updated for ${notificationId}: ${deliveryStatus}`);
+        console.log(
+          `📊 Delivery status updated for ${notificationId}: ${deliveryStatus}`
+        );
         return true;
       } else {
         console.error('Failed to update delivery status:', result.error);
@@ -182,7 +198,7 @@ export class NotificationHistoryService {
       const result = await DatabaseOperations.markNotificationAsRead({
         notificationId,
         userId,
-        readAt: new Date().toISOString()
+        readAt: new Date().toISOString(),
       });
 
       if (result.success) {
@@ -211,18 +227,18 @@ export class NotificationHistoryService {
       // Check cache first
       const cacheKey = this.generateCacheKey(options);
       const cached = this.cacheMap.get(cacheKey);
-      
+
       if (cached && this.isCacheValid(cacheKey)) {
         return {
           notifications: cached,
           total: cached.length,
-          hasMore: false // Cache doesn't track this accurately
+          hasMore: false, // Cache doesn't track this accurately
         };
       }
 
       // Query database with stream optimization
       const result = await DatabaseOperations.getNotificationHistory(options);
-      
+
       if (result.success && result.data) {
         const notifications = result.data.notifications || [];
         const total = result.data.total || notifications.length;
@@ -233,8 +249,10 @@ export class NotificationHistoryService {
           this.cacheMap.set(cacheKey, notifications);
         }
 
-        console.log(`📖 Retrieved ${notifications.length}/${total} history entries (${result.duration?.toFixed(2)}ms)`);
-        
+        console.log(
+          `📖 Retrieved ${notifications.length}/${total} history entries (${result.duration?.toFixed(2)}ms)`
+        );
+
         return { notifications, total, hasMore };
       } else {
         console.error('Failed to get notification history:', result.error);
@@ -250,7 +268,7 @@ export class NotificationHistoryService {
    * Get notification analytics with stream optimization
    */
   async getAnalytics(
-    userId?: string, 
+    userId?: string,
     userType?: 'admin' | 'customer',
     dateFrom?: string,
     dateTo?: string
@@ -258,8 +276,11 @@ export class NotificationHistoryService {
     try {
       // Check cache
       const cacheKey = `analytics_${userId || 'all'}_${userType || 'all'}_${dateFrom || ''}_${dateTo || ''}`;
-      
-      if (this.analyticsCache && Date.now() - this.analyticsCache.timestamp < this.CACHE_TTL) {
+
+      if (
+        this.analyticsCache &&
+        Date.now() - this.analyticsCache.timestamp < this.CACHE_TTL
+      ) {
         return this.analyticsCache.data;
       }
 
@@ -268,24 +289,27 @@ export class NotificationHistoryService {
         userId,
         userType,
         dateFrom,
-        dateTo
+        dateTo,
       });
 
       if (result.success && result.data) {
         const analytics = result.data as NotificationAnalytics;
-        
+
         // Cache the result
         this.analyticsCache = {
           data: analytics,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
-        console.log(`📊 Analytics retrieved (${result.duration?.toFixed(2)}ms):`, {
-          total: analytics.totalNotifications,
-          delivered: analytics.deliveredNotifications,
-          readRate: `${((analytics.readNotifications / analytics.totalNotifications) * 100).toFixed(1)}%`,
-          streamOptimized: `${analytics.streamOptimizedPercentage.toFixed(1)}%`
-        });
+        console.log(
+          `📊 Analytics retrieved (${result.duration?.toFixed(2)}ms):`,
+          {
+            total: analytics.totalNotifications,
+            delivered: analytics.deliveredNotifications,
+            readRate: `${((analytics.readNotifications / analytics.totalNotifications) * 100).toFixed(1)}%`,
+            streamOptimized: `${analytics.streamOptimizedPercentage.toFixed(1)}%`,
+          }
+        );
 
         return analytics;
       } else {
@@ -303,17 +327,22 @@ export class NotificationHistoryService {
    */
   async exportHistory(
     options: HistoryQueryOptions & { format: 'json' | 'csv' | 'xlsx' }
-  ): Promise<{ success: boolean; data?: string | Buffer; filename?: string; error?: string }> {
+  ): Promise<{
+    success: boolean;
+    data?: string | Buffer;
+    filename?: string;
+    error?: string;
+  }> {
     try {
       const { format, ...queryOptions } = options;
-      
+
       // Get history data
       const historyResult = await this.getHistory(queryOptions);
-      
+
       if (historyResult.notifications.length === 0) {
         return {
           success: false,
-          error: 'No notifications found for the specified criteria'
+          error: 'No notifications found for the specified criteria',
         };
       }
 
@@ -322,18 +351,21 @@ export class NotificationHistoryService {
         notifications: historyResult.notifications,
         format,
         timestamp: new Date().toISOString(),
-        totalRecords: historyResult.total
+        totalRecords: historyResult.total,
       };
 
-      const result = await spawnPythonJSON('./src/services/notification_export.py', [
-        JSON.stringify(exportData)
-      ]);
+      const result = await spawnPythonJSON(
+        './src/services/notification_export.py',
+        [JSON.stringify(exportData)]
+      );
 
       if (result.success && result.data) {
         const filename = `notifications_export_${Date.now()}.${format}`;
-        
-        console.log(`📤 History exported: ${historyResult.notifications.length} records (${result.duration?.toFixed(2)}ms)`);
-        
+
+        console.log(
+          `📤 History exported: ${historyResult.notifications.length} records (${result.duration?.toFixed(2)}ms)`
+        );
+
         return {
           success: true,
           data: result.data.exportData,
@@ -342,14 +374,14 @@ export class NotificationHistoryService {
       } else {
         return {
           success: false,
-          error: result.error || 'Export failed'
+          error: result.error || 'Export failed',
         };
       }
     } catch (error: any) {
       console.error('Error exporting history:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -359,21 +391,25 @@ export class NotificationHistoryService {
    */
   async cleanupOldNotifications(retentionDays: number = 90): Promise<number> {
     try {
-      const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
-      
+      const cutoffDate = new Date(
+        Date.now() - retentionDays * 24 * 60 * 60 * 1000
+      ).toISOString();
+
       const result = await DatabaseOperations.cleanupOldNotifications({
         cutoffDate,
-        retentionDays
+        retentionDays,
       });
 
       if (result.success) {
         const cleaned = result.data?.cleaned || 0;
-        
+
         // Clear relevant caches
         this.clearCache();
         this.analyticsCache = null;
-        
-        console.log(`🧹 Cleaned up ${cleaned} old notifications (older than ${retentionDays} days)`);
+
+        console.log(
+          `🧹 Cleaned up ${cleaned} old notifications (older than ${retentionDays} days)`
+        );
         return cleaned;
       } else {
         console.error('Failed to cleanup old notifications:', result.error);
@@ -388,16 +424,22 @@ export class NotificationHistoryService {
   /**
    * Get notification delivery statistics
    */
-  async getDeliveryStatistics(dateFrom?: string, dateTo?: string): Promise<{
+  async getDeliveryStatistics(
+    dateFrom?: string,
+    dateTo?: string
+  ): Promise<{
     totalDeliveries: number;
     successfulDeliveries: number;
     failedDeliveries: number;
     averageLatency: number;
-    channelStats: Record<string, {
-      total: number;
-      successful: number;
-      averageLatency: number;
-    }>;
+    channelStats: Record<
+      string,
+      {
+        total: number;
+        successful: number;
+        averageLatency: number;
+      }
+    >;
     streamOptimizedStats: {
       total: number;
       percentage: number;
@@ -407,11 +449,13 @@ export class NotificationHistoryService {
     try {
       const result = await DatabaseOperations.getDeliveryStatistics({
         dateFrom,
-        dateTo
+        dateTo,
       });
 
       if (result.success && result.data) {
-        console.log(`📈 Delivery statistics retrieved (${result.duration?.toFixed(2)}ms)`);
+        console.log(
+          `📈 Delivery statistics retrieved (${result.duration?.toFixed(2)}ms)`
+        );
         return result.data;
       } else {
         console.error('Failed to get delivery statistics:', result.error);
@@ -434,13 +478,16 @@ export class NotificationHistoryService {
       const searchOptions = {
         ...options,
         query,
-        searchFields: ['title', 'message', 'metadata']
+        searchFields: ['title', 'message', 'metadata'],
       };
 
-      const result = await DatabaseOperations.searchNotifications(searchOptions);
+      const result =
+        await DatabaseOperations.searchNotifications(searchOptions);
 
       if (result.success && result.data) {
-        console.log(`🔍 Search completed: ${result.data.length} results for "${query}" (${result.duration?.toFixed(2)}ms)`);
+        console.log(
+          `🔍 Search completed: ${result.data.length} results for "${query}" (${result.duration?.toFixed(2)}ms)`
+        );
         return result.data;
       } else {
         console.error('Failed to search notifications:', result.error);
@@ -486,15 +533,20 @@ export class NotificationHistoryService {
   /**
    * Check if cache entry should be updated with new notification
    */
-  private shouldUpdateCacheEntry(cacheKey: string, entry: NotificationHistoryEntry): boolean {
+  private shouldUpdateCacheEntry(
+    cacheKey: string,
+    entry: NotificationHistoryEntry
+  ): boolean {
     try {
-      const options = JSON.parse(cacheKey.replace('history_', '')) as HistoryQueryOptions;
-      
+      const options = JSON.parse(
+        cacheKey.replace('history_', '')
+      ) as HistoryQueryOptions;
+
       if (options.userId && options.userId !== entry.userId) return false;
       if (options.userType && options.userType !== entry.userType) return false;
       if (options.type && options.type !== entry.type) return false;
       if (options.priority && options.priority !== entry.priority) return false;
-      
+
       return true;
     } catch {
       return false;
@@ -506,7 +558,9 @@ export class NotificationHistoryService {
    */
   private invalidateCacheForNotification(notificationId: string) {
     for (const [key, entries] of this.cacheMap.entries()) {
-      const index = entries.findIndex(entry => entry.notificationId === notificationId);
+      const index = entries.findIndex(
+        entry => entry.notificationId === notificationId
+      );
       if (index !== -1) {
         entries.splice(index, 1);
       }
@@ -525,15 +579,21 @@ export class NotificationHistoryService {
    */
   private startCleanupScheduler() {
     // Clean up old notifications every 6 hours
-    setInterval(async () => {
-      await this.cleanupOldNotifications();
-    }, 6 * 60 * 60 * 1000);
+    setInterval(
+      async () => {
+        await this.cleanupOldNotifications();
+      },
+      6 * 60 * 60 * 1000
+    );
 
     // Clear cache every hour to prevent memory buildup
-    setInterval(() => {
-      this.clearCache();
-      this.analyticsCache = null;
-    }, 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.clearCache();
+        this.analyticsCache = null;
+      },
+      60 * 60 * 1000
+    );
 
     console.log('🔄 Notification history cleanup scheduler started');
   }

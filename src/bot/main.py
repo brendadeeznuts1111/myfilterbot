@@ -21,17 +21,17 @@ from telegram.ext import (
     filters
 )
 
-from src.config import config
-from src.database import db
-from src.handlers import handlers
-from src.utils import rate_limiter
-from src.error_handler import error_handler, error_tracker
-from src.debug_handler import debug_handler
-from src.portal_integration import setup_portal_integration
-from src.chat_tracker import chat_tracker
-from src.enhanced_chat_handlers import enhanced_chat_handlers
-from src.authenticated_handlers import authenticated_handlers
-from src.timezone_handler import timezone_handler
+from config import config
+from database import db
+from handlers import handlers
+from utils.rate_limiter import rate_limiter
+from services.error_handler import error_handler, error_tracker
+from debug_handler import debug_handler
+from services.portal_integration import setup_portal_integration
+from services.chat_tracker import chat_tracker
+from enhanced_chat_handlers import enhanced_chat_handlers
+from authenticated_handlers import authenticated_handlers
+from timezone_handler import timezone_handler
 
 # Configure logging
 logging.basicConfig(

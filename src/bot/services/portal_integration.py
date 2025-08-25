@@ -12,8 +12,8 @@ import asyncio
 from threading import Thread
 import time
 
-from .config import config
-from .database import db
+from config import config
+from database import db
 
 logger = logging.getLogger(__name__)
 

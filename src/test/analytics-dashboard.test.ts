@@ -1,5 +1,5 @@
 /**
- * Enhanced Analytics Dashboard Test Suite  
+ * Enhanced Analytics Dashboard Test Suite
  * Tests all API endpoints and route functionality for the dashboard
  * Updated for Bun v1.2.21+ with improved error reporting
  */
@@ -21,24 +21,24 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       status: 'healthy',
       timestamp: Date.now(),
       routes: 25,
-      uptime: '00:05:23'
+      uptime: '00:05:23',
     }),
 
     '/api/docs': () => ({
       success: true,
       title: 'Fantdev Trading Bot API',
       version: '1.0.0',
-      endpoints: 25
+      endpoints: 25,
     }),
 
     '/api/customer/balance': () => ({
       success: true,
       balance: {
-        current: 1450.00,
-        weekly_pnl: 245.50,
+        current: 1450.0,
+        weekly_pnl: 245.5,
         currency: 'USD',
-        last_updated: new Date().toISOString()
-      }
+        last_updated: new Date().toISOString(),
+      },
     }),
 
     '/api/customer/analytics': () => ({
@@ -53,11 +53,11 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
         performance_metrics: {
           total_deposits: 2500,
           total_withdrawals: 1200,
-          net_pnl: 245.50,
-          roi_percentage: 12.5
+          net_pnl: 245.5,
+          roi_percentage: 12.5,
         },
-        activity_stats: { daily_avg: 5.2, weekly_total: 36 }
-      }
+        activity_stats: { daily_avg: 5.2, weekly_total: 36 },
+      },
     }),
 
     '/api/customer/transactions': () => ({
@@ -69,7 +69,7 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
           type: 'deposit',
           status: 'completed',
           timestamp: new Date().toISOString(),
-          description: 'Account deposit'
+          description: 'Account deposit',
         },
         {
           id: 'TX002',
@@ -77,7 +77,7 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
           type: 'trade',
           status: 'completed',
           timestamp: new Date(Date.now() - 3600000).toISOString(),
-          description: 'Trading position'
+          description: 'Trading position',
         },
         {
           id: 'TX003',
@@ -85,10 +85,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
           type: 'bonus',
           status: 'completed',
           timestamp: new Date(Date.now() - 7200000).toISOString(),
-          description: 'Welcome bonus'
-        }
+          description: 'Welcome bonus',
+        },
       ],
-      pagination: { page: 1, total: 3, hasMore: false }
+      pagination: { page: 1, total: 3, hasMore: false },
     }),
 
     '/api/customer/profile': () => ({
@@ -97,8 +97,8 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
         customer_id: 'BB1042',
         name: 'Test Customer',
         status: 'active',
-        created_at: '2024-01-01T00:00:00Z'
-      }
+        created_at: '2024-01-01T00:00:00Z',
+      },
     }),
 
     '/api/notifications': () => ({
@@ -110,7 +110,7 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
           message: 'Low balance warning',
           read: false,
           timestamp: new Date().toISOString(),
-          type: 'warning'
+          type: 'warning',
         },
         {
           id: 'N002',
@@ -118,9 +118,9 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
           message: 'Your trade has been completed successfully',
           read: true,
           timestamp: new Date(Date.now() - 1800000).toISOString(),
-          type: 'info'
-        }
-      ]
+          type: 'info',
+        },
+      ],
     }),
 
     '/api/notifications/preferences': () => ({
@@ -135,9 +135,9 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
           balance: true,
           trades: true,
           security: false,
-          marketing: false
-        }
-      }
+          marketing: false,
+        },
+      },
     }),
 
     '/api/security/status': () => ({
@@ -147,9 +147,9 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
         last_login: new Date().toISOString(),
         failed_attempts: 0,
         two_factor: true,
-        session_timeout: 3600
-      }
-    })
+        session_timeout: 3600,
+      },
+    }),
   };
 
   // Authentication check function
@@ -164,34 +164,40 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
     const userId = req.headers.get('X-User-ID');
 
     if (!customerId || !userId) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Authentication required',
-        message: 'Missing required headers: X-Customer-ID and X-User-ID'
-      }), {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Authentication required',
+          message: 'Missing required headers: X-Customer-ID and X-User-ID',
+        }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
         }
-      });
+      );
     }
 
     // Check admin permissions for security endpoints
     if (url.pathname.startsWith('/api/security/')) {
       const adminPerms = req.headers.get('X-Admin-Permissions');
       if (!adminPerms || adminPerms !== 'true') {
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Insufficient permissions',
-          message: 'Admin permissions required for security endpoints'
-        }), {
-          status: 403,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions',
+            message: 'Admin permissions required for security endpoints',
+          }),
+          {
+            status: 403,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
           }
-        });
+        );
       }
     }
 
@@ -200,7 +206,9 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
 
   // Start dedicated test server for this test suite
   beforeAll(async () => {
-    console.log(`🚀 [ANALYTICS-TEST] Starting dedicated test server on port ${TEST_PORT}...`);
+    console.log(
+      `🚀 [ANALYTICS-TEST] Starting dedicated test server on port ${TEST_PORT}...`
+    );
 
     testServer = serve({
       port: TEST_PORT,
@@ -212,14 +220,17 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
 
         // Handle CORS preflight
         if (req.method === 'OPTIONS') {
-          console.log(`✈️  [ANALYTICS-TEST] Handling CORS preflight for ${url.pathname}`);
+          console.log(
+            `✈️  [ANALYTICS-TEST] Handling CORS preflight for ${url.pathname}`
+          );
           return new Response(null, {
             status: 200,
             headers: {
               'Access-Control-Allow-Origin': '*',
               'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, X-Customer-ID, X-User-ID, X-Admin-Permissions',
-            }
+              'Access-Control-Allow-Headers':
+                'Content-Type, X-Customer-ID, X-User-ID, X-Admin-Permissions',
+            },
           });
         }
 
@@ -231,57 +242,73 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
         }
 
         // Route to mock responses
-        const mockHandler = mockResponses[url.pathname as keyof typeof mockResponses];
+        const mockHandler =
+          mockResponses[url.pathname as keyof typeof mockResponses];
         if (mockHandler) {
           try {
             const responseData = mockHandler();
             const jsonResponse = JSON.stringify(responseData);
-            console.log(`📤 [ANALYTICS-TEST] Returning JSON for ${url.pathname} (${jsonResponse.length} chars)`);
+            console.log(
+              `📤 [ANALYTICS-TEST] Returning JSON for ${url.pathname} (${jsonResponse.length} chars)`
+            );
 
             return new Response(jsonResponse, {
               status: 200,
               headers: {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*',
-                'ETag': `"${Bun.hash(url.pathname)}"`
-              }
+                ETag: `"${Bun.hash(url.pathname)}"`,
+              },
             });
           } catch (error) {
-            console.error(`💥 [ANALYTICS-TEST] Error in mock handler for ${url.pathname}:`, error);
-            return new Response(JSON.stringify({
-              success: false,
-              error: 'Internal server error',
-              message: 'Mock handler failed',
-              path: url.pathname
-            }), {
-              status: 500,
-              headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+            console.error(
+              `💥 [ANALYTICS-TEST] Error in mock handler for ${url.pathname}:`,
+              error
+            );
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Internal server error',
+                message: 'Mock handler failed',
+                path: url.pathname,
+              }),
+              {
+                status: 500,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*',
+                },
               }
-            });
+            );
           }
         }
 
         // Return 404 for unknown endpoints
-        console.log(`❓ [ANALYTICS-TEST] No mock handler found for ${url.pathname}, returning 404`);
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Endpoint not found',
-          message: `The requested endpoint ${url.pathname} does not exist`,
-          path: url.pathname,
-          timestamp: new Date().toISOString()
-        }), {
-          status: 404,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+        console.log(
+          `❓ [ANALYTICS-TEST] No mock handler found for ${url.pathname}, returning 404`
+        );
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Endpoint not found',
+            message: `The requested endpoint ${url.pathname} does not exist`,
+            path: url.pathname,
+            timestamp: new Date().toISOString(),
+          }),
+          {
+            status: 404,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
           }
-        });
-      }
+        );
+      },
     });
 
-    console.log(`✅ [ANALYTICS-TEST] Test server started successfully on port ${TEST_PORT}`);
+    console.log(
+      `✅ [ANALYTICS-TEST] Test server started successfully on port ${TEST_PORT}`
+    );
 
     // Wait for server to be ready
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -338,10 +365,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/customer/balance`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const data = await response.json();
 
       expect(response.ok).toBe(true);
@@ -356,10 +383,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/customer/analytics`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const data = await response.json();
 
       expect(response.ok).toBe(true);
@@ -372,13 +399,16 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
     });
 
     test('should get customer transactions with pagination', async () => {
-      const response = await fetch(`${baseURL}/api/customer/transactions?page=1&limit=10`, {
-        headers: {
-          'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
+      const response = await fetch(
+        `${baseURL}/api/customer/transactions?page=1&limit=10`,
+        {
+          headers: {
+            'X-Customer-ID': testCustomerId,
+            'X-User-ID': testCustomerId,
+          },
         }
-      });
-      
+      );
+
       const data = await response.json();
 
       expect(response.ok).toBe(true);
@@ -394,10 +424,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/customer/profile`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const data = await response.json();
 
       expect(response.ok).toBe(true);
@@ -408,7 +438,7 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
 
     test('should handle missing authentication headers', async () => {
       const response = await fetch(`${baseURL}/api/customer/balance`);
-      
+
       expect(response.status).toBe(401);
 
       const data = await response.json();
@@ -421,10 +451,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/notifications`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const data = await response.json();
 
       expect(response.ok).toBe(true);
@@ -440,10 +470,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/notifications/preferences`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const data = await response.json();
 
       expect(response.ok).toBe(true);
@@ -460,10 +490,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
         headers: {
           'X-Customer-ID': testCustomerId,
           'X-User-ID': testCustomerId,
-          'X-Admin-Permissions': 'true'
-        }
+          'X-Admin-Permissions': 'true',
+        },
       });
-      
+
       const data = await response.json();
 
       expect(response.ok).toBe(true);
@@ -479,9 +509,9 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/security/status`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
+          'X-User-ID': testCustomerId,
           // Missing X-Admin-Permissions header to trigger insufficient permissions
-        }
+        },
       });
 
       expect(response.status).toBe(403);
@@ -494,21 +524,25 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
   describe('CORS and Headers', () => {
     test('should handle CORS preflight requests', async () => {
       const response = await fetch(`${baseURL}/api/customer/balance`, {
-        method: 'OPTIONS'
+        method: 'OPTIONS',
       });
 
       expect(response.status).toBe(200);
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
-      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
-      expect(response.headers.get('Access-Control-Allow-Headers')).toContain('Content-Type');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain(
+        'GET'
+      );
+      expect(response.headers.get('Access-Control-Allow-Headers')).toContain(
+        'Content-Type'
+      );
     });
 
     test('should include CORS headers in API responses', async () => {
       const response = await fetch(`${baseURL}/api/customer/balance`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
 
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
@@ -517,23 +551,30 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
   });
 
   describe('Rate Limiting', () => {
-    test('should enforce rate limits after many requests', async () => {
-      const requests = [];
-      
-      // Send more than the rate limit (100 requests per minute)
-      for (let i = 0; i < 105; i++) {
-        requests.push(
-          fetch(`${baseURL}/health`).catch(() => ({ ok: false, status: 429 }))
-        );
-      }
+    test(
+      'should enforce rate limits after many requests',
+      async () => {
+        const requests = [];
 
-      const responses = await Promise.all(requests);
-      const rateLimited = responses.some(r => r.status === 429);
-      
-      // Rate limiting may not trigger in test environment
-      // This is expected behavior for a simple in-memory rate limiter
-      console.log('Rate limit test:', rateLimited ? 'triggered' : 'not triggered (expected)');
-    }, { timeout: 10000 });
+        // Send more than the rate limit (100 requests per minute)
+        for (let i = 0; i < 105; i++) {
+          requests.push(
+            fetch(`${baseURL}/health`).catch(() => ({ ok: false, status: 429 }))
+          );
+        }
+
+        const responses = await Promise.all(requests);
+        const rateLimited = responses.some(r => r.status === 429);
+
+        // Rate limiting may not trigger in test environment
+        // This is expected behavior for a simple in-memory rate limiter
+        console.log(
+          'Rate limit test:',
+          rateLimited ? 'triggered' : 'not triggered (expected)'
+        );
+      },
+      { timeout: 10000 }
+    );
   });
 
   describe('Error Handling', () => {
@@ -541,8 +582,8 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/nonexistent/endpoint`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
 
       expect(response.status).toBe(404);
@@ -550,9 +591,9 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
 
     test('should return structured error responses', async () => {
       const response = await fetch(`${baseURL}/api/customer/balance`);
-      
+
       expect(response.status).toBe(401);
-      
+
       const data = await response.json();
       expect(data.error).toBeDefined();
       expect(data.message).toBeDefined();
@@ -562,10 +603,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/customer/balance`, {
         headers: {
           'X-Customer-ID': 'INVALID_ID',
-          'X-User-ID': 'INVALID_ID'
-        }
+          'X-User-ID': 'INVALID_ID',
+        },
       });
-      
+
       // Unknown customers should return error or default data
       // The API should handle unknown customer IDs gracefully
       expect(response.status).toBeGreaterThanOrEqual(200);
@@ -575,14 +616,14 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
   describe('Performance Tests', () => {
     test('should respond quickly to balance requests', async () => {
       const startTime = performance.now();
-      
+
       const response = await fetch(`${baseURL}/api/customer/balance`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const endTime = performance.now();
       const responseTime = endTime - startTime;
 
@@ -592,15 +633,17 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
 
     test('should handle concurrent requests efficiently', async () => {
       const startTime = performance.now();
-      
-      const requests = Array(10).fill(0).map(() =>
-        fetch(`${baseURL}/api/customer/balance`, {
-          headers: {
-            'X-Customer-ID': testCustomerId,
-            'X-User-ID': testCustomerId
-          }
-        })
-      );
+
+      const requests = Array(10)
+        .fill(0)
+        .map(() =>
+          fetch(`${baseURL}/api/customer/balance`, {
+            headers: {
+              'X-Customer-ID': testCustomerId,
+              'X-User-ID': testCustomerId,
+            },
+          })
+        );
 
       const responses = await Promise.all(requests);
       const endTime = performance.now();
@@ -608,7 +651,7 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
 
       // All requests should succeed
       expect(responses.every(r => r.ok)).toBe(true);
-      
+
       // Should handle 10 concurrent requests quickly
       expect(totalTime).toBeLessThan(1000); // Less than 1 second
     });
@@ -619,10 +662,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/customer/balance`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const data = await response.json();
 
       expect(data.success).toBe(true);
@@ -637,10 +680,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/customer/analytics`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
-      
+
       const data = await response.json();
 
       expect(data.success).toBe(true);
@@ -648,7 +691,7 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       expect(typeof data.analytics.transaction_summary).toBe('object');
       expect(typeof data.analytics.performance_metrics).toBe('object');
       expect(typeof data.analytics.activity_stats).toBe('object');
-      
+
       // Check specific metrics
       const metrics = data.analytics.performance_metrics;
       expect(typeof metrics.total_deposits).toBe('number');
@@ -667,7 +710,10 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       try {
         const healthResponse = await fetch(`${baseURL}/health`);
         console.log('🏥 Health check status:', healthResponse.status);
-        console.log('🏥 Health check content-type:', healthResponse.headers.get('Content-Type'));
+        console.log(
+          '🏥 Health check content-type:',
+          healthResponse.headers.get('Content-Type')
+        );
 
         if (!healthResponse.ok) {
           const healthText = await healthResponse.text();
@@ -680,16 +726,23 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
       const response = await fetch(`${baseURL}/api/customer/transactions`, {
         headers: {
           'X-Customer-ID': testCustomerId,
-          'X-User-ID': testCustomerId
-        }
+          'X-User-ID': testCustomerId,
+        },
       });
 
       console.log('📊 Response Status (transactions):', response.status);
-      console.log('📊 Response Headers (transactions):', response.headers.get('Content-Type'));
+      console.log(
+        '📊 Response Headers (transactions):',
+        response.headers.get('Content-Type')
+      );
       console.log('📊 Response URL:', response.url);
 
       const responseText = await response.text(); // Get raw text BEFORE .json()
-      console.log('📊 Raw Response Body (transactions):', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''));
+      console.log(
+        '📊 Raw Response Body (transactions):',
+        responseText.substring(0, 200) +
+          (responseText.length > 200 ? '...' : '')
+      );
 
       let data;
       try {
@@ -703,7 +756,9 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
         // Check if it looks like HTML
         if (responseText.trim().startsWith('<')) {
           console.error('❌ Response appears to be HTML instead of JSON!');
-          console.error('❌ This suggests the request hit a web server instead of the API server');
+          console.error(
+            '❌ This suggests the request hit a web server instead of the API server'
+          );
         }
 
         throw e; // Re-throw to ensure test still fails
@@ -716,8 +771,12 @@ describe('Enhanced Analytics Dashboard API Tests', () => {
         const transaction = data.transactions[0];
         expect(typeof transaction.id).toBe('string');
         expect(typeof transaction.amount).toBe('number');
-        expect(['deposit', 'withdrawal', 'trade', 'bonus']).toContain(transaction.type);
-        expect(['pending', 'completed', 'failed']).toContain(transaction.status);
+        expect(['deposit', 'withdrawal', 'trade', 'bonus']).toContain(
+          transaction.type
+        );
+        expect(['pending', 'completed', 'failed']).toContain(
+          transaction.status
+        );
         expect(typeof transaction.timestamp).toBe('string');
         expect(typeof transaction.description).toBe('string');
       }

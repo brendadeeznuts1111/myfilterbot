@@ -1,0 +1,21 @@
+{
+  "customers": {},
+  "transactions": [],
+  "alerts": {
+    "large_win": 1000,
+    "large_loss": -500,
+    "low_balance": 100,
+    "inactive_days": 3
+  },
+  "groups": {},
+  "members": {},
+  "permissions": {
+    "pending": [],
+    "approved": [],
+    "denied": []
+  },
+  "settings": {
+    "last_backup": null,
+    "version": "2.0"
+  }
+}

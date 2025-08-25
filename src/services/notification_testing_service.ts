@@ -3,10 +3,19 @@
  * Comprehensive testing suite with stream optimization and delivery validation
  */
 
-import { enhancedNotificationService, StreamNotification, NotificationType, NotificationPriority } from './enhanced_notification_service';
+import {
+  enhancedNotificationService,
+  StreamNotification,
+  NotificationType,
+  NotificationPriority,
+} from './enhanced_notification_service';
 import { notificationTemplateService } from './notification_template_service';
 import { getEnhancedWebSocketService } from './enhanced_websocket_service';
-import { StreamUtils, fetchJSON, StreamBenchmark } from '../utils/stream-helpers';
+import {
+  StreamUtils,
+  fetchJSON,
+  StreamBenchmark,
+} from '../utils/stream-helpers';
 import { spawnPythonJSON, DatabaseOperations } from '../utils/spawn-utils';
 
 export interface TestNotificationOptions {
@@ -133,14 +142,14 @@ export class NotificationTestingService {
               type: NotificationType.SYSTEM_UPDATE,
               priority: NotificationPriority.MEDIUM,
               channels: ['web'],
-              streamOptimized: true
+              streamOptimized: true,
             },
             expectations: {
               shouldSucceed: true,
               maxDeliveryTime: 500,
-              minSuccessfulChannels: 1
+              minSuccessfulChannels: 1,
             },
-            enabled: true
+            enabled: true,
           },
           {
             id: 'multi_channel_delivery',
@@ -153,16 +162,16 @@ export class NotificationTestingService {
               type: NotificationType.SECURITY_ALERT,
               priority: NotificationPriority.HIGH,
               channels: ['web', 'websocket', 'telegram'],
-              streamOptimized: true
+              streamOptimized: true,
             },
             expectations: {
               shouldSucceed: true,
               maxDeliveryTime: 2000,
               minSuccessfulChannels: 2,
-              expectedStreamOptimizationRate: 80
+              expectedStreamOptimizationRate: 80,
             },
-            enabled: true
-          }
+            enabled: true,
+          },
         ],
         config: {
           timeout: 10000,
@@ -170,8 +179,8 @@ export class NotificationTestingService {
           concurrentTests: 5,
           streamOptimizationPreference: true,
           generateReports: true,
-          validateDeliveryConfirmation: true
-        }
+          validateDeliveryConfirmation: true,
+        },
       },
       {
         name: 'Performance Tests',
@@ -188,7 +197,7 @@ export class NotificationTestingService {
               type: NotificationType.TRANSACTION,
               priority: NotificationPriority.HIGH,
               channels: ['websocket', 'web'],
-              streamOptimized: true
+              streamOptimized: true,
             },
             expectations: {
               shouldSucceed: true,
@@ -197,11 +206,11 @@ export class NotificationTestingService {
                 maxCreationTime: 50,
                 maxRenderingTime: 100,
                 maxTotalLatency: 800,
-                minThroughput: 100
-              }
+                minThroughput: 100,
+              },
             },
-            enabled: true
-          }
+            enabled: true,
+          },
         ],
         config: {
           timeout: 30000,
@@ -209,9 +218,9 @@ export class NotificationTestingService {
           concurrentTests: 10,
           streamOptimizationPreference: true,
           generateReports: true,
-          validateDeliveryConfirmation: false
-        }
-      }
+          validateDeliveryConfirmation: false,
+        },
+      },
     ];
 
     for (const suiteData of defaultSuites) {
@@ -224,7 +233,9 @@ export class NotificationTestingService {
   /**
    * Create a single test notification
    */
-  async createTestNotification(options: TestNotificationOptions): Promise<TestResult> {
+  async createTestNotification(
+    options: TestNotificationOptions
+  ): Promise<TestResult> {
     const testId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
     const startTime = performance.now();
 
@@ -243,11 +254,11 @@ export class NotificationTestingService {
         streamOptimizedChannels: 0,
         averageChannelLatency: 0,
         memoryUsage: 0,
-        throughput: 0
+        throughput: 0,
       },
       errors: [],
       warnings: [],
-      recommendations: []
+      recommendations: [],
     };
 
     this.activeTests.set(testId, testResult);
@@ -257,12 +268,14 @@ export class NotificationTestingService {
 
       // Create test notification
       const createStart = performance.now();
-      
+
       let notification: StreamNotification | null = null;
-      
+
       if (options.templateId) {
         // Use template-based notification
-        const template = await notificationTemplateService.getTemplate(options.templateId);
+        const template = await notificationTemplateService.getTemplate(
+          options.templateId
+        );
         if (!template) {
           throw new Error(`Template not found: ${options.templateId}`);
         }
@@ -278,7 +291,8 @@ export class NotificationTestingService {
           throw new Error('Template rendering failed');
         }
 
-        testResult.performanceMetrics.templateRenderingTime = rendered.renderDuration;
+        testResult.performanceMetrics.templateRenderingTime =
+          rendered.renderDuration;
 
         notification = await enhancedNotificationService.createNotification(
           options.userId,
@@ -289,7 +303,7 @@ export class NotificationTestingService {
           {
             priority: options.priority,
             customChannels: options.channels as any,
-            forceStreamOptimization: options.streamOptimized
+            forceStreamOptimization: options.streamOptimized,
           }
         );
       } else {
@@ -303,13 +317,14 @@ export class NotificationTestingService {
           {
             priority: options.priority,
             customChannels: options.channels as any,
-            forceStreamOptimization: options.streamOptimized
+            forceStreamOptimization: options.streamOptimized,
           }
         );
       }
 
       const createEnd = performance.now();
-      testResult.performanceMetrics.notificationCreationTime = createEnd - createStart;
+      testResult.performanceMetrics.notificationCreationTime =
+        createEnd - createStart;
 
       if (!notification) {
         throw new Error('Failed to create notification');
@@ -328,21 +343,31 @@ export class NotificationTestingService {
 
       // Calculate performance metrics
       const totalLatency = Math.max(...deliveryResults.map(r => r.latency));
-      const averageLatency = deliveryResults.reduce((sum, r) => sum + r.latency, 0) / deliveryResults.length;
-      const streamOptimizedCount = deliveryResults.filter(r => r.streamOptimized).length;
-      const successfulDeliveries = deliveryResults.filter(r => r.status === 'delivered').length;
+      const averageLatency =
+        deliveryResults.reduce((sum, r) => sum + r.latency, 0) /
+        deliveryResults.length;
+      const streamOptimizedCount = deliveryResults.filter(
+        r => r.streamOptimized
+      ).length;
+      const successfulDeliveries = deliveryResults.filter(
+        r => r.status === 'delivered'
+      ).length;
 
       testResult.performanceMetrics.totalDeliveryTime = totalLatency;
       testResult.performanceMetrics.averageChannelLatency = averageLatency;
-      testResult.performanceMetrics.streamOptimizedChannels = streamOptimizedCount;
-      testResult.performanceMetrics.throughput = successfulDeliveries / (totalLatency / 1000);
+      testResult.performanceMetrics.streamOptimizedChannels =
+        streamOptimizedCount;
+      testResult.performanceMetrics.throughput =
+        successfulDeliveries / (totalLatency / 1000);
 
       // Determine test status
       if (successfulDeliveries === options.channels.length) {
         testResult.status = 'passed';
       } else if (successfulDeliveries > 0) {
         testResult.status = 'partial';
-        testResult.warnings.push(`Only ${successfulDeliveries}/${options.channels.length} channels delivered successfully`);
+        testResult.warnings.push(
+          `Only ${successfulDeliveries}/${options.channels.length} channels delivered successfully`
+        );
       } else {
         testResult.status = 'failed';
         testResult.errors.push('No channels delivered successfully');
@@ -350,13 +375,19 @@ export class NotificationTestingService {
 
       // Add performance recommendations
       if (averageLatency > 1000) {
-        testResult.recommendations.push('Consider optimizing delivery mechanisms for better performance');
+        testResult.recommendations.push(
+          'Consider optimizing delivery mechanisms for better performance'
+        );
       }
 
-      if (streamOptimizedCount < options.channels.length && options.streamOptimized) {
-        testResult.recommendations.push('Some channels did not use stream optimization');
+      if (
+        streamOptimizedCount < options.channels.length &&
+        options.streamOptimized
+      ) {
+        testResult.recommendations.push(
+          'Some channels did not use stream optimization'
+        );
       }
-
     } catch (error: any) {
       testResult.status = 'failed';
       testResult.errors.push(error.message);
@@ -375,7 +406,9 @@ export class NotificationTestingService {
       this.testHistory = this.testHistory.slice(-800);
     }
 
-    console.log(`🧪 Test ${testId} completed: ${testResult.status} (${testResult.duration.toFixed(2)}ms)`);
+    console.log(
+      `🧪 Test ${testId} completed: ${testResult.status} (${testResult.duration.toFixed(2)}ms)`
+    );
     return testResult;
   }
 
@@ -402,17 +435,19 @@ export class NotificationTestingService {
 
     const startTime = performance.now();
     const enabledTests = suite.tests.filter(test => test.enabled);
-    
-    console.log(`🧪 Running test suite: ${suite.name} (${enabledTests.length} tests)`);
+
+    console.log(
+      `🧪 Running test suite: ${suite.name} (${enabledTests.length} tests)`
+    );
 
     // Run tests with controlled concurrency
     const results: TestResult[] = [];
     const batchSize = suite.config.concurrentTests;
-    
+
     for (let i = 0; i < enabledTests.length; i += batchSize) {
       const batch = enabledTests.slice(i, i + batchSize);
-      
-      const batchPromises = batch.map(test => 
+
+      const batchPromises = batch.map(test =>
         this.createTestNotification(test.options).catch(error => ({
           id: `failed_${Date.now()}`,
           testName: test.name,
@@ -428,16 +463,16 @@ export class NotificationTestingService {
             streamOptimizedChannels: 0,
             averageChannelLatency: 0,
             memoryUsage: 0,
-            throughput: 0
+            throughput: 0,
           },
           errors: [error.message || 'Unknown error'],
           warnings: [],
-          recommendations: []
+          recommendations: [],
         }))
       );
 
       const batchResults = await Promise.allSettled(batchPromises);
-      
+
       batchResults.forEach(result => {
         if (result.status === 'fulfilled') {
           results.push(result.value);
@@ -452,15 +487,28 @@ export class NotificationTestingService {
     const passed = results.filter(r => r.status === 'passed').length;
     const failed = results.filter(r => r.status === 'failed').length;
     const partial = results.filter(r => r.status === 'partial').length;
-    
-    const totalLatency = results.reduce((sum, r) => sum + r.performanceMetrics.averageChannelLatency, 0);
-    const averageLatency = results.length > 0 ? totalLatency / results.length : 0;
-    
-    const totalStreamOptimized = results.reduce((sum, r) => sum + r.performanceMetrics.streamOptimizedChannels, 0);
-    const totalChannels = results.reduce((sum, r) => sum + r.deliveryResults.length, 0);
-    const streamOptimizationRate = totalChannels > 0 ? (totalStreamOptimized / totalChannels) * 100 : 0;
 
-    console.log(`📊 Test suite ${suite.name} completed: ${passed}/${results.length} passed (${totalDuration.toFixed(2)}ms)`);
+    const totalLatency = results.reduce(
+      (sum, r) => sum + r.performanceMetrics.averageChannelLatency,
+      0
+    );
+    const averageLatency =
+      results.length > 0 ? totalLatency / results.length : 0;
+
+    const totalStreamOptimized = results.reduce(
+      (sum, r) => sum + r.performanceMetrics.streamOptimizedChannels,
+      0
+    );
+    const totalChannels = results.reduce(
+      (sum, r) => sum + r.deliveryResults.length,
+      0
+    );
+    const streamOptimizationRate =
+      totalChannels > 0 ? (totalStreamOptimized / totalChannels) * 100 : 0;
+
+    console.log(
+      `📊 Test suite ${suite.name} completed: ${passed}/${results.length} passed (${totalDuration.toFixed(2)}ms)`
+    );
 
     return {
       suiteId,
@@ -472,8 +520,8 @@ export class NotificationTestingService {
         partial,
         duration: totalDuration,
         averageLatency,
-        streamOptimizationRate
-      }
+        streamOptimizationRate,
+      },
     };
   }
 
@@ -496,29 +544,31 @@ export class NotificationTestingService {
         latency: 0,
         streamOptimized: false,
         confirmationReceived: false,
-        deliveryMetadata: {}
+        deliveryMetadata: {},
       });
     }
 
     // Wait for delivery confirmations
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const checkInterval = setInterval(() => {
         const currentTime = performance.now();
         let allCompleted = true;
 
         for (let i = 0; i < results.length; i++) {
           const result = results[i];
-          
+
           if (result.status === 'not_attempted') {
-            const confirmation = this.deliveryConfirmations.get(`${notificationId}_${result.channel}`);
-            
+            const confirmation = this.deliveryConfirmations.get(
+              `${notificationId}_${result.channel}`
+            );
+
             if (confirmation) {
               result.status = confirmation.success ? 'delivered' : 'failed';
-              result.latency = confirmation.latency || (currentTime - startTime);
+              result.latency = confirmation.latency || currentTime - startTime;
               result.streamOptimized = confirmation.streamOptimized || false;
               result.confirmationReceived = true;
               result.deliveryMetadata = confirmation.metadata || {};
-              
+
               if (!confirmation.success) {
                 result.error = confirmation.error;
               }
@@ -542,9 +592,14 @@ export class NotificationTestingService {
   /**
    * Create test suite
    */
-  async createTestSuite(suiteData: Partial<TestSuite>, createdBy: string): Promise<TestSuite> {
+  async createTestSuite(
+    suiteData: Partial<TestSuite>,
+    createdBy: string
+  ): Promise<TestSuite> {
     const suite: TestSuite = {
-      id: suiteData.id || `suite_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      id:
+        suiteData.id ||
+        `suite_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       name: suiteData.name || 'Unnamed Test Suite',
       description: suiteData.description || '',
       tests: suiteData.tests || [],
@@ -555,32 +610,41 @@ export class NotificationTestingService {
         streamOptimizationPreference: true,
         generateReports: true,
         validateDeliveryConfirmation: true,
-        ...suiteData.config
+        ...suiteData.config,
       },
       createdAt: new Date().toISOString(),
-      updatedBy: createdBy
+      updatedBy: createdBy,
     };
 
     this.testSuites.set(suite.id, suite);
-    console.log(`📋 Test suite created: ${suite.name} (${suite.tests.length} tests)`);
-    
+    console.log(
+      `📋 Test suite created: ${suite.name} (${suite.tests.length} tests)`
+    );
+
     return suite;
   }
 
   /**
    * Register delivery confirmation
    */
-  registerDeliveryConfirmation(notificationId: string, channel: string, confirmation: any) {
+  registerDeliveryConfirmation(
+    notificationId: string,
+    channel: string,
+    confirmation: any
+  ) {
     const key = `${notificationId}_${channel}`;
     this.deliveryConfirmations.set(key, {
       ...confirmation,
-      receivedAt: new Date().toISOString()
+      receivedAt: new Date().toISOString(),
     });
 
     // Clean up old confirmations after 5 minutes
-    setTimeout(() => {
-      this.deliveryConfirmations.delete(key);
-    }, 5 * 60 * 1000);
+    setTimeout(
+      () => {
+        this.deliveryConfirmations.delete(key);
+      },
+      5 * 60 * 1000
+    );
   }
 
   /**
@@ -589,7 +653,7 @@ export class NotificationTestingService {
   private startDeliveryConfirmationMonitoring() {
     // This would integrate with your WebSocket service and other delivery channels
     // to receive delivery confirmations
-    
+
     const webSocketService = getEnhancedWebSocketService();
     if (webSocketService) {
       // Integration point for WebSocket delivery confirmations
@@ -597,26 +661,34 @@ export class NotificationTestingService {
     }
 
     // Clean up old confirmations every 5 minutes
-    setInterval(() => {
-      const now = Date.now();
-      for (const [key, confirmation] of this.deliveryConfirmations.entries()) {
-        const receivedAt = new Date(confirmation.receivedAt).getTime();
-        if (now - receivedAt > 5 * 60 * 1000) {
-          this.deliveryConfirmations.delete(key);
+    setInterval(
+      () => {
+        const now = Date.now();
+        for (const [
+          key,
+          confirmation,
+        ] of this.deliveryConfirmations.entries()) {
+          const receivedAt = new Date(confirmation.receivedAt).getTime();
+          if (now - receivedAt > 5 * 60 * 1000) {
+            this.deliveryConfirmations.delete(key);
+          }
         }
-      }
-    }, 5 * 60 * 1000);
+      },
+      5 * 60 * 1000
+    );
   }
 
   /**
    * Get test history with filtering
    */
-  getTestHistory(filters: {
-    status?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    limit?: number;
-  } = {}): TestResult[] {
+  getTestHistory(
+    filters: {
+      status?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      limit?: number;
+    } = {}
+  ): TestResult[] {
     let filtered = [...this.testHistory];
 
     if (filters.status) {
@@ -656,22 +728,30 @@ export class NotificationTestingService {
     }[];
   } {
     const recentTests = this.testHistory.slice(-100); // Last 100 tests
-    
+
     const totalTests = recentTests.length;
-    const passedTests = recentTests.filter(test => test.status === 'passed').length;
+    const passedTests = recentTests.filter(
+      test => test.status === 'passed'
+    ).length;
     const passRate = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
-    
-    const totalLatency = recentTests.reduce((sum, test) => 
-      sum + test.performanceMetrics.averageChannelLatency, 0);
+
+    const totalLatency = recentTests.reduce(
+      (sum, test) => sum + test.performanceMetrics.averageChannelLatency,
+      0
+    );
     const averageLatency = totalTests > 0 ? totalLatency / totalTests : 0;
-    
-    const totalStreamOptimized = recentTests.reduce((sum, test) => 
-      sum + test.performanceMetrics.streamOptimizedChannels, 0);
-    const totalChannels = recentTests.reduce((sum, test) => 
-      sum + test.deliveryResults.length, 0);
-    const streamOptimizationRate = totalChannels > 0 ? 
-      (totalStreamOptimized / totalChannels) * 100 : 0;
-    
+
+    const totalStreamOptimized = recentTests.reduce(
+      (sum, test) => sum + test.performanceMetrics.streamOptimizedChannels,
+      0
+    );
+    const totalChannels = recentTests.reduce(
+      (sum, test) => sum + test.deliveryResults.length,
+      0
+    );
+    const streamOptimizationRate =
+      totalChannels > 0 ? (totalStreamOptimized / totalChannels) * 100 : 0;
+
     // Count errors
     const errorCounts = new Map<string, number>();
     recentTests.forEach(test => {
@@ -679,7 +759,7 @@ export class NotificationTestingService {
         errorCounts.set(error, (errorCounts.get(error) || 0) + 1);
       });
     });
-    
+
     const mostCommonErrors = Array.from(errorCounts.entries())
       .map(([error, count]) => ({ error, count }))
       .sort((a, b) => b.count - a.count)
@@ -691,7 +771,7 @@ export class NotificationTestingService {
       averageLatency,
       streamOptimizationRate,
       mostCommonErrors,
-      performanceTrends: [] // Would implement trend analysis
+      performanceTrends: [], // Would implement trend analysis
     };
   }
 

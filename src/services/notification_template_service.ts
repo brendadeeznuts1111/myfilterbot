@@ -5,7 +5,10 @@
 
 import { StreamUtils, fetchJSON } from '../utils/stream-helpers';
 import { DatabaseOperations, spawnPythonJSON } from '../utils/spawn-utils';
-import type { NotificationType, NotificationPriority } from './enhanced_notification_service';
+import type {
+  NotificationType,
+  NotificationPriority,
+} from './enhanced_notification_service';
 
 export interface NotificationTemplate {
   id: string;
@@ -60,7 +63,13 @@ export interface TemplateFormatting {
 
 export interface TemplateCondition {
   field: string;
-  operator: 'equals' | 'contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
+  operator:
+    | 'equals'
+    | 'contains'
+    | 'greater_than'
+    | 'less_than'
+    | 'in'
+    | 'not_in';
   value: any;
   logicalOperator?: 'and' | 'or';
 }
@@ -116,12 +125,13 @@ export class NotificationTemplateService {
         type: 'transaction' as NotificationType,
         priority: 'high' as NotificationPriority,
         title: '💰 Transaction Alert: {{action}} of ${{amount}}',
-        message: 'Customer {{customer_id}} has {{action}} ${{amount}}. New balance: ${{new_balance}}. {{#if notes}}Note: {{notes}}{{/if}}',
+        message:
+          'Customer {{customer_id}} has {{action}} ${{amount}}. New balance: ${{new_balance}}. {{#if notes}}Note: {{notes}}{{/if}}',
         channels: ['websocket', 'telegram', 'web'],
         variables: ['action', 'amount', 'customer_id', 'new_balance', 'notes'],
         customizations: [],
         metadata: { category: 'financial', importance: 'high' },
-        active: true
+        active: true,
       },
       {
         id: 'balance_update',
@@ -129,12 +139,20 @@ export class NotificationTemplateService {
         type: 'balance_update' as NotificationType,
         priority: 'medium' as NotificationPriority,
         title: '📊 Balance Update for {{customer_id}}',
-        message: 'Your account balance has been updated from ${{old_balance}} to ${{new_balance}}. Change: {{#if positive}}+{{/if}}${{change}} ({{percentage}}%)',
+        message:
+          'Your account balance has been updated from ${{old_balance}} to ${{new_balance}}. Change: {{#if positive}}+{{/if}}${{change}} ({{percentage}}%)',
         channels: ['websocket', 'web', 'telegram'],
-        variables: ['customer_id', 'old_balance', 'new_balance', 'change', 'percentage', 'positive'],
+        variables: [
+          'customer_id',
+          'old_balance',
+          'new_balance',
+          'change',
+          'percentage',
+          'positive',
+        ],
         customizations: [],
         metadata: { category: 'account', importance: 'medium' },
-        active: true
+        active: true,
       },
       {
         id: 'security_alert',
@@ -142,12 +160,19 @@ export class NotificationTemplateService {
         type: 'security_alert' as NotificationType,
         priority: 'critical' as NotificationPriority,
         title: '🚨 SECURITY ALERT: {{alert_type}}',
-        message: 'Security event detected: {{description}}. Time: {{timestamp}}. Location: {{location}}. {{#if action_required}}IMMEDIATE ACTION REQUIRED: {{action_required}}{{/if}}',
+        message:
+          'Security event detected: {{description}}. Time: {{timestamp}}. Location: {{location}}. {{#if action_required}}IMMEDIATE ACTION REQUIRED: {{action_required}}{{/if}}',
         channels: ['websocket', 'telegram', 'email', 'push'],
-        variables: ['alert_type', 'description', 'timestamp', 'location', 'action_required'],
+        variables: [
+          'alert_type',
+          'description',
+          'timestamp',
+          'location',
+          'action_required',
+        ],
         customizations: [],
         metadata: { category: 'security', importance: 'critical' },
-        active: true
+        active: true,
       },
       {
         id: 'trade_signal',
@@ -155,12 +180,20 @@ export class NotificationTemplateService {
         type: 'trade_signal' as NotificationType,
         priority: 'high' as NotificationPriority,
         title: '📈 {{signal_type}} Signal: {{symbol}}',
-        message: '{{signal_description}} for {{symbol}} at ${{price}}. Confidence: {{confidence}}%. {{#if expiry}}Valid until: {{expiry}}{{/if}}',
+        message:
+          '{{signal_description}} for {{symbol}} at ${{price}}. Confidence: {{confidence}}%. {{#if expiry}}Valid until: {{expiry}}{{/if}}',
         channels: ['websocket', 'telegram', 'web'],
-        variables: ['signal_type', 'symbol', 'price', 'signal_description', 'confidence', 'expiry'],
+        variables: [
+          'signal_type',
+          'symbol',
+          'price',
+          'signal_description',
+          'confidence',
+          'expiry',
+        ],
         customizations: [],
         metadata: { category: 'trading', importance: 'high' },
-        active: true
+        active: true,
       },
       {
         id: 'web_analysis_alert',
@@ -168,12 +201,21 @@ export class NotificationTemplateService {
         type: 'web_analysis' as NotificationType,
         priority: 'medium' as NotificationPriority,
         title: '🌐 {{analysis_type}}: {{source}}',
-        message: 'Web analysis detected {{event_type}}: {{description}}. Source: {{source}}. Confidence: {{confidence}}%. {{#if actionable}}Suggested action: {{suggested_action}}{{/if}}',
+        message:
+          'Web analysis detected {{event_type}}: {{description}}. Source: {{source}}. Confidence: {{confidence}}%. {{#if actionable}}Suggested action: {{suggested_action}}{{/if}}',
         channels: ['websocket', 'web'],
-        variables: ['analysis_type', 'source', 'event_type', 'description', 'confidence', 'actionable', 'suggested_action'],
+        variables: [
+          'analysis_type',
+          'source',
+          'event_type',
+          'description',
+          'confidence',
+          'actionable',
+          'suggested_action',
+        ],
         customizations: [],
         metadata: { category: 'intelligence', importance: 'medium' },
-        active: true
+        active: true,
       },
       {
         id: 'market_alert',
@@ -181,13 +223,20 @@ export class NotificationTemplateService {
         type: 'market_alert' as NotificationType,
         priority: 'high' as NotificationPriority,
         title: '📊 Market Alert: {{market_event}}',
-        message: 'Market update: {{description}}. Impact: {{impact_level}}. Assets affected: {{affected_assets}}. {{#if recommendation}}Recommendation: {{recommendation}}{{/if}}',
+        message:
+          'Market update: {{description}}. Impact: {{impact_level}}. Assets affected: {{affected_assets}}. {{#if recommendation}}Recommendation: {{recommendation}}{{/if}}',
         channels: ['websocket', 'telegram', 'web'],
-        variables: ['market_event', 'description', 'impact_level', 'affected_assets', 'recommendation'],
+        variables: [
+          'market_event',
+          'description',
+          'impact_level',
+          'affected_assets',
+          'recommendation',
+        ],
         customizations: [],
         metadata: { category: 'market', importance: 'high' },
-        active: true
-      }
+        active: true,
+      },
     ];
 
     for (const template of defaultTemplates) {
@@ -200,29 +249,38 @@ export class NotificationTemplateService {
   /**
    * Create new notification template
    */
-  async createTemplate(templateData: Partial<NotificationTemplate>, createdBy: string): Promise<NotificationTemplate | null> {
+  async createTemplate(
+    templateData: Partial<NotificationTemplate>,
+    createdBy: string
+  ): Promise<NotificationTemplate | null> {
     try {
       const template: NotificationTemplate = {
-        id: templateData.id || `template_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+        id:
+          templateData.id ||
+          `template_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
         name: templateData.name || 'Untitled Template',
-        type: templateData.type || 'info' as NotificationType,
-        priority: templateData.priority || 'medium' as NotificationPriority,
+        type: templateData.type || ('info' as NotificationType),
+        priority: templateData.priority || ('medium' as NotificationPriority),
         title: templateData.title || 'Notification',
         message: templateData.message || '',
         channels: templateData.channels || ['web'],
-        variables: this.extractVariables(templateData.title || '', templateData.message || ''),
+        variables: this.extractVariables(
+          templateData.title || '',
+          templateData.message || ''
+        ),
         customizations: templateData.customizations || [],
         metadata: templateData.metadata || {},
         active: templateData.active !== false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy,
-        version: 1
+        version: 1,
       };
 
       // Store template with stream optimization
-      const result = await DatabaseOperations.storeNotificationTemplate(template);
-      
+      const result =
+        await DatabaseOperations.storeNotificationTemplate(template);
+
       if (result.success) {
         // Update cache
         this.templateCache.set(template.id, template);
@@ -241,7 +299,11 @@ export class NotificationTemplateService {
   /**
    * Update existing template
    */
-  async updateTemplate(templateId: string, updates: Partial<NotificationTemplate>, updatedBy: string): Promise<NotificationTemplate | null> {
+  async updateTemplate(
+    templateId: string,
+    updates: Partial<NotificationTemplate>,
+    updatedBy: string
+  ): Promise<NotificationTemplate | null> {
     try {
       const existingTemplate = await this.getTemplate(templateId);
       if (!existingTemplate) {
@@ -253,20 +315,27 @@ export class NotificationTemplateService {
         ...existingTemplate,
         ...updates,
         id: templateId, // Prevent ID changes
-        variables: updates.title || updates.message ? 
-          this.extractVariables(updates.title || existingTemplate.title, updates.message || existingTemplate.message) :
-          existingTemplate.variables,
+        variables:
+          updates.title || updates.message
+            ? this.extractVariables(
+                updates.title || existingTemplate.title,
+                updates.message || existingTemplate.message
+              )
+            : existingTemplate.variables,
         updatedAt: new Date().toISOString(),
-        version: existingTemplate.version + 1
+        version: existingTemplate.version + 1,
       };
 
-      const result = await DatabaseOperations.updateNotificationTemplate(updatedTemplate);
-      
+      const result =
+        await DatabaseOperations.updateNotificationTemplate(updatedTemplate);
+
       if (result.success) {
         // Update cache
         this.templateCache.set(templateId, updatedTemplate);
         this.clearRenderedCache(templateId);
-        console.log(`📝 Template updated: ${updatedTemplate.name} (v${updatedTemplate.version})`);
+        console.log(
+          `📝 Template updated: ${updatedTemplate.name} (v${updatedTemplate.version})`
+        );
         return updatedTemplate;
       } else {
         console.error('Failed to update template:', result.error);
@@ -290,8 +359,9 @@ export class NotificationTemplateService {
       }
 
       // Query database
-      const result = await DatabaseOperations.getNotificationTemplate(templateId);
-      
+      const result =
+        await DatabaseOperations.getNotificationTemplate(templateId);
+
       if (result.success && result.data) {
         const template = result.data as NotificationTemplate;
         this.templateCache.set(templateId, template);
@@ -308,24 +378,26 @@ export class NotificationTemplateService {
   /**
    * Get all templates with filtering
    */
-  async getTemplates(filters: {
-    type?: NotificationType;
-    priority?: NotificationPriority;
-    active?: boolean;
-    createdBy?: string;
-    search?: string;
-  } = {}): Promise<NotificationTemplate[]> {
+  async getTemplates(
+    filters: {
+      type?: NotificationType;
+      priority?: NotificationPriority;
+      active?: boolean;
+      createdBy?: string;
+      search?: string;
+    } = {}
+  ): Promise<NotificationTemplate[]> {
     try {
       const result = await DatabaseOperations.getNotificationTemplates(filters);
-      
+
       if (result.success && result.data) {
         const templates = result.data as NotificationTemplate[];
-        
+
         // Update cache
         templates.forEach(template => {
           this.templateCache.set(template.id, template);
         });
-        
+
         console.log(`📋 Retrieved ${templates.length} templates`);
         return templates;
       } else {
@@ -345,7 +417,10 @@ export class NotificationTemplateService {
     templateId: string,
     variables: Record<string, any> = {},
     channel: string = 'web',
-    userContext: { userId: string; userType: string } = { userId: '', userType: 'customer' }
+    userContext: { userId: string; userType: string } = {
+      userId: '',
+      userType: 'customer',
+    }
   ): Promise<RenderedTemplate | null> {
     const startTime = performance.now();
 
@@ -353,7 +428,10 @@ export class NotificationTemplateService {
       // Check rendered cache
       const cacheKey = `${templateId}_${channel}_${JSON.stringify(variables)}`;
       const cached = this.renderedCache.get(cacheKey);
-      if (cached && Date.now() - new Date(cached.renderedAt).getTime() < this.CACHE_TTL) {
+      if (
+        cached &&
+        Date.now() - new Date(cached.renderedAt).getTime() < this.CACHE_TTL
+      ) {
         return cached;
       }
 
@@ -365,10 +443,14 @@ export class NotificationTemplateService {
       }
 
       // Find applicable customization for channel
-      const customization = template.customizations.find(c => 
-        c.channel === channel && 
-        c.active && 
-        this.evaluateConditions(c.conditions, { ...variables, ...userContext })
+      const customization = template.customizations.find(
+        c =>
+          c.channel === channel &&
+          c.active &&
+          this.evaluateConditions(c.conditions, {
+            ...variables,
+            ...userContext,
+          })
       );
 
       // Use stream optimization for template rendering
@@ -377,28 +459,30 @@ export class NotificationTemplateService {
         variables,
         channel,
         customization,
-        userContext
+        userContext,
       };
 
-      const result = await spawnPythonJSON('./src/services/template_renderer.py', [
-        JSON.stringify(renderData)
-      ]);
+      const result = await spawnPythonJSON(
+        './src/services/template_renderer.py',
+        [JSON.stringify(renderData)]
+      );
 
       if (result.success && result.data) {
         const rendered: RenderedTemplate = {
           title: result.data.title,
           message: result.data.message,
-          formatting: customization?.formatting || this.getDefaultFormatting(channel),
+          formatting:
+            customization?.formatting || this.getDefaultFormatting(channel),
           metadata: {
             ...template.metadata,
             templateId,
             channel,
-            renderContext: userContext
+            renderContext: userContext,
           },
           variables,
           templateId,
           renderedAt: new Date().toISOString(),
-          renderDuration: performance.now() - startTime
+          renderDuration: performance.now() - startTime,
         };
 
         // Cache rendered result
@@ -406,7 +490,9 @@ export class NotificationTemplateService {
           this.renderedCache.set(cacheKey, rendered);
         }
 
-        console.log(`🎨 Template rendered: ${template.name} for ${channel} (${rendered.renderDuration.toFixed(2)}ms)`);
+        console.log(
+          `🎨 Template rendered: ${template.name} for ${channel} (${rendered.renderDuration.toFixed(2)}ms)`
+        );
         return rendered;
       } else {
         console.error('Template rendering failed:', result.error);
@@ -434,19 +520,22 @@ export class NotificationTemplateService {
 
       const newCustomization: TemplateCustomization = {
         id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-        ...customization
+        ...customization,
       };
 
       template.customizations.push(newCustomization);
       template.updatedAt = new Date().toISOString();
       template.version++;
 
-      const result = await DatabaseOperations.updateNotificationTemplate(template);
-      
+      const result =
+        await DatabaseOperations.updateNotificationTemplate(template);
+
       if (result.success) {
         this.templateCache.set(templateId, template);
         this.clearRenderedCache(templateId);
-        console.log(`🎨 Customization created for template ${templateId}: ${newCustomization.channel}`);
+        console.log(
+          `🎨 Customization created for template ${templateId}: ${newCustomization.channel}`
+        );
         return newCustomization;
       } else {
         console.error('Failed to create customization:', result.error);
@@ -483,11 +572,14 @@ export class NotificationTemplateService {
         updatedAt: new Date().toISOString(),
         createdBy: 'preview',
         version: 1,
-        ...templateData
+        ...templateData,
       };
 
       // Extract variables from title and message
-      previewTemplate.variables = this.extractVariables(previewTemplate.title, previewTemplate.message);
+      previewTemplate.variables = this.extractVariables(
+        previewTemplate.title,
+        previewTemplate.message
+      );
 
       // Render using stream optimization
       const renderData = {
@@ -495,12 +587,13 @@ export class NotificationTemplateService {
         variables,
         channel,
         customization: null,
-        userContext: { userId: 'preview', userType: 'customer' }
+        userContext: { userId: 'preview', userType: 'customer' },
       };
 
-      const result = await spawnPythonJSON('./src/services/template_renderer.py', [
-        JSON.stringify(renderData)
-      ]);
+      const result = await spawnPythonJSON(
+        './src/services/template_renderer.py',
+        [JSON.stringify(renderData)]
+      );
 
       if (result.success && result.data) {
         return {
@@ -511,7 +604,7 @@ export class NotificationTemplateService {
           variables,
           templateId: 'preview',
           renderedAt: new Date().toISOString(),
-          renderDuration: result.duration || 0
+          renderDuration: result.duration || 0,
         };
       } else {
         console.error('Preview rendering failed:', result.error);
@@ -528,8 +621,9 @@ export class NotificationTemplateService {
    */
   async deleteTemplate(templateId: string): Promise<boolean> {
     try {
-      const result = await DatabaseOperations.deleteNotificationTemplate(templateId);
-      
+      const result =
+        await DatabaseOperations.deleteNotificationTemplate(templateId);
+
       if (result.success) {
         this.templateCache.delete(templateId);
         this.clearRenderedCache(templateId);
@@ -551,9 +645,9 @@ export class NotificationTemplateService {
   private extractVariables(title: string, message: string): string[] {
     const variables = new Set<string>();
     const regex = /\{\{([^}]+)\}\}/g;
-    
+
     let match;
-    
+
     // Extract from title
     while ((match = regex.exec(title)) !== null) {
       const variable = match[1].trim().split(' ')[0]; // Handle helpers like {{#if condition}}
@@ -561,10 +655,10 @@ export class NotificationTemplateService {
         variables.add(variable);
       }
     }
-    
+
     // Reset regex for message
     regex.lastIndex = 0;
-    
+
     // Extract from message
     while ((match = regex.exec(message)) !== null) {
       const variable = match[1].trim().split(' ')[0];
@@ -572,46 +666,54 @@ export class NotificationTemplateService {
         variables.add(variable);
       }
     }
-    
+
     return Array.from(variables);
   }
 
   /**
    * Evaluate template conditions
    */
-  private evaluateConditions(conditions: TemplateCondition[], context: Record<string, any>): boolean {
+  private evaluateConditions(
+    conditions: TemplateCondition[],
+    context: Record<string, any>
+  ): boolean {
     if (conditions.length === 0) return true;
-    
+
     let result = true;
     let currentLogicalOperator = 'and';
-    
+
     for (const condition of conditions) {
       const conditionResult = this.evaluateSingleCondition(condition, context);
-      
+
       if (currentLogicalOperator === 'and') {
         result = result && conditionResult;
       } else {
         result = result || conditionResult;
       }
-      
+
       currentLogicalOperator = condition.logicalOperator || 'and';
     }
-    
+
     return result;
   }
 
   /**
    * Evaluate single condition
    */
-  private evaluateSingleCondition(condition: TemplateCondition, context: Record<string, any>): boolean {
+  private evaluateSingleCondition(
+    condition: TemplateCondition,
+    context: Record<string, any>
+  ): boolean {
     const fieldValue = context[condition.field];
     const { operator, value } = condition;
-    
+
     switch (operator) {
       case 'equals':
         return fieldValue === value;
       case 'contains':
-        return String(fieldValue).toLowerCase().includes(String(value).toLowerCase());
+        return String(fieldValue)
+          .toLowerCase()
+          .includes(String(value).toLowerCase());
       case 'greater_than':
         return Number(fieldValue) > Number(value);
       case 'less_than':
@@ -636,26 +738,26 @@ export class NotificationTemplateService {
           primary: '#3b82f6',
           secondary: '#64748b',
           background: '#f8fafc',
-          text: '#1e293b'
+          text: '#1e293b',
         },
         typography: {
           titleSize: '16px',
           messageSize: '14px',
-          fontWeight: 'normal'
+          fontWeight: 'normal',
         },
         layout: {
           alignment: 'left',
-          spacing: 'normal'
+          spacing: 'normal',
         },
-        icons: { enabled: true }
+        icons: { enabled: true },
       },
       websocket: {
         style: 'plain',
-        icons: { enabled: true }
+        icons: { enabled: true },
       },
       telegram: {
         style: 'markdown',
-        icons: { enabled: true }
+        icons: { enabled: true },
       },
       email: {
         style: 'html',
@@ -663,19 +765,19 @@ export class NotificationTemplateService {
           primary: '#3b82f6',
           secondary: '#64748b',
           background: '#ffffff',
-          text: '#1e293b'
+          text: '#1e293b',
         },
         typography: {
           titleSize: '18px',
           messageSize: '14px',
-          fontWeight: 'normal'
+          fontWeight: 'normal',
         },
         layout: {
           alignment: 'left',
-          spacing: 'spacious'
+          spacing: 'spacious',
         },
-        icons: { enabled: true }
-      }
+        icons: { enabled: true },
+      },
     };
 
     return defaults[channel] || defaults.web;
@@ -696,29 +798,38 @@ export class NotificationTemplateService {
    * Start cache cleanup process
    */
   private startCacheCleanup() {
-    setInterval(() => {
-      // Clean up expired rendered cache entries
-      const now = Date.now();
-      for (const [key, rendered] of this.renderedCache.entries()) {
-        if (now - new Date(rendered.renderedAt).getTime() > this.CACHE_TTL) {
-          this.renderedCache.delete(key);
+    setInterval(
+      () => {
+        // Clean up expired rendered cache entries
+        const now = Date.now();
+        for (const [key, rendered] of this.renderedCache.entries()) {
+          if (now - new Date(rendered.renderedAt).getTime() > this.CACHE_TTL) {
+            this.renderedCache.delete(key);
+          }
         }
-      }
-      
-      // Limit cache sizes
-      if (this.templateCache.size > this.MAX_CACHE_SIZE) {
-        const entries = Array.from(this.templateCache.entries());
-        const toDelete = entries.slice(0, Math.floor(this.MAX_CACHE_SIZE / 10));
-        toDelete.forEach(([key]) => this.templateCache.delete(key));
-      }
-      
-      if (this.renderedCache.size > this.MAX_CACHE_SIZE) {
-        const entries = Array.from(this.renderedCache.entries());
-        const toDelete = entries.slice(0, Math.floor(this.MAX_CACHE_SIZE / 10));
-        toDelete.forEach(([key]) => this.renderedCache.delete(key));
-      }
-    }, 5 * 60 * 1000); // Every 5 minutes
-    
+
+        // Limit cache sizes
+        if (this.templateCache.size > this.MAX_CACHE_SIZE) {
+          const entries = Array.from(this.templateCache.entries());
+          const toDelete = entries.slice(
+            0,
+            Math.floor(this.MAX_CACHE_SIZE / 10)
+          );
+          toDelete.forEach(([key]) => this.templateCache.delete(key));
+        }
+
+        if (this.renderedCache.size > this.MAX_CACHE_SIZE) {
+          const entries = Array.from(this.renderedCache.entries());
+          const toDelete = entries.slice(
+            0,
+            Math.floor(this.MAX_CACHE_SIZE / 10)
+          );
+          toDelete.forEach(([key]) => this.renderedCache.delete(key));
+        }
+      },
+      5 * 60 * 1000
+    ); // Every 5 minutes
+
     console.log('🧹 Template cache cleanup scheduler started');
   }
 
@@ -736,27 +847,37 @@ export class NotificationTemplateService {
     const templates = Array.from(this.templateCache.values());
     const totalTemplates = templates.length;
     const activeTemplates = templates.filter(t => t.active).length;
-    
-    const templatesByType = templates.reduce((acc, t) => {
-      acc[t.type] = (acc[t.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const templatesByPriority = templates.reduce((acc, t) => {
-      acc[t.priority] = (acc[t.priority] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const totalCustomizations = templates.reduce((sum, t) => sum + t.customizations.length, 0);
-    const averageCustomizations = totalTemplates > 0 ? totalCustomizations / totalTemplates : 0;
-    
+
+    const templatesByType = templates.reduce(
+      (acc, t) => {
+        acc[t.type] = (acc[t.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    const templatesByPriority = templates.reduce(
+      (acc, t) => {
+        acc[t.priority] = (acc[t.priority] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    const totalCustomizations = templates.reduce(
+      (sum, t) => sum + t.customizations.length,
+      0
+    );
+    const averageCustomizations =
+      totalTemplates > 0 ? totalCustomizations / totalTemplates : 0;
+
     return {
       totalTemplates,
       activeTemplates,
       templatesByType,
       templatesByPriority,
       averageCustomizations,
-      cacheHitRate: 0 // Would need to track hits vs misses for accurate calculation
+      cacheHitRate: 0, // Would need to track hits vs misses for accurate calculation
     };
   }
 }

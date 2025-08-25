@@ -5,7 +5,10 @@
 
 import { Server as SocketIOServer } from 'socket.io';
 import { StreamUtils, fetchJSON } from '../utils/stream-helpers';
-import { enhancedNotificationService, StreamNotification } from './enhanced_notification_service';
+import {
+  enhancedNotificationService,
+  StreamNotification,
+} from './enhanced_notification_service';
 import type { Server as HTTPServer } from 'http';
 
 export interface WebSocketClient {
@@ -38,7 +41,7 @@ export class EnhancedWebSocketService {
     averageLatency: 0,
     compressionSavings: 0,
     connectionCount: 0,
-    peakConnections: 0
+    peakConnections: 0,
   };
 
   constructor(private httpServer: HTTPServer) {
@@ -52,18 +55,20 @@ export class EnhancedWebSocketService {
   private initializeWebSocket() {
     this.io = new SocketIOServer(this.httpServer, {
       cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: '*',
+        methods: ['GET', 'POST'],
       },
       compression: true,
       pingTimeout: 60000,
       pingInterval: 25000,
       maxHttpBufferSize: 1e6, // 1MB
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
     });
 
     this.setupEventHandlers();
-    console.log('🚀 Enhanced WebSocket service initialized with stream optimization');
+    console.log(
+      '🚀 Enhanced WebSocket service initialized with stream optimization'
+    );
   }
 
   /**
@@ -72,36 +77,40 @@ export class EnhancedWebSocketService {
   private setupEventHandlers() {
     if (!this.io) return;
 
-    this.io.on('connection', (socket) => {
+    this.io.on('connection', socket => {
       console.log(`📡 WebSocket client connected: ${socket.id}`);
       this.performanceMetrics.connectionCount++;
-      
-      if (this.performanceMetrics.connectionCount > this.performanceMetrics.peakConnections) {
-        this.performanceMetrics.peakConnections = this.performanceMetrics.connectionCount;
+
+      if (
+        this.performanceMetrics.connectionCount >
+        this.performanceMetrics.peakConnections
+      ) {
+        this.performanceMetrics.peakConnections =
+          this.performanceMetrics.connectionCount;
       }
 
       // Authentication handler
-      socket.on('authenticate', async (data) => {
+      socket.on('authenticate', async data => {
         await this.handleAuthentication(socket, data);
       });
 
       // Notification subscription
-      socket.on('subscribe_notifications', (data) => {
+      socket.on('subscribe_notifications', data => {
         this.handleNotificationSubscription(socket, data);
       });
 
       // Stream optimization request
-      socket.on('enable_stream_optimization', (data) => {
+      socket.on('enable_stream_optimization', data => {
         this.handleStreamOptimization(socket, data);
       });
 
       // Real-time data subscription
-      socket.on('subscribe_realtime', (data) => {
+      socket.on('subscribe_realtime', data => {
         this.handleRealtimeSubscription(socket, data);
       });
 
       // Batch message acknowledgment
-      socket.on('message_batch_ack', (data) => {
+      socket.on('message_batch_ack', data => {
         this.handleBatchAcknowledgment(socket, data);
       });
 
@@ -111,7 +120,7 @@ export class EnhancedWebSocketService {
       });
 
       // Disconnect handler
-      socket.on('disconnect', (reason) => {
+      socket.on('disconnect', reason => {
         this.handleDisconnect(socket, reason);
       });
 
@@ -135,11 +144,11 @@ export class EnhancedWebSocketService {
 
       // Validate authentication token (integrate with your auth system)
       const isValid = await this.validateAuthToken(token, userId, userType);
-      
+
       if (!isValid) {
-        socket.emit('auth_error', { 
+        socket.emit('auth_error', {
           error: 'Invalid authentication token',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
         return;
       }
@@ -152,7 +161,7 @@ export class EnhancedWebSocketService {
         connectionTime: new Date().toISOString(),
         lastActivity: new Date().toISOString(),
         subscriptions: new Set(),
-        streamOptimized
+        streamOptimized,
       };
 
       this.clients.set(socket.id, client);
@@ -174,21 +183,22 @@ export class EnhancedWebSocketService {
           streamOptimization: true,
           compression: true,
           batchDelivery: true,
-          realtimeUpdates: true
+          realtimeUpdates: true,
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Send queued messages if any
       await this.deliverQueuedMessages(socket, client);
 
-      console.log(`✅ Client authenticated: ${userType}:${userId} (stream: ${streamOptimized})`);
-
+      console.log(
+        `✅ Client authenticated: ${userType}:${userId} (stream: ${streamOptimized})`
+      );
     } catch (error: any) {
       console.error('Authentication error:', error);
-      socket.emit('auth_error', { 
+      socket.emit('auth_error', {
         error: 'Authentication failed',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -218,10 +228,12 @@ export class EnhancedWebSocketService {
       types,
       priority,
       streamOptimized,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    console.log(`📬 Notification subscription updated for ${client.userId}: ${types.join(', ')}`);
+    console.log(
+      `📬 Notification subscription updated for ${client.userId}: ${types.join(', ')}`
+    );
   }
 
   /**
@@ -238,12 +250,14 @@ export class EnhancedWebSocketService {
       features: {
         fastJSON: true,
         compression: true,
-        batchDelivery: true
+        batchDelivery: true,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    console.log(`⚡ Stream optimization ${client.streamOptimized ? 'enabled' : 'disabled'} for ${client.userId}`);
+    console.log(
+      `⚡ Stream optimization ${client.streamOptimized ? 'enabled' : 'disabled'} for ${client.userId}`
+    );
   }
 
   /**
@@ -262,7 +276,7 @@ export class EnhancedWebSocketService {
 
     socket.emit('realtime_subscription_success', {
       channels,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -270,10 +284,10 @@ export class EnhancedWebSocketService {
    * Send notification to specific user with stream optimization
    */
   async sendNotificationToUser(
-    userId: string, 
-    userType: string, 
+    userId: string,
+    userType: string,
     notification: StreamNotification,
-    options: { 
+    options: {
       streamOptimized?: boolean;
       priority?: 'low' | 'medium' | 'high' | 'critical';
       compression?: boolean;
@@ -282,7 +296,7 @@ export class EnhancedWebSocketService {
     try {
       const userRoom = `user_${userType}_${userId}`;
       const clients = await this.getClientsInRoom(userRoom);
-      
+
       if (clients.length === 0) {
         // Queue message for later delivery
         await this.queueMessage(userId, userType, {
@@ -291,7 +305,7 @@ export class EnhancedWebSocketService {
           data: notification,
           timestamp: new Date().toISOString(),
           streamOptimized: options.streamOptimized,
-          priority: options.priority
+          priority: options.priority,
         });
         return false;
       }
@@ -303,7 +317,7 @@ export class EnhancedWebSocketService {
         timestamp: new Date().toISOString(),
         streamOptimized: options.streamOptimized ?? true,
         compression: options.compression ?? true,
-        priority: options.priority ?? notification.priority
+        priority: options.priority ?? notification.priority,
       };
 
       // Send with stream optimization if supported
@@ -339,14 +353,14 @@ export class EnhancedWebSocketService {
     try {
       const typeRoom = `type_${userType}`;
       const clients = await this.getClientsInRoom(typeRoom);
-      
+
       const message: StreamMessage = {
         type: 'notification',
         event: 'broadcast_notification',
         data: notification,
         timestamp: new Date().toISOString(),
         streamOptimized: options.streamOptimized ?? true,
-        priority: options.priority as any
+        priority: options.priority as any,
       };
 
       let deliveredCount = 0;
@@ -355,8 +369,8 @@ export class EnhancedWebSocketService {
       const batchSize = 50;
       for (let i = 0; i < clients.length; i += batchSize) {
         const batch = clients.slice(i, i + batchSize);
-        
-        const batchPromises = batch.map(async (clientId) => {
+
+        const batchPromises = batch.map(async clientId => {
           const client = this.clients.get(clientId);
           if (client?.streamOptimized && options.streamOptimized !== false) {
             return this.sendStreamOptimizedMessage(clientId, message);
@@ -370,7 +384,9 @@ export class EnhancedWebSocketService {
       }
 
       this.performanceMetrics.messagesDelivered += deliveredCount;
-      console.log(`📢 Broadcast delivered to ${deliveredCount}/${clients.length} ${userType} clients`);
+      console.log(
+        `📢 Broadcast delivered to ${deliveredCount}/${clients.length} ${userType} clients`
+      );
 
       return deliveredCount;
     } catch (error: any) {
@@ -382,7 +398,10 @@ export class EnhancedWebSocketService {
   /**
    * Send message with stream optimization
    */
-  private async sendStreamOptimizedMessage(clientId: string, message: StreamMessage): Promise<void> {
+  private async sendStreamOptimizedMessage(
+    clientId: string,
+    message: StreamMessage
+  ): Promise<void> {
     if (!this.io) return;
 
     const startTime = performance.now();
@@ -391,17 +410,16 @@ export class EnhancedWebSocketService {
       // Use stream utilities for optimized JSON serialization
       const jsonStream = StreamUtils.fromJSON(message);
       const optimizedPayload = await jsonStream.text();
-      
+
       // Send optimized payload
       this.io.to(clientId).emit('stream_message', {
         ...message,
         _streamOptimized: true,
-        _payloadSize: optimizedPayload.length
+        _payloadSize: optimizedPayload.length,
       });
 
       const latency = performance.now() - startTime;
       this.updateLatencyMetrics(latency);
-
     } catch (error: any) {
       console.error('Stream optimized message send failed:', error);
       // Fallback to traditional message
@@ -412,7 +430,10 @@ export class EnhancedWebSocketService {
   /**
    * Send message using traditional method
    */
-  private async sendTraditionalMessage(clientId: string, message: StreamMessage): Promise<void> {
+  private async sendTraditionalMessage(
+    clientId: string,
+    message: StreamMessage
+  ): Promise<void> {
     if (!this.io) return;
 
     const startTime = performance.now();
@@ -420,12 +441,11 @@ export class EnhancedWebSocketService {
     try {
       this.io.to(clientId).emit('message', {
         ...message,
-        _streamOptimized: false
+        _streamOptimized: false,
       });
 
       const latency = performance.now() - startTime;
       this.updateLatencyMetrics(latency);
-
     } catch (error: any) {
       console.error('Traditional message send failed:', error);
     }
@@ -434,9 +454,13 @@ export class EnhancedWebSocketService {
   /**
    * Queue message for later delivery
    */
-  private async queueMessage(userId: string, userType: string, message: StreamMessage): Promise<void> {
+  private async queueMessage(
+    userId: string,
+    userType: string,
+    message: StreamMessage
+  ): Promise<void> {
     const queueKey = `${userType}_${userId}`;
-    
+
     if (!this.messageQueue.has(queueKey)) {
       this.messageQueue.set(queueKey, []);
     }
@@ -449,19 +473,26 @@ export class EnhancedWebSocketService {
       queue.shift(); // Remove oldest message
     }
 
-    console.log(`📮 Message queued for ${userType}:${userId} (queue: ${queue.length})`);
+    console.log(
+      `📮 Message queued for ${userType}:${userId} (queue: ${queue.length})`
+    );
   }
 
   /**
    * Deliver queued messages to authenticated client
    */
-  private async deliverQueuedMessages(socket: any, client: WebSocketClient): Promise<void> {
+  private async deliverQueuedMessages(
+    socket: any,
+    client: WebSocketClient
+  ): Promise<void> {
     const queueKey = `${client.userType}_${client.userId}`;
     const queue = this.messageQueue.get(queueKey);
 
     if (!queue || queue.length === 0) return;
 
-    console.log(`📬 Delivering ${queue.length} queued messages to ${client.userId}`);
+    console.log(
+      `📬 Delivering ${queue.length} queued messages to ${client.userId}`
+    );
 
     // Send queued messages
     for (const message of queue) {
@@ -481,9 +512,11 @@ export class EnhancedWebSocketService {
    */
   private handleBatchAcknowledgment(socket: any, data: any) {
     const { messageIds = [], timestamp } = data;
-    
+
     // Process acknowledgments (could be used for delivery confirmation)
-    console.log(`✅ Batch acknowledgment from ${socket.id}: ${messageIds.length} messages`);
+    console.log(
+      `✅ Batch acknowledgment from ${socket.id}: ${messageIds.length} messages`
+    );
   }
 
   /**
@@ -491,13 +524,17 @@ export class EnhancedWebSocketService {
    */
   private handleDisconnect(socket: any, reason: string) {
     const client = this.clients.get(socket.id);
-    
+
     if (client) {
-      console.log(`📤 Client disconnected: ${client.userType}:${client.userId} (reason: ${reason})`);
+      console.log(
+        `📤 Client disconnected: ${client.userType}:${client.userId} (reason: ${reason})`
+      );
       this.clients.delete(socket.id);
       this.performanceMetrics.connectionCount--;
     } else {
-      console.log(`📤 Unknown client disconnected: ${socket.id} (reason: ${reason})`);
+      console.log(
+        `📤 Unknown client disconnected: ${socket.id} (reason: ${reason})`
+      );
     }
   }
 
@@ -519,7 +556,11 @@ export class EnhancedWebSocketService {
   /**
    * Validate authentication token
    */
-  private async validateAuthToken(token: string, userId: string, userType: string): Promise<boolean> {
+  private async validateAuthToken(
+    token: string,
+    userId: string,
+    userType: string
+  ): Promise<boolean> {
     try {
       // Implement your authentication logic here
       // For now, return true for demo purposes
@@ -536,7 +577,7 @@ export class EnhancedWebSocketService {
   private sendPerformanceMetrics(socket: any) {
     socket.emit('performance_metrics', {
       ...this.performanceMetrics,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -544,7 +585,7 @@ export class EnhancedWebSocketService {
    * Update latency metrics
    */
   private updateLatencyMetrics(latency: number) {
-    this.performanceMetrics.averageLatency = 
+    this.performanceMetrics.averageLatency =
       (this.performanceMetrics.averageLatency + latency) / 2;
   }
 
@@ -553,9 +594,12 @@ export class EnhancedWebSocketService {
    */
   private startPerformanceMonitoring() {
     setInterval(() => {
-      const streamOptimizedPercentage = this.performanceMetrics.messagesDelivered > 0 
-        ? (this.performanceMetrics.streamOptimizedMessages / this.performanceMetrics.messagesDelivered * 100)
-        : 0;
+      const streamOptimizedPercentage =
+        this.performanceMetrics.messagesDelivered > 0
+          ? (this.performanceMetrics.streamOptimizedMessages /
+              this.performanceMetrics.messagesDelivered) *
+            100
+          : 0;
 
       console.log('📊 WebSocket Performance Metrics:', {
         connections: this.performanceMetrics.connectionCount,
@@ -563,7 +607,7 @@ export class EnhancedWebSocketService {
         messagesDelivered: this.performanceMetrics.messagesDelivered,
         streamOptimizedPercentage: `${streamOptimizedPercentage.toFixed(1)}%`,
         averageLatency: `${this.performanceMetrics.averageLatency.toFixed(2)}ms`,
-        queuedMessages: this.messageQueue.size
+        queuedMessages: this.messageQueue.size,
       });
     }, 60000); // Every minute
   }
@@ -584,7 +628,7 @@ export class EnhancedWebSocketService {
       userType: client.userType,
       connectionTime: client.connectionTime,
       streamOptimized: client.streamOptimized,
-      subscriptions: Array.from(client.subscriptions)
+      subscriptions: Array.from(client.subscriptions),
     }));
 
     return clientsSummary;
@@ -604,7 +648,9 @@ export class EnhancedWebSocketService {
 // Export singleton instance
 let enhancedWebSocketService: EnhancedWebSocketService | null = null;
 
-export function initializeEnhancedWebSocket(httpServer: HTTPServer): EnhancedWebSocketService {
+export function initializeEnhancedWebSocket(
+  httpServer: HTTPServer
+): EnhancedWebSocketService {
   if (!enhancedWebSocketService) {
     enhancedWebSocketService = new EnhancedWebSocketService(httpServer);
   }

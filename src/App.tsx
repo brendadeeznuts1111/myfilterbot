@@ -4,6 +4,7 @@ import "./index.css";
 // Analytics Components
 import { RealTimeAnalyticsCenter } from "./components/RealTimeAnalyticsCenter";
 import { EnhancedAnalyticsDashboard } from "./components/EnhancedAnalyticsDashboard";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Types
 type AppView = 'legacy-analytics' | 'enhanced-analytics';
@@ -148,7 +149,16 @@ function AppContent() {
 }
 
 export function App() {
-  return <AppContent />;
+  return (
+    <ErrorBoundary 
+      onError={(error, errorInfo) => {
+        console.error('App-level error:', error);
+        // Could send to error tracking service here
+      }}
+    >
+      <AppContent />
+    </ErrorBoundary>
+  );
 }
 
 export default App;

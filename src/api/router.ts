@@ -19,10 +19,11 @@ interface RouteHandler {
 class APIRouter {
   private routes: RouteHandler[] = [];
   private corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Customer-ID, X-User-ID, X-User-Type, X-Admin-ID, X-Admin-Permissions",
-    "Content-Type": "application/json"
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Customer-ID, X-User-ID, X-User-Type, X-Admin-ID, X-Admin-Permissions',
+    'Content-Type': 'application/json',
   };
 
   constructor() {
@@ -31,37 +32,117 @@ class APIRouter {
 
   private initializeRoutes() {
     // Customer API Routes
-    this.addRoute('GET', /^\/api\/customer\/profile$/, customerAPI.getCustomerProfile.bind(customerAPI));
-    this.addRoute('PUT', /^\/api\/customer\/profile$/, customerAPI.updateCustomerProfile.bind(customerAPI));
-    this.addRoute('GET', /^\/api\/customer\/balance$/, customerAPI.getCustomerBalance.bind(customerAPI));
-    this.addRoute('GET', /^\/api\/customer\/transactions$/, customerAPI.getTransactionHistory.bind(customerAPI));
-    this.addRoute('POST', /^\/api\/customer\/withdraw$/, customerAPI.requestWithdrawal.bind(customerAPI));
-    this.addRoute('GET', /^\/api\/customer\/analytics$/, customerAPI.getCustomerAnalytics.bind(customerAPI));
+    this.addRoute(
+      'GET',
+      /^\/api\/customer\/profile$/,
+      customerAPI.getCustomerProfile.bind(customerAPI)
+    );
+    this.addRoute(
+      'PUT',
+      /^\/api\/customer\/profile$/,
+      customerAPI.updateCustomerProfile.bind(customerAPI)
+    );
+    this.addRoute(
+      'GET',
+      /^\/api\/customer\/balance$/,
+      customerAPI.getCustomerBalance.bind(customerAPI)
+    );
+    this.addRoute(
+      'GET',
+      /^\/api\/customer\/transactions$/,
+      customerAPI.getTransactionHistory.bind(customerAPI)
+    );
+    this.addRoute(
+      'POST',
+      /^\/api\/customer\/withdraw$/,
+      customerAPI.requestWithdrawal.bind(customerAPI)
+    );
+    this.addRoute(
+      'GET',
+      /^\/api\/customer\/analytics$/,
+      customerAPI.getCustomerAnalytics.bind(customerAPI)
+    );
 
     // Notification API Routes
-    this.addRoute('GET', /^\/api\/notifications$/, notificationAPI.getNotifications.bind(notificationAPI));
-    this.addRoute('POST', /^\/api\/notifications\/(\w+)\/read$/, notificationAPI.markAsRead.bind(notificationAPI));
-    this.addRoute('POST', /^\/api\/notifications\/mark-all-read$/, notificationAPI.markAllAsRead.bind(notificationAPI));
-    this.addRoute('GET', /^\/api\/notifications\/preferences$/, notificationAPI.getPreferences.bind(notificationAPI));
-    this.addRoute('PUT', /^\/api\/notifications\/preferences$/, notificationAPI.updatePreferences.bind(notificationAPI));
-    this.addRoute('POST', /^\/api\/notifications\/send$/, notificationAPI.sendNotification.bind(notificationAPI));
+    this.addRoute(
+      'GET',
+      /^\/api\/notifications$/,
+      notificationAPI.getNotifications.bind(notificationAPI)
+    );
+    this.addRoute(
+      'POST',
+      /^\/api\/notifications\/(\w+)\/read$/,
+      notificationAPI.markAsRead.bind(notificationAPI)
+    );
+    this.addRoute(
+      'POST',
+      /^\/api\/notifications\/mark-all-read$/,
+      notificationAPI.markAllAsRead.bind(notificationAPI)
+    );
+    this.addRoute(
+      'GET',
+      /^\/api\/notifications\/preferences$/,
+      notificationAPI.getPreferences.bind(notificationAPI)
+    );
+    this.addRoute(
+      'PUT',
+      /^\/api\/notifications\/preferences$/,
+      notificationAPI.updatePreferences.bind(notificationAPI)
+    );
+    this.addRoute(
+      'POST',
+      /^\/api\/notifications\/send$/,
+      notificationAPI.sendNotification.bind(notificationAPI)
+    );
 
     // Security API Routes
-    this.addRoute('GET', /^\/api\/security\/status$/, securityAPI.getSecurityStatus.bind(securityAPI));
-    this.addRoute('GET', /^\/api\/security\/events$/, securityAPI.getSecurityEvents.bind(securityAPI));
-    this.addRoute('GET', /^\/api\/security\/rules$/, securityAPI.getSecurityRules.bind(securityAPI));
-    this.addRoute('PUT', /^\/api\/security\/rules\/(\w+)$/, securityAPI.updateSecurityRule.bind(securityAPI));
-    this.addRoute('GET', /^\/api\/security\/blocked-ips$/, securityAPI.getBlockedIPs.bind(securityAPI));
-    this.addRoute('POST', /^\/api\/security\/block-ip$/, securityAPI.blockIP.bind(securityAPI));
-    this.addRoute('DELETE', /^\/api\/security\/blocked-ips\/(.+)$/, securityAPI.unblockIP.bind(securityAPI));
-    this.addRoute('POST', /^\/api\/security\/events$/, securityAPI.recordSecurityEvent.bind(securityAPI));
+    this.addRoute(
+      'GET',
+      /^\/api\/security\/status$/,
+      securityAPI.getSecurityStatus.bind(securityAPI)
+    );
+    this.addRoute(
+      'GET',
+      /^\/api\/security\/events$/,
+      securityAPI.getSecurityEvents.bind(securityAPI)
+    );
+    this.addRoute(
+      'GET',
+      /^\/api\/security\/rules$/,
+      securityAPI.getSecurityRules.bind(securityAPI)
+    );
+    this.addRoute(
+      'PUT',
+      /^\/api\/security\/rules\/(\w+)$/,
+      securityAPI.updateSecurityRule.bind(securityAPI)
+    );
+    this.addRoute(
+      'GET',
+      /^\/api\/security\/blocked-ips$/,
+      securityAPI.getBlockedIPs.bind(securityAPI)
+    );
+    this.addRoute(
+      'POST',
+      /^\/api\/security\/block-ip$/,
+      securityAPI.blockIP.bind(securityAPI)
+    );
+    this.addRoute(
+      'DELETE',
+      /^\/api\/security\/blocked-ips\/(.+)$/,
+      securityAPI.unblockIP.bind(securityAPI)
+    );
+    this.addRoute(
+      'POST',
+      /^\/api\/security\/events$/,
+      securityAPI.recordSecurityEvent.bind(securityAPI)
+    );
 
     console.log(`✅ Initialized ${this.routes.length} API routes`);
   }
 
   private addRoute(
-    method: string, 
-    pattern: RegExp, 
+    method: string,
+    pattern: RegExp,
     handler: (req: Request, matches?: RegExpMatchArray) => Promise<Response>,
     requiresAuth: boolean = true,
     requiredPermissions: string[] = []
@@ -71,7 +152,7 @@ class APIRouter {
       pattern,
       handler,
       requiresAuth,
-      requiredPermissions
+      requiredPermissions,
     });
   }
 
@@ -82,9 +163,9 @@ class APIRouter {
 
     // Handle CORS preflight requests
     if (method === 'OPTIONS') {
-      return new Response(null, { 
-        status: 204, 
-        headers: this.corsHeaders 
+      return new Response(null, {
+        status: 204,
+        headers: this.corsHeaders,
       });
     }
 
@@ -103,7 +184,7 @@ class APIRouter {
 
           // Execute route handler
           const response = await route.handler(req, matches);
-          
+
           // Add CORS headers to response
           const headers = new Headers();
           Object.entries(this.corsHeaders).forEach(([key, value]) => {
@@ -120,20 +201,22 @@ class APIRouter {
           return new Response(response.body, {
             status: response.status,
             statusText: response.statusText,
-            headers
+            headers,
           });
-
         } catch (error) {
           console.error(`API Error for ${method} ${path}:`, error);
-          
-          return new Response(JSON.stringify({
-            error: 'Internal server error',
-            message: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date().toISOString()
-          }), {
-            status: 500,
-            headers: this.corsHeaders
-          });
+
+          return new Response(
+            JSON.stringify({
+              error: 'Internal server error',
+              message: error instanceof Error ? error.message : 'Unknown error',
+              timestamp: new Date().toISOString(),
+            }),
+            {
+              status: 500,
+              headers: this.corsHeaders,
+            }
+          );
         }
       }
     }
@@ -142,7 +225,10 @@ class APIRouter {
     return null;
   }
 
-  private async applyMiddleware(req: Request, route: RouteHandler): Promise<Response | null> {
+  private async applyMiddleware(
+    req: Request,
+    route: RouteHandler
+  ): Promise<Response | null> {
     // Rate limiting middleware
     const rateLimitResponse = await this.rateLimitMiddleware(req);
     if (rateLimitResponse) return rateLimitResponse;
@@ -152,7 +238,10 @@ class APIRouter {
 
     // Authentication middleware
     if (route.requiresAuth) {
-      const authResponse = await this.authenticationMiddleware(req, route.requiredPermissions);
+      const authResponse = await this.authenticationMiddleware(
+        req,
+        route.requiredPermissions
+      );
       if (authResponse) return authResponse;
     }
 
@@ -172,7 +261,7 @@ class APIRouter {
     }
 
     const rateLimitData = this.rateLimitCache.get(key)!;
-    
+
     if (now > rateLimitData.resetTime) {
       // Reset the counter
       rateLimitData.count = 0;
@@ -183,32 +272,41 @@ class APIRouter {
 
     if (rateLimitData.count > maxRequests) {
       // Record security event for rate limit exceeded
-      await securityAPI.recordSecurityEvent(new Request('http://localhost/api/security/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_type: 'rate_limit_exceeded',
-          threat_level: 'medium',
-          source_ip: ip,
-          description: `Rate limit exceeded: ${rateLimitData.count} requests`,
-          metadata: { requests: rateLimitData.count, window: windowSize }
+      await securityAPI.recordSecurityEvent(
+        new Request('http://localhost/api/security/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: 'rate_limit_exceeded',
+            threat_level: 'medium',
+            source_ip: ip,
+            description: `Rate limit exceeded: ${rateLimitData.count} requests`,
+            metadata: { requests: rateLimitData.count, window: windowSize },
+          }),
         })
-      }));
+      );
 
-      return new Response(JSON.stringify({
-        error: 'Rate limit exceeded',
-        message: 'Too many requests. Please try again later.',
-        retry_after: Math.ceil((rateLimitData.resetTime - now) / 1000)
-      }), {
-        status: 429,
-        headers: {
-          ...this.corsHeaders,
-          'Retry-After': String(Math.ceil((rateLimitData.resetTime - now) / 1000)),
-          'X-RateLimit-Limit': String(maxRequests),
-          'X-RateLimit-Remaining': String(Math.max(0, maxRequests - rateLimitData.count)),
-          'X-RateLimit-Reset': String(rateLimitData.resetTime)
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded',
+          message: 'Too many requests. Please try again later.',
+          retry_after: Math.ceil((rateLimitData.resetTime - now) / 1000),
+        }),
+        {
+          status: 429,
+          headers: {
+            ...this.corsHeaders,
+            'Retry-After': String(
+              Math.ceil((rateLimitData.resetTime - now) / 1000)
+            ),
+            'X-RateLimit-Limit': String(maxRequests),
+            'X-RateLimit-Remaining': String(
+              Math.max(0, maxRequests - rateLimitData.count)
+            ),
+            'X-RateLimit-Reset': String(rateLimitData.resetTime),
+          },
         }
-      });
+      );
     }
 
     return null;
@@ -216,76 +314,101 @@ class APIRouter {
 
   private async securityLoggingMiddleware(req: Request): Promise<void> {
     const suspicious = this.detectSuspiciousActivity(req);
-    
+
     if (suspicious) {
-      await securityAPI.recordSecurityEvent(new Request('http://localhost/api/security/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_type: 'suspicious_activity',
-          threat_level: 'medium',
-          source_ip: req.headers.get('x-forwarded-for') || 'unknown',
-          user_agent: req.headers.get('user-agent'),
-          description: suspicious.reason,
-          metadata: suspicious.metadata
+      await securityAPI.recordSecurityEvent(
+        new Request('http://localhost/api/security/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: 'suspicious_activity',
+            threat_level: 'medium',
+            source_ip: req.headers.get('x-forwarded-for') || 'unknown',
+            user_agent: req.headers.get('user-agent'),
+            description: suspicious.reason,
+            metadata: suspicious.metadata,
+          }),
         })
-      }));
+      );
     }
   }
 
-  private detectSuspiciousActivity(req: Request): { reason: string; metadata: any } | null {
+  private detectSuspiciousActivity(
+    req: Request
+  ): { reason: string; metadata: any } | null {
     const userAgent = req.headers.get('user-agent') || '';
     const path = new URL(req.url).pathname;
 
     // Detect common attack patterns
-    if (path.includes('..') || path.includes('<script') || path.includes('DROP TABLE')) {
+    if (
+      path.includes('..') ||
+      path.includes('<script') ||
+      path.includes('DROP TABLE')
+    ) {
       return {
         reason: 'Potential path traversal or injection attack',
-        metadata: { path, userAgent }
+        metadata: { path, userAgent },
       };
     }
 
     // Detect bot-like behavior
-    if (userAgent.length < 10 || userAgent.includes('bot') || userAgent.includes('crawler')) {
+    if (
+      userAgent.length < 10 ||
+      userAgent.includes('bot') ||
+      userAgent.includes('crawler')
+    ) {
       return {
         reason: 'Automated request detected',
-        metadata: { userAgent, path }
+        metadata: { userAgent, path },
       };
     }
 
     return null;
   }
 
-  private async authenticationMiddleware(req: Request, requiredPermissions: string[] = []): Promise<Response | null> {
+  private async authenticationMiddleware(
+    req: Request,
+    requiredPermissions: string[] = []
+  ): Promise<Response | null> {
     // Basic authentication check
-    const userId = req.headers.get('X-User-ID') || req.headers.get('X-Customer-ID');
+    const userId =
+      req.headers.get('X-User-ID') || req.headers.get('X-Customer-ID');
     const adminId = req.headers.get('X-Admin-ID');
-    
+
     if (!userId && !adminId) {
-      return new Response(JSON.stringify({
-        error: 'Authentication required',
-        message: 'Missing user ID or admin ID in headers'
-      }), {
-        status: 401,
-        headers: this.corsHeaders
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'Authentication required',
+          message: 'Missing user ID or admin ID in headers',
+        }),
+        {
+          status: 401,
+          headers: this.corsHeaders,
+        }
+      );
     }
 
     // Check admin permissions if required
     if (requiredPermissions.length > 0 && adminId) {
-      const permissions = req.headers.get('X-Admin-Permissions')?.split(',') || [];
-      const hasRequiredPermissions = requiredPermissions.every(perm => permissions.includes(perm));
-      
+      const permissions =
+        req.headers.get('X-Admin-Permissions')?.split(',') || [];
+      const hasRequiredPermissions = requiredPermissions.every(perm =>
+        permissions.includes(perm)
+      );
+
       if (!hasRequiredPermissions) {
-        return new Response(JSON.stringify({
-          error: 'Insufficient permissions',
-          message: `Required permissions: ${requiredPermissions.join(', ')}`,
-          required: requiredPermissions,
-          provided: permissions
-        }), {
-          status: 403,
-          headers: this.corsHeaders
-        });
+        return new Response(
+          JSON.stringify({
+            error: 'Insufficient permissions',
+            message: `Required permissions: ${requiredPermissions.join(', ')}`,
+            required: requiredPermissions,
+            provided: permissions,
+          }),
+          {
+            status: 403,
+            headers: this.corsHeaders,
+          }
+        );
       }
     }
 
@@ -293,7 +416,10 @@ class APIRouter {
   }
 
   // Simple in-memory cache for rate limiting (in production, use Redis)
-  private rateLimitCache = new Map<string, { count: number; resetTime: number }>();
+  private rateLimitCache = new Map<
+    string,
+    { count: number; resetTime: number }
+  >();
 
   // Health check endpoint
   async getHealthCheck(): Promise<Response> {
@@ -303,14 +429,14 @@ class APIRouter {
       services: {
         customer_api: 'operational',
         notification_api: 'operational',
-        security_api: 'operational'
+        security_api: 'operational',
       },
       routes: this.routes.length,
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
 
     return new Response(JSON.stringify(health), {
-      headers: this.corsHeaders
+      headers: this.corsHeaders,
     });
   }
 
@@ -319,7 +445,8 @@ class APIRouter {
     const documentation = {
       title: 'Fantdev Trading Bot API',
       version: '2.1.0',
-      description: 'High-performance TypeScript/Bun API for trading bot operations',
+      description:
+        'High-performance TypeScript/Bun API for trading bot operations',
       base_url: '/api',
       endpoints: {
         customer: {
@@ -328,7 +455,7 @@ class APIRouter {
           'GET /customer/balance': 'Get current balance and P&L',
           'GET /customer/transactions': 'Get transaction history',
           'POST /customer/withdraw': 'Request withdrawal',
-          'GET /customer/analytics': 'Get customer analytics'
+          'GET /customer/analytics': 'Get customer analytics',
         },
         notifications: {
           'GET /notifications': 'Get user notifications',
@@ -336,7 +463,7 @@ class APIRouter {
           'POST /notifications/mark-all-read': 'Mark all notifications as read',
           'GET /notifications/preferences': 'Get notification preferences',
           'PUT /notifications/preferences': 'Update notification preferences',
-          'POST /notifications/send': 'Send notification (admin only)'
+          'POST /notifications/send': 'Send notification (admin only)',
         },
         security: {
           'GET /security/status': 'Get security system status',
@@ -345,16 +472,16 @@ class APIRouter {
           'PUT /security/rules/{id}': 'Update security rule',
           'GET /security/blocked-ips': 'Get blocked IP addresses',
           'POST /security/block-ip': 'Block IP address',
-          'DELETE /security/blocked-ips/{ip}': 'Unblock IP address'
-        }
+          'DELETE /security/blocked-ips/{ip}': 'Unblock IP address',
+        },
       },
       authentication: {
         type: 'Header-based',
         headers: {
           'X-Customer-ID': 'Customer identifier',
           'X-Admin-ID': 'Admin identifier',
-          'X-Admin-Permissions': 'Comma-separated permissions'
-        }
+          'X-Admin-Permissions': 'Comma-separated permissions',
+        },
       },
       rate_limits: {
         window: '1 minute',
@@ -362,16 +489,16 @@ class APIRouter {
         headers: {
           'X-RateLimit-Limit': 'Maximum requests per window',
           'X-RateLimit-Remaining': 'Requests remaining',
-          'X-RateLimit-Reset': 'Window reset timestamp'
-        }
-      }
+          'X-RateLimit-Reset': 'Window reset timestamp',
+        },
+      },
     };
 
     return new Response(JSON.stringify(documentation, null, 2), {
       headers: {
         ...this.corsHeaders,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
   }
 }

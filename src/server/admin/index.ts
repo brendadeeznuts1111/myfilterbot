@@ -1,10 +1,9 @@
 import { serve } from "bun";
-import enhancedAdminPortal from "./enhanced_admin_portal.html";
-import { apiRouter } from "./src/api/router";
+import { apiRouter } from "../api/router";
 
 // Load ONLY real Fantasy402.com customers - NO MORE MOCK DATA
-const configFile = await Bun.file("./customer_config.json");
-const databaseFile = await Bun.file("./customer_database.json");
+const configFile = await Bun.file("./config/customer_config.json");
+const databaseFile = await Bun.file("./data/customer_database.json");
 
 const customerConfig = await configFile.json();
 const customerDatabase = await databaseFile.json();
@@ -104,11 +103,6 @@ const realData = {
 
 const server = serve({
   port: 3003,
-  static: {
-    "/": enhancedAdminPortal,
-    "/admin": enhancedAdminPortal,
-    "/enhanced": enhancedAdminPortal
-  },
   async fetch(req) {
     const url = new URL(req.url);
     const corsHeaders = {
@@ -360,6 +354,16 @@ const server = serve({
           message: error.message
         }, { status: 500, headers: corsHeaders });
       }
+    }
+
+    // Serve HTML for root paths
+    if (url.pathname === "/" || url.pathname === "/admin" || url.pathname === "/enhanced") {
+      const htmlFile = await Bun.file("./public/portals/admin-portal.html").text();
+      return new Response(htmlFile, {
+        headers: {
+          "Content-Type": "text/html"
+        }
+      });
     }
 
     return new Response("Not Found", { status: 404 });

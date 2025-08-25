@@ -9,7 +9,7 @@ export class CloudflareWorkerClient {
     this.baseUrl = workerUrl;
     this.headers = {
       'Content-Type': 'application/json',
-      ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
+      ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
     };
   }
 
@@ -21,12 +21,12 @@ export class CloudflareWorkerClient {
         `${this.baseUrl}/api/chats`,
         { headers: this.headers }
       );
-      
+
       if (!result.success) {
         console.error('Failed to fetch chats:', result.error);
         return [];
       }
-      
+
       return result.data?.data?.chats || [];
     } catch (error) {
       console.error('Failed to fetch chats:', error);
@@ -41,12 +41,12 @@ export class CloudflareWorkerClient {
         `${this.baseUrl}/api/chat/${chatId}`,
         { headers: this.headers }
       );
-      
+
       if (!result.success) {
         console.error('Failed to fetch chat:', result.error);
         return null;
       }
-      
+
       return result.data?.data?.chat || null;
     } catch (error) {
       console.error('Failed to fetch chat:', error);
@@ -61,12 +61,12 @@ export class CloudflareWorkerClient {
         `${this.baseUrl}/api/stats`,
         { headers: this.headers }
       );
-      
+
       if (!result.success) {
         console.error('Failed to fetch statistics:', result.error);
         return {};
       }
-      
+
       return result.data?.data?.stats || {};
     } catch (error) {
       console.error('Failed to fetch statistics:', error);
@@ -76,40 +76,40 @@ export class CloudflareWorkerClient {
 
   // Shortlink methods
   async createShortlink(
-    url: string, 
-    customCode?: string, 
+    url: string,
+    customCode?: string,
     metadata?: Record<string, any>
   ): Promise<ShortlinkData | null> {
     try {
       const response = await fetch(`${this.baseUrl}/api/shortlink`, {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify({ url, customCode, metadata })
+        body: JSON.stringify({ url, customCode, metadata }),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('Failed to create shortlink:', error);
         return null;
       }
-      
-      const data = await response.json() as {
+
+      const data = (await response.json()) as {
         success: boolean;
         shortCode: string;
         shortUrl: string;
         targetUrl: string;
       };
-      
+
       if (data.success) {
         return {
           shortCode: data.shortCode,
           url: data.targetUrl,
           clicks: 0,
           createdAt: new Date().toISOString(),
-          metadata
+          metadata,
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error('Failed to create shortlink:', error);
@@ -120,11 +120,14 @@ export class CloudflareWorkerClient {
   async getShortlink(shortCode: string): Promise<ShortlinkData | null> {
     try {
       // This would need to be implemented in the worker
-      const response = await fetch(`${this.baseUrl}/api/shortlink/${shortCode}`, {
-        headers: this.headers
-      });
+      const response = await fetch(
+        `${this.baseUrl}/api/shortlink/${shortCode}`,
+        {
+          headers: this.headers,
+        }
+      );
       if (!response.ok) return null;
-      const data = await response.json() as APIResponse<ShortlinkData>;
+      const data = (await response.json()) as APIResponse<ShortlinkData>;
       return data.data || null;
     } catch (error) {
       console.error('Failed to fetch shortlink:', error);
@@ -149,7 +152,7 @@ export class CloudflareWorkerClient {
   async healthCheck(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
-        headers: this.headers
+        headers: this.headers,
       });
       return response.ok;
     } catch (error) {

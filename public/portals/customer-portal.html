@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary Meta Tags -->
+    <title>Customer Trading Portal - Real-Time Trading Dashboard | Fantdev</title>
+    <meta name="title" content="Customer Trading Portal - Real-Time Trading Dashboard | Fantdev">
+    <meta name="description" content="Access your trading account with real-time balance updates, P&L tracking, transaction history, and advanced analytics. Secure JWT authentication and WebSocket updates.">
+    <meta name="keywords" content="trading portal, customer dashboard, real-time trading, P&L tracking, transaction history, Fantdev, trading analytics">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="language" content="English">
+    <meta name="author" content="Fantdev Trading Systems">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fantdev.trading/portal">
+    <meta property="og:title" content="Customer Trading Portal - Real-Time Dashboard | Fantdev">
+    <meta property="og:description" content="Manage your trading account with real-time updates, comprehensive analytics, and secure authentication. Track your P&L, view transaction history, and monitor your performance.">
+    <meta property="og:image" content="/images/customer-og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Fantdev Trading">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://fantdev.trading/portal">
+    <meta name="twitter:title" content="Customer Trading Portal - Real-Time Dashboard">
+    <meta name="twitter:description" content="Access your trading account with real-time updates, P&L tracking, and advanced analytics. Secure authentication included.">
+    <meta name="twitter:image" content="/images/customer-twitter.jpg">
+    <meta name="twitter:site" content="@fantdev_trading">
+    
+    <!-- Security & Performance -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://yourwebsite.com/portal">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+    
+    <!-- External Resources -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Fantdev Customer Trading Portal",
+      "description": "Real-time trading dashboard with balance tracking, P&L analytics, and transaction history",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Real-time balance updates",
+        "Transaction history tracking",
+        "P&L analytics and charts",
+        "WebSocket live updates",
+        "JWT secure authentication",
+        "Customer-specific keyword filtering",
+        "Dark/Light theme toggle"
+      ],
+      "screenshot": "/images/customer-thumbnail.jpg",
+      "softwareVersion": "2.0",
+      "author": {
+        "@type": "Organization",
+        "name": "Fantdev Trading Systems",
+        "url": "https://fantdev.trading"
+      }
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .dashboard-container {
+            display: none;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-connected {
+            background: #e6ffed;
+            color: #2e7d32;
+        }
+        
+        .status-disconnected {
+            background: #fee;
+            color: #c33;
+        }
+        
+        .user-info {
+            text-align: right;
+        }
+        
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .user-id {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .btn-logout {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-logout:hover {
+            background: #e9ecef;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .stat-title {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .icon-blue {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+        
+        .icon-green {
+            background: rgba(72, 187, 120, 0.1);
+            color: #48bb78;
+        }
+        
+        .icon-red {
+            background: rgba(245, 101, 101, 0.1);
+            color: #f56565;
+        }
+        
+        .icon-purple {
+            background: rgba(159, 122, 234, 0.1);
+            color: #9f7aea;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+        
+        .stat-change {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .change-positive {
+            color: #48bb78;
+        }
+        
+        .change-negative {
+            color: #f56565;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .chart-tabs {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-tab {
+            padding: 6px 12px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        
+        .chart-tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .activity-section {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .activity-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .activity-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .activity-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .icon-deposit {
+            background: rgba(72, 187, 120, 0.1);
+            color: #48bb78;
+        }
+        
+        .icon-withdrawal {
+            background: rgba(245, 101, 101, 0.1);
+            color: #f56565;
+        }
+        
+        .icon-denied {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ff9800;
+        }
+        
+        .activity-details {
+            flex: 1;
+        }
+        
+        .activity-description {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .activity-time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .activity-amount {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .amount-positive {
+            color: #48bb78;
+        }
+        
+        .amount-negative {
+            color: #f56565;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .success-message {
+            background: #e6ffed;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            min-width: 300px;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .notification-success {
+            border-left: 4px solid #4caf50;
+        }
+        
+        .notification-error {
+            border-left: 4px solid #f44336;
+        }
+        
+        .notification-info {
+            border-left: 4px solid #2196f3;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h1 class="login-title">Customer Portal</h1>
+                <p style="color: #666; margin-top: 8px;">Access your trading account</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Customer ID</label>
+                    <input type="text" class="form-input" id="customerId" placeholder="e.g., BB1042" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+            
+            <div id="loginError" class="error-message" style="display: none;"></div>
+            <div id="loginSuccess" class="success-message" style="display: none;"></div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <p style="font-size: 13px; color: #999;">
+                    Need help? Contact support via 
+                    <a href="https://t.me/admin" style="color: #667eea;">Telegram</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard -->
+    <div id="dashboardScreen" class="dashboard-container">
+        <div class="header">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class="fas fa-chart-line" style="color: #667eea;"></i>
+                    Trading Dashboard
+                </h1>
+                <div class="header-user">
+                    <div class="connection-status" id="connectionStatus">
+                        <i class="fas fa-circle"></i>
+                        <span>Connecting...</span>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">Loading...</div>
+                        <div class="user-id" id="userId">ID: ...</div>
+                    </div>
+                    <button class="btn-logout" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">
+                            <i class="fas fa-wallet"></i>
+                            Current Balance
+                        </div>
+                        <div class="stat-icon icon-blue">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="currentBalance">$0.00</div>
+                    <div class="stat-change" id="balanceChange">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Loading...</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">
+                            <i class="fas fa-chart-line"></i>
+                            Weekly P&L
+                        </div>
+                        <div class="stat-icon icon-green">
+                            <i class="fas fa-trending-up"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="weeklyPnl">$0.00</div>
+                    <div class="stat-change" id="pnlChange">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Calculating...</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">
+                            <i class="fas fa-percentage"></i>
+                            Win Rate
+                        </div>
+                        <div class="stat-icon icon-purple">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="winRate">0%</div>
+                    <div class="stat-change">
+                        <span id="totalTrades">0 trades this week</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">
+                            <i class="fas fa-clock"></i>
+                            Account Status
+                        </div>
+                        <div class="stat-icon icon-red">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="accountStatus">Active</div>
+                    <div class="stat-change" id="accountDetail">
+                        <span>Telegram Connected</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chart Section -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2 class="chart-title">Performance Overview</h2>
+                    <div class="chart-tabs">
+                        <button class="chart-tab active" onclick="switchChart('daily')">Daily</button>
+                        <button class="chart-tab" onclick="switchChart('weekly')">Weekly</button>
+                        <button class="chart-tab" onclick="switchChart('monthly')">Monthly</button>
+                    </div>
+                </div>
+                <canvas id="performanceChart" height="100"></canvas>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="activity-section">
+                <div class="activity-header">
+                    <h2 class="activity-title">Recent Transactions</h2>
+                    <button class="btn-logout" onclick="loadMoreActivity()">
+                        Load More
+                    </button>
+                </div>
+                <div class="activity-list" id="activityList">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // API Configuration
+        const API_BASE = window.location.origin + '/api';
+        
+        // State management
+        let currentUser = null;
+        let authToken = null;
+        let socket = null;
+        let chart = null;
+        let reconnectInterval = null;
+        
+        // Login handler
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const customerId = document.getElementById('customerId').value.toUpperCase();
+            const password = document.getElementById('password').value.toUpperCase();
+            const loginBtn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+            const successDiv = document.getElementById('loginSuccess');
+            
+            // Clear messages
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            // Disable button
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.customer;
+                    authToken = data.token;
+                    
+                    // Store authentication
+                    localStorage.setItem('customerId', customerId);
+                    localStorage.setItem('authToken', authToken);
+                    
+                    successDiv.textContent = 'Login successful! Loading dashboard...';
+                    successDiv.style.display = 'block';
+                    
+                    // Initialize WebSocket
+                    initializeWebSocket();
+                    
+                    // Show dashboard
+                    setTimeout(() => {
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('dashboardScreen').style.display = 'block';
+                        loadDashboard();
+                    }, 1000);
+                } else {
+                    errorDiv.textContent = data.error || 'Invalid credentials';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.style.display = 'block';
+                console.error('Login error:', error);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            }
+        }
+        
+        // Logout handler
+        function handleLogout() {
+            localStorage.removeItem('customerId');
+            localStorage.removeItem('authToken');
+            currentUser = null;
+            authToken = null;
+            
+            // Disconnect WebSocket
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+            
+            // Clear reconnect interval
+            if (reconnectInterval) {
+                clearInterval(reconnectInterval);
+                reconnectInterval = null;
+            }
+            
+            // Destroy chart
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+            
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboardScreen').style.display = 'none';
+            document.getElementById('loginForm').reset();
+        }
+        
+        // Load dashboard data
+        async function loadDashboard() {
+            if (!currentUser) return;
+            
+            // Update user info
+            document.getElementById('userName').textContent = `Customer ${currentUser.customer_id}`;
+            document.getElementById('userId').textContent = `ID: ${currentUser.customer_id}`;
+            
+            try {
+                // Fetch full customer data
+                const response = await fetch(`${API_BASE}/customer/${currentUser.customer_id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        handleLogout();
+                        return;
+                    }
+                    throw new Error('Failed to fetch data');
+                }
+                
+                const data = await response.json();
+                updateDashboard(data);
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showNotification('Error', 'Failed to load dashboard data', 'error');
+            }
+        }
+        
+        // Update dashboard with data
+        function updateDashboard(data) {
+            const customer = data.customer || currentUser;
+            const statistics = data.statistics || {};
+            
+            // Update balance
+            const balance = customer.balance || 0;
+            document.getElementById('currentBalance').textContent = `$${balance.toLocaleString()}`;
+            
+            // Update weekly P&L
+            const weeklyPnl = customer.weekly_pnl || 0;
+            const pnlEl = document.getElementById('weeklyPnl');
+            pnlEl.textContent = `${weeklyPnl >= 0 ? '+' : ''}$${Math.abs(weeklyPnl).toLocaleString()}`;
+            pnlEl.style.color = weeklyPnl >= 0 ? '#48bb78' : '#f56565';
+            
+            // Update win rate
+            const winRate = statistics.win_rate || 0;
+            document.getElementById('winRate').textContent = `${winRate.toFixed(1)}%`;
+            document.getElementById('totalTrades').textContent = `${statistics.total_trades || 0} trades this week`;
+            
+            // Update account status
+            const isActive = customer.active ? 'Active' : 'Inactive';
+            const isRegistered = customer.registered ? '✓ Telegram Connected' : '⚠️ Not Connected';
+            document.getElementById('accountStatus').textContent = isActive;
+            document.getElementById('accountDetail').textContent = isRegistered;
+            document.getElementById('accountDetail').className = customer.registered ? 'stat-change change-positive' : 'stat-change';
+            
+            // Update balance change
+            if (balance > 0) {
+                const percentage = (weeklyPnl / balance * 100).toFixed(1);
+                const changeEl = document.getElementById('balanceChange');
+                changeEl.innerHTML = `
+                    <i class="fas fa-arrow-${percentage >= 0 ? 'up' : 'down'}"></i>
+                    <span>${percentage >= 0 ? '+' : ''}${percentage}% this week</span>
+                `;
+                changeEl.className = percentage >= 0 ? 'stat-change change-positive' : 'stat-change change-negative';
+            }
+            
+            // Update P&L change
+            const pnlChangeEl = document.getElementById('pnlChange');
+            pnlChangeEl.innerHTML = `
+                <i class="fas fa-arrow-${weeklyPnl >= 0 ? 'up' : 'down'}"></i>
+                <span>${statistics.wins || 0} wins, ${statistics.losses || 0} losses</span>
+            `;
+            pnlChangeEl.className = weeklyPnl >= 0 ? 'stat-change change-positive' : 'stat-change change-negative';
+            
+            // Update chart
+            updateChart(data);
+            
+            // Update transactions
+            updateTransactions(data.recent_transactions || []);
+        }
+        
+        // Update chart
+        function updateChart(data) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const today = new Date().getDay();
+            const orderedDays = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const dayIndex = (today - i + 7) % 7;
+                orderedDays.push(days[dayIndex === 0 ? 6 : dayIndex - 1]);
+            }
+            
+            // Generate sample data if not provided
+            const chartData = orderedDays.map(() => Math.floor(Math.random() * 200) - 100);
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: orderedDays,
+                    datasets: [{
+                        label: 'Daily P&L',
+                        data: chartData,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Switch chart view
+        function switchChart(period) {
+            document.querySelectorAll('.chart-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update chart with new data
+            if (chart) {
+                const newData = generateChartData(period);
+                chart.data.labels = newData.labels;
+                chart.data.datasets[0].data = newData.data;
+                chart.update();
+            }
+        }
+        
+        // Generate chart data
+        function generateChartData(period) {
+            const configs = {
+                daily: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    dataPoints: 7
+                },
+                weekly: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    dataPoints: 4
+                },
+                monthly: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    dataPoints: 6
+                }
+            };
+            
+            const config = configs[period];
+            const data = Array(config.dataPoints).fill(0).map(() => Math.floor(Math.random() * 500) - 250);
+            
+            return {
+                labels: config.labels,
+                data: data
+            };
+        }
+        
+        // Update transactions
+        function updateTransactions(transactions) {
+            const activityList = document.getElementById('activityList');
+            
+            if (transactions.length === 0) {
+                activityList.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No transactions yet</div>';
+                return;
+            }
+            
+            activityList.innerHTML = transactions.map(tx => {
+                const icon = tx.type === 'deposit' ? 'fa-arrow-down' : 
+                           tx.type === 'withdrawal' ? 'fa-arrow-up' : 
+                           tx.status === 'denied' ? 'fa-times-circle' : 'fa-exchange-alt';
+                
+                const iconClass = tx.type === 'deposit' ? 'icon-deposit' : 
+                                tx.type === 'withdrawal' ? 'icon-withdrawal' : 'icon-denied';
+                
+                const amount = tx.amount || 0;
+                const amountClass = tx.type === 'deposit' ? 'amount-positive' : 'amount-negative';
+                const amountText = tx.type === 'deposit' ? `+$${amount}` : `-$${amount}`;
+                
+                const time = new Date(tx.timestamp).toLocaleString();
+                
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon ${iconClass}">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-description">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)} ${tx.status ? '- ' + tx.status : ''}</div>
+                            <div class="activity-time">${time}</div>
+                        </div>
+                        <div class="activity-amount ${amountClass}">
+                            ${amountText}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // WebSocket initialization
+        function initializeWebSocket() {
+            if (!authToken) return;
+            
+            socket = io(window.location.origin, {
+                transports: ['websocket', 'polling']
+            });
+            
+            socket.on('connect', () => {
+                console.log('WebSocket connected');
+                updateConnectionStatus(true);
+                socket.emit('authenticate', { token: authToken });
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+                updateConnectionStatus(false);
+                attemptReconnect();
+            });
+            
+            socket.on('auth_success', (data) => {
+                console.log('Authenticated:', data.message);
+                socket.emit('subscribe_updates', { type: 'all' });
+            });
+            
+            socket.on('transaction_update', (data) => {
+                handleTransactionUpdate(data);
+            });
+            
+            socket.on('balance_update', (data) => {
+                handleBalanceUpdate(data);
+            });
+        }
+        
+        // Update connection status indicator
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status status-connected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> <span>Connected</span>';
+            } else {
+                statusEl.className = 'connection-status status-disconnected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> <span>Disconnected</span>';
+            }
+        }
+        
+        // Handle transaction update
+        function handleTransactionUpdate(transaction) {
+            // Add to activity list
+            const activityList = document.getElementById('activityList');
+            const newItem = document.createElement('div');
+            newItem.className = 'activity-item';
+            
+            const icon = transaction.type === 'deposit' ? 'fa-arrow-down' : 
+                       transaction.type === 'withdrawal' ? 'fa-arrow-up' : 'fa-exchange-alt';
+            
+            const iconClass = transaction.type === 'deposit' ? 'icon-deposit' : 
+                            transaction.type === 'withdrawal' ? 'icon-withdrawal' : 'icon-denied';
+            
+            const amount = transaction.amount || 0;
+            const amountClass = transaction.type === 'deposit' ? 'amount-positive' : 'amount-negative';
+            const amountText = transaction.type === 'deposit' ? `+$${amount}` : `-$${amount}`;
+            
+            newItem.innerHTML = `
+                <div class="activity-icon ${iconClass}">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-description">${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)} - New</div>
+                    <div class="activity-time">Just now</div>
+                </div>
+                <div class="activity-amount ${amountClass}">
+                    ${amountText}
+                </div>
+            `;
+            
+            if (activityList.firstChild) {
+                activityList.insertBefore(newItem, activityList.firstChild);
+            } else {
+                activityList.appendChild(newItem);
+            }
+            
+            // Show notification
+            const message = transaction.type === 'deposit' ? 
+                `Deposit of $${amount} successful` :
+                transaction.type === 'withdrawal' ?
+                `Withdrawal of $${amount} processed` :
+                'Transaction completed';
+            
+            showNotification('Transaction Update', message, 'success');
+        }
+        
+        // Handle balance update
+        function handleBalanceUpdate(data) {
+            const balanceEl = document.getElementById('currentBalance');
+            balanceEl.textContent = `$${data.balance.toLocaleString()}`;
+            balanceEl.style.animation = 'pulse 0.5s';
+            
+            setTimeout(() => {
+                balanceEl.style.animation = '';
+            }, 500);
+            
+            if (data.change !== undefined) {
+                const changeEl = document.getElementById('balanceChange');
+                changeEl.innerHTML = `
+                    <i class="fas fa-arrow-${data.change >= 0 ? 'up' : 'down'}"></i>
+                    <span>${data.change >= 0 ? '+' : ''}$${Math.abs(data.change)} (${data.percentage}%)</span>
+                `;
+                changeEl.className = data.change >= 0 ? 'stat-change change-positive' : 'stat-change change-negative';
+            }
+        }
+        
+        // Attempt reconnection
+        function attemptReconnect() {
+            if (reconnectInterval) return;
+            
+            let attempts = 0;
+            reconnectInterval = setInterval(() => {
+                attempts++;
+                console.log(`Reconnection attempt ${attempts}...`);
+                
+                if (socket && !socket.connected && authToken) {
+                    socket.connect();
+                } else if (attempts > 5) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                    console.log('Max reconnection attempts reached');
+                }
+            }, 3000);
+        }
+        
+        // Show notification
+        function showNotification(title, message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 4px; color: #333;">${title}</div>
+                <div style="color: #666; font-size: 14px;">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
+        }
+        
+        // Load more activity
+        function loadMoreActivity() {
+            showNotification('Loading', 'Fetching more transactions...', 'info');
+        }
+        
+        // Check for saved session on load
+        window.onload = function() {
+            const savedCustomer = localStorage.getItem('customerId');
+            const savedToken = localStorage.getItem('authToken');
+            
+            if (savedCustomer && savedToken) {
+                // Try auto-login
+                currentUser = { customer_id: savedCustomer };
+                authToken = savedToken;
+                
+                // Verify token
+                fetch(`${API_BASE}/customer/${savedCustomer}`, {
+                    headers: {
+                        'Authorization': `Bearer ${savedToken}`,
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Valid session
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('dashboardScreen').style.display = 'block';
+                        initializeWebSocket();
+                        loadDashboard();
+                    } else {
+                        // Invalid session
+                        localStorage.removeItem('authToken');
+                        authToken = null;
+                        currentUser = null;
+                        document.getElementById('customerId').value = savedCustomer;
+                    }
+                })
+                .catch(error => {
+                    console.error('Auto-login failed:', error);
+                    document.getElementById('customerId').value = savedCustomer;
+                });
+            } else if (savedCustomer) {
+                document.getElementById('customerId').value = savedCustomer;
+            }
+            
+            // Handle enter key
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleLogin(e);
+                }
+            });
+        };
+    </script>
+</body>
+</html>

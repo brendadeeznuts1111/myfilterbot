@@ -4,7 +4,11 @@
  */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { EnhancedApiClient, createApiClient, customerAPI } from '../lib/api-client';
+import {
+  EnhancedApiClient,
+  createApiClient,
+  customerAPI,
+} from '../lib/api-client';
 
 interface CustomerContextType {
   customerId: string | null;
@@ -14,15 +18,22 @@ interface CustomerContextType {
   isReady: boolean;
 }
 
-const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
+const CustomerContext = createContext<CustomerContextType | undefined>(
+  undefined
+);
 
 interface CustomerProviderProps {
   children: React.ReactNode;
   defaultCustomerId?: string;
 }
 
-export function CustomerProvider({ children, defaultCustomerId }: CustomerProviderProps) {
-  const [customerId, setCustomerIdState] = useState<string | null>(defaultCustomerId || null);
+export function CustomerProvider({
+  children,
+  defaultCustomerId,
+}: CustomerProviderProps) {
+  const [customerId, setCustomerIdState] = useState<string | null>(
+    defaultCustomerId || null
+  );
   const [apiClient, setApiClient] = useState<EnhancedApiClient | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -31,12 +42,12 @@ export function CustomerProvider({ children, defaultCustomerId }: CustomerProvid
     if (customerId) {
       const client = createApiClient(customerId);
       setApiClient(client);
-      
+
       // Also update the global API client for backward compatibility
       customerAPI.setCustomerId(customerId);
-      
+
       setIsReady(true);
-      
+
       console.log(`🔗 API Client initialized for customer: ${customerId}`);
     } else {
       setApiClient(null);
@@ -83,11 +94,13 @@ export function useCustomer(): CustomerContextType {
 // Hook to get the current API client
 export function useApiClient(): EnhancedApiClient {
   const { apiClient, isReady, customerId } = useCustomer();
-  
+
   if (!isReady || !apiClient) {
-    throw new Error(`API client not ready. Customer ID: ${customerId}, Ready: ${isReady}`);
+    throw new Error(
+      `API client not ready. Customer ID: ${customerId}, Ready: ${isReady}`
+    );
   }
-  
+
   return apiClient;
 }
 

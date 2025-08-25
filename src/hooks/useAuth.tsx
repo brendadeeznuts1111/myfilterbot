@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Get customer profile data
   const { data: profileData, error } = useAPI<User>('/customer/profile', {
     customerId: user?.customer_id,
-    immediate: false
+    immediate: false,
   });
 
   useEffect(() => {
@@ -53,18 +53,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       // For this demo, we'll use the API to validate the customer
-      const response = await fetch(`http://localhost:3003/api/customer/profile`, {
-        headers: {
-          'X-Customer-ID': customerId,
-          'X-User-ID': customerId,
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `http://localhost:3003/api/customer/profile`,
+        {
+          headers: {
+            'X-Customer-ID': customerId,
+            'X-User-ID': customerId,
+            'Content-Type': 'application/json',
+          },
         }
-      });
+      );
 
       if (response.ok) {
         const userData = await response.json();
         const customer = userData.success ? userData.data : userData;
-        
+
         localStorage.setItem('customer_id', customerId);
         setUser(customer);
         setIsAuthenticated(true);
@@ -88,13 +91,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      isAuthenticated, 
-      loading 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

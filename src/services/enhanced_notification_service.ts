@@ -21,14 +21,14 @@ export enum NotificationType {
   ERROR = 'error',
   WEB_ANALYSIS = 'web_analysis',
   MARKET_ALERT = 'market_alert',
-  COMPETITOR_INTELLIGENCE = 'competitor_intelligence'
+  COMPETITOR_INTELLIGENCE = 'competitor_intelligence',
 }
 
 export enum NotificationPriority {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 export enum NotificationChannel {
@@ -37,7 +37,7 @@ export enum NotificationChannel {
   TELEGRAM = 'telegram',
   PUSH = 'push',
   SMS = 'sms',
-  WEBSOCKET = 'websocket'
+  WEBSOCKET = 'websocket',
 }
 
 export interface StreamNotification {
@@ -88,7 +88,7 @@ export class EnhancedNotificationService {
     totalDelivered: 0,
     averageLatency: 0,
     streamOptimizedCount: 0,
-    failureRate: 0
+    failureRate: 0,
   };
 
   constructor() {
@@ -101,25 +101,31 @@ export class EnhancedNotificationService {
    */
   private initializeWorkerThread() {
     try {
-      this.notificationWorker = new Worker('./src/workers/notification-worker.ts', {
-        workerData: {
-          useStreamOptimization: true,
-          batchSize: 50,
-          maxRetries: 3
+      this.notificationWorker = new Worker(
+        './src/workers/notification-worker.ts',
+        {
+          workerData: {
+            useStreamOptimization: true,
+            batchSize: 50,
+            maxRetries: 3,
+          },
         }
-      });
+      );
 
-      this.notificationWorker.on('message', (result) => {
+      this.notificationWorker.on('message', result => {
         this.handleWorkerResult(result);
       });
 
-      this.notificationWorker.on('error', (error) => {
+      this.notificationWorker.on('error', error => {
         console.error('Notification worker error:', error);
       });
 
       console.log('✅ Enhanced notification worker initialized');
     } catch (error: any) {
-      console.warn('⚠️ Worker thread unavailable, falling back to direct processing:', error.message);
+      console.warn(
+        '⚠️ Worker thread unavailable, falling back to direct processing:',
+        error.message
+      );
     }
   }
 
@@ -150,8 +156,9 @@ export class EnhancedNotificationService {
       }
 
       // Determine delivery channels
-      const channels = options.customChannels || preferences.channels[type] || [NotificationChannel.WEB];
-      
+      const channels = options.customChannels ||
+        preferences.channels[type] || [NotificationChannel.WEB];
+
       // Create notification object
       const notification: StreamNotification = {
         id: `notif_${Date.now()}_${userId}_${Math.random().toString(36).substr(2, 8)}`,
@@ -167,9 +174,13 @@ export class EnhancedNotificationService {
         delivered: false,
         deliveryAttempts: 0,
         createdAt: new Date().toISOString(),
-        expiresAt: options.expiresInHours ? 
-          new Date(Date.now() + options.expiresInHours * 60 * 60 * 1000).toISOString() : undefined,
-        streamOptimized: options.forceStreamOptimization || preferences.streamDelivery
+        expiresAt: options.expiresInHours
+          ? new Date(
+              Date.now() + options.expiresInHours * 60 * 60 * 1000
+            ).toISOString()
+          : undefined,
+        streamOptimized:
+          options.forceStreamOptimization || preferences.streamDelivery,
       };
 
       // Store notification using stream-optimized database operation
@@ -185,9 +196,10 @@ export class EnhancedNotificationService {
       const processingTime = performance.now() - startTime;
       notification.deliveryLatency = processingTime;
 
-      console.log(`📨 Notification created: ${notification.id} (${processingTime.toFixed(2)}ms)`);
+      console.log(
+        `📨 Notification created: ${notification.id} (${processingTime.toFixed(2)}ms)`
+      );
       return notification;
-
     } catch (error: any) {
       console.error('Failed to create notification:', error);
       return null;
@@ -197,13 +209,17 @@ export class EnhancedNotificationService {
   /**
    * Store notification using stream-optimized database operations
    */
-  private async storeNotificationOptimized(notification: StreamNotification): Promise<boolean> {
+  private async storeNotificationOptimized(
+    notification: StreamNotification
+  ): Promise<boolean> {
     try {
       // Use spawn operations for direct stream consumption
       const result = await DatabaseOperations.storeNotification(notification);
-      
+
       if (result.success) {
-        console.log(`💾 Notification stored (${result.duration?.toFixed(2)}ms)`);
+        console.log(
+          `💾 Notification stored (${result.duration?.toFixed(2)}ms)`
+        );
         return true;
       } else {
         console.error('Database storage failed:', result.error);
@@ -224,7 +240,7 @@ export class EnhancedNotificationService {
       this.notificationWorker.postMessage({
         type: 'DELIVER_NOTIFICATION',
         notification,
-        streamOptimized: true
+        streamOptimized: true,
       });
     } else {
       // Fallback to direct delivery
@@ -235,8 +251,10 @@ export class EnhancedNotificationService {
   /**
    * Deliver notification across all specified channels
    */
-  private async deliverNotification(notification: StreamNotification): Promise<DeliveryResult[]> {
-    const deliveryPromises = notification.channels.map(channel => 
+  private async deliverNotification(
+    notification: StreamNotification
+  ): Promise<DeliveryResult[]> {
+    const deliveryPromises = notification.channels.map(channel =>
       this.deliverToChannel(notification, channel)
     );
 
@@ -255,14 +273,14 @@ export class EnhancedNotificationService {
           channel,
           latency: 0,
           error: result.reason?.message || 'Unknown error',
-          streamOptimized: false
+          streamOptimized: false,
         });
       }
     }
 
     // Update delivery stats
     this.updateDeliveryStats(deliveryResults);
-    
+
     return deliveryResults;
   }
 
@@ -270,7 +288,7 @@ export class EnhancedNotificationService {
    * Deliver notification to specific channel with stream optimization
    */
   private async deliverToChannel(
-    notification: StreamNotification, 
+    notification: StreamNotification,
     channel: NotificationChannel
   ): Promise<DeliveryResult> {
     const startTime = performance.now();
@@ -279,19 +297,19 @@ export class EnhancedNotificationService {
       switch (channel) {
         case NotificationChannel.WEBSOCKET:
           return await this.deliverWebSocket(notification, startTime);
-        
+
         case NotificationChannel.WEB:
           return await this.deliverWeb(notification, startTime);
-        
+
         case NotificationChannel.TELEGRAM:
           return await this.deliverTelegram(notification, startTime);
-        
+
         case NotificationChannel.EMAIL:
           return await this.deliverEmail(notification, startTime);
-        
+
         case NotificationChannel.PUSH:
           return await this.deliverPush(notification, startTime);
-        
+
         default:
           throw new Error(`Unsupported channel: ${channel}`);
       }
@@ -301,7 +319,7 @@ export class EnhancedNotificationService {
         channel,
         latency: performance.now() - startTime,
         error: error.message,
-        streamOptimized: false
+        streamOptimized: false,
       };
     }
   }
@@ -309,13 +327,16 @@ export class EnhancedNotificationService {
   /**
    * Deliver via WebSocket using stream optimization
    */
-  private async deliverWebSocket(notification: StreamNotification, startTime: number): Promise<DeliveryResult> {
+  private async deliverWebSocket(
+    notification: StreamNotification,
+    startTime: number
+  ): Promise<DeliveryResult> {
     const payload = {
       type: 'notification',
       event: 'new_notification',
       data: notification,
       timestamp: new Date().toISOString(),
-      streamOptimized: notification.streamOptimized
+      streamOptimized: notification.streamOptimized,
     };
 
     // Use stream-optimized JSON serialization
@@ -323,64 +344,75 @@ export class EnhancedNotificationService {
     const optimizedPayload = await jsonStream.text();
 
     // Send to WebSocket server (integration point)
-    await this.broadcastToWebSocket(notification.userId, notification.userType, optimizedPayload);
+    await this.broadcastToWebSocket(
+      notification.userId,
+      notification.userType,
+      optimizedPayload
+    );
 
     return {
       success: true,
       channel: NotificationChannel.WEBSOCKET,
       latency: performance.now() - startTime,
-      streamOptimized: true
+      streamOptimized: true,
     };
   }
 
   /**
    * Deliver via Web portal using fetch with stream helpers
    */
-  private async deliverWeb(notification: StreamNotification, startTime: number): Promise<DeliveryResult> {
+  private async deliverWeb(
+    notification: StreamNotification,
+    startTime: number
+  ): Promise<DeliveryResult> {
     const portalEndpoint = `http://localhost:5000/api/notifications/deliver`;
-    
+
     const result = await fetchJSON(portalEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: notification.userId,
         userType: notification.userType,
-        notification
-      })
+        notification,
+      }),
     });
 
     return {
       success: result.success,
       channel: NotificationChannel.WEB,
-      latency: result.duration || (performance.now() - startTime),
+      latency: result.duration || performance.now() - startTime,
       error: result.error,
-      streamOptimized: true
+      streamOptimized: true,
     };
   }
 
   /**
    * Deliver via Telegram using spawn operations
    */
-  private async deliverTelegram(notification: StreamNotification, startTime: number): Promise<DeliveryResult> {
+  private async deliverTelegram(
+    notification: StreamNotification,
+    startTime: number
+  ): Promise<DeliveryResult> {
     try {
       const telegramData = {
         userId: notification.userId,
         title: notification.title,
         message: notification.message,
         type: notification.type,
-        priority: notification.priority
+        priority: notification.priority,
       };
 
-      const result = await spawnPythonJSON('./src/services/telegram_delivery.py', [
-        JSON.stringify(telegramData)
-      ]);
+      const result = await spawnPythonJSON(
+        './src/services/telegram_delivery.py',
+        [JSON.stringify(telegramData)]
+      );
 
       return {
         success: result.success,
         channel: NotificationChannel.TELEGRAM,
-        latency: result.duration || (performance.now() - startTime),
+        latency: result.duration || performance.now() - startTime,
         error: result.error,
-        streamOptimized: true
+        streamOptimized: true,
       };
     } catch (error: any) {
       return {
@@ -388,7 +420,7 @@ export class EnhancedNotificationService {
         channel: NotificationChannel.TELEGRAM,
         latency: performance.now() - startTime,
         error: error.message,
-        streamOptimized: false
+        streamOptimized: false,
       };
     }
   }
@@ -396,43 +428,58 @@ export class EnhancedNotificationService {
   /**
    * Deliver via Email
    */
-  private async deliverEmail(notification: StreamNotification, startTime: number): Promise<DeliveryResult> {
+  private async deliverEmail(
+    notification: StreamNotification,
+    startTime: number
+  ): Promise<DeliveryResult> {
     // Implementation for email delivery
     // This would integrate with your email service
     return {
       success: true,
       channel: NotificationChannel.EMAIL,
       latency: performance.now() - startTime,
-      streamOptimized: false
+      streamOptimized: false,
     };
   }
 
   /**
    * Deliver via Push notification
    */
-  private async deliverPush(notification: StreamNotification, startTime: number): Promise<DeliveryResult> {
+  private async deliverPush(
+    notification: StreamNotification,
+    startTime: number
+  ): Promise<DeliveryResult> {
     // Implementation for push notification delivery
     return {
       success: true,
       channel: NotificationChannel.PUSH,
       latency: performance.now() - startTime,
-      streamOptimized: false
+      streamOptimized: false,
     };
   }
 
   /**
    * Get user preferences with caching and stream optimization
    */
-  private async getUserPreferences(userId: string, userType: string): Promise<NotificationPreferences | null> {
+  private async getUserPreferences(
+    userId: string,
+    userType: string
+  ): Promise<NotificationPreferences | null> {
     try {
-      const result = await DatabaseOperations.getUserPreferences(userId, userType);
-      
+      const result = await DatabaseOperations.getUserPreferences(
+        userId,
+        userType
+      );
+
       if (result.success) {
         return result.data as NotificationPreferences;
       }
-      
+
       // Create default preferences if none exist
-      return this.createDefaultPreferences(userId, userType as 'admin' | 'customer');
+      return this.createDefaultPreferences(
+        userId,
+        userType as 'admin' | 'customer'
+      );
     } catch (error: any) {
       console.error('Error getting user preferences:', error);
       return null;
@@ -442,24 +489,83 @@ export class EnhancedNotificationService {
   /**
    * Create default notification preferences
    */
-  private createDefaultPreferences(userId: string, userType: 'admin' | 'customer'): NotificationPreferences {
-    const defaultChannels = userType === 'admin' ? {
-      [NotificationType.TRANSACTION]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.TELEGRAM],
-      [NotificationType.SECURITY_ALERT]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.EMAIL, NotificationChannel.TELEGRAM],
-      [NotificationType.SYSTEM_UPDATE]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB],
-      [NotificationType.MEMBER_REQUEST]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.TELEGRAM],
-      [NotificationType.ERROR]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.TELEGRAM],
-      [NotificationType.WEB_ANALYSIS]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB],
-      [NotificationType.MARKET_ALERT]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.TELEGRAM],
-      [NotificationType.COMPETITOR_INTELLIGENCE]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB]
-    } : {
-      [NotificationType.TRANSACTION]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.TELEGRAM],
-      [NotificationType.BALANCE_UPDATE]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.TELEGRAM],
-      [NotificationType.ACCOUNT_UPDATE]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.EMAIL],
-      [NotificationType.TRADE_SIGNAL]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.TELEGRAM],
-      [NotificationType.PROMOTION]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB],
-      [NotificationType.MAINTENANCE]: [NotificationChannel.WEBSOCKET, NotificationChannel.WEB, NotificationChannel.EMAIL]
-    };
+  private createDefaultPreferences(
+    userId: string,
+    userType: 'admin' | 'customer'
+  ): NotificationPreferences {
+    const defaultChannels =
+      userType === 'admin'
+        ? {
+            [NotificationType.TRANSACTION]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.SECURITY_ALERT]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.EMAIL,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.SYSTEM_UPDATE]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+            ],
+            [NotificationType.MEMBER_REQUEST]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.ERROR]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.WEB_ANALYSIS]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+            ],
+            [NotificationType.MARKET_ALERT]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.COMPETITOR_INTELLIGENCE]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+            ],
+          }
+        : {
+            [NotificationType.TRANSACTION]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.BALANCE_UPDATE]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.ACCOUNT_UPDATE]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.EMAIL,
+            ],
+            [NotificationType.TRADE_SIGNAL]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.TELEGRAM,
+            ],
+            [NotificationType.PROMOTION]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+            ],
+            [NotificationType.MAINTENANCE]: [
+              NotificationChannel.WEBSOCKET,
+              NotificationChannel.WEB,
+              NotificationChannel.EMAIL,
+            ],
+          };
 
     return {
       userId,
@@ -471,12 +577,12 @@ export class EnhancedNotificationService {
         [NotificationType.TRADE_SIGNAL]: 10,
         [NotificationType.PROMOTION]: 5,
         [NotificationType.MARKET_ALERT]: 15,
-        [NotificationType.WEB_ANALYSIS]: 10
+        [NotificationType.WEB_ANALYSIS]: 10,
       },
       enabled: true,
       streamDelivery: true,
       batchDelivery: false,
-      realtimeEnabled: true
+      realtimeEnabled: true,
     };
   }
 
@@ -485,7 +591,9 @@ export class EnhancedNotificationService {
    */
   private handleWorkerResult(result: any) {
     if (result.type === 'DELIVERY_COMPLETE') {
-      console.log(`✅ Batch delivery completed: ${result.delivered}/${result.total} notifications`);
+      console.log(
+        `✅ Batch delivery completed: ${result.delivered}/${result.total} notifications`
+      );
       this.deliveryStats.totalDelivered += result.delivered;
     } else if (result.type === 'DELIVERY_ERROR') {
       console.error('❌ Worker delivery error:', result.error);
@@ -498,20 +606,27 @@ export class EnhancedNotificationService {
   private updateDeliveryStats(results: DeliveryResult[]) {
     const successful = results.filter(r => r.success);
     const streamOptimized = results.filter(r => r.streamOptimized);
-    
+
     if (successful.length > 0) {
-      const averageLatency = successful.reduce((sum, r) => sum + r.latency, 0) / successful.length;
-      this.deliveryStats.averageLatency = (this.deliveryStats.averageLatency + averageLatency) / 2;
+      const averageLatency =
+        successful.reduce((sum, r) => sum + r.latency, 0) / successful.length;
+      this.deliveryStats.averageLatency =
+        (this.deliveryStats.averageLatency + averageLatency) / 2;
     }
-    
+
     this.deliveryStats.streamOptimizedCount += streamOptimized.length;
-    this.deliveryStats.failureRate = (results.length - successful.length) / results.length * 100;
+    this.deliveryStats.failureRate =
+      ((results.length - successful.length) / results.length) * 100;
   }
 
   /**
    * Broadcast to WebSocket server
    */
-  private async broadcastToWebSocket(userId: string, userType: string, payload: string) {
+  private async broadcastToWebSocket(
+    userId: string,
+    userType: string,
+    payload: string
+  ) {
     // Integration point with existing WebSocket server
     // This would connect to your WebSocket server and broadcast the message
     console.log(`📡 WebSocket broadcast to ${userType}:${userId}`);
@@ -525,9 +640,11 @@ export class EnhancedNotificationService {
       console.log('📊 Notification Delivery Stats:', {
         totalDelivered: this.deliveryStats.totalDelivered,
         averageLatency: `${this.deliveryStats.averageLatency.toFixed(2)}ms`,
-        streamOptimizedPercent: this.deliveryStats.totalDelivered > 0 ? 
-          `${(this.deliveryStats.streamOptimizedCount / this.deliveryStats.totalDelivered * 100).toFixed(1)}%` : '0%',
-        failureRate: `${this.deliveryStats.failureRate.toFixed(1)}%`
+        streamOptimizedPercent:
+          this.deliveryStats.totalDelivered > 0
+            ? `${((this.deliveryStats.streamOptimizedCount / this.deliveryStats.totalDelivered) * 100).toFixed(1)}%`
+            : '0%',
+        failureRate: `${this.deliveryStats.failureRate.toFixed(1)}%`,
       });
     }, 60000); // Every minute
   }

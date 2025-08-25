@@ -23,7 +23,7 @@ const queryClient = new QueryClient({
         }
         return failureCount < 3;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       retry: 1,
@@ -34,14 +34,16 @@ const queryClient = new QueryClient({
 
 // Add performance monitoring to the QueryClient
 if (typeof window !== 'undefined') {
-  queryClient.getQueryCache().subscribe((event) => {
+  queryClient.getQueryCache().subscribe(event => {
     if (event?.type === 'updated' && event.action?.type === 'success') {
-      const duration = event.query?.state?.dataUpdatedAt 
-        ? Date.now() - event.query.state.dataUpdatedAt 
+      const duration = event.query?.state?.dataUpdatedAt
+        ? Date.now() - event.query.state.dataUpdatedAt
         : 0;
-      
+
       if (duration > 0 && duration < 1000) {
-        console.log(`⚡ Query "${event.query.queryHash}" completed in ${duration}ms`);
+        console.log(
+          `⚡ Query "${event.query.queryHash}" completed in ${duration}ms`
+        );
       }
     }
   });
@@ -57,15 +59,15 @@ export function QueryProvider({ children }: QueryProviderProps) {
       {children}
       {/* Only show devtools in development */}
       {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools 
-          initialIsOpen={false} 
-          position="bottom-left"
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          position='bottom-left'
           toggleButtonProps={{
             style: {
               marginLeft: '5px',
               transform: 'none',
               fontSize: '12px',
-            }
+            },
           }}
         />
       )}

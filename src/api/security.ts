@@ -30,14 +30,14 @@ enum EventType {
   DATA_BREACH_ATTEMPT = 'data_breach_attempt',
   MALICIOUS_REQUEST = 'malicious_request',
   ACCOUNT_LOCKOUT = 'account_lockout',
-  PERMISSION_ESCALATION = 'permission_escalation'
+  PERMISSION_ESCALATION = 'permission_escalation',
 }
 
 enum ThreatLevel {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 enum ActionType {
@@ -47,7 +47,7 @@ enum ActionType {
   LOCK_ACCOUNT = 'lock_account',
   NOTIFY_ADMIN = 'notify_admin',
   LOG_EVENT = 'log_event',
-  QUARANTINE_SESSION = 'quarantine_session'
+  QUARANTINE_SESSION = 'quarantine_session',
 }
 
 interface SecurityAction {
@@ -109,22 +109,26 @@ class SecurityAPI {
   private actions: Map<string, SecurityAction> = new Map();
   private ipWhitelist: Map<string, IPWhitelist> = new Map();
   private ipBlocklist: Map<string, IPBlocklist> = new Map();
-  private rateLimitCounter: Map<string, { count: number; resetAt: number }> = new Map();
+  private rateLimitCounter: Map<string, { count: number; resetAt: number }> =
+    new Map();
 
   constructor() {
     this.initializeDefaultRules();
     this.startCleanupTask();
   }
 
-  private getAdminFromRequest(req: Request): { admin_id: string; permissions: string[] } | null {
+  private getAdminFromRequest(
+    req: Request
+  ): { admin_id: string; permissions: string[] } | null {
     // In production, this would validate JWT tokens
     const adminId = req.headers.get('X-Admin-ID');
-    const permissions = req.headers.get('X-Admin-Permissions')?.split(',') || [];
-    
+    const permissions =
+      req.headers.get('X-Admin-Permissions')?.split(',') || [];
+
     if (adminId === 'admin' && permissions.includes('security_read')) {
       return { admin_id: adminId, permissions };
     }
-    
+
     return null;
   }
 
@@ -138,13 +142,13 @@ class SecurityAPI {
         conditions: {
           threshold: 5,
           time_window: 900, // 15 minutes in seconds
-          scope: 'user_id'
+          scope: 'user_id',
         },
         actions: [ActionType.LOCK_ACCOUNT, ActionType.NOTIFY_ADMIN],
         enabled: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        trigger_count: 0
+        trigger_count: 0,
       },
       {
         id: 'rate_limit_protection',
@@ -154,28 +158,35 @@ class SecurityAPI {
         conditions: {
           threshold: 100,
           time_window: 300, // 5 minutes
-          scope: 'ip_address'
+          scope: 'ip_address',
         },
         actions: [ActionType.BLOCK_IP, ActionType.LOG_EVENT],
         enabled: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        trigger_count: 0
+        trigger_count: 0,
       },
       {
         id: 'suspicious_activity_monitor',
         name: 'Suspicious Activity Monitor',
         description: 'Monitor and log suspicious activities',
-        event_types: [EventType.SUSPICIOUS_ACTIVITY, EventType.UNAUTHORIZED_ACCESS],
+        event_types: [
+          EventType.SUSPICIOUS_ACTIVITY,
+          EventType.UNAUTHORIZED_ACCESS,
+        ],
         conditions: {
-          severity: 'high'
+          severity: 'high',
         },
-        actions: [ActionType.REQUIRE_2FA, ActionType.NOTIFY_ADMIN, ActionType.LOG_EVENT],
+        actions: [
+          ActionType.REQUIRE_2FA,
+          ActionType.NOTIFY_ADMIN,
+          ActionType.LOG_EVENT,
+        ],
         enabled: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        trigger_count: 0
-      }
+        trigger_count: 0,
+      },
     ];
 
     defaultRules.forEach(rule => {
@@ -192,11 +203,11 @@ class SecurityAPI {
 
   private cleanupOldData() {
     const now = Date.now();
-    const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
     // Remove events older than 30 days
-    this.events = this.events.filter(event => 
-      new Date(event.timestamp).getTime() > thirtyDaysAgo
+    this.events = this.events.filter(
+      event => new Date(event.timestamp).getTime() > thirtyDaysAgo
     );
 
     // Remove expired IP blocks
@@ -208,12 +219,17 @@ class SecurityAPI {
 
     // Remove expired IP whitelists
     for (const [ip, whitelist] of this.ipWhitelist.entries()) {
-      if (whitelist.expires_at && new Date(whitelist.expires_at).getTime() < now) {
+      if (
+        whitelist.expires_at &&
+        new Date(whitelist.expires_at).getTime() < now
+      ) {
         this.ipWhitelist.delete(ip);
       }
     }
 
-    console.log(`🧹 Security cleanup: ${this.events.length} events, ${this.ipBlocklist.size} blocked IPs`);
+    console.log(
+      `🧹 Security cleanup: ${this.events.length} events, ${this.ipBlocklist.size} blocked IPs`
+    );
   }
 
   private processSecurityEvent(event: SecurityEvent) {
@@ -231,32 +247,37 @@ class SecurityAPI {
     }
   }
 
-  private evaluateRuleConditions(rule: SecurityRule, event: SecurityEvent): boolean {
+  private evaluateRuleConditions(
+    rule: SecurityRule,
+    event: SecurityEvent
+  ): boolean {
     // Simple rule evaluation - in production this would be more sophisticated
     const conditions = rule.conditions;
-    
+
     if (conditions.threshold && conditions.time_window) {
       const timeWindow = conditions.time_window * 1000; // Convert to milliseconds
       const cutoff = Date.now() - timeWindow;
-      
+
       let relevantEvents: SecurityEvent[];
-      
+
       if (conditions.scope === 'user_id' && event.user_id) {
-        relevantEvents = this.events.filter(e => 
-          e.user_id === event.user_id &&
-          e.event_type === event.event_type &&
-          new Date(e.timestamp).getTime() > cutoff
+        relevantEvents = this.events.filter(
+          e =>
+            e.user_id === event.user_id &&
+            e.event_type === event.event_type &&
+            new Date(e.timestamp).getTime() > cutoff
         );
       } else if (conditions.scope === 'ip_address' && event.source_ip) {
-        relevantEvents = this.events.filter(e => 
-          e.source_ip === event.source_ip &&
-          e.event_type === event.event_type &&
-          new Date(e.timestamp).getTime() > cutoff
+        relevantEvents = this.events.filter(
+          e =>
+            e.source_ip === event.source_ip &&
+            e.event_type === event.event_type &&
+            new Date(e.timestamp).getTime() > cutoff
         );
       } else {
         return false;
       }
-      
+
       return relevantEvents.length >= conditions.threshold;
     }
 
@@ -271,14 +292,18 @@ class SecurityAPI {
         action_type: actionType,
         timestamp: new Date().toISOString(),
         details: {},
-        success: true
+        success: true,
       };
 
       try {
         switch (actionType) {
           case ActionType.BLOCK_IP:
             if (event.source_ip) {
-              this.blockIP(event.source_ip, `Triggered by rule: ${rule.name}`, 'system');
+              this.blockIP(
+                event.source_ip,
+                `Triggered by rule: ${rule.name}`,
+                'system'
+              );
               action.details = { blocked_ip: event.source_ip };
             }
             break;
@@ -293,7 +318,10 @@ class SecurityAPI {
 
           case ActionType.NOTIFY_ADMIN:
             // In production, this would send real notifications
-            action.details = { notification_sent: true, admin_notified: 'admin' };
+            action.details = {
+              notification_sent: true,
+              admin_notified: 'admin',
+            };
             console.log(`🚨 Admin notified for event: ${event.id}`);
             break;
 
@@ -318,27 +346,38 @@ class SecurityAPI {
         this.actions.set(action.id, action);
       } catch (error) {
         action.success = false;
-        action.error_message = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`Failed to execute security action ${actionType}:`, error);
+        action.error_message =
+          error instanceof Error ? error.message : 'Unknown error';
+        console.error(
+          `Failed to execute security action ${actionType}:`,
+          error
+        );
       }
     }
   }
 
-  private blockIP(ip: string, reason: string, blockedBy: string, permanent: boolean = false) {
-    const expiresAt = permanent ? undefined : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    
+  private blockIP(
+    ip: string,
+    reason: string,
+    blockedBy: string,
+    permanent: boolean = false
+  ) {
+    const expiresAt = permanent
+      ? undefined
+      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
     this.ipBlocklist.set(ip, {
       ip,
       reason,
       blocked_by: blockedBy,
       blocked_at: new Date().toISOString(),
       expires_at: expiresAt,
-      permanent
+      permanent,
     });
   }
 
   private applyRateLimit(ip: string) {
-    const resetAt = Date.now() + (5 * 60 * 1000); // 5 minutes
+    const resetAt = Date.now() + 5 * 60 * 1000; // 5 minutes
     this.rateLimitCounter.set(ip, { count: 0, resetAt });
   }
 
@@ -351,9 +390,9 @@ class SecurityAPI {
     }
 
     const now = Date.now();
-    const last24Hours = now - (24 * 60 * 60 * 1000);
-    const recentEvents = this.events.filter(e => 
-      new Date(e.timestamp).getTime() > last24Hours
+    const last24Hours = now - 24 * 60 * 60 * 1000;
+    const recentEvents = this.events.filter(
+      e => new Date(e.timestamp).getTime() > last24Hours
     );
 
     const metrics: SecurityMetrics = {
@@ -362,10 +401,14 @@ class SecurityAPI {
       events_by_threat_level: this.getEventsByThreatLevel(recentEvents),
       blocked_ips: Array.from(this.ipBlocklist.keys()),
       active_sessions: Math.floor(Math.random() * 150) + 50, // Mock data
-      failed_login_attempts: recentEvents.filter(e => e.event_type === EventType.FAILED_LOGIN).length,
+      failed_login_attempts: recentEvents.filter(
+        e => e.event_type === EventType.FAILED_LOGIN
+      ).length,
       resolved_incidents: this.events.filter(e => e.resolved).length,
-      open_incidents: this.events.filter(e => !e.resolved && e.threat_level !== ThreatLevel.LOW).length,
-      average_response_time: 180 // Mock: 3 minutes average
+      open_incidents: this.events.filter(
+        e => !e.resolved && e.threat_level !== ThreatLevel.LOW
+      ).length,
+      average_response_time: 180, // Mock: 3 minutes average
     };
 
     return Response.json({
@@ -376,7 +419,7 @@ class SecurityAPI {
       system_health: 'healthy',
       monitoring_active: true,
       rules_configured: this.rules.size,
-      last_updated: new Date().toISOString()
+      last_updated: new Date().toISOString(),
     });
   }
 
@@ -388,7 +431,10 @@ class SecurityAPI {
 
     const url = new URL(req.url);
     const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit') || '50'),
+      200
+    );
     const eventType = url.searchParams.get('event_type') as EventType;
     const threatLevel = url.searchParams.get('threat_level') as ThreatLevel;
     const unresolvedOnly = url.searchParams.get('unresolved_only') === 'true';
@@ -401,7 +447,9 @@ class SecurityAPI {
     }
 
     if (threatLevel) {
-      filteredEvents = filteredEvents.filter(e => e.threat_level === threatLevel);
+      filteredEvents = filteredEvents.filter(
+        e => e.threat_level === threatLevel
+      );
     }
 
     if (unresolvedOnly) {
@@ -409,8 +457,9 @@ class SecurityAPI {
     }
 
     // Sort by timestamp (newest first)
-    filteredEvents.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    filteredEvents.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
 
     // Pagination
@@ -425,8 +474,8 @@ class SecurityAPI {
         page,
         limit,
         total: filteredEvents.length,
-        total_pages: Math.ceil(filteredEvents.length / limit)
-      }
+        total_pages: Math.ceil(filteredEvents.length / limit),
+      },
     });
   }
 
@@ -437,11 +486,11 @@ class SecurityAPI {
     }
 
     const rules = Array.from(this.rules.values());
-    
+
     return Response.json({
       success: true,
       rules,
-      total: rules.length
+      total: rules.length,
     });
   }
 
@@ -465,16 +514,16 @@ class SecurityAPI {
 
     try {
       const updates = await req.json();
-      
+
       // Update allowed fields
       if (typeof updates.enabled === 'boolean') {
         rule.enabled = updates.enabled;
       }
-      
+
       if (updates.conditions) {
         rule.conditions = { ...rule.conditions, ...updates.conditions };
       }
-      
+
       if (updates.actions && Array.isArray(updates.actions)) {
         rule.actions = updates.actions;
       }
@@ -485,14 +534,16 @@ class SecurityAPI {
       return Response.json({
         success: true,
         message: 'Security rule updated successfully',
-        rule
+        rule,
       });
-
     } catch (error) {
-      return Response.json({
-        error: 'Invalid request data',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 400 });
+      return Response.json(
+        {
+          error: 'Invalid request data',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 400 }
+      );
     }
   }
 
@@ -502,15 +553,17 @@ class SecurityAPI {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const blockedIPs = Array.from(this.ipBlocklist.entries()).map(([ip, data]) => ({
-      ip,
-      ...data
-    }));
+    const blockedIPs = Array.from(this.ipBlocklist.entries()).map(
+      ([ip, data]) => ({
+        ip,
+        ...data,
+      })
+    );
 
     return Response.json({
       success: true,
       blocked_ips: blockedIPs,
-      total: blockedIPs.length
+      total: blockedIPs.length,
     });
   }
 
@@ -521,12 +574,20 @@ class SecurityAPI {
     }
 
     try {
-      const { ip, reason, permanent = false, duration_hours = 24 } = await req.json();
+      const {
+        ip,
+        reason,
+        permanent = false,
+        duration_hours = 24,
+      } = await req.json();
 
       if (!ip || !reason) {
-        return Response.json({ 
-          error: 'Missing required fields: ip, reason' 
-        }, { status: 400 });
+        return Response.json(
+          {
+            error: 'Missing required fields: ip, reason',
+          },
+          { status: 400 }
+        );
       }
 
       this.blockIP(ip, reason, admin.admin_id, permanent);
@@ -535,14 +596,20 @@ class SecurityAPI {
         success: true,
         message: `IP ${ip} blocked successfully`,
         blocked_ip: ip,
-        expires_at: permanent ? null : new Date(Date.now() + duration_hours * 60 * 60 * 1000).toISOString()
+        expires_at: permanent
+          ? null
+          : new Date(
+              Date.now() + duration_hours * 60 * 60 * 1000
+            ).toISOString(),
       });
-
     } catch (error) {
-      return Response.json({
-        error: 'Invalid request data',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 400 });
+      return Response.json(
+        {
+          error: 'Invalid request data',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 400 }
+      );
     }
   }
 
@@ -561,14 +628,17 @@ class SecurityAPI {
 
     if (this.ipBlocklist.has(ip)) {
       this.ipBlocklist.delete(ip);
-      
+
       return Response.json({
         success: true,
         message: `IP ${ip} unblocked successfully`,
-        unblocked_ip: ip
+        unblocked_ip: ip,
       });
     } else {
-      return Response.json({ error: 'IP not found in blocklist' }, { status: 404 });
+      return Response.json(
+        { error: 'IP not found in blocklist' },
+        { status: 404 }
+      );
     }
   }
 
@@ -576,7 +646,7 @@ class SecurityAPI {
     // Internal endpoint for recording security events
     try {
       const eventData = await req.json();
-      
+
       const event: SecurityEvent = {
         id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         timestamp: new Date().toISOString(),
@@ -588,7 +658,7 @@ class SecurityAPI {
         description: eventData.description,
         metadata: eventData.metadata || {},
         resolved: false,
-        actions_taken: []
+        actions_taken: [],
       };
 
       this.events.unshift(event);
@@ -597,14 +667,16 @@ class SecurityAPI {
       return Response.json({
         success: true,
         message: 'Security event recorded',
-        event_id: event.id
+        event_id: event.id,
       });
-
     } catch (error) {
-      return Response.json({
-        error: 'Invalid request data',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 400 });
+      return Response.json(
+        {
+          error: 'Invalid request data',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 400 }
+      );
     }
   }
 
@@ -612,21 +684,23 @@ class SecurityAPI {
 
   private getEventsByType(events: SecurityEvent[]): Record<EventType, number> {
     const counts = {} as Record<EventType, number>;
-    
+
     Object.values(EventType).forEach(type => {
       counts[type] = events.filter(e => e.event_type === type).length;
     });
-    
+
     return counts;
   }
 
-  private getEventsByThreatLevel(events: SecurityEvent[]): Record<ThreatLevel, number> {
+  private getEventsByThreatLevel(
+    events: SecurityEvent[]
+  ): Record<ThreatLevel, number> {
     const counts = {} as Record<ThreatLevel, number>;
-    
+
     Object.values(ThreatLevel).forEach(level => {
       counts[level] = events.filter(e => e.threat_level === level).length;
     });
-    
+
     return counts;
   }
 
@@ -643,7 +717,7 @@ class SecurityAPI {
         description: 'Failed login attempt with incorrect password',
         metadata: { attempts: 3, user_agent: 'Mozilla/5.0...' },
         resolved: false,
-        actions_taken: []
+        actions_taken: [],
       },
       {
         id: `event_${Date.now()}_002`,
@@ -657,8 +731,8 @@ class SecurityAPI {
         resolved: true,
         resolved_at: new Date(Date.now() - 3600000).toISOString(),
         resolved_by: 'admin',
-        actions_taken: []
-      }
+        actions_taken: [],
+      },
     ];
 
     this.events.push(...sampleEvents);

@@ -29,12 +29,12 @@ const ChartSelector: React.FC<{
     { id: 'equity', name: 'Equity Curve', icon: '📈' },
     { id: 'pnl', name: 'P&L Analysis', icon: '💰' },
     { id: 'volume', name: 'Volume Analysis', icon: '📊' },
-    { id: 'performance', name: 'Performance Metrics', icon: '🎯' }
+    { id: 'performance', name: 'Performance Metrics', icon: '🎯' },
   ];
 
   return (
-    <div className="flex space-x-2 mb-6 overflow-x-auto">
-      {charts.map((chart) => (
+    <div className='flex space-x-2 mb-6 overflow-x-auto'>
+      {charts.map(chart => (
         <button
           key={chart.id}
           onClick={() => onChartChange(chart.id)}
@@ -45,8 +45,8 @@ const ChartSelector: React.FC<{
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           } ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
         >
-          <span className="text-sm">{chart.icon}</span>
-          <span className="text-sm">{chart.name}</span>
+          <span className='text-sm'>{chart.icon}</span>
+          <span className='text-sm'>{chart.name}</span>
         </button>
       ))}
     </div>
@@ -63,12 +63,12 @@ const TimeRangeSelector: React.FC<{
     { id: '30d', name: '30D' },
     { id: '90d', name: '3M' },
     { id: '1y', name: '1Y' },
-    { id: 'all', name: 'All' }
+    { id: 'all', name: 'All' },
   ];
 
   return (
-    <div className="flex space-x-1">
-      {ranges.map((range) => (
+    <div className='flex space-x-1'>
+      {ranges.map(range => (
         <button
           key={range.id}
           onClick={() => onRangeChange(range.id)}
@@ -95,18 +95,22 @@ const InteractiveChart: React.FC<{
   animated?: boolean;
   width?: number;
   height?: number;
-}> = ({ 
-  data, 
-  type = 'line', 
-  color = '#3B82F6', 
-  showGrid = true, 
+}> = ({
+  data,
+  type = 'line',
+  color = '#3B82F6',
+  showGrid = true,
   showTooltip = true,
   animated = true,
   width = 800,
-  height = 400 
+  height = 400,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hoveredPoint, setHoveredPoint] = useState<{ point: ChartDataPoint; x: number; y: number } | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    point: ChartDataPoint;
+    x: number;
+    y: number;
+  } | null>(null);
   const [isAnimating, setIsAnimating] = useState(animated);
 
   const chartData = useMemo(() => {
@@ -115,15 +119,15 @@ const InteractiveChart: React.FC<{
     const maxValue = Math.max(...data.map(d => d.value));
     const minValue = Math.min(...data.map(d => d.value));
     const range = maxValue - minValue || 1;
-    
+
     const padding = 40;
-    const chartWidth = width - (padding * 2);
-    const chartHeight = height - (padding * 2);
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
 
     const points = data.map((point, index) => ({
       ...point,
       x: padding + (index / (data.length - 1)) * chartWidth,
-      y: padding + ((maxValue - point.value) / range) * chartHeight
+      y: padding + ((maxValue - point.value) / range) * chartHeight,
     }));
 
     return { points, maxValue, minValue };
@@ -131,10 +135,10 @@ const InteractiveChart: React.FC<{
 
   const pathData = useMemo(() => {
     if (!chartData.points.length) return '';
-    
-    const points = chartData.points.map((p, i) => 
-      `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
-    ).join(' ');
+
+    const points = chartData.points
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+      .join(' ');
 
     if (type === 'area') {
       const firstPoint = chartData.points[0];
@@ -160,7 +164,7 @@ const InteractiveChart: React.FC<{
     setHoveredPoint({
       point: closestPoint,
       x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      y: event.clientY - rect.top,
     });
   };
 
@@ -173,52 +177,52 @@ const InteractiveChart: React.FC<{
   }, [chartData, animated]);
 
   return (
-    <div className="relative">
+    <div className='relative'>
       <svg
         ref={svgRef}
         width={width}
         height={height}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoveredPoint(null)}
-        className="cursor-crosshair"
+        className='cursor-crosshair'
       >
         <defs>
-          <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.05" />
+          <linearGradient id='chartGradient' x1='0%' y1='0%' x2='0%' y2='100%'>
+            <stop offset='0%' stopColor={color} stopOpacity='0.3' />
+            <stop offset='100%' stopColor={color} stopOpacity='0.05' />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-            <feMerge> 
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
+          <filter id='glow'>
+            <feGaussianBlur stdDeviation='2' result='coloredBlur' />
+            <feMerge>
+              <feMergeNode in='coloredBlur' />
+              <feMergeNode in='SourceGraphic' />
             </feMerge>
           </filter>
         </defs>
 
         {/* Grid lines */}
         {showGrid && (
-          <g className="opacity-20">
+          <g className='opacity-20'>
             {[...Array(5)].map((_, i) => (
               <line
                 key={`h-${i}`}
-                x1="40"
-                y1={40 + (i * (height - 80) / 4)}
+                x1='40'
+                y1={40 + (i * (height - 80)) / 4}
                 x2={width - 40}
-                y2={40 + (i * (height - 80) / 4)}
-                stroke="#E5E7EB"
-                strokeWidth="1"
+                y2={40 + (i * (height - 80)) / 4}
+                stroke='#E5E7EB'
+                strokeWidth='1'
               />
             ))}
             {[...Array(6)].map((_, i) => (
               <line
                 key={`v-${i}`}
-                x1={40 + (i * (width - 80) / 5)}
-                y1="40"
-                x2={40 + (i * (width - 80) / 5)}
+                x1={40 + (i * (width - 80)) / 5}
+                y1='40'
+                x2={40 + (i * (width - 80)) / 5}
                 y2={height - 40}
-                stroke="#E5E7EB"
-                strokeWidth="1"
+                stroke='#E5E7EB'
+                strokeWidth='1'
               />
             ))}
           </g>
@@ -230,26 +234,33 @@ const InteractiveChart: React.FC<{
             {type === 'area' && (
               <path
                 d={pathData}
-                fill="url(#chartGradient)"
-                stroke="none"
+                fill='url(#chartGradient)'
+                stroke='none'
                 style={{
-                  animation: isAnimating ? 'fadeIn 0.8s ease-out' : 'none'
+                  animation: isAnimating ? 'fadeIn 0.8s ease-out' : 'none',
                 }}
               />
             )}
-            
+
             <path
-              d={type === 'area' ? pathData.split(' L')[0] + pathData.split(' L').slice(1, -3).join(' L') : pathData}
-              fill="none"
+              d={
+                type === 'area'
+                  ? pathData.split(' L')[0] +
+                    pathData.split(' L').slice(1, -3).join(' L')
+                  : pathData
+              }
+              fill='none'
               stroke={color}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              filter="url(#glow)"
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              filter='url(#glow)'
               style={{
                 strokeDasharray: isAnimating ? '1000' : '0',
                 strokeDashoffset: isAnimating ? '1000' : '0',
-                animation: isAnimating ? 'drawLine 1s ease-out forwards' : 'none'
+                animation: isAnimating
+                  ? 'drawLine 1s ease-out forwards'
+                  : 'none',
               }}
             />
           </>
@@ -263,26 +274,30 @@ const InteractiveChart: React.FC<{
             cy={point.y}
             r={hoveredPoint?.point === point ? 6 : 3}
             fill={color}
-            stroke="white"
-            strokeWidth="2"
-            className="transition-all duration-200"
+            stroke='white'
+            strokeWidth='2'
+            className='transition-all duration-200'
             style={{
               opacity: isAnimating ? 0 : 1,
-              animation: isAnimating ? `fadeIn 0.3s ease-out ${index * 50}ms forwards` : 'none'
+              animation: isAnimating
+                ? `fadeIn 0.3s ease-out ${index * 50}ms forwards`
+                : 'none',
             }}
           />
         ))}
 
         {/* Y-axis labels */}
         {[...Array(5)].map((_, i) => {
-          const value = chartData.maxValue - (i * (chartData.maxValue - chartData.minValue) / 4);
+          const value =
+            chartData.maxValue -
+            (i * (chartData.maxValue - chartData.minValue)) / 4;
           return (
             <text
               key={`y-label-${i}`}
-              x="35"
-              y={40 + (i * (height - 80) / 4) + 5}
-              textAnchor="end"
-              className="text-xs fill-gray-500"
+              x='35'
+              y={40 + (i * (height - 80)) / 4 + 5}
+              textAnchor='end'
+              className='text-xs fill-gray-500'
             >
               ${value.toFixed(0)}
             </text>
@@ -293,21 +308,22 @@ const InteractiveChart: React.FC<{
       {/* Tooltip */}
       {hoveredPoint && showTooltip && (
         <div
-          className="absolute z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 pointer-events-none"
+          className='absolute z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 pointer-events-none'
           style={{
             left: hoveredPoint.x + 10,
             top: hoveredPoint.y - 60,
-            transform: hoveredPoint.x > width - 150 ? 'translateX(-100%)' : 'none'
+            transform:
+              hoveredPoint.x > width - 150 ? 'translateX(-100%)' : 'none',
           }}
         >
-          <div className="text-sm font-medium text-gray-900">
+          <div className='text-sm font-medium text-gray-900'>
             ${hoveredPoint.point.value.toLocaleString()}
           </div>
-          <div className="text-xs text-gray-600">
+          <div className='text-xs text-gray-600'>
             {new Date(hoveredPoint.point.timestamp).toLocaleDateString()}
           </div>
           {hoveredPoint.point.type && (
-            <div className="text-xs text-blue-600 capitalize">
+            <div className='text-xs text-blue-600 capitalize'>
               {hoveredPoint.point.type}
             </div>
           )}
@@ -329,38 +345,43 @@ const PerformanceComparison: React.FC<{
 }> = ({ data, loading }) => {
   if (loading) {
     return (
-      <div className="animate-pulse">
-        <div className="h-64 bg-gray-200 rounded-lg" />
+      <div className='animate-pulse'>
+        <div className='h-64 bg-gray-200 rounded-lg' />
       </div>
     );
   }
 
-  const chartData: ChartDataPoint[] = data.timestamps.map((timestamp, index) => ({
-    timestamp,
-    value: data.net_pnl[index] || 0,
-    volume: (data.deposits[index] || 0) + Math.abs(data.withdrawals[index] || 0)
-  }));
+  const chartData: ChartDataPoint[] = data.timestamps.map(
+    (timestamp, index) => ({
+      timestamp,
+      value: data.net_pnl[index] || 0,
+      volume:
+        (data.deposits[index] || 0) + Math.abs(data.withdrawals[index] || 0),
+    })
+  );
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Performance Analysis</h3>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full" />
-            <span className="text-xs text-gray-600">Net P&L</span>
+    <div className='bg-white rounded-lg shadow-md p-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h3 className='text-lg font-semibold text-gray-900'>
+          Performance Analysis
+        </h3>
+        <div className='flex items-center space-x-4'>
+          <div className='flex items-center space-x-2'>
+            <div className='w-3 h-3 bg-green-500 rounded-full' />
+            <span className='text-xs text-gray-600'>Net P&L</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full" />
-            <span className="text-xs text-gray-600">Volume</span>
+          <div className='flex items-center space-x-2'>
+            <div className='w-3 h-3 bg-blue-500 rounded-full' />
+            <span className='text-xs text-gray-600'>Volume</span>
           </div>
         </div>
       </div>
 
       <InteractiveChart
         data={chartData}
-        type="area"
-        color="#10B981"
+        type='area'
+        color='#10B981'
         width={750}
         height={300}
       />
@@ -369,15 +390,16 @@ const PerformanceComparison: React.FC<{
 };
 
 // Main Advanced Charting Component
-export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({ 
-  customerId, 
-  className = '' 
+export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({
+  customerId,
+  className = '',
 }) => {
   const [selectedChart, setSelectedChart] = useState('equity');
   const [timeRange, setTimeRange] = useState('30d');
   const [isExporting, setIsExporting] = useState(false);
 
-  const { data: analytics, loading: analyticsLoading } = useCustomerAnalytics(customerId);
+  const { data: analytics, loading: analyticsLoading } =
+    useCustomerAnalytics(customerId);
   const { data: transactions } = useTransactionHistory(customerId, 1, 100);
 
   // Process data for different chart types
@@ -394,42 +416,44 @@ export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({
     return {
       equity: analytics.balance_trend.map((value, index) => ({
         timestamp: timestamps[index],
-        value
+        value,
       })),
       pnl: analytics.balance_trend.map((value, index) => ({
         timestamp: timestamps[index],
-        value: value - (analytics.balance_trend[0] || 0)
+        value: value - (analytics.balance_trend[0] || 0),
       })),
-      volume: transactions?.transactions.slice(0, 30).map((tx, index) => ({
-        timestamp: tx.timestamp,
-        value: Math.abs(tx.amount),
-        type: tx.type
-      })) || [],
+      volume:
+        transactions?.transactions.slice(0, 30).map((tx, index) => ({
+          timestamp: tx.timestamp,
+          value: Math.abs(tx.amount),
+          type: tx.type,
+        })) || [],
       performance: {
         deposits: analytics.balance_trend.map(() => Math.random() * 1000),
         withdrawals: analytics.balance_trend.map(() => Math.random() * -500),
-        net_pnl: analytics.balance_trend.map((value, index) => 
-          value - (analytics.balance_trend[0] || 0)
+        net_pnl: analytics.balance_trend.map(
+          (value, index) => value - (analytics.balance_trend[0] || 0)
         ),
-        timestamps
-      }
+        timestamps,
+      },
     };
   }, [analytics, transactions]);
 
   const exportChart = async (format: 'png' | 'csv') => {
     setIsExporting(true);
-    
+
     try {
       if (format === 'csv') {
         const data = chartData[selectedChart as keyof typeof chartData];
         if (Array.isArray(data)) {
           const csvContent = [
             'Timestamp,Value,Type',
-            ...data.map(point => 
-              `${point.timestamp},${point.value},${(point as any).type || ''}`
-            )
+            ...data.map(
+              point =>
+                `${point.timestamp},${point.value},${(point as any).type || ''}`
+            ),
           ].join('\n');
-          
+
           const blob = new Blob([csvContent], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -450,30 +474,34 @@ export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+      <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0'>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Advanced Analytics</h2>
-          <p className="text-sm text-gray-600">Real-time performance visualization powered by sub-millisecond APIs</p>
+          <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+            Advanced Analytics
+          </h2>
+          <p className='text-sm text-gray-600'>
+            Real-time performance visualization powered by sub-millisecond APIs
+          </p>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          <TimeRangeSelector 
-            selectedRange={timeRange} 
-            onRangeChange={setTimeRange} 
+
+        <div className='flex items-center space-x-4'>
+          <TimeRangeSelector
+            selectedRange={timeRange}
+            onRangeChange={setTimeRange}
           />
-          
-          <div className="flex space-x-2">
+
+          <div className='flex space-x-2'>
             <button
               onClick={() => exportChart('csv')}
               disabled={isExporting}
-              className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              className='px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 disabled:opacity-50'
             >
               📊 Export CSV
             </button>
             <button
               onClick={() => exportChart('png')}
               disabled={isExporting}
-              className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              className='px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors duration-200 disabled:opacity-50'
             >
               📸 Export PNG
             </button>
@@ -489,19 +517,19 @@ export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({
       />
 
       {/* Main Chart Area */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className='bg-white rounded-lg shadow-md p-6'>
         {analyticsLoading ? (
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3" />
-            <div className="h-64 bg-gray-200 rounded-lg" />
+          <div className='animate-pulse space-y-4'>
+            <div className='h-8 bg-gray-200 rounded w-1/3' />
+            <div className='h-64 bg-gray-200 rounded-lg' />
           </div>
         ) : (
           <>
             {selectedChart === 'equity' && (
               <InteractiveChart
                 data={chartData.equity}
-                type="area"
-                color="#3B82F6"
+                type='area'
+                color='#3B82F6'
                 width={800}
                 height={400}
               />
@@ -510,8 +538,8 @@ export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({
             {selectedChart === 'pnl' && (
               <InteractiveChart
                 data={chartData.pnl}
-                type="line"
-                color="#10B981"
+                type='line'
+                color='#10B981'
                 width={800}
                 height={400}
               />
@@ -520,8 +548,8 @@ export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({
             {selectedChart === 'volume' && (
               <InteractiveChart
                 data={chartData.volume}
-                type="bar"
-                color="#F59E0B"
+                type='bar'
+                color='#F59E0B'
                 width={800}
                 height={400}
               />
@@ -538,33 +566,34 @@ export const AdvancedCharting: React.FC<AdvancedChartingProps> = ({
       </div>
 
       {/* Chart Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="text-green-600">📈</span>
-            <h4 className="font-medium text-green-800">Best Performance</h4>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <div className='bg-green-50 border border-green-200 rounded-lg p-4'>
+          <div className='flex items-center space-x-2 mb-2'>
+            <span className='text-green-600'>📈</span>
+            <h4 className='font-medium text-green-800'>Best Performance</h4>
           </div>
-          <p className="text-sm text-green-700">
-            Highest single-day gain: +${Math.max(...(chartData.pnl || [])).toLocaleString()}
+          <p className='text-sm text-green-700'>
+            Highest single-day gain: +$
+            {Math.max(...(chartData.pnl || [])).toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="text-blue-600">⚡</span>
-            <h4 className="font-medium text-blue-800">API Performance</h4>
+        <div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+          <div className='flex items-center space-x-2 mb-2'>
+            <span className='text-blue-600'>⚡</span>
+            <h4 className='font-medium text-blue-800'>API Performance</h4>
           </div>
-          <p className="text-sm text-blue-700">
+          <p className='text-sm text-blue-700'>
             Average response: &lt;2ms for real-time updates
           </p>
         </div>
 
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="text-purple-600">🎯</span>
-            <h4 className="font-medium text-purple-800">Accuracy</h4>
+        <div className='bg-purple-50 border border-purple-200 rounded-lg p-4'>
+          <div className='flex items-center space-x-2 mb-2'>
+            <span className='text-purple-600'>🎯</span>
+            <h4 className='font-medium text-purple-800'>Accuracy</h4>
           </div>
-          <p className="text-sm text-purple-700">
+          <p className='text-sm text-purple-700'>
             Live data with sub-second latency guarantee
           </p>
         </div>

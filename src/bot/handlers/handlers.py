@@ -10,13 +10,13 @@ import logging
 import re
 import asyncio
 
-from .config import config, messages, patterns, keywords
-from .database import db, Customer, Transaction
-from .utils import detect_transaction, format_currency, calculate_percentage
-from .error_handler import error_handler_decorator, ErrorCategory, ErrorSeverity
-from .portal_integration import notify_customer_activity, notify_balance_change, process_group_message, is_portal_enabled
-from .chat_manager import chat_manager
-from .shortlink_service import shortlink_service
+from config import config, messages, patterns, keywords
+from database import db, Customer, Transaction
+from utils.utils import detect_transaction, format_currency, calculate_percentage
+from services.error_handler import error_handler_decorator, ErrorCategory, ErrorSeverity
+from services.portal_integration import notify_customer_activity, notify_balance_change, process_group_message, is_portal_enabled
+from services.chat_manager import chat_manager
+from services.shortlink_service import shortlink_service
 
 import sys
 import os

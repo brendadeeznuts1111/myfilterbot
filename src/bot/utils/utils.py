@@ -6,7 +6,7 @@ from typing import Dict, Optional, Any, List
 from datetime import datetime, timedelta
 import logging
 
-from .config import patterns
+from config import patterns
 
 logger = logging.getLogger(__name__)
 
