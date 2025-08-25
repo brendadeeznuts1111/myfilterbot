@@ -5,7 +5,11 @@
  * Run with: bun --hot src/test-yaml-hot-reload.ts
  */
 
-import { server, features } from "../config/app.yaml";
+import appConfig from "../config/app.yaml";
+import featuresConfig from "../config/features.yaml";
+
+const server = appConfig.server;
+const features = featuresConfig;
 import { configManager, isFeatureEnabled } from "./utils/yaml-config";
 
 console.log("🚀 Starting YAML Hot Reload Test Server");
@@ -44,9 +48,12 @@ await checkFeatures();
 let configVersion = 1;
 
 // Create a simple HTTP server to demonstrate config usage
+const port = parseInt(process.env.API_PORT || '3001');
+const host = process.env.API_HOST || 'localhost';
+
 Bun.serve({
-  port: server.api.port || 3001,
-  hostname: server.api.host || "localhost",
+  port,
+  hostname: host,
 
   async fetch(req) {
     const url = new URL(req.url);
