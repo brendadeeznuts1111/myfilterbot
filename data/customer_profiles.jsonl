@@ -1,0 +1,4 @@
+{"id":42,"tgId":777,"username":"@vip_whale","balance":15250,"deposits":12,"withdrawals":3,"totalWagered":125000,"winRate":0.58,"tags":["vip","crypto","high-roller","verified"],"joinedAt":"2024-06-01","lastActive":"2024-12-01T12:05:00Z"}
+{"id":43,"tgId":888,"username":"@admin_user","balance":5000,"deposits":20,"withdrawals":8,"totalWagered":50000,"winRate":0.52,"tags":["admin","trusted","long-term"],"joinedAt":"2024-01-15","lastActive":"2024-12-01T12:01:00Z"}
+{"id":44,"tgId":999,"username":"@mod_sarah","balance":2500,"deposits":8,"withdrawals":2,"totalWagered":15000,"winRate":0.55,"tags":["moderator","active","gold"],"joinedAt":"2024-03-20","lastActive":"2024-12-01T12:10:00Z"}
+{"id":45,"tgId":1000,"username":"@trader_john","balance":750,"deposits":5,"withdrawals":1,"totalWagered":5000,"winRate":0.48,"tags":["regular","sports","silver"],"joinedAt":"2024-05-10","lastActive":"2024-12-01T12:15:00Z"}

@@ -1,0 +1,5 @@
+{"id":1,"chat":-2714719687,"user":777,"username":"@vip_whale","text":"When is the next big match?","timestamp":"2024-12-01T12:00:00Z","type":"question"}
+{"id":2,"chat":-2714719687,"user":888,"username":"@admin_user","text":"Champions League final is tomorrow at 3 PM EST","timestamp":"2024-12-01T12:01:00Z","type":"reply"}
+{"id":3,"chat":-2814729688,"user":777,"username":"@vip_whale","text":"I want to place a 10k bet on Real Madrid","timestamp":"2024-12-01T12:05:00Z","type":"bet_request"}
+{"id":4,"chat":-1001111111111,"user":999,"username":"@mod_sarah","text":"VIP signals: Real Madrid showing strong form","timestamp":"2024-12-01T12:10:00Z","type":"signal"}
+{"id":5,"chat":-1002222222222,"user":1000,"username":"@trader_john","text":"Thanks for the tips!","timestamp":"2024-12-01T12:15:00Z","type":"message"}

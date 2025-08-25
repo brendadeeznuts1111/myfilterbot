@@ -1,0 +1,100 @@
+# Customer Profile Configuration
+customers:
+  # VIP customers with Telegram integration
+  - id: 42
+    telegramId: 777
+    username: "@vip_whale"
+    level: vip
+    tags: ["high-roller", "crypto", "verified"]
+    joinedAt: "2024-06-01"
+    preferredPayment: "crypto"
+    
+  - id: 43
+    telegramId: 888
+    username: "@admin_user"
+    level: vip
+    tags: ["admin", "trusted", "long-term"]
+    joinedAt: "2024-01-15"
+    preferredPayment: "stripe"
+    
+  - id: 44
+    telegramId: 999
+    username: "@mod_sarah"
+    level: gold
+    tags: ["moderator", "active"]
+    joinedAt: "2024-03-20"
+    preferredPayment: "paypal"
+    
+  - id: 45
+    telegramId: 1000
+    username: "@trader_john"
+    level: silver
+    tags: ["regular", "sports"]
+    joinedAt: "2024-05-10"
+    preferredPayment: "card"
+
+# Profile levels with benefits
+levels:
+  vip:
+    minDeposit: 10000
+    rebate: 0.02
+    withdrawPriority: 1
+    supportPriority: 1
+    
+  gold:
+    minDeposit: 5000
+    rebate: 0.015
+    withdrawPriority: 2
+    supportPriority: 2
+    
+  silver:
+    minDeposit: 1000
+    rebate: 0.01
+    withdrawPriority: 3
+    supportPriority: 3
+    
+  basic:
+    minDeposit: 0
+    rebate: 0
+    withdrawPriority: 4
+    supportPriority: 4
+
+# Available tags for customer categorization
+tags:
+  categories:
+    - high-roller
+    - regular
+    - new
+    - inactive
+    - vip
+    - gold
+    - silver
+    - basic
+    
+  payment:
+    - crypto
+    - card
+    - paypal
+    - stripe
+    - bank
+    
+  behavior:
+    - verified
+    - trusted
+    - flagged
+    - restricted
+    - banned
+    
+  activity:
+    - sports
+    - casino
+    - lottery
+    - p2p
+    - forex
+    
+  special:
+    - admin
+    - moderator
+    - affiliate
+    - agent
+    - master

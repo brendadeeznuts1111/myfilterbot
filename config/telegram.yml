@@ -4,6 +4,15 @@ telegram:
   botToken: ${TELEGRAM_BOT_TOKEN:-123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11}
   cashierBotToken: ${TELEGRAM_CASHIER_TOKEN:-654321:XYZ-ABC5678mnoPq-rst90U3v4w567ab22}
   
+  # Personal account (MTProto) - Optional
+  # Get apiId and apiHash from https://my.telegram.org
+  personal:
+    apiId: ${TELEGRAM_API_ID}
+    apiHash: ${TELEGRAM_API_HASH}
+    phone: ${TELEGRAM_PHONE}
+    # 2FA password if enabled (store in env var for security)
+    password: ${TELEGRAM_2FA_PASSWORD}
+  
   # VIP settings
   vipThreshold: 500         # Minimum deposit for VIP status
   vipBenefits:
@@ -20,23 +29,43 @@ telegram:
     pattern_analysis: true
     blacklist_check: true
   
-  # Group chats
+  # Admin settings
+  adminGroup: -1001234567890
+  roles:
+    admin: [777, 888]        # TG user IDs with admin access
+    moderator: [999, 1000]   # TG user IDs with moderator access
+    viewer: []               # TG user IDs with view-only access
+  
+  # Group chats with RBAC
   groups:
     main:
       id: "-2714719687"
       name: "Main Trading Group"
       type: "public"
       max_members: 5000
+      roles: ["admin", "moderator", "viewer"]
     vip:
       id: "-2814729688"
       name: "VIP Trading Group"
       type: "private"
       max_members: 200
+      roles: ["admin", "moderator"]
     alerts:
       id: "-2914739689"
       name: "System Alerts"
       type: "admin"
       max_members: 10
+      roles: ["admin"]
+    signals:
+      id: "-1001111111111"
+      name: "VIP Signals"
+      type: "group"
+      roles: ["admin", "moderator"]
+    public:
+      id: "-1002222222222"
+      name: "Public Chat"
+      type: "channel"
+      roles: ["viewer"]
   
   # Bot commands
   commands:

@@ -14,6 +14,12 @@ import { apiRouter } from './server/api/router';
 import { dashboardRouter } from './server/api/dashboard-router';
 import { dashboardConfigService } from './services/dashboard-config-service';
 import { commissionCalculator } from './lib/commission';
+import { db } from './lib/data';
+import { buildTable, exportToCSV, calculateStats } from './lib/table';
+import { telegramBridge } from './lib/telegram-bridge';
+
+// Initialize data layer on startup
+await db.reload();
 
 // JWT Authentication Setup
 const JWT_SECRET = new TextEncoder().encode(
@@ -211,9 +217,10 @@ const server = serve({
   async fetch(req) {
     const url = new URL(req.url);
     const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": process.env.REMOTE_DASHBOARD || "https://fire22.ag",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+      "Access-Control-Allow-Credentials": "true",
       "Content-Type": "application/json"
     };
 
@@ -549,22 +556,22 @@ const server = serve({
       }, { headers: corsHeaders });
     }
 
-    // WebSocket upgrade endpoint
-    if (url.pathname === "/api/ws" && req.headers.get("upgrade") === "websocket") {
-      const { response, socket } = Bun.upgradeWebSocket(req, {
-        message: (ws, message) => {
-          console.log('WebSocket message:', message);
-        },
-        open: (ws) => {
-          console.log('WebSocket connection opened');
-          ws.send(JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() }));
-        },
-        close: (ws) => {
-          console.log('WebSocket connection closed');
-        }
-      });
-      return response;
-    }
+    // WebSocket upgrade endpoint - commented out to avoid errors
+    // if (url.pathname === "/api/ws" && req.headers.get("upgrade") === "websocket") {
+    //   const { response, socket } = Bun.upgradeWebSocket(req, {
+    //     message: (ws, message) => {
+    //       console.log('WebSocket message:', message);
+    //     },
+    //     open: (ws) => {
+    //       console.log('WebSocket connection opened');
+    //       ws.send(JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() }));
+    //     },
+    //     close: (ws) => {
+    //       console.log('WebSocket connection closed');
+    //     }
+    //   });
+    //   return response;
+    // }
 
     // Service control endpoints (Public for monitoring tools)
     if (url.pathname === "/api/services/start" && req.method === "POST") {
@@ -1211,6 +1218,206 @@ const server = serve({
           }
           
           return Response.json({ error: "Customer not found" }, { status: 404, headers: corsHeaders });
+        }
+        
+        // DATA TABLE ENDPOINTS
+        
+        // Transactions table
+        if (url.pathname === "/api/admin/transactions") {
+          const query = Object.fromEntries(url.searchParams);
+          
+          // Handle CSV export
+          if (query.export === 'csv') {
+            const csv = exportToCSV(db.transactions);
+            return new Response(csv, {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="transactions-${Date.now()}.csv"`,
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return Response.json(buildTable(db.transactions, query), { headers: corsHeaders });
+        }
+        
+        // Bets table
+        if (url.pathname === "/api/admin/bets") {
+          const query = Object.fromEntries(url.searchParams);
+          
+          if (query.export === 'csv') {
+            const csv = exportToCSV(db.bets);
+            return new Response(csv, {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="bets-${Date.now()}.csv"`,
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return Response.json(buildTable(db.bets, query), { headers: corsHeaders });
+        }
+        
+        // Deposits table
+        if (url.pathname === "/api/admin/deposits") {
+          const query = Object.fromEntries(url.searchParams);
+          
+          if (query.export === 'csv') {
+            const csv = exportToCSV(db.deposits);
+            return new Response(csv, {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="deposits-${Date.now()}.csv"`,
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return Response.json(buildTable(db.deposits, query), { headers: corsHeaders });
+        }
+        
+        // Telegram Groups table
+        if (url.pathname === "/api/admin/tg-groups") {
+          const query = Object.fromEntries(url.searchParams);
+          
+          if (query.export === 'csv') {
+            const csv = exportToCSV(db.tgGroups);
+            return new Response(csv, {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="tg-groups-${Date.now()}.csv"`,
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return Response.json(buildTable(db.tgGroups, query), { headers: corsHeaders });
+        }
+        
+        // Images/Media table
+        if (url.pathname === "/api/admin/images") {
+          const query = Object.fromEntries(url.searchParams);
+          
+          if (query.export === 'csv') {
+            const csv = exportToCSV(db.images);
+            return new Response(csv, {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="images-${Date.now()}.csv"`,
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return Response.json(buildTable(db.images, query), { headers: corsHeaders });
+        }
+        
+        // Statistics endpoint - simplified version
+        if (url.pathname === "/api/admin/data-stats") {
+          return Response.json({
+            customers: db.customers.length,
+            transactions: db.transactions.length,
+            bets: db.bets.length,
+            deposits: db.deposits.length,
+            full_stats: db.getStats()
+          }, { headers: corsHeaders });
+        }
+        
+        // Generic table endpoints - simplified routing
+        const tables = ["transactions", "bets", "deposits", "customers"];
+        for (const t of tables) {
+          if (url.pathname === `/api/admin/${t}`) {
+            const q = Object.fromEntries(url.searchParams);
+            return Response.json(buildTable(db[t as keyof typeof db] as any[], q), { headers: corsHeaders });
+          }
+        }
+        
+        // Reload data endpoint
+        if (url.pathname === "/api/admin/data/reload" && req.method === "POST") {
+          await db.reload();
+          return Response.json({ success: true, stats: db.getStats() }, { headers: corsHeaders });
+        }
+        
+        // ========== REMOTE DASHBOARD ENDPOINTS ==========
+        // These endpoints are designed for the remote dashboard at fire22.ag
+        
+        // Remote customers endpoint
+        if (url.pathname === "/api/remote/customers") {
+          const query = Object.fromEntries(url.searchParams);
+          return Response.json(buildTable(db.customers, query), { headers: corsHeaders });
+        }
+        
+        // Remote transactions endpoint
+        if (url.pathname === "/api/remote/transactions") {
+          const query = Object.fromEntries(url.searchParams);
+          return Response.json(buildTable(db.transactions, query), { headers: corsHeaders });
+        }
+        
+        // Remote P2P deposits endpoint
+        if (url.pathname === "/api/remote/p2p/deposits") {
+          const p2pDeposits = await db.loadJsonl('data/p2p_deposits.jsonl');
+          const query = Object.fromEntries(url.searchParams);
+          return Response.json(buildTable(p2pDeposits, query), { headers: corsHeaders });
+        }
+        
+        // Remote P2P withdrawals endpoint
+        if (url.pathname === "/api/remote/p2p/withdrawals") {
+          const p2pWithdrawals = await db.loadJsonl('data/p2p_withdrawals.jsonl');
+          const query = Object.fromEntries(url.searchParams);
+          return Response.json(buildTable(p2pWithdrawals, query), { headers: corsHeaders });
+        }
+        
+        // Remote Telegram groups endpoint
+        if (url.pathname === "/api/remote/telegram/groups") {
+          const telegramGroups = await db.loadJsonl('data/telegram_groups.jsonl');
+          return Response.json({
+            groups: telegramGroups,
+            config: telegramConfig.telegram.groups,
+            roles: telegramConfig.telegram.roles
+          }, { headers: corsHeaders });
+        }
+        
+        // Remote Telegram messages endpoint
+        if (url.pathname === "/api/remote/telegram/messages") {
+          const messages = await db.loadJsonl('data/telegram_messages.jsonl');
+          const query = Object.fromEntries(url.searchParams);
+          return Response.json(buildTable(messages, query), { headers: corsHeaders });
+        }
+        
+        // Remote dashboard stats
+        if (url.pathname === "/api/remote/stats") {
+          return Response.json({
+            customers: db.customers.length,
+            transactions: db.transactions.length,
+            bets: db.bets.length,
+            deposits: db.deposits.length,
+            telegram_messages: (await db.loadJsonl('data/telegram_messages.jsonl')).length,
+            p2p_deposits: (await db.loadJsonl('data/p2p_deposits.jsonl')).length,
+            p2p_withdrawals: (await db.loadJsonl('data/p2p_withdrawals.jsonl')).length,
+            server_time: new Date().toISOString()
+          }, { headers: corsHeaders });
+        }
+        
+        // Telegram send message endpoint
+        if (url.pathname === "/api/admin/telegram/send" && req.method === "POST") {
+          const { chat, text, source } = await req.json();
+          const result = await telegramBridge.sendMessage(chat, text, source || "bot");
+          return Response.json(result, { headers: corsHeaders });
+        }
+        
+        // Telegram get messages endpoint
+        if (url.pathname === "/api/admin/telegram/messages") {
+          const limit = parseInt(url.searchParams.get("limit") || "100");
+          const chat = url.searchParams.get("chat") || undefined;
+          const messages = await telegramBridge.getMessages(limit, chat);
+          return Response.json({ messages }, { headers: corsHeaders });
+        }
+        
+        // Telegram get chats endpoint
+        if (url.pathname === "/api/admin/telegram/chats") {
+          const chats = await telegramBridge.getChats();
+          return Response.json({ chats }, { headers: corsHeaders });
         }
         
         // Add other admin routes here...
