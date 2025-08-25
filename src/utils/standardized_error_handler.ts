@@ -3,13 +3,13 @@
  * Provides consistent error handling patterns across the application
  */
 
-import { MESSAGE_CONFIG, TIMEOUT_CONFIG } from '@config/app_constants';
+import { MESSAGE_CONFIG } from '@config/app_constants';
 
 export enum ErrorSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 export enum ErrorCategory {
@@ -19,7 +19,7 @@ export enum ErrorCategory {
   AUTHENTICATION = 'authentication',
   RATE_LIMIT = 'rate_limit',
   TIMEOUT = 'timeout',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 export interface ErrorContext {
@@ -27,7 +27,7 @@ export interface ErrorContext {
   userId?: string;
   endpoint?: string;
   timestamp?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface RetryConfig {
@@ -40,7 +40,7 @@ export interface RetryConfig {
 
 export interface ErrorResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: {
     id: string;
     message: string;
@@ -53,7 +53,7 @@ export interface ErrorResult {
 
 export class StandardizedErrorHandler {
   private static instance: StandardizedErrorHandler;
-  private errorLog: Map<string, any> = new Map();
+  private errorLog: Map<string, unknown> = new Map();
 
   private constructor() {}
 
@@ -78,7 +78,7 @@ export class StandardizedErrorHandler {
       maxDelay: 30000,
       exponentialBackoff: true,
       jitter: true,
-      ...retryConfig
+      ...retryConfig,
     };
 
     let lastError: Error | null = null;
@@ -88,24 +88,31 @@ export class StandardizedErrorHandler {
         const result = await operation();
         return {
           success: true,
-          data: result
+          data: result,
         };
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         const errorInfo = this.classifyError(lastError);
-        
+
         // Log error
-        const errorId = this.logError(lastError, errorInfo.category, errorInfo.severity, {
-          ...context,
-          attempt,
-          maxAttempts: config.maxAttempts
-        });
+        const errorId = this.logError(
+          lastError,
+          errorInfo.category,
+          errorInfo.severity,
+          {
+            ...context,
+            attempt,
+            maxAttempts: config.maxAttempts,
+          }
+        );
 
         // Check if we should retry
         if (attempt < config.maxAttempts && errorInfo.retryable) {
           const delay = this.calculateDelay(attempt, config);
-          console.warn(`🔄 Retrying operation after ${delay}ms (attempt ${attempt}/${config.maxAttempts})`);
+          console.warn(
+            `🔄 Retrying operation after ${delay}ms (attempt ${attempt}/${config.maxAttempts})`
+          );
           await this.delay(delay);
           continue;
         }
@@ -119,8 +126,8 @@ export class StandardizedErrorHandler {
             category: errorInfo.category,
             severity: errorInfo.severity,
             context,
-            retryable: errorInfo.retryable
-          }
+            retryable: errorInfo.retryable,
+          },
         };
       }
     }
@@ -133,8 +140,8 @@ export class StandardizedErrorHandler {
         message: 'Unknown error occurred',
         category: ErrorCategory.UNKNOWN,
         severity: ErrorSeverity.MEDIUM,
-        retryable: false
-      }
+        retryable: false,
+      },
     };
   }
 
@@ -150,12 +157,16 @@ export class StandardizedErrorHandler {
     const name = error.name.toLowerCase();
 
     // Network errors
-    if (message.includes('fetch') || message.includes('network') || 
-        message.includes('timeout') || name.includes('timeout')) {
+    if (
+      message.includes('fetch') ||
+      message.includes('network') ||
+      message.includes('timeout') ||
+      name.includes('timeout')
+    ) {
       return {
         category: ErrorCategory.NETWORK,
         severity: ErrorSeverity.MEDIUM,
-        retryable: true
+        retryable: true,
       };
     }
 
@@ -164,47 +175,61 @@ export class StandardizedErrorHandler {
       return {
         category: ErrorCategory.RATE_LIMIT,
         severity: ErrorSeverity.LOW,
-        retryable: true
+        retryable: true,
       };
     }
 
     // Authentication errors
-    if (message.includes('unauthorized') || message.includes('401') || 
-        message.includes('forbidden') || message.includes('403')) {
+    if (
+      message.includes('unauthorized') ||
+      message.includes('401') ||
+      message.includes('forbidden') ||
+      message.includes('403')
+    ) {
       return {
         category: ErrorCategory.AUTHENTICATION,
         severity: ErrorSeverity.HIGH,
-        retryable: false
+        retryable: false,
       };
     }
 
     // Validation errors
-    if (message.includes('validation') || message.includes('invalid') || 
-        message.includes('400')) {
+    if (
+      message.includes('validation') ||
+      message.includes('invalid') ||
+      message.includes('400')
+    ) {
       return {
         category: ErrorCategory.VALIDATION,
         severity: ErrorSeverity.LOW,
-        retryable: false
+        retryable: false,
       };
     }
 
     // Database errors
-    if (message.includes('database') || message.includes('sql') || 
-        message.includes('connection')) {
+    if (
+      message.includes('database') ||
+      message.includes('sql') ||
+      message.includes('connection')
+    ) {
       return {
         category: ErrorCategory.DATABASE,
         severity: ErrorSeverity.HIGH,
-        retryable: true
+        retryable: true,
       };
     }
 
     // Server errors (5xx)
-    if (message.includes('500') || message.includes('502') || 
-        message.includes('503') || message.includes('504')) {
+    if (
+      message.includes('500') ||
+      message.includes('502') ||
+      message.includes('503') ||
+      message.includes('504')
+    ) {
       return {
         category: ErrorCategory.NETWORK,
         severity: ErrorSeverity.HIGH,
-        retryable: true
+        retryable: true,
       };
     }
 
@@ -212,7 +237,7 @@ export class StandardizedErrorHandler {
     return {
       category: ErrorCategory.UNKNOWN,
       severity: ErrorSeverity.MEDIUM,
-      retryable: false
+      retryable: false,
     };
   }
 
@@ -223,7 +248,10 @@ export class StandardizedErrorHandler {
     let delay = config.baseDelay;
 
     if (config.exponentialBackoff) {
-      delay = Math.min(config.baseDelay * Math.pow(2, attempt - 1), config.maxDelay);
+      delay = Math.min(
+        config.baseDelay * Math.pow(2, attempt - 1),
+        config.maxDelay
+      );
     }
 
     if (config.jitter) {
@@ -245,7 +273,7 @@ export class StandardizedErrorHandler {
     context: ErrorContext
   ): string {
     const errorId = `ERR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const errorRecord = {
       id: errorId,
       timestamp: new Date().toISOString(),
@@ -253,14 +281,14 @@ export class StandardizedErrorHandler {
       stack: error.stack,
       category,
       severity,
-      context
+      context,
     };
 
     this.errorLog.set(errorId, errorRecord);
-    
+
     // Log to console with appropriate level
     const logMessage = `[${severity.toUpperCase()}] ${category}: ${error.message}`;
-    
+
     switch (severity) {
       case ErrorSeverity.CRITICAL:
       case ErrorSeverity.HIGH:
@@ -295,7 +323,7 @@ export class StandardizedErrorHandler {
     const stats = {
       total: this.errorLog.size,
       byCategory: {} as Record<ErrorCategory, number>,
-      bySeverity: {} as Record<ErrorSeverity, number>
+      bySeverity: {} as Record<ErrorSeverity, number>,
     };
 
     // Initialize counters

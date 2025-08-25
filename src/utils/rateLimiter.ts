@@ -156,6 +156,7 @@ export const aggressiveRateLimiter = new RateLimiter({
   skipSuccessful: true, // Only count failed requests
   circuitBreaker: {
     errorThreshold: THRESHOLD_CONFIG.AGGRESSIVE_ERROR_THRESHOLD,
-    resetTimeout: TIMEOUT_CONFIG.AGGRESSIVE_CIRCUIT_BREAKER_RESET_TIMEOUT * 1000,
+    resetTimeout:
+      TIMEOUT_CONFIG.AGGRESSIVE_CIRCUIT_BREAKER_RESET_TIMEOUT * 1000,
   },
 });

@@ -381,9 +381,9 @@ Use /debug to view full error details.
 def error_handler_decorator(category: str = ErrorCategory.UNKNOWN, 
                            severity: str = ErrorSeverity.MEDIUM):
     """Decorator for automatic error handling"""
-    def decorator(func) -> Any:
+    def decorator(func):
         @wraps(func)
-        async def wrapper(*args, **kwargs) -> None:
+        async def wrapper(*args, **kwargs):
             try:
                 return await func(*args, **kwargs)
             except Exception as e:

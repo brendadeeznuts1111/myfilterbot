@@ -38,7 +38,7 @@ const apiCache = new Map<
 
 // Global config
 let globalConfig: APIConfig = {
-        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003',
   refreshInterval: 30000, // 30 seconds - reduced from 5s to prevent flooding
   retryCount: 2, // Reduced from 3 to prevent excessive retries
   cache: true,
@@ -105,7 +105,7 @@ export function useAPI<T = any>(
       setError(null);
 
       try {
-        const headers: HeadersInit = {
+        const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
 
@@ -350,7 +350,9 @@ export function clearAPICache(pattern?: string) {
 export function preloadAPI(endpoint: string, options: APIConfig = {}) {
   // Pre-fetch data to warm the cache
   const config = { ...globalConfig, ...options };
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
 
   if (config.customerId) headers['X-Customer-ID'] = config.customerId;
   if (config.adminId) headers['X-Admin-ID'] = config.adminId;
