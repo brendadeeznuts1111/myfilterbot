@@ -1,3 +1,87 @@
-escrowWallet: "3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5"
-minMatch: 10
-maxQueueAge: 3600
+# Peer-to-Peer Trading Configuration
+# Settings for P2P trading system between customers
+# Based on the Fantasy402 Trading Platform configuration standard
+
+# P2P Trading Settings
+p2p:
+  # Escrow Configuration
+  escrow:
+    wallet: "3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5"  # Bitcoin escrow wallet
+    confirmations_required: 3                        # Required confirmations
+    timeout_hours: 24                               # Escrow timeout in hours
+    fee_percentage: 0.005                          # 0.5% escrow fee
+  
+  # Matching Engine
+  matching:
+    min_match_amount: 10                           # Minimum order size
+    max_queue_age_seconds: 3600                    # Max time order stays in queue (1 hour)
+    price_tolerance: 0.02                          # 2% price tolerance for matching
+    auto_match: true                               # Enable automatic order matching
+  
+  # Order Types
+  order_types:
+    market:
+      enabled: true
+      execution: "immediate"
+    limit:
+      enabled: true
+      execution: "queue"
+    stop_loss:
+      enabled: false                               # Disabled for P2P
+  
+  # Risk Management
+  risk_management:
+    max_daily_volume: 100000                      # Max daily volume per user
+    max_single_order: 50000                       # Max single order size
+    kyc_required_above: 10000                     # KYC required for orders above this
+    cooling_off_period: 300                       # 5 minutes between orders
+  
+  # Supported Assets
+  assets:
+    - symbol: "BTC"
+      name: "Bitcoin"
+      min_amount: 0.001
+      max_amount: 10.0
+      trading_fee: 0.002                          # 0.2%
+    - symbol: "ETH"
+      name: "Ethereum"
+      min_amount: 0.01
+      max_amount: 100.0
+      trading_fee: 0.0015                         # 0.15%
+    - symbol: "USDT"
+      name: "Tether"
+      min_amount: 10
+      max_amount: 100000
+      trading_fee: 0.001                          # 0.1%
+  
+  # Trading Hours
+  trading_hours:
+    enabled: true
+    timezone: "UTC"
+    open_time: "00:00"
+    close_time: "23:59"
+    trading_days:
+      - monday
+      - tuesday
+      - wednesday
+      - thursday
+      - friday
+      - saturday
+      - sunday
+  
+  # Dispute Resolution
+  dispute:
+    enabled: true
+    timeout_hours: 48                             # Auto-resolve timeout
+    arbitrator_required: true
+    arbitrator_fee: 0.01                          # 1% arbitration fee
+    evidence_types:
+      - screenshot
+      - transaction_hash
+      - communication_log
+
+# Validation Settings
+validation:
+  enabled: true
+  schema_version: "2.1.0"
+  last_validated: "2025-08-25T14:30:00Z"

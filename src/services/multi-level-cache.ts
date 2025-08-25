@@ -33,11 +33,24 @@ interface CacheStats {
   memory_usage: number;
 }
 
+/**
+ * Redis configuration interface for L2 cache
+ */
 interface RedisConfig {
+  /** Redis connection URL */
   url?: string;
+  /** Whether Redis is enabled for L2 caching */
   enabled: boolean;
 }
 
+/**
+ * LRU (Least Recently Used) Cache Implementation
+ * 
+ * High-performance in-memory cache with TTL support and automatic eviction.
+ * Used as L1 cache in the multi-level caching system.
+ * 
+ * @template T The type of values stored in the cache
+ */
 class LRUCache<T = any> {
   private cache = new Map<string, CacheEntry<T>>();
   private accessOrder = new Map<string, number>();
@@ -49,10 +62,22 @@ class LRUCache<T = any> {
     evictions: 0,
   };
 
+  /**
+   * Create a new LRU cache
+   * 
+   * @param maxSize Maximum number of entries to store (default: 1000)
+   */
   constructor(maxSize: number = 1000) {
     this.maxSize = maxSize;
   }
 
+  /**
+   * Store a value in the cache with optional TTL
+   * 
+   * @param key Cache key
+   * @param value Value to cache
+   * @param ttl Time to live in milliseconds (default: 5 minutes)
+   */
   set(key: string, value: T, ttl: number = 300000): void {
     // 5 min default TTL
     const now = Date.now();

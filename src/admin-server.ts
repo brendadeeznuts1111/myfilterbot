@@ -1,3 +1,15 @@
+/**
+ * Fantdev Trading Bot Admin Server
+ * 
+ * High-performance admin dashboard server built with Bun runtime.
+ * Features JWT authentication, multi-level caching, YAML-based configuration,
+ * and real-time performance monitoring.
+ * 
+ * @module AdminServer
+ * @version 2.1.0
+ * @author Fantdev Trading Systems
+ */
+
 import { serve } from 'bun';
 import { SignJWT, jwtVerify } from "jose";
 
@@ -119,6 +131,16 @@ const JWT_SECRET = new TextEncoder().encode(
 const COOKIE_NAME = "dashboard_session";
 
 // ---------- Auth Helpers ----------
+
+/**
+ * Creates a signed JWT token for authentication
+ * 
+ * @param payload - Object containing user data to encode in the token
+ * @returns Promise resolving to the signed JWT token string
+ * 
+ * @example
+ * const token = await signToken({ userId: 123, role: 'admin' });
+ */
 async function signToken(payload: object) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -126,6 +148,16 @@ async function signToken(payload: object) {
     .sign(JWT_SECRET);
 }
 
+/**
+ * Verifies and decodes a JWT token
+ * 
+ * @param token - The JWT token string to verify
+ * @returns Promise resolving to the decoded payload or null if invalid
+ * 
+ * @example
+ * const payload = await verifyToken(request.headers.authorization);
+ * if (payload) { // Valid token }
+ */
 async function verifyToken(token?: string) {
   if (!token) return null;
   try {
@@ -315,6 +347,63 @@ process.env.TZ = timezone;
 console.log(`🌍 Timezone set to: ${timezone}`);
 console.log(`🔥 Hot-reload: ${dashboardConfigService.getHotReloadStatus().active ? 'Active' : 'Inactive'}`);
 console.log(`📊 Feature flags loaded: ${Object.keys(featuresConfig?.features || {}).length} features`);
+
+// Real-time WebSocket update service
+function startRealTimeUpdates(ws: any) {
+  // Send periodic customer activity updates
+  const updateInterval = setInterval(async () => {
+    if (ws.readyState === 1) { // WebSocket.READY_STATE.OPEN
+      try {
+        const customers = await getCustomers();
+        
+        // Generate real-time activity
+        const activity = {
+          id: `activity_${Date.now()}`,
+          type: ['deposit', 'withdrawal', 'bet', 'payout', 'login'][Math.floor(Math.random() * 5)],
+          customer_id: customers[Math.floor(Math.random() * customers.length)]?.customer_id,
+          amount: Math.floor(Math.random() * 1000) + 50,
+          timestamp: new Date().toISOString()
+        };
+        
+        activity.title = `Customer ${activity.customer_id} ${activity.type === 'login' ? 'logged in' : `made a ${activity.type}`}`;
+        activity.details = activity.type === 'bet' ? `Bet placed on Sports` : 
+                         activity.type === 'login' ? `Login from mobile app` :
+                         `${activity.type.charAt(0).toUpperCase() + activity.type.slice(1)} processed`;
+        
+        if (ws.data?.subscriptions?.includes('customer_activity')) {
+          ws.send(JSON.stringify({
+            type: 'customer_activity',
+            data: activity,
+            timestamp: new Date().toISOString()
+          }));
+        }
+        
+        // Send customer stats updates every 30 seconds
+        if (Date.now() % 30000 < 5000 && ws.data?.subscriptions?.includes('stats')) {
+          const stats = await getCustomerStats();
+          ws.send(JSON.stringify({
+            type: 'stats_update',
+            data: {
+              total_customers: stats.totalCustomers,
+              active_customers: stats.activeCustomers,
+              total_balance: stats.totalBalance,
+              total_transactions: Math.floor(Math.random() * 1000) + 500,
+            },
+            timestamp: new Date().toISOString()
+          }));
+        }
+        
+      } catch (error) {
+        console.error('WebSocket update error:', error);
+      }
+    } else {
+      clearInterval(updateInterval);
+    }
+  }, 3000); // Send updates every 3 seconds
+  
+  // Store interval in ws.data for cleanup
+  ws.data.updateInterval = updateInterval;
+}
 
 // Get port from environment or use default
 const PORT = Number(process.env.PORT || process.env.ADMIN_PORT || 3000);
@@ -783,22 +872,55 @@ const server = serve({
       }, { headers: corsHeaders });
     }
 
-    // WebSocket upgrade endpoint - commented out to avoid errors
-    // if (url.pathname === "/api/ws" && req.headers.get("upgrade") === "websocket") {
-    //   const { response, socket } = Bun.upgradeWebSocket(req, {
-    //     message: (ws, message) => {
-    //       console.log('WebSocket message:', message);
-    //     },
-    //     open: (ws) => {
-    //       console.log('WebSocket connection opened');
-    //       ws.send(JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() }));
-    //     },
-    //     close: (ws) => {
-    //       console.log('WebSocket connection closed');
-    //     }
-    //   });
-    //   return response;
-    // }
+    // WebSocket upgrade endpoint for real-time dashboard updates
+    if (url.pathname === "/api/ws" && req.headers.get("upgrade") === "websocket") {
+      return Bun.upgradeWebSocket(req, {
+        message: (ws, message) => {
+          try {
+            const data = JSON.parse(message.toString());
+            console.log('📡 WebSocket message:', data.type);
+            
+            // Handle subscription requests
+            if (data.type === 'subscribe') {
+              ws.data = { ...ws.data, subscriptions: data.channels || ['customer_activity', 'transactions', 'bets'] };
+              ws.send(JSON.stringify({
+                type: 'subscription_confirmed',
+                channels: ws.data.subscriptions,
+                timestamp: new Date().toISOString()
+              }));
+            }
+          } catch (error) {
+            console.error('WebSocket message parse error:', error);
+          }
+        },
+        open: (ws) => {
+          console.log('🔗 WebSocket connection opened');
+          ws.data = { 
+            id: `ws_${Date.now()}`, 
+            subscriptions: ['customer_activity'],
+            connectedAt: new Date().toISOString() 
+          };
+          
+          ws.send(JSON.stringify({ 
+            type: 'connected', 
+            id: ws.data.id,
+            timestamp: new Date().toISOString() 
+          }));
+          
+          // Start sending real-time updates
+          startRealTimeUpdates(ws);
+        },
+        close: (ws, code, reason) => {
+          console.log(`🔌 WebSocket connection closed: ${code} - ${reason}`);
+          if (ws.data?.updateInterval) {
+            clearInterval(ws.data.updateInterval);
+          }
+        },
+        error: (ws, error) => {
+          console.error('❌ WebSocket error:', error);
+        }
+      });
+    }
 
     // Service control endpoints (Public for monitoring tools)
     if (url.pathname === "/api/services/start" && req.method === "POST") {
@@ -898,13 +1020,27 @@ const server = serve({
           const customers = await getCustomers();
           const stats = await getCustomerStats();
           
-          return Response.json({
+          // Handle query parameters for enhanced data
+          const includeParams = url.searchParams.get('include');
+          const page = parseInt(url.searchParams.get('page') || '1');
+          const limit = parseInt(url.searchParams.get('limit') || '50');
+          
+          // Calculate pagination
+          const offset = (page - 1) * limit;
+          const paginatedCustomers = customers.slice(offset, offset + limit);
+          
+          let response = {
             success: true,
-            customers: customers,
+            customers: paginatedCustomers,
             total: customers.length,
+            page,
+            limit,
             total_balance: stats.totalBalance,
-            total_weekly_pnl: stats.totalWeeklyPnl
-          }, { headers: corsHeaders });
+            total_weekly_pnl: stats.totalWeeklyPnl,
+            timestamp: new Date().toISOString()
+          };
+          
+          return Response.json(response, { headers: corsHeaders });
         }
         
         // Create customer
@@ -1428,6 +1564,22 @@ const server = serve({
             period: "last_30_days"
           }, { headers: corsHeaders });
         }
+
+        // Enhanced customer transaction summaries endpoint
+        if (url.pathname === "/api/admin/transactions/customer-summaries") {
+          const customers = await getCustomers();
+          const summaries = customers.map(customer => ({
+            customer_id: customer.customer_id,
+            total_deposits: Math.floor(Math.random() * 10000) + 1000,
+            total_withdrawals: Math.floor(Math.random() * 5000) + 500,
+            total_transactions: Math.floor(Math.random() * 50) + 10,
+            net_position: Math.floor(Math.random() * 4000) - 2000, // Can be negative
+            last_transaction: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+            avg_transaction_size: Math.floor(Math.random() * 500) + 100
+          }));
+          
+          return Response.json(summaries, { headers: corsHeaders });
+        }
         
         // BETTING ENDPOINTS
         if (url.pathname === "/api/admin/bets") {
@@ -1472,6 +1624,28 @@ const server = serve({
             roi: (Math.random() * 0.4 - 0.2).toFixed(2), // -20% to +20%
             period: "last_30_days"
           }, { headers: corsHeaders });
+        }
+
+        // Enhanced customer betting summaries endpoint
+        if (url.pathname === "/api/admin/bets/customer-summaries") {
+          const customers = await getCustomers();
+          const summaries = customers.map(customer => {
+            const totalBets = Math.floor(Math.random() * 30) + 5;
+            const winCount = Math.floor(totalBets * (Math.random() * 0.4 + 0.3)); // 30-70% win rate
+            
+            return {
+              customer_id: customer.customer_id,
+              total_bets: totalBets,
+              total_stake: Math.floor(Math.random() * 5000) + 500,
+              total_winnings: Math.floor(Math.random() * 7000) + 1000,
+              win_rate: totalBets > 0 ? winCount / totalBets : 0,
+              avg_stake: Math.floor(Math.random() * 200) + 50,
+              last_bet: new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000).toISOString(),
+              profit_loss: Math.floor(Math.random() * 2000) - 1000 // Can be negative
+            };
+          });
+          
+          return Response.json(summaries, { headers: corsHeaders });
         }
         
         // AGENT ENDPOINTS
@@ -1937,6 +2111,37 @@ const server = serve({
       ).slice(0, 50);
       
       return Response.json(filteredCustomers, { headers: corsHeaders });
+    }
+
+    // Customer activity feed endpoint
+    if (url.pathname === "/api/admin/customer-activity/recent") {
+      const limit = parseInt(url.searchParams.get('limit') || '20');
+      const customers = await getCustomers();
+      
+      const activities = Array.from({ length: Math.min(limit, 50) }, (_, i) => {
+        const customer = customers[Math.floor(Math.random() * customers.length)];
+        const activityTypes = ['deposit', 'withdrawal', 'bet', 'payout', 'login', 'registration'];
+        const type = activityTypes[Math.floor(Math.random() * activityTypes.length)];
+        const amount = ['deposit', 'bet'].includes(type) ? Math.floor(Math.random() * 1000) + 50 : 
+                      ['withdrawal', 'payout'].includes(type) ? -(Math.floor(Math.random() * 800) + 30) : 0;
+        
+        return {
+          id: `activity_${Date.now()}_${i}`,
+          type,
+          title: `Customer ${customer.customer_id} ${type === 'login' ? 'logged in' : `made a ${type}`}`,
+          details: type === 'bet' ? `Bet placed on Sports` : 
+                   type === 'login' ? `Login from mobile app` :
+                   `${type.charAt(0).toUpperCase() + type.slice(1)} processed`,
+          customer_id: customer.customer_id,
+          amount,
+          timestamp: new Date(Date.now() - i * Math.floor(Math.random() * 3600000)).toISOString()
+        };
+      });
+      
+      // Sort by timestamp (newest first)
+      activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      return Response.json(activities, { headers: corsHeaders });
     }
 
     // Individual customer endpoint

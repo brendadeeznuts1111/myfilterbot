@@ -42,10 +42,33 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class FantdevBot:
-    """Main bot application"""
+    """
+    Main Fantdev Trading Bot Application
+    
+    Handles Telegram bot initialization, configuration validation,
+    database setup, error handling, and portal integration.
+    
+    Attributes:
+        application: Telegram Application instance for handling updates
+        
+    Examples:
+        >>> bot = FantdevBot()
+        >>> await bot.start()
+    """
     
     def __init__(self):
-        """Initialize the bot"""
+        """
+        Initialize the bot with configuration validation and service setup.
+        
+        Performs the following initialization steps:
+        1. Validates bot configuration
+        2. Initializes database connection
+        3. Sets up error handling system
+        4. Configures portal integration
+        
+        Raises:
+            SystemExit: If bot token is not configured
+        """
         self.application = None
         self._validate_config()
         self._initialize_database()
