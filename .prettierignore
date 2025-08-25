@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+coverage/
+*.min.js
+*.min.css
+
+# Generated files
+bun.lock
+bun.xml
+package-lock.json
+yarn.lock
+
+# Backup and archived files
+backup/
+*.backup
+archived-*/
+
+# Logs and temporary files
+*.log
+*.tmp
+.temp-*
+
+# Environment files
+.env*
+
+# Test results
+test-results/
+test_logs/
+
+# Documentation build
+docs/build/
+
+# Large data files
+data/*.json
+*.csv
+
+# Images and binary files
+images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot
