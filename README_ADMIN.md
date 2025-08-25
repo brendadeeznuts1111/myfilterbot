@@ -3,11 +3,11 @@
 One command to rule them all:
 
 ```bash
-ADMIN_PASSWORD=secret bun --hot src/admin-server.ts
+ADMIN_PASSWORD=admin bun --hot src/admin-server.ts
 ```
 
 Open http://localhost:3003/login  
-Password: `secret` (or set `ADMIN_PASSWORD` env var)
+Password: `admin` (or set `ADMIN_PASSWORD` env var)
 
 ## 🗺️ Quick Route Map
 
@@ -108,7 +108,7 @@ curl http://localhost:3003/health
 ```bash
 curl -X POST http://localhost:3003/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"password":"secret"}'
+  -d '{"password":"admin"}'
 ```
 
 ### Access protected endpoint:
@@ -122,7 +122,7 @@ curl http://localhost:3003/api/admin/stats \
 1. **Start here**: Read `src/manifest.json` - it's the map
 2. **Route labels**: Check top of `admin-server.ts` for all routes
 3. **Auth is simple**: Wrap any route with `withAuth()` to protect it
-4. **Test locally**: Always use `ADMIN_PASSWORD=secret` for local dev
+4. **Test locally**: Always use `ADMIN_PASSWORD=admin` for local dev
 5. **Check logs**: Server logs everything to console in dev mode
 
 ---

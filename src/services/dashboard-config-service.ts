@@ -35,14 +35,18 @@ class DashboardConfigService extends EventEmitter {
     configChanges: 0,
     lastReload: null
   };
+  private debounceTimeouts: Map<string, NodeJS.Timeout> = new Map();
   
   constructor() {
     super();
-    this.initializeConfigs();
+    // Initialize configs asynchronously 
+    this.initializeConfigs().catch(error => {
+      console.error('Failed to initialize configurations:', error);
+    });
   }
 
-  private initializeConfigs() {
-    // Initialize configuration files
+  private async initializeConfigs() {
+    // Initialize configuration files with parallel loading
     const configFiles: ConfigFile[] = [
       { name: 'app', path: './config/app.yaml', content: appConfig },
       { name: 'features', path: './config/features.yaml', content: featuresConfig },
@@ -51,9 +55,32 @@ class DashboardConfigService extends EventEmitter {
       { name: 'database', path: './config/database.yaml', content: databaseConfig }
     ];
 
-    configFiles.forEach(config => {
+    // Load all configs in parallel for better performance
+    const loadPromises = configFiles.map(async (config) => {
+      try {
+        // Validate config content exists
+        if (!config.content || Object.keys(config.content).length === 0) {
+          console.warn(`⚠️ Config file ${config.name} appears to be empty`);
+        }
+        
+        // Pre-compute config size for monitoring
+        const configSize = JSON.stringify(config.content).length;
+        console.log(`📝 Loaded config: ${config.name} (${configSize} bytes)`);
+        
+        return config;
+      } catch (error) {
+        console.error(`❌ Failed to process config: ${config.name}`, error);
+        return { ...config, content: {} }; // Return empty config as fallback
+      }
+    });
+
+    const loadedConfigs = await Promise.all(loadPromises);
+    
+    loadedConfigs.forEach(config => {
       this.configs.set(config.name, config);
     });
+
+    console.log(`✅ Initialized ${loadedConfigs.length} configuration files`);
   }
 
   /**
@@ -149,6 +176,26 @@ class DashboardConfigService extends EventEmitter {
   }
 
   /**
+   * Debounced configuration reload
+   */
+  private debounceReload(configName: string, reloadFn: () => void, delay: number = 500) {
+    // Clear existing timeout
+    const existingTimeout = this.debounceTimeouts.get(configName);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    // Set new timeout
+    const timeout = setTimeout(() => {
+      reloadFn();
+      this.debounceTimeouts.delete(configName);
+    }, delay);
+
+    this.debounceTimeouts.set(configName, timeout);
+    console.log(`⏱️ Debouncing config reload for ${configName} (${delay}ms)`);
+  }
+
+  /**
    * Watch configuration files for changes (hot-reload)
    */
   startWatching() {
@@ -163,28 +210,36 @@ class DashboardConfigService extends EventEmitter {
       try {
         const watcher = watch(configPath, async (event, filename) => {
           if (event === 'change') {
-            console.log(`Configuration file changed: ${filename}`);
+            console.log(`📝 Configuration file changed: ${filename}`);
             
-            try {
-              // Re-import the configuration using dynamic import
-              const newConfig = await import(`../../config/${name}.yaml`);
-              
-              // Update in-memory config
-              config.content = newConfig.default || newConfig;
-              this.configs.set(name, config);
-              
-              // Emit change event
-              this.emit('config:changed', { file: name, content: config.content });
-              this.emit('hotreload:triggered', { file: name });
-              
-              // Update status
-              this.hotReloadStatus.configChanges++;
-              this.hotReloadStatus.lastReload = new Date();
-              
-              console.log(`Hot-reloaded: ${name}.yaml`);
-            } catch (error) {
-              console.error(`Failed to hot-reload ${name}.yaml:`, error);
-            }
+            // Debounce rapid file changes
+            this.debounceReload(name, async () => {
+              try {
+                performance.mark(`config-reload-${name}-start`);
+                
+                // Re-import the configuration using dynamic import
+                const newConfig = await import(`../../config/${name}.yaml`);
+                
+                // Update in-memory config
+                config.content = newConfig.default || newConfig;
+                this.configs.set(name, config);
+                
+                // Emit change event
+                this.emit('config:changed', { file: name, content: config.content });
+                this.emit('hotreload:triggered', { file: name });
+                
+                // Update status
+                this.hotReloadStatus.configChanges++;
+                this.hotReloadStatus.lastReload = new Date();
+                
+                performance.mark(`config-reload-${name}-end`);
+                performance.measure(`config-reload-${name}`, `config-reload-${name}-start`, `config-reload-${name}-end`);
+                
+                console.log(`🔄 Hot-reloaded: ${name}.yaml`);
+              } catch (error) {
+                console.error(`❌ Failed to hot-reload ${name}.yaml:`, error);
+              }
+            });
           }
         });
 

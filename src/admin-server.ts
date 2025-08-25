@@ -13,13 +13,48 @@ import enhancedAdminPortal from '../public/portals/admin-portal.html';
 import { apiRouter } from './server/api/router';
 import { dashboardRouter } from './server/api/dashboard-router';
 import { dashboardConfigService } from './services/dashboard-config-service';
+import { LazyCustomerLoader, type Customer } from './services/lazy-customer-loader';
+import { PerformanceMonitor } from './services/performance-monitor';
+import { MultiLevelCache } from './services/multi-level-cache';
+import { ResponseCacheMiddleware } from './middleware/response-cache';
 import { commissionCalculator } from './lib/commission';
 import { db } from './lib/data';
 import { buildTable, exportToCSV, calculateStats } from './lib/table';
 import { telegramBridge } from './lib/telegram-bridge';
 
-// Initialize data layer on startup
-await db.reload();
+// Initialize services
+const customerLoader = new LazyCustomerLoader();
+const performanceMonitor = new PerformanceMonitor();
+const cache = new MultiLevelCache(2000); // 2000 items max in L1 cache
+const responseCache = new ResponseCacheMiddleware(cache);
+
+// Track startup performance
+performanceMonitor.startMetric('total_startup');
+performanceMonitor.startPhase('data_initialization');
+
+// Initialize data layer on startup (non-blocking)
+Promise.all([
+  (async () => {
+    performanceMonitor.startMetric('database_reload');
+    await db.reload();
+    performanceMonitor.endMetric('database_reload');
+    performanceMonitor.warnIfSlow('database_reload', 2000);
+  })(),
+  (async () => {
+    performanceMonitor.startMetric('customer_loading');
+    await customerLoader.startBackgroundLoad();
+    performanceMonitor.endMetric('customer_loading');
+    performanceMonitor.warnIfSlow('customer_loading', 5000);
+  })()
+]).then(() => {
+  performanceMonitor.endPhase('data_initialization');
+  performanceMonitor.startPhase('server_startup');
+  performanceMonitor.endMetric('total_startup');
+  performanceMonitor.completeStartup();
+}).catch(error => {
+  console.error('❌ Startup error:', error);
+  performanceMonitor.endPhase('data_initialization', error.message);
+});
 
 // JWT Authentication Setup
 const JWT_SECRET = new TextEncoder().encode(
@@ -69,10 +104,14 @@ function withAuth(
 
 
 // ------------------------------------------------------------------
-// ROUTE STRUCTURE
+// ROUTE STRUCTURE & AUTHENTICATION
 // ------------------------------------------------------------------
+// 🔐 AUTHENTICATION: Default password is "admin" (set ADMIN_PASSWORD env var to override)
+//    Login via: POST /api/auth/login with {"password": "admin"}
+//    Example: curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"password":"admin"}'
+//
 // 1. PUBLIC ROUTES (No auth required)
-//    GET  /login                     - Login page
+//    GET  /login                     - Login page (password: admin)
 //    POST /api/auth/login            - Issue JWT cookie
 //    POST /api/auth/logout           - Clear JWT cookie
 //    GET  /health                    - Basic health check
@@ -99,105 +138,110 @@ function withAuth(
 //    GET  /api/ws                    - WebSocket for live updates
 // ------------------------------------------------------------------
 
-// Load customer data
-const configFile = await Bun.file("./customer_config.json");
-const databaseFile = await Bun.file("./customer_database.json");
+// Helper function to get customers (lazy loaded)
+async function getCustomers(): Promise<Customer[]> {
+  return await customerLoader.waitForReady();
+}
 
-const customerConfig = await configFile.json();
-const customerDatabase = await databaseFile.json();
+// Helper function to get customer stats (cached)
+async function getCustomerStats() {
+  return await cache.getOrCompute('customer_stats', async () => {
+    performanceMonitor.startMetric('compute_customer_stats');
+    
+    const customers = await getCustomers();
+    const configFile = await Bun.file("./customer_config.json");
+    const customerConfig = await configFile.json();
+    const groups = customerConfig.group_chats || {};
+    
+    const totalBalance = customers.reduce((sum, c) => sum + (c.balance || 0), 0);
+    const totalWeeklyPnl = customers.reduce((sum, c) => sum + (c.weekly_pnl || 0), 0);
+    const activeCustomers = customers.filter(c => c.active === true).length;
+    const inactiveCustomers = customers.filter(c => c.active === false).length;
+    const telegramCustomers = customers.filter(c => c.active === true);
+    
+    performanceMonitor.endMetric('compute_customer_stats');
+    
+    return {
+      customers,
+      totalBalance,
+      totalWeeklyPnl,
+      activeCustomers,
+      inactiveCustomers,
+      telegramCustomers,
+      groups: Object.keys(groups)
+    };
+  }, 30000); // Cache for 30 seconds
+}
 
-const configCustomers = customerConfig.customers || {};
-const databaseCustomers = customerDatabase.customers || {};
-const groups = customerConfig.group_chats || {};
+// Helper function to generate group members (cached)
+async function getGroupMembers() {
+  return await cache.getOrCompute('group_members', async () => {
+    performanceMonitor.startMetric('compute_group_members');
+    
+    const customers = await getCustomers();
+    const configFile = await Bun.file("./customer_config.json");
+    const customerConfig = await configFile.json();
+    const groups = customerConfig.group_chats || {};
+    
+    const mainGroup = groups.main_group || { chat_id: "-2714719687", name: "Main Trading Group" };
+    
+    const result = customers.map((customer, index) => ({
+      id: index + 1,
+      customer_id: customer.customer_id,
+      telegram_id: customer.telegram_id,
+      telegram_username: customer.telegram_username?.replace('@', '') || `user_${customer.customer_id}`,
+      group_id: customer.group_chat_id || mainGroup.chat_id,
+      group_name: mainGroup.name,
+      group_type: "trading",
+      join_date: customer.last_activity,
+      status: customer.active ? 'approved' : 'pending',
+      permissions: {
+        can_view: true,
+        can_trade: customer.active,
+        can_withdraw: customer.balance > 100
+      },
+      keywords: customer.keywords
+    }));
 
-console.log(`🏆 Enhanced Admin Portal: Loading ONLY ${Object.keys(configCustomers).length} real Fantasy402.com customers`);
+    performanceMonitor.endMetric('compute_group_members');
+    return result;
+  }, 60000); // Cache for 1 minute
+}
 
-// Create ONLY the 4 real Fantasy402.com customers
-const customers = Object.keys(configCustomers).map(customerId => {
-  const configCustomer = configCustomers[customerId];
-  const dbCustomer = databaseCustomers[customerId] || {};
+// Helper function to get real-time data structure
+async function getRealData() {
+  const stats = await getCustomerStats();
+  const groupMembers = await getGroupMembers();
   
-  const customer = {
-    customer_id: customerId,
-    password: configCustomer.password,
-    balance: dbCustomer.balance || 0,
-    weekly_pnl: dbCustomer.weekly_pnl || 0,
-    phone: dbCustomer.phone || '',
-    telegram_id: configCustomer.telegram_id,
-    telegram_username: configCustomer.telegram_username,
-    active: configCustomer.active,
-    last_activity: dbCustomer.last_activity || new Date().toISOString(),
-    keywords: configCustomer.keywords || [],
-    group_chat_id: configCustomer.group_chat_id
-  };
-  
-  console.log(`✅ Real Fantasy402.com customer: ${customerId} (@${configCustomer.telegram_username}) - Balance: $${customer.balance}`);
-  return customer;
-});
-
-// Create group data structure
-const groupIds = Object.keys(groups);
-const telegramCustomers = customers.filter(c => c.active === true);
-
-// Create group memberships for active customers
-const groupMembers = customers.map((customer, index) => {
-  // Use main group for all customers initially
-  const mainGroup = groups.main_group || { chat_id: "-2714719687", name: "Main Trading Group" };
+  const approvedMembers = groupMembers.filter(m => m.status === 'approved').length;
+  const pendingMembers = groupMembers.filter(m => m.status === 'pending').length;
+  const deniedMembers = groupMembers.filter(m => m.status === 'denied').length;
   
   return {
-    id: index + 1,
-    customer_id: customer.customer_id,
-    telegram_id: customer.telegram_id,
-    telegram_username: customer.telegram_username?.replace('@', '') || `user_${customer.customer_id}`,
-    group_id: customer.group_chat_id || mainGroup.chat_id,
-    group_name: mainGroup.name,
-    group_type: "trading",
-    join_date: customer.last_activity,
-    status: customer.active ? 'approved' : 'pending',
-    permissions: {
-      can_view: true,
-      can_trade: customer.active,
-      can_withdraw: customer.balance > 100 // Allow withdrawal for customers with balance > $100
+    stats: {
+      customers: {
+        total: stats.customers.length,
+        total_balance: stats.totalBalance,
+        total_weekly_pnl: stats.totalWeeklyPnl,
+        active: stats.activeCustomers,
+        inactive: stats.inactiveCustomers,
+        telegram_connected: stats.telegramCustomers.length,
+        telegram_disconnected: stats.customers.length - stats.telegramCustomers.length
+      },
+      members: {
+        approved: approvedMembers,
+        pending: pendingMembers,
+        denied: deniedMembers
+      },
+      groups: {
+        total: stats.groups.length,
+        members_per_group: stats.groups.length > 0 ? Math.floor(stats.telegramCustomers.length / stats.groups.length) : 0
+      }
     },
-    keywords: customer.keywords
+    members: groupMembers,
+    customers: stats.customers
   };
-});
-
-const totalBalance = customers.reduce((sum, c) => sum + (c.balance || 0), 0);
-const totalWeeklyPnl = customers.reduce((sum, c) => sum + (c.weekly_pnl || 0), 0);
-const activeCustomers = customers.filter(c => c.active === true).length;
-const inactiveCustomers = customers.filter(c => c.active === false).length;
-
-// Telegram group member statistics
-const approvedMembers = groupMembers.filter(m => m.status === 'approved').length;
-const pendingMembers = groupMembers.filter(m => m.status === 'pending').length;
-const deniedMembers = groupMembers.filter(m => m.status === 'denied').length;
-
-// Real data store
-const realData = {
-  stats: {
-    customers: {
-      total: customers.length,
-      total_balance: totalBalance,
-      total_weekly_pnl: totalWeeklyPnl,
-      active: activeCustomers,
-      inactive: inactiveCustomers,
-      telegram_connected: telegramCustomers.length,
-      telegram_disconnected: customers.length - telegramCustomers.length
-    },
-    members: {
-      approved: approvedMembers, // Telegram group members with approved status
-      pending: pendingMembers,   // Telegram group members with pending status
-      denied: deniedMembers      // Telegram group members with denied status
-    },
-    groups: {
-      total: groupIds.length,
-      members_per_group: Math.floor(telegramCustomers.length / groupIds.length)
-    }
-  },
-  members: groupMembers,
-  customers: customers
-};
+}
 
 // Initialize dashboard configuration service
 dashboardConfigService.startWatching();
@@ -477,37 +521,93 @@ const server = serve({
       });
     }
 
-    // Real Health Checks with actual pings
+    // Startup status endpoint
+    if (url.pathname === "/api/startup-status" && req.method === "GET") {
+      const loadingStatus = customerLoader.getStatus();
+      const isReady = customerLoader.isReady();
+      const startupSummary = performanceMonitor.getStartupSummary();
+      
+      return Response.json({
+        ready: isReady,
+        loading_status: loadingStatus,
+        progress_percent: customerLoader.getProgressPercent(),
+        startup_performance: startupSummary,
+        uptime: Math.floor(startupSummary.total_startup_time / 1000),
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Performance metrics endpoint
+    if (url.pathname === "/api/performance" && req.method === "GET") {
+      return Response.json({
+        startup: performanceMonitor.getStartupSummary(),
+        runtime: performanceMonitor.getRuntimeStats(),
+        metrics: performanceMonitor.getMetrics(),
+        cache: cache.getStats(),
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Cache control endpoint
+    if (url.pathname === "/api/cache" && req.method === "GET") {
+      return Response.json({
+        stats: cache.getStats(),
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Cache clear endpoint
+    if (url.pathname === "/api/cache" && req.method === "DELETE") {
+      await cache.clear();
+      return Response.json({
+        success: true,
+        message: "Cache cleared successfully",
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Real Health Checks with actual pings (cached)
     if (url.pathname === "/api/bot/status" && req.method === "GET") {
-      const start = Date.now();
-      try {
-        // Simulate bot ping - replace with real Telegram API call
-        await new Promise(resolve => setTimeout(resolve, 10)); // Simulate network delay
-        return Response.json({ 
-          status: "ok", 
-          bot: "running", 
-          latency: Date.now() - start,
-          timestamp: new Date().toISOString()
-        }, { headers: corsHeaders });
-      } catch (e: any) {
-        return Response.json({ 
-          status: "error", 
-          bot: "disconnected", 
-          error: e.message,
-          timestamp: new Date().toISOString()
-        }, { status: 503, headers: corsHeaders });
-      }
+      return await responseCache.withCache(async (req: Request) => {
+        const start = Date.now();
+        try {
+          // Simulate bot ping - replace with real Telegram API call
+          await new Promise(resolve => setTimeout(resolve, 10)); // Simulate network delay
+          return Response.json({ 
+            status: "ok", 
+            bot: "running", 
+            latency: Date.now() - start,
+            timestamp: new Date().toISOString()
+          }, { headers: corsHeaders });
+        } catch (e: any) {
+          return Response.json({ 
+            status: "error", 
+            bot: "disconnected", 
+            error: e.message,
+            timestamp: new Date().toISOString()
+          }, { status: 503, headers: corsHeaders });
+        }
+      }, { 
+        ttl: 15000, // 15 seconds cache
+        maxAge: 15,
+        staleWhileRevalidate: 5 
+      })(req);
     }
 
     if (url.pathname === "/api/db/status" && req.method === "GET") {
       const start = Date.now();
       try {
+        // Get customer count from lazy loader
+        const customers = customerLoader.getCustomers();
+        const customerCount = customerLoader.isReady() ? customers.length : 0;
+        
         // Simulate database ping - replace with actual DB query
         await new Promise(resolve => setTimeout(resolve, 5));
         return Response.json({ 
           status: "ok", 
           db: "connected", 
-          customers: customers.length,
+          customers: customerCount,
+          loading_complete: customerLoader.isReady(),
           latency: Date.now() - start,
           timestamp: new Date().toISOString()
         }, { headers: corsHeaders });
@@ -623,9 +723,15 @@ const server = serve({
       return apiRouter.getHealthCheck();
     }
 
-    // API documentation endpoint
+    // API documentation endpoint (cached)
     if (url.pathname === "/api" || url.pathname === "/api/docs") {
-      return apiRouter.getAPIDocumentation();
+      return await responseCache.withCache(async (req: Request) => {
+        return apiRouter.getAPIDocumentation();
+      }, {
+        ttl: 600000, // 10 minutes cache
+        maxAge: 600,
+        private: false
+      })(req);
     }
 
     // Protected Admin API Routes
@@ -633,6 +739,17 @@ const server = serve({
       return withAuth(async (req, user) => {
         // Statistics endpoint - FIXED: proper path
         if (url.pathname === "/api/admin/stats" || url.pathname === "/api/admin/statistics") {
+          if (!customerLoader.isReady()) {
+            return Response.json({
+              loading: true,
+              progress: customerLoader.getProgressPercent(),
+              status: customerLoader.getStatus(),
+              message: "Customer data still loading...",
+              timestamp: new Date().toISOString()
+            }, { headers: corsHeaders });
+          }
+          
+          const realData = await getRealData();
           return Response.json({
             ...realData.stats,
             total_transactions: Math.floor(Math.random() * 1000) + 500,
@@ -642,12 +759,27 @@ const server = serve({
         
         // Customer endpoints
         if (url.pathname === "/api/admin/customers" && req.method === "GET") {
+          if (!customerLoader.isReady()) {
+            return Response.json({
+              loading: true,
+              progress: customerLoader.getProgressPercent(),
+              status: customerLoader.getStatus(),
+              customers: [], // Return empty array while loading
+              total: 0,
+              message: "Customer data still loading...",
+              timestamp: new Date().toISOString()
+            }, { headers: corsHeaders });
+          }
+          
+          const customers = await getCustomers();
+          const stats = await getCustomerStats();
+          
           return Response.json({
             success: true,
-            customers: realData.customers,
-            total: realData.customers.length,
-            total_balance: totalBalance,
-            total_weekly_pnl: totalWeeklyPnl
+            customers: customers,
+            total: customers.length,
+            total_balance: stats.totalBalance,
+            total_weekly_pnl: stats.totalWeeklyPnl
           }, { headers: corsHeaders });
         }
         
