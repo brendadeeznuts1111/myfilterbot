@@ -3,7 +3,7 @@
  * Measures performance of Bun-specific APIs vs Node.js equivalents
  */
 
-import { test, expect, describe, beforeAll } from 'bun:test';
+import { test, expect, describe, beforeAll, afterAll } from 'bun:test';
 import { PasswordSecurity } from '../../src/utils/password-security';
 import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
