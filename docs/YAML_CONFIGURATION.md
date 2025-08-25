@@ -2,6 +2,9 @@
 
 This project now leverages Bun's first-class YAML support for configuration management with hot reloading capabilities.
 
+> **📚 Complete Reference:** For a comprehensive guide to all of Bun's YAML features, see [Bun YAML Reference](./BUN_YAML_REFERENCE.md). This includes detailed coverage of the runtime API, advanced YAML features, and configuration patterns.
+
+
 ## Features
 
 ✅ **Zero Runtime Overhead** - YAML is parsed at build time when bundled  

@@ -1,7 +1,17 @@
 import { serve } from 'bun';
+import { server as serverConfig } from '../../../config/app.yaml';
+import { yamlConfigService } from '../../services/yaml-config-service';
+
+// Get admin server configuration from YAML
+const adminConfig = serverConfig.admin;
+const port = parseInt(process.env.ADMIN_PORT || adminConfig?.port || '3008');
+
+console.log(`🚀 Admin Mobile Dev Server starting with YAML config`);
+console.log(`📍 Port: ${port}`);
+console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 
 const server = serve({
-  port: 3008,
+  port,
   async fetch(req) {
     const url = new URL(req.url);
     
@@ -24,7 +34,9 @@ const server = serve({
           minify: false,
           sourcemap: 'inline',
           define: {
-            'process.env.NODE_ENV': '"development"'
+            'process.env.NODE_ENV': '"development"',
+            'CONFIG.API_URL': JSON.stringify(serverConfig.api ? `http://${serverConfig.api.host}:${serverConfig.api.port}` : 'http://localhost:3001'),
+            'CONFIG.WS_URL': JSON.stringify(serverConfig.websocket ? `ws://${serverConfig.websocket.host || 'localhost'}:${serverConfig.websocket.port}` : 'ws://localhost:3002')
           }
         });
         

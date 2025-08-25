@@ -2,11 +2,13 @@
 /**
  * Build script with Bun --define optimizations
  * Builds the application with production defines for dead code elimination
+ * Now with YAML configuration support
  */
 
 import { $ } from 'bun';
 import path from 'path';
 import fs from 'fs/promises';
+import { app, server } from '../config/app.yaml';
 
 const defines = require('../config/bun-defines.js');
 
@@ -30,7 +32,9 @@ async function build() {
   console.log('  - NODE_ENV: production');
   console.log('  - Console logs: disabled');
   console.log('  - Debug mode: disabled');
-  console.log('  - Dev tools: disabled\n');
+  console.log('  - Dev tools: disabled');
+  console.log('  - Config source: YAML');
+  console.log(`  - App: ${app.name} v${app.version}\n`);
 
   // Build main entry points
   const entryPoints = [

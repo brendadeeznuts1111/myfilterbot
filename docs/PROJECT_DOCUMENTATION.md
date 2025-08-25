@@ -230,7 +230,7 @@ myfilterbot/
 ├── Web Interfaces
 │   ├── index.html                    # Message viewer
 │   ├── admin_portal.html            # Basic admin dashboard
-│   ├── admin_portal_enhanced.html   # Enhanced admin dashboard
+│   ├── admin_portal_enhanced.html   # Advanced admin dashboard
 │   ├── admin_portal_ultimate.html   # Ultimate admin dashboard
 │   ├── enhanced_admin_portal.html   # Latest admin portal
 │   ├── customer_portal.html         # Basic customer portal
@@ -434,6 +434,7 @@ Contains all bot command and message handlers.
 - `/register <id> <password>`: Account registration
 - `/balance`: Check current balance
 - `/account`: Account management menu
+- `/transactions`: View recent transactions
 - `/help`: Help and support
 
 **Admin Commands:**
