@@ -57,7 +57,7 @@ class LazyCustomerLoader extends EventEmitter {
       cacheHits: 0,
       cacheMisses: 0,
       avgLoadTime: 0,
-      totalRequests: 0
+      totalRequests: 0,
     };
   }
 
@@ -66,7 +66,7 @@ class LazyCustomerLoader extends EventEmitter {
       maxConnections: 10,
       activeConnections: 0,
       connectionQueue: [],
-      
+
       async acquire() {
         if (this.activeConnections < this.maxConnections) {
           this.activeConnections++;
@@ -76,7 +76,7 @@ class LazyCustomerLoader extends EventEmitter {
           this.connectionQueue.push(resolve);
         });
       },
-      
+
       release(connection) {
         this.activeConnections--;
         if (this.connectionQueue.length > 0) {
@@ -84,7 +84,7 @@ class LazyCustomerLoader extends EventEmitter {
           this.activeConnections++;
           next({ id: `conn_${Date.now()}`, acquired: true });
         }
-      }
+      },
     };
   }
 
@@ -156,50 +156,53 @@ class LazyCustomerLoader extends EventEmitter {
       const batchSize = 100; // Increased batch size for better performance
       const customers: Customer[] = [];
       const connectionPool = this.createConnectionPool();
-      
+
       // Pre-allocate memory for better performance
       customers.length = customerIds.length;
 
       for (let i = 0; i < customerIds.length; i += batchSize) {
         const batch = customerIds.slice(i, i + batchSize);
-        
+
         // Acquire connection from pool
         const connection = await connectionPool.acquire();
-        
+
         try {
           // Process batch in parallel for better performance
-          const batchCustomers = await Promise.all(batch.map(async (customerId, index) => {
-            const configCustomer = configCustomers[customerId];
-            const dbCustomer = databaseCustomers[customerId] || {};
-            
-            // Check cache first
-            const cacheKey = `customer_${customerId}`;
-            if (this.customerCache?.has(cacheKey)) {
-              this.performanceMetrics.cacheHits++;
-              return this.customerCache.get(cacheKey);
-            }
-            
-            this.performanceMetrics.cacheMisses++;
+          const batchCustomers = await Promise.all(
+            batch.map(async (customerId, index) => {
+              const configCustomer = configCustomers[customerId];
+              const dbCustomer = databaseCustomers[customerId] || {};
 
-            const customer: Customer = {
-              customer_id: customerId,
-              password: configCustomer.password,
-              balance: dbCustomer.balance || 0,
-              weekly_pnl: dbCustomer.weekly_pnl || 0,
-              phone: dbCustomer.phone || '',
-              telegram_id: configCustomer.telegram_id,
-              telegram_username: configCustomer.telegram_username,
-              active: configCustomer.active,
-              last_activity: dbCustomer.last_activity || new Date().toISOString(),
-              keywords: configCustomer.keywords || [],
-              group_chat_id: configCustomer.group_chat_id,
-            };
+              // Check cache first
+              const cacheKey = `customer_${customerId}`;
+              if (this.customerCache?.has(cacheKey)) {
+                this.performanceMetrics.cacheHits++;
+                return this.customerCache.get(cacheKey);
+              }
 
-            // Cache the customer for future access
-            this.customerCache?.set(cacheKey, customer);
-            
-            return customer;
-          }));
+              this.performanceMetrics.cacheMisses++;
+
+              const customer: Customer = {
+                customer_id: customerId,
+                password: configCustomer.password,
+                balance: dbCustomer.balance || 0,
+                weekly_pnl: dbCustomer.weekly_pnl || 0,
+                phone: dbCustomer.phone || '',
+                telegram_id: configCustomer.telegram_id,
+                telegram_username: configCustomer.telegram_username,
+                active: configCustomer.active,
+                last_activity:
+                  dbCustomer.last_activity || new Date().toISOString(),
+                keywords: configCustomer.keywords || [],
+                group_chat_id: configCustomer.group_chat_id,
+              };
+
+              // Cache the customer for future access
+              this.customerCache?.set(cacheKey, customer);
+
+              return customer;
+            })
+          );
 
           customers.push(...batchCustomers);
           this.customers = customers;
@@ -225,18 +228,27 @@ class LazyCustomerLoader extends EventEmitter {
       }
 
       const loadTime = Date.now() - this.status.startTime;
-      
+
       // Update performance metrics
       this.performanceMetrics.avgLoadTime = loadTime;
       this.performanceMetrics.totalRequests++;
-      
+
       // Log performance statistics
-      const cacheHitRate = this.performanceMetrics.totalRequests > 0 ? 
-        (this.performanceMetrics.cacheHits / (this.performanceMetrics.cacheHits + this.performanceMetrics.cacheMisses)) * 100 : 0;
-      
+      const cacheHitRate =
+        this.performanceMetrics.totalRequests > 0
+          ? (this.performanceMetrics.cacheHits /
+              (this.performanceMetrics.cacheHits +
+                this.performanceMetrics.cacheMisses)) *
+            100
+          : 0;
+
       console.log(`✅ Loaded ${customers.length} customers in ${loadTime}ms`);
-      console.log(`📊 Cache Performance: ${cacheHitRate.toFixed(1)}% hit rate (${this.performanceMetrics.cacheHits} hits, ${this.performanceMetrics.cacheMisses} misses)`);
-      console.log(`⚡ Memory Usage: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
+      console.log(
+        `📊 Cache Performance: ${cacheHitRate.toFixed(1)}% hit rate (${this.performanceMetrics.cacheHits} hits, ${this.performanceMetrics.cacheMisses} misses)`
+      );
+      console.log(
+        `⚡ Memory Usage: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`
+      );
 
       this.updateStatus(
         'completed',
@@ -296,14 +308,19 @@ class LazyCustomerLoader extends EventEmitter {
    * Get performance metrics
    */
   getPerformanceMetrics() {
-    const cacheHitRate = this.performanceMetrics.totalRequests > 0 ? 
-      (this.performanceMetrics.cacheHits / (this.performanceMetrics.cacheHits + this.performanceMetrics.cacheMisses)) * 100 : 0;
-    
+    const cacheHitRate =
+      this.performanceMetrics.totalRequests > 0
+        ? (this.performanceMetrics.cacheHits /
+            (this.performanceMetrics.cacheHits +
+              this.performanceMetrics.cacheMisses)) *
+          100
+        : 0;
+
     return {
       ...this.performanceMetrics,
       cacheHitRate: cacheHitRate.toFixed(1) + '%',
       cacheSize: this.customerCache?.size || 0,
-      memoryUsageMB: (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)
+      memoryUsageMB: (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2),
     };
   }
 

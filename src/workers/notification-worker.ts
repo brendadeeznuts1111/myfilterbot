@@ -5,10 +5,7 @@
  */
 
 import { parentPort } from 'worker_threads';
-import {
-  spawnPythonJSON,
-  DatabaseOperations,
-} from '../utils/spawn-utils';
+import { spawnPythonJSON, DatabaseOperations } from '../utils/spawn-utils';
 import { fetchJSON, StreamUtils } from '../utils/stream-helpers';
 
 interface NotificationWorkerTask {
@@ -90,12 +87,13 @@ class NotificationWorker {
           const processingTime = performance.now() - startTime;
           this.updateStats(processingTime, true);
         } catch (error: any) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           console.error('[NotificationWorker] Task processing error:', {
             error: errorMessage,
             stack: error instanceof Error ? error.stack : undefined,
             taskType: task.type,
-            priority: task.priority
+            priority: task.priority,
           });
           this.updateStats(0, false);
 
@@ -154,12 +152,13 @@ class NotificationWorker {
         );
         deliveryResults.push(result);
       } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         console.error('[NotificationWorker] Channel delivery error:', {
           channel,
           notificationId: notification.id,
           error: errorMessage,
-          stack: error instanceof Error ? error.stack : undefined
+          stack: error instanceof Error ? error.stack : undefined,
         });
         deliveryResults.push({
           channel,
@@ -553,12 +552,13 @@ class NotificationWorker {
 
         delivered += userNotifications.length;
       } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         console.error(`Batch WebSocket delivery failed for ${userKey}:`, {
           error: errorMessage,
           stack: error instanceof Error ? error.stack : undefined,
           userKey,
-          notificationCount: userNotifications.length
+          notificationCount: userNotifications.length,
         });
       }
     }
@@ -650,11 +650,12 @@ class NotificationWorker {
         });
       }
     } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error('[NotificationWorker] Cleanup error:', {
         error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -700,12 +701,13 @@ class NotificationWorker {
         deliveryResults: results,
       });
     } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error('Failed to update delivery status:', {
         error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
         notificationId,
-        resultsCount: results.length
+        resultsCount: results.length,
       });
     }
   }

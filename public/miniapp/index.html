@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fantdev Trading - Mini App</title>
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Trade directly within Telegram with Fantdev Trading Bot">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- Design System & Styles -->
+    <link rel="stylesheet" href="../static/css/design-system.css">
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://telegram.org">
+    <link rel="dns-prefetch" href="https://telegram.org">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Loading State -->
+        <div id="loader" class="loader">
+            <div class="spinner"></div>
+            <p>Loading Trading Platform...</p>
+        </div>
+        
+        <!-- Main App -->
+        <div id="main-app" class="main-app hidden">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar"></div>
+                    <div class="user-details">
+                        <h3 id="user-name">Loading...</h3>
+                        <p id="user-id" class="user-id">ID: ...</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="notifications-btn" class="icon-btn">
+                        <span class="notification-badge hidden" id="notification-badge">0</span>
+                        🔔
+                    </button>
+                    <button id="settings-btn" class="icon-btn">⚙️</button>
+                </div>
+            </header>
+            
+            <!-- Balance Card -->
+            <div class="balance-card">
+                <div class="balance-header">
+                    <span class="balance-label">Total Balance</span>
+                    <button id="refresh-balance" class="refresh-btn">🔄</button>
+                </div>
+                <div class="balance-amount">
+                    <span class="currency">$</span>
+                    <span id="balance-value">0.00</span>
+                </div>
+                <div class="balance-stats">
+                    <div class="stat">
+                        <span class="stat-label">Today's P&L</span>
+                        <span id="daily-pnl" class="stat-value">+$0.00</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Weekly P&L</span>
+                        <span id="weekly-pnl" class="stat-value">+$0.00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button id="deposit-btn" class="action-btn primary">
+                    <span class="action-icon">💰</span>
+                    <span>Deposit</span>
+                </button>
+                <button id="withdraw-btn" class="action-btn">
+                    <span class="action-icon">💸</span>
+                    <span>Withdraw</span>
+                </button>
+                <button id="trade-btn" class="action-btn">
+                    <span class="action-icon">📈</span>
+                    <span>Trade</span>
+                </button>
+                <button id="p2p-btn" class="action-btn">
+                    <span class="action-icon">🤝</span>
+                    <span>P2P</span>
+                </button>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="transactions">Transactions</button>
+                <button class="tab-btn" data-tab="trading">Trading</button>
+                <button class="tab-btn" data-tab="analytics">Analytics</button>
+                <button class="tab-btn" data-tab="referrals">Referrals</button>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Transactions Tab -->
+                <div id="transactions-tab" class="tab-panel active">
+                    <div class="section-header">
+                        <h3>Recent Transactions</h3>
+                        <button id="view-all-transactions" class="text-btn">View All</button>
+                    </div>
+                    <div id="transactions-list" class="transactions-list">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Trading Tab -->
+                <div id="trading-tab" class="tab-panel hidden">
+                    <div class="trading-interface">
+                        <div class="market-info">
+                            <h3>Quick Trade</h3>
+                            <div class="market-stats">
+                                <div class="market-stat">
+                                    <span class="label">24h Volume</span>
+                                    <span id="volume-24h" class="value">$0</span>
+                                </div>
+                                <div class="market-stat">
+                                    <span class="label">Active Trades</span>
+                                    <span id="active-trades" class="value">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="trade-form">
+                            <div class="trade-type-selector">
+                                <button class="trade-type-btn active" data-type="buy">Buy</button>
+                                <button class="trade-type-btn" data-type="sell">Sell</button>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="trade-amount">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-prefix">$</span>
+                                    <input type="number" id="trade-amount" placeholder="0.00" min="0" step="0.01">
+                                </div>
+                            </div>
+                            
+                            <div class="amount-presets">
+                                <button class="preset-btn" data-amount="100">$100</button>
+                                <button class="preset-btn" data-amount="500">$500</button>
+                                <button class="preset-btn" data-amount="1000">$1000</button>
+                                <button class="preset-btn" data-amount="max">MAX</button>
+                            </div>
+                            
+                            <button id="execute-trade" class="submit-btn">Place Order</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analytics Tab -->
+                <div id="analytics-tab" class="tab-panel hidden">
+                    <div class="analytics-content">
+                        <h3>Performance Analytics</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <span class="stat-label">Total Trades</span>
+                                <span id="total-trades" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Win Rate</span>
+                                <span id="win-rate" class="stat-value">0%</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Avg. Trade</span>
+                                <span id="avg-trade" class="stat-value">$0</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Best Trade</span>
+                                <span id="best-trade" class="stat-value">$0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container" id="performance-chart">
+                            <!-- Chart will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Referrals Tab -->
+                <div id="referrals-tab" class="tab-panel hidden">
+                    <div class="referrals-content">
+                        <div class="referral-card">
+                            <h3>Your Referral Link</h3>
+                            <div class="referral-link-container">
+                                <input type="text" id="referral-link" readonly value="Loading...">
+                                <button id="copy-referral" class="copy-btn">📋 Copy</button>
+                            </div>
+                            <div class="referral-stats">
+                                <div class="ref-stat">
+                                    <span class="label">Total Referrals</span>
+                                    <span id="total-referrals" class="value">0</span>
+                                </div>
+                                <div class="ref-stat">
+                                    <span class="label">Earnings</span>
+                                    <span id="referral-earnings" class="value">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button id="share-referral" class="share-btn">Share Referral Link</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modals -->
+        <!-- Deposit Modal -->
+        <div id="deposit-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Deposit Funds</h3>
+                    <button class="close-modal" data-modal="deposit-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="deposit-amount">Amount</label>
+                        <div class="input-group">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="deposit-amount" placeholder="0.00" min="10" step="0.01">
+                        </div>
+                    </div>
+                    <div class="payment-methods">
+                        <h4>Payment Method</h4>
+                        <div class="method-options">
+                            <label class="method-option">
+                                <input type="radio" name="payment-method" value="telegram" checked>
+                                <span>Telegram Pay</span>
+                            </label>
+                            <label class="method-option">
+                                <input type="radio" name="payment-method" value="crypto">
+                                <span>Cryptocurrency</span>
+                            </label>
+                            <label class="method-option">
+                                <input type="radio" name="payment-method" value="p2p">
+                                <span>P2P Transfer</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button id="confirm-deposit" class="submit-btn">Proceed to Payment</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Withdraw Modal -->
+        <div id="withdraw-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Withdraw Funds</h3>
+                    <button class="close-modal" data-modal="withdraw-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="withdraw-amount">Amount</label>
+                        <div class="input-group">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="withdraw-amount" placeholder="0.00" min="10" step="0.01">
+                        </div>
+                        <div class="available-balance">
+                            Available: $<span id="available-for-withdrawal">0.00</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="withdraw-method">Withdrawal Method</label>
+                        <select id="withdraw-method">
+                            <option value="telegram">Telegram Wallet</option>
+                            <option value="bank">Bank Transfer</option>
+                            <option value="crypto">Cryptocurrency</option>
+                        </select>
+                    </div>
+                    <button id="confirm-withdraw" class="submit-btn">Request Withdrawal</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification Panel -->
+        <div id="notification-panel" class="notification-panel hidden">
+            <div class="panel-header">
+                <h3>Notifications</h3>
+                <button id="close-notifications" class="close-btn">✕</button>
+            </div>
+            <div id="notifications-list" class="notifications-list">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <div class="panel-header">
+                <h3>Settings</h3>
+                <button id="close-settings" class="close-btn">✕</button>
+            </div>
+            <div class="settings-content">
+                <div class="setting-item">
+                    <label for="theme-toggle">Dark Theme</label>
+                    <input type="checkbox" id="theme-toggle" class="toggle-switch">
+                </div>
+                <div class="setting-item">
+                    <label for="notifications-toggle">Push Notifications</label>
+                    <input type="checkbox" id="notifications-toggle" class="toggle-switch" checked>
+                </div>
+                <div class="setting-item">
+                    <label for="sound-toggle">Sound Effects</label>
+                    <input type="checkbox" id="sound-toggle" class="toggle-switch" checked>
+                </div>
+                <div class="setting-item">
+                    <label for="language-select">Language</label>
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="zh">中文</option>
+                        <option value="ru">Русский</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+    
+    <!-- Load JavaScript Libraries -->
+    <script src="../static/js/enhanced-api-client.js"></script>
+    <script src="../static/js/websocket-client.js"></script>
+    <script src="../static/js/component-library.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

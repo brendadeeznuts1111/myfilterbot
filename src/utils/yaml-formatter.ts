@@ -35,7 +35,7 @@ export interface YAMLValidationResult {
 
 export class YAMLFormatter {
   private static instance: YAMLFormatter;
-  
+
   private defaultOptions: YAMLFormatOptions = {
     indent: 2,
     lineWidth: 120,
@@ -46,7 +46,7 @@ export class YAMLFormatter {
     forceQuotes: false,
     minimizeQuotes: true,
     condenseFlow: false,
-    keepBlobsInDumps: true
+    keepBlobsInDumps: true,
   };
 
   private constructor() {}
@@ -62,7 +62,7 @@ export class YAMLFormatter {
    * Format YAML content with consistent styling
    */
   async formatYAML(
-    content: string, 
+    content: string,
     options: Partial<YAMLFormatOptions> = {},
     filename?: string
   ): Promise<YAMLValidationResult> {
@@ -75,13 +75,13 @@ export class YAMLFormatter {
         lines: 0,
         keys: 0,
         complexObjects: 0,
-        arrayItems: 0
-      }
+        arrayItems: 0,
+      },
     };
 
     try {
       const { YAML } = await import('bun');
-      
+
       // First, validate that it's parseable YAML
       let parsed: any;
       try {
@@ -97,16 +97,19 @@ export class YAMLFormatter {
 
       // Format the YAML with consistent styling
       const formatted = await this.formatContent(parsed, opts);
-      
+
       // Validate the formatted result
-      const validationResult = await this.validateFormatted(formatted, content, opts);
-      
+      const validationResult = await this.validateFormatted(
+        formatted,
+        content,
+        opts
+      );
+
       result.valid = true;
       result.formatted = formatted;
       result.warnings = validationResult.warnings;
 
       return result;
-
     } catch (error: any) {
       result.errors.push(`Formatting Error: ${error.message}`);
       logConfigError(error, filename || 'unknown', 'load');
@@ -117,7 +120,10 @@ export class YAMLFormatter {
   /**
    * Validate YAML and provide suggestions
    */
-  async validateYAML(content: string, filename?: string): Promise<YAMLValidationResult> {
+  async validateYAML(
+    content: string,
+    filename?: string
+  ): Promise<YAMLValidationResult> {
     const result: YAMLValidationResult = {
       valid: false,
       errors: [],
@@ -126,17 +132,17 @@ export class YAMLFormatter {
         lines: 0,
         keys: 0,
         complexObjects: 0,
-        arrayItems: 0
-      }
+        arrayItems: 0,
+      },
     };
 
     try {
       const { YAML } = await import('bun');
-      
+
       // Parse and validate
       const parsed = YAML.parse(content);
       result.metrics = this.calculateMetrics(content, parsed);
-      
+
       // Structural validations
       const structuralWarnings = this.validateStructure(parsed, content);
       result.warnings.push(...structuralWarnings);
@@ -150,7 +156,6 @@ export class YAMLFormatter {
       result.warnings.push(...securityWarnings);
 
       result.valid = true;
-
     } catch (error: any) {
       result.errors.push(`Validation Error: ${error.message}`);
       logConfigError(error, filename || 'unknown', 'validate');
@@ -164,19 +169,24 @@ export class YAMLFormatter {
    */
   async normalizeYAML(content: string, filename?: string): Promise<string> {
     try {
-      const formatResult = await this.formatYAML(content, {
-        indent: 2,
-        sortKeys: false,
-        preserveComments: true,
-        minimizeQuotes: true
-      }, filename);
+      const formatResult = await this.formatYAML(
+        content,
+        {
+          indent: 2,
+          sortKeys: false,
+          preserveComments: true,
+          minimizeQuotes: true,
+        },
+        filename
+      );
 
       if (!formatResult.valid || !formatResult.formatted) {
-        throw new Error(`Failed to normalize: ${formatResult.errors.join(', ')}`);
+        throw new Error(
+          `Failed to normalize: ${formatResult.errors.join(', ')}`
+        );
       }
 
       return formatResult.formatted;
-
     } catch (error: any) {
       logConfigError(error, filename || 'unknown', 'load');
       throw error;
@@ -186,7 +196,10 @@ export class YAMLFormatter {
   /**
    * Format content with specific styling rules
    */
-  private async formatContent(data: any, options: YAMLFormatOptions): Promise<string> {
+  private async formatContent(
+    data: any,
+    options: YAMLFormatOptions
+  ): Promise<string> {
     const { YAML } = await import('bun');
 
     // Custom YAML stringify options for Bun
@@ -195,7 +208,7 @@ export class YAMLFormatter {
       lineWidth: options.lineWidth,
       minAliasCount: options.flowLevel,
       sortKeys: options.sortKeys,
-      forceQuotes: options.forceQuotes
+      forceQuotes: options.forceQuotes,
     });
 
     // Post-process formatting
@@ -205,7 +218,10 @@ export class YAMLFormatter {
   /**
    * Post-process formatted YAML for consistency
    */
-  private postProcessFormat(content: string, options: YAMLFormatOptions): string {
+  private postProcessFormat(
+    content: string,
+    options: YAMLFormatOptions
+  ): string {
     let lines = content.split('\n');
 
     // Ensure proper spacing after comments
@@ -219,13 +235,13 @@ export class YAMLFormatter {
     // Ensure blank lines between top-level sections
     const processedLines: string[] = [];
     let previousWasEmpty = false;
-    let inTopLevel = true;
+    const inTopLevel = true;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const trimmed = line.trim();
       const nextLine = lines[i + 1];
-      
+
       // Skip multiple consecutive empty lines
       if (trimmed === '') {
         if (!previousWasEmpty) {
@@ -238,7 +254,11 @@ export class YAMLFormatter {
       previousWasEmpty = false;
 
       // Add spacing between top-level sections
-      if (!line.startsWith(' ') && !trimmed.startsWith('#') && processedLines.length > 0) {
+      if (
+        !line.startsWith(' ') &&
+        !trimmed.startsWith('#') &&
+        processedLines.length > 0
+      ) {
         const lastLine = processedLines[processedLines.length - 1];
         if (lastLine.trim() !== '') {
           processedLines.push('');
@@ -249,10 +269,11 @@ export class YAMLFormatter {
     }
 
     // Clean up trailing whitespace and ensure file ends with newline
-    const result = processedLines
-      .map(line => line.trimEnd())
-      .join('\n')
-      .trimEnd() + '\n';
+    const result =
+      processedLines
+        .map(line => line.trimEnd())
+        .join('\n')
+        .trimEnd() + '\n';
 
     return result;
   }
@@ -260,10 +281,15 @@ export class YAMLFormatter {
   /**
    * Calculate YAML metrics
    */
-  private calculateMetrics(content: string, parsed: any): YAMLValidationResult['metrics'] {
+  private calculateMetrics(
+    content: string,
+    parsed: any
+  ): YAMLValidationResult['metrics'] {
     const lines = content.split('\n').length;
-    
-    const countStructure = (obj: any): { keys: number; complexObjects: number; arrayItems: number } => {
+
+    const countStructure = (
+      obj: any
+    ): { keys: number; complexObjects: number; arrayItems: number } => {
       let keys = 0;
       let complexObjects = 0;
       let arrayItems = 0;
@@ -301,7 +327,7 @@ export class YAMLFormatter {
       lines,
       keys: structure.keys,
       complexObjects: structure.complexObjects,
-      arrayItems: structure.arrayItems
+      arrayItems: structure.arrayItems,
     };
   }
 
@@ -314,7 +340,9 @@ export class YAMLFormatter {
     // Check for deeply nested structures
     const maxDepth = this.getMaxDepth(parsed);
     if (maxDepth > 6) {
-      warnings.push(`Configuration is deeply nested (depth: ${maxDepth}). Consider flattening for readability.`);
+      warnings.push(
+        `Configuration is deeply nested (depth: ${maxDepth}). Consider flattening for readability.`
+      );
     }
 
     // Check for very long lines
@@ -322,9 +350,11 @@ export class YAMLFormatter {
     const longLines = lines
       .map((line, index) => ({ line: line.trimEnd(), number: index + 1 }))
       .filter(({ line }) => line.length > 120);
-    
+
     if (longLines.length > 0) {
-      warnings.push(`Found ${longLines.length} lines longer than 120 characters. Consider breaking them up.`);
+      warnings.push(
+        `Found ${longLines.length} lines longer than 120 characters. Consider breaking them up.`
+      );
     }
 
     // Check for inconsistent indentation (align with project's 2-space standard)
@@ -342,7 +372,9 @@ export class YAMLFormatter {
       });
 
       if (hasInconsistentSpacing) {
-        warnings.push('Inconsistent indentation detected. Use 2 spaces consistently.');
+        warnings.push(
+          'Inconsistent indentation detected. Use 2 spaces consistently.'
+        );
       }
     }
 
@@ -364,11 +396,13 @@ export class YAMLFormatter {
       const envVarPattern = /\$\{[^}]+\}/g;
       const contentStr = JSON.stringify(parsed);
       const envVars = contentStr.match(envVarPattern) || [];
-      
+
       // Check for environment variables without defaults in production configs
       const requiredEnvVars = envVars.filter(envVar => !envVar.includes(':-'));
       if (requiredEnvVars.length > 0 && content.includes('production')) {
-        warnings.push(`Found ${requiredEnvVars.length} required environment variables without defaults. Consider adding defaults for development.`);
+        warnings.push(
+          `Found ${requiredEnvVars.length} required environment variables without defaults. Consider adding defaults for development.`
+        );
       }
     }
 
@@ -402,21 +436,32 @@ export class YAMLFormatter {
     for (const [featureName, config] of Object.entries(features)) {
       if (typeof config === 'object' && config !== null) {
         const featureConfig = config as any;
-        
+
         // Check required properties
         if (featureConfig.enabled === undefined) {
-          warnings.push(`Feature '${featureName}' missing required 'enabled' property.`);
+          warnings.push(
+            `Feature '${featureName}' missing required 'enabled' property.`
+          );
         }
-        
+
         if (featureConfig.rolloutPercentage === undefined) {
-          warnings.push(`Feature '${featureName}' missing 'rolloutPercentage' property.`);
-        } else if (featureConfig.rolloutPercentage < 0 || featureConfig.rolloutPercentage > 100) {
-          warnings.push(`Feature '${featureName}' has invalid rolloutPercentage (${featureConfig.rolloutPercentage}). Must be 0-100.`);
+          warnings.push(
+            `Feature '${featureName}' missing 'rolloutPercentage' property.`
+          );
+        } else if (
+          featureConfig.rolloutPercentage < 0 ||
+          featureConfig.rolloutPercentage > 100
+        ) {
+          warnings.push(
+            `Feature '${featureName}' has invalid rolloutPercentage (${featureConfig.rolloutPercentage}). Must be 0-100.`
+          );
         }
 
         // Check description
         if (!featureConfig.description) {
-          warnings.push(`Feature '${featureName}' missing description. Add description for documentation.`);
+          warnings.push(
+            `Feature '${featureName}' missing description. Add description for documentation.`
+          );
         }
       }
     }
@@ -436,14 +481,20 @@ export class YAMLFormatter {
           warnings.push('Agent missing required "id" field.');
         }
         if (!agent.name) {
-          warnings.push(`Agent ${agent.id || '(unknown)'} missing "name" field.`);
+          warnings.push(
+            `Agent ${agent.id || '(unknown)'} missing "name" field.`
+          );
         }
         if (!agent.status) {
-          warnings.push(`Agent ${agent.id || '(unknown)'} missing "status" field.`);
+          warnings.push(
+            `Agent ${agent.id || '(unknown)'} missing "status" field.`
+          );
         }
         if (agent.commission_rate !== undefined) {
           if (agent.commission_rate < 0 || agent.commission_rate > 1) {
-            warnings.push(`Agent ${agent.id} has invalid commission_rate (${agent.commission_rate}). Must be 0-1.`);
+            warnings.push(
+              `Agent ${agent.id} has invalid commission_rate (${agent.commission_rate}). Must be 0-1.`
+            );
           }
         }
       }
@@ -464,10 +515,14 @@ export class YAMLFormatter {
       if (server[section]) {
         const sectionConfig = server[section];
         if (!sectionConfig.port) {
-          warnings.push(`Server section '${section}' missing port configuration.`);
+          warnings.push(
+            `Server section '${section}' missing port configuration.`
+          );
         }
         if (!sectionConfig.host) {
-          warnings.push(`Server section '${section}' missing host configuration. Consider adding default.`);
+          warnings.push(
+            `Server section '${section}' missing host configuration. Consider adding default.`
+          );
         }
       }
     }
@@ -497,7 +552,9 @@ export class YAMLFormatter {
       .filter(({ line }) => line !== line.trimEnd());
 
     if (trailingSpaceLines.length > 0) {
-      warnings.push(`Found ${trailingSpaceLines.length} lines with trailing whitespace.`);
+      warnings.push(
+        `Found ${trailingSpaceLines.length} lines with trailing whitespace.`
+      );
     }
 
     // Check for tabs instead of spaces
@@ -506,7 +563,9 @@ export class YAMLFormatter {
       .filter(({ line }) => line.includes('\t'));
 
     if (tabLines.length > 0) {
-      warnings.push(`Found ${tabLines.length} lines using tabs instead of spaces for indentation.`);
+      warnings.push(
+        `Found ${tabLines.length} lines using tabs instead of spaces for indentation.`
+      );
     }
 
     return warnings;
@@ -523,22 +582,35 @@ export class YAMLFormatter {
       if (typeof obj === 'object' && obj !== null) {
         for (const [key, value] of Object.entries(obj)) {
           const currentPath = path ? `${path}.${key}` : key;
-          
+
           if (typeof value === 'string') {
             // Check for potential secrets that aren't using environment variables
-            const secretKeywords = ['password', 'secret', 'key', 'token', 'api_key', 'private'];
-            const isSecretKey = secretKeywords.some(keyword => key.toLowerCase().includes(keyword));
-            
+            const secretKeywords = [
+              'password',
+              'secret',
+              'key',
+              'token',
+              'api_key',
+              'private',
+            ];
+            const isSecretKey = secretKeywords.some(keyword =>
+              key.toLowerCase().includes(keyword)
+            );
+
             if (isSecretKey && !value.startsWith('${') && value.length > 8) {
-              warnings.push(`Potential hardcoded secret at ${currentPath}. Consider using environment variables.`);
+              warnings.push(
+                `Potential hardcoded secret at ${currentPath}. Consider using environment variables.`
+              );
             }
 
             // Check for suspicious patterns
             if (value.match(/^[A-Za-z0-9+/]{20,}={0,2}$/)) {
-              warnings.push(`Potential base64 encoded secret at ${currentPath}.`);
+              warnings.push(
+                `Potential base64 encoded secret at ${currentPath}.`
+              );
             }
           }
-          
+
           if (typeof value === 'object') {
             checkForSecrets(value, currentPath);
           }
@@ -566,7 +638,10 @@ export class YAMLFormatter {
       }
     } else {
       for (const value of Object.values(obj)) {
-        maxDepth = Math.max(maxDepth, this.getMaxDepth(value, currentDepth + 1));
+        maxDepth = Math.max(
+          maxDepth,
+          this.getMaxDepth(value, currentDepth + 1)
+        );
       }
     }
 
@@ -577,23 +652,24 @@ export class YAMLFormatter {
    * Validate that formatted YAML matches original intent
    */
   private async validateFormatted(
-    formatted: string, 
-    original: string, 
+    formatted: string,
+    original: string,
     options: YAMLFormatOptions
   ): Promise<{ warnings: string[] }> {
     const warnings: string[] = [];
 
     try {
       const { YAML } = await import('bun');
-      
+
       const originalParsed = YAML.parse(original);
       const formattedParsed = YAML.parse(formatted);
 
       // Deep equality check
       if (!this.deepEqual(originalParsed, formattedParsed)) {
-        warnings.push('Formatted YAML data differs from original. Manual review recommended.');
+        warnings.push(
+          'Formatted YAML data differs from original. Manual review recommended.'
+        );
       }
-
     } catch (error: any) {
       warnings.push(`Validation error: ${error.message}`);
     }
@@ -628,7 +704,11 @@ export class YAMLFormatter {
 // Export singleton instance and convenience functions
 export const yamlFormatter = YAMLFormatter.getInstance();
 
-export async function formatYAML(content: string, options?: Partial<YAMLFormatOptions>, filename?: string) {
+export async function formatYAML(
+  content: string,
+  options?: Partial<YAMLFormatOptions>,
+  filename?: string
+) {
   return yamlFormatter.formatYAML(content, options, filename);
 }
 

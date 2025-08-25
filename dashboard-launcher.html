@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Launcher - FantDev Trading Platform</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: #f0f4f8;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .service {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+        }
+        .service-name {
+            font-weight: 600;
+        }
+        .service-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .online {
+            background: #10b981;
+            color: white;
+        }
+        .offline {
+            background: #ef4444;
+            color: white;
+        }
+        .checking {
+            background: #f59e0b;
+            color: white;
+        }
+        .launch-btn {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            margin: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .launch-btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+        .launch-btn.secondary {
+            background: #64748b;
+        }
+        .launch-btn.secondary:hover {
+            background: #475569;
+        }
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 FantDev Dashboard Launcher</h1>
+        <p>Checking available dashboard services...</p>
+        
+        <div class="status">
+            <div class="service">
+                <span class="service-name">Admin Portal (Port 3001)</span>
+                <span class="service-status checking" id="status-3001">Checking...</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Dashboard Server (Port 3001)</span>
+                <span class="service-status checking" id="status-dashboard">Checking...</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Bot Service (Port 3004)</span>
+                <span class="service-status checking" id="status-3004">Checking...</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Admin Server (Port 3003)</span>
+                <span class="service-status checking" id="status-3003">Checking...</span>
+            </div>
+        </div>
+
+        <div id="error-container"></div>
+
+        <div style="margin-top: 30px;">
+            <a href="http://localhost:3001/dashboard" class="launch-btn" id="main-dashboard">
+                Open Main Dashboard
+            </a>
+            <a href="http://localhost:3001/" class="launch-btn secondary">
+                Open Admin Portal
+            </a>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <a href="/public/portals/dashboard.html" class="launch-btn secondary">
+                Open Static Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Check service availability
+        async function checkService(url, elementId) {
+            const element = document.getElementById(elementId);
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    signal: controller.signal,
+                    mode: 'no-cors' // Allow checking without CORS
+                });
+                
+                clearTimeout(timeoutId);
+                
+                // If we get here without error, service is responding
+                element.textContent = 'Online';
+                element.className = 'service-status online';
+                return true;
+            } catch (error) {
+                // Check if it's a CORS error (which means service is actually online)
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    // This might be a CORS issue, try with a simple HEAD request
+                    try {
+                        await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+                        element.textContent = 'Online';
+                        element.className = 'service-status online';
+                        return true;
+                    } catch {
+                        element.textContent = 'Offline';
+                        element.className = 'service-status offline';
+                        return false;
+                    }
+                }
+                element.textContent = 'Offline';
+                element.className = 'service-status offline';
+                return false;
+            }
+        }
+
+        // Check all services
+        async function checkAllServices() {
+            const services = [
+                { url: 'http://localhost:3001/', id: 'status-3001' },
+                { url: 'http://localhost:3001/api/dashboard/stats', id: 'status-dashboard' },
+                { url: 'http://localhost:3004/', id: 'status-3004' },
+                { url: 'http://localhost:3003/', id: 'status-3003' }
+            ];
+
+            const results = await Promise.all(
+                services.map(service => checkService(service.url, service.id))
+            );
+
+            // Show error if main dashboard is not available
+            if (!results[1]) {
+                document.getElementById('error-container').innerHTML = `
+                    <div class="error">
+                        ⚠️ Dashboard API not responding. Please ensure the admin server is running:<br>
+                        <code>bun run dev:server</code>
+                    </div>
+                `;
+            }
+        }
+
+        // Check services on load
+        checkAllServices();
+
+        // Refresh every 5 seconds
+        setInterval(checkAllServices, 5000);
+    </script>
+</body>
+</html>

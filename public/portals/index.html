@@ -60,9 +60,17 @@
     <link rel="icon" type="image/x-icon" href="/images/favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
     
+    <!-- Enhanced Static Assets -->
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/advanced-components.css">
+    <link rel="stylesheet" href="/static/css/fantdev-components.css">
+    
     <!-- External Resources -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -173,16 +181,92 @@
             cursor: pointer;
         }
         
-        .tabs {
+        /* Enhanced Navigation Styles */
+        .breadcrumb-nav {
+            margin: 1rem 0;
+            padding: 0.75rem 0;
+        }
+
+        .breadcrumb-list {
             display: flex;
-            gap: 8px;
+            align-items: center;
+            gap: 0.5rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            font-size: var(--font-size-sm, 0.875rem);
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .breadcrumb-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            color: #6b7280;
+            font-weight: 300;
+        }
+
+        .breadcrumb-current {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        /* Section Indicator */
+        .section-indicator {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            color: #374151;
+            transition: all 0.3s ease;
+        }
+
+        .section-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .section-name {
+            color: #667eea;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        /* Enhanced Tabs */
+        .enhanced-tabs {
+            display: flex;
+            gap: 0.5rem;
             margin-bottom: 20px;
             border-bottom: 1px solid var(--tg-theme-hint-color, #e0e0e0);
             overflow-x: auto;
+            padding: 0.5rem 0;
         }
-        
-        .tab {
-            padding: 12px 20px;
+
+        .enhanced-tab {
+            padding: 0.75rem 1rem;
             background: none;
             border: none;
             color: var(--tg-theme-text-color, #000);
@@ -191,21 +275,56 @@
             position: relative;
             white-space: nowrap;
             opacity: 0.7;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 120px;
+            justify-content: center;
         }
-        
-        .tab.active {
+
+        .enhanced-tab:hover {
+            opacity: 0.9;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .enhanced-tab.active {
             opacity: 1;
             color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
         }
-        
-        .tab.active::after {
+
+        .enhanced-tab.active::after {
             content: '';
             position: absolute;
-            bottom: -1px;
-            left: 0;
-            right: 0;
-            height: 2px;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
             background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .tab-icon {
+            font-size: 1.1em;
+        }
+
+        .tab-count {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .enhanced-tab.active .tab-count {
+            background: #667eea;
+            color: white;
         }
         
         .tab-content {
@@ -401,60 +520,195 @@
             margin-bottom: 12px;
         }
         
-        .fab {
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 50px;
+            height: 50px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            z-index: 1000;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: #764ba2;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .back-to-top:active {
+            transform: translateY(-2px);
+        }
+
+        /* Enhanced Floating Action Button */
+        .enhanced-fab {
             position: fixed;
             bottom: 20px;
             right: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            position: relative;
         }
-        
-        .fab:active {
+
+        .enhanced-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .enhanced-fab:active {
             transform: scale(0.95);
         }
-        
-        .export-menu {
+
+        .fab-tooltip {
+            position: absolute;
+            right: 70px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .enhanced-fab:hover .fab-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Enhanced Export Menu */
+        .enhanced-export-menu {
             position: fixed;
-            bottom: 90px;
+            bottom: 100px;
             right: 20px;
-            background: var(--tg-theme-bg-color, white);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            padding: 8px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            padding: 0;
             display: none;
-            z-index: 99;
+            z-index: 999;
+            min-width: 250px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
         }
-        
-        .export-menu.show {
+
+        .enhanced-export-menu.show {
             display: block;
+            animation: slideInUp 0.3s ease;
         }
-        
-        .export-option {
-            display: block;
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .export-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .export-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .export-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .export-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .export-options {
+            padding: 0.5rem;
+        }
+
+        .enhanced-export-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
             width: 100%;
             text-align: left;
             background: none;
             border: none;
-            padding: 12px 16px;
-            font-size: 14px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
             cursor: pointer;
             border-radius: 8px;
-            color: var(--tg-theme-text-color, #000);
+            color: #374151;
+            transition: all 0.2s ease;
         }
-        
-        .export-option:hover {
-            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+
+        .enhanced-export-option:hover {
+            background: #f3f4f6;
+            transform: translateX(4px);
+        }
+
+        .option-icon {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .option-text {
+            font-weight: 500;
         }
         
         .loading {
@@ -491,9 +745,134 @@
         .message {
             animation: slideIn 0.3s ease;
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .metric-grid {
+                grid-template-columns: repeat(1, 1fr);
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .metric-value {
+                font-size: 2rem;
+            }
+
+            .enhanced-tabs {
+                gap: 0.25rem;
+            }
+
+            .enhanced-tab {
+                min-width: 100px;
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+            }
+
+            .tab-icon {
+                font-size: 1em;
+            }
+
+            .tab-count {
+                font-size: 0.625rem;
+                padding: 0.125rem 0.375rem;
+            }
+
+            .section-indicator {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin-bottom: 1rem;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .breadcrumb-nav {
+                margin: 0.5rem 0;
+            }
+
+            .breadcrumb-list {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .back-to-top {
+                bottom: 1rem;
+                left: 1rem;
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+
+            .enhanced-fab {
+                width: 56px;
+                height: 56px;
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .enhanced-export-menu {
+                bottom: 80px;
+                right: 1rem;
+                left: 1rem;
+                min-width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+
+            .header {
+                padding: 16px 12px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .stats-grid {
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 12px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .enhanced-tab {
+                min-width: 80px;
+                padding: 0.375rem 0.5rem;
+                font-size: 0.625rem;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Enhanced Navigation -->
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
+            <li class="breadcrumb-item">
+                <a href="/" class="breadcrumb-link">Home</a>
+            </li>
+            <li class="breadcrumb-item">
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">Filter Bot Dashboard</span>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Section Indicator -->
+    <div class="section-indicator" id="section-indicator">
+        <span class="section-label">Current Section:</span>
+        <span class="section-name" id="current-section">Overview</span>
+    </div>
+
     <div class="header">
         <h1>🤖 Filter Bot Pro</h1>
         <p style="opacity: 0.9; font-size: 14px;">@fantdev_bot</p>
@@ -506,11 +885,28 @@
             <button class="search-btn" onclick="searchMessages()">🔍</button>
         </div>
         
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('overview')">Overview</button>
-            <button class="tab" onclick="switchTab('messages')">Messages</button>
-            <button class="tab" onclick="switchTab('filters')">Filters</button>
-            <button class="tab" onclick="switchTab('analytics')">Analytics</button>
+        <!-- Enhanced Tab Navigation -->
+        <div class="enhanced-tabs">
+            <button class="enhanced-tab active" data-tab="overview" onclick="switchTab('overview')">
+                <span class="tab-icon">📊</span>
+                <span class="tab-text">Overview</span>
+                <span class="tab-count">4</span>
+            </button>
+            <button class="enhanced-tab" data-tab="messages" onclick="switchTab('messages')">
+                <span class="tab-icon">💬</span>
+                <span class="tab-text">Messages</span>
+                <span class="tab-count" id="messages-count">0</span>
+            </button>
+            <button class="enhanced-tab" data-tab="filters" onclick="switchTab('filters')">
+                <span class="tab-icon">🔍</span>
+                <span class="tab-text">Filters</span>
+                <span class="tab-count">29</span>
+            </button>
+            <button class="enhanced-tab" data-tab="analytics" onclick="switchTab('analytics')">
+                <span class="tab-icon">📈</span>
+                <span class="tab-text">Analytics</span>
+                <span class="tab-count">3</span>
+            </button>
         </div>
         
         <!-- Overview Tab -->
@@ -617,14 +1013,46 @@
         </div>
     </div>
     
-    <button class="fab" onclick="toggleExportMenu()">⚡</button>
-    
-    <div class="export-menu" id="exportMenu">
-        <button class="export-option" onclick="exportMessages('csv')">📊 Export as CSV</button>
-        <button class="export-option" onclick="exportMessages('json')">📄 Export as JSON</button>
-        <button class="export-option" onclick="clearMessages()">🗑️ Clear All</button>
-        <button class="export-option" onclick="refreshMessages()">🔄 Refresh</button>
-    </div>
+        <!-- Back to Top Button -->
+        <button id="back-to-top" class="back-to-top" aria-label="Back to top">
+            <span>↑</span>
+        </button>
+
+        <!-- Enhanced Floating Action Button -->
+        <button class="enhanced-fab" onclick="toggleExportMenu()">
+            <span class="fab-icon">⚡</span>
+            <span class="fab-tooltip">Quick Actions</span>
+        </button>
+        
+        <!-- Enhanced Export Menu -->
+        <div class="enhanced-export-menu" id="exportMenu">
+            <div class="export-header">
+                <h3>Quick Actions</h3>
+                <button class="export-close" onclick="toggleExportMenu()">×</button>
+            </div>
+            <div class="export-options">
+                <button class="enhanced-export-option" onclick="exportMessages('csv')">
+                    <span class="option-icon">📊</span>
+                    <span class="option-text">Export as CSV</span>
+                </button>
+                <button class="enhanced-export-option" onclick="exportMessages('json')">
+                    <span class="option-icon">📄</span>
+                    <span class="option-text">Export as JSON</span>
+                </button>
+                <button class="enhanced-export-option" onclick="clearMessages()">
+                    <span class="option-icon">🗑️</span>
+                    <span class="option-text">Clear All</span>
+                </button>
+                <button class="enhanced-export-option" onclick="refreshMessages()">
+                    <span class="option-icon">🔄</span>
+                    <span class="option-text">Refresh</span>
+                </button>
+                <button class="enhanced-export-option" onclick="addSampleMessage()">
+                    <span class="option-icon">➕</span>
+                    <span class="option-text">Add Test Message</span>
+                </button>
+            </div>
+        </div>
     
     <script>
         // Initialize Telegram WebApp
@@ -649,6 +1077,7 @@
             updateStats();
             loadMessages();
             initCharts();
+            setupBackToTop();
             
             // Set theme
             if (tg.colorScheme === 'dark') {
@@ -659,16 +1088,31 @@
             tg.MainButton.text = "Add Test Message";
             tg.MainButton.show();
             tg.MainButton.onClick(() => addSampleMessage());
+            
+            // Initialize section indicator
+            updateSectionIndicator('overview');
         }
         
         function switchTab(tab) {
             currentTab = tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Update enhanced tabs
+            document.querySelectorAll('.enhanced-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
-            event.target.classList.add('active');
+            // Find and activate the clicked tab
+            const clickedTab = document.querySelector(`[data-tab="${tab}"]`);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            
+            // Show the corresponding content
             document.getElementById(tab).classList.add('active');
             
+            // Update section indicator
+            updateSectionIndicator(tab);
+            
+            // Update charts if needed
             if (tab === 'analytics') {
                 setTimeout(() => updateCharts(), 100);
             }
@@ -726,6 +1170,45 @@
                 new Date(msg.timestamp || Date.now()).toDateString() === today
             ).length;
             document.getElementById('todayMessages').textContent = todayCount;
+            
+            // Update messages count in tab
+            const messagesCountElement = document.getElementById('messages-count');
+            if (messagesCountElement) {
+                messagesCountElement.textContent = messages.length;
+            }
+        }
+
+        function updateSectionIndicator(section) {
+            const sectionIndicator = document.getElementById('current-section');
+            if (sectionIndicator) {
+                const sectionNames = {
+                    'overview': 'Overview',
+                    'messages': 'Messages',
+                    'filters': 'Filters',
+                    'analytics': 'Analytics'
+                };
+                sectionIndicator.textContent = sectionNames[section] || section;
+            }
+        }
+
+        function setupBackToTop() {
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTop.classList.add('visible');
+                    } else {
+                        backToTop.classList.remove('visible');
+                    }
+                });
+
+                backToTop.addEventListener('click', () => {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
         }
         
         function initCharts() {
@@ -862,5 +1345,11 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
+
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/icon-helper.js"></script>
+    <script src="/static/js/advanced-components.js"></script>
 </body>
 </html>

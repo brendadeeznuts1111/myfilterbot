@@ -1,0 +1,265 @@
+/**
+ * FantDev Navigation Styles
+ * Custom CSS classes replacing Bootstrap navigation
+ */
+
+/* Sidebar Container */
+.fantdev-sidebar {
+  width: 260px;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+}
+
+.fantdev-sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+/* Navigation List */
+.fantdev-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Navigation Item */
+.fantdev-nav-item {
+  position: relative;
+  margin: 0;
+}
+
+/* Navigation Link */
+.fantdev-nav-link {
+  display: block;
+  padding: 14px 20px;
+  color: #e2e8f0;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.fantdev-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.fantdev-nav-link-active {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #ffffff;
+  border-left: 3px solid #6366f1;
+}
+
+.fantdev-nav-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #6366f1;
+}
+
+/* Sub-navigation Link */
+.fantdev-nav-link-sub {
+  padding-left: 48px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.fantdev-nav-link-sub:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+/* Navigation Link Content */
+.fantdev-nav-link-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Navigation Icon */
+.fantdev-nav-icon {
+  width: 20px;
+  margin-right: 12px;
+  font-size: 16px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.fantdev-nav-link:hover .fantdev-nav-icon {
+  color: #cbd5e1;
+}
+
+.fantdev-nav-link-active .fantdev-nav-icon {
+  color: #6366f1;
+}
+
+/* Navigation Label */
+.fantdev-nav-label {
+  flex-grow: 1;
+}
+
+/* Navigation Badge */
+.fantdev-nav-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+}
+
+.fantdev-nav-badge.bg-red-500 {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.fantdev-nav-badge.bg-green-500 {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.fantdev-nav-badge.bg-blue-500 {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.fantdev-nav-badge.bg-yellow-500 {
+  background-color: #eab308;
+  color: #000000;
+}
+
+/* Navigation Chevron */
+.fantdev-nav-chevron {
+  font-size: 10px;
+  color: #94a3b8;
+  transition: transform 0.3s ease;
+  margin-left: 8px;
+}
+
+.fantdev-nav-link-expandable:hover .fantdev-nav-chevron {
+  color: #cbd5e1;
+}
+
+/* Submenu */
+.fantdev-nav-submenu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  max-height: 400px;
+  overflow-y: auto;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 400px;
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .fantdev-sidebar {
+    width: 100%;
+    transform: translateX(-100%);
+  }
+  
+  .fantdev-sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .fantdev-nav-link {
+    padding: 16px 20px;
+    font-size: 15px;
+  }
+  
+  .fantdev-nav-icon {
+    font-size: 18px;
+  }
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  .fantdev-sidebar {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+  
+  .fantdev-nav-link {
+    color: #cbd5e1;
+  }
+  
+  .fantdev-nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #f1f5f9;
+  }
+}
+
+/* Scrollbar Styling */
+.fantdev-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fantdev-sidebar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.fantdev-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.fantdev-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Accessibility */
+.fantdev-nav-link:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+}
+
+.fantdev-nav-link:focus-visible {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+/* Loading State */
+.fantdev-nav-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #94a3b8;
+}
+
+.fantdev-nav-loading::after {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-left: 10px;
+  border: 2px solid #94a3b8;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

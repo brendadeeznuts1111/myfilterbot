@@ -138,7 +138,7 @@ class EnvParser {
           if (envValue === undefined) {
             console.warn(`Warning: Environment variable ${expr} is not set`, {
               expression: expr,
-              availableEnvVars: Object.keys(process.env).length
+              availableEnvVars: Object.keys(process.env).length,
             });
           }
           return envValue ?? '';
@@ -155,11 +155,12 @@ class EnvParser {
 
           case '?': // Error if not set
             if (!envValue) {
-              const errorMsg = operand || `Environment variable ${varName} is required`;
+              const errorMsg =
+                operand || `Environment variable ${varName} is required`;
               console.error('Required environment variable missing:', {
                 variable: varName,
                 expression: expr,
-                error: errorMsg
+                error: errorMsg,
               });
               throw new Error(errorMsg);
             }
@@ -254,7 +255,7 @@ export class EnhancedConfigService {
     try {
       // Load YAML file content
       const yamlContent = await Bun.file(`${this.configDir}/app.yaml`).text();
-      
+
       // Parse YAML
       const config = Bun.YAML.parse(yamlContent);
 
@@ -277,12 +278,13 @@ export class EnhancedConfigService {
 
       return validated;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error('Failed to load app configuration:', {
         error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
         environment: this.environment,
-        configDir: this.configDir
+        configDir: this.configDir,
       });
       throw error;
     }
@@ -299,7 +301,9 @@ export class EnhancedConfigService {
     }
 
     try {
-      const yamlContent = await Bun.file(`${this.configDir}/database.yaml`).text();
+      const yamlContent = await Bun.file(
+        `${this.configDir}/database.yaml`
+      ).text();
       const config = Bun.YAML.parse(yamlContent);
       const parsed = EnvParser.parse(config);
       const validated = validateDatabaseConfig(parsed);
@@ -307,8 +311,7 @@ export class EnhancedConfigService {
       // Decrypt sensitive fields if encrypted
       if (validated.primary?.password?.startsWith('encrypted:')) {
         const encrypted = validated.primary.password.substring(10);
-        validated.primary.password =
-          this.encryption.decrypt(encrypted);
+        validated.primary.password = this.encryption.decrypt(encrypted);
       }
 
       this.cache.set(cacheKey, validated);
@@ -316,12 +319,13 @@ export class EnhancedConfigService {
 
       return validated;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error('Failed to load database configuration:', {
         error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
         environment: this.environment,
-        configDir: this.configDir
+        configDir: this.configDir,
       });
       throw error;
     }
@@ -339,7 +343,9 @@ export class EnhancedConfigService {
     }
 
     try {
-      const yamlContent = await Bun.file(`${this.configDir}/features.yaml`).text();
+      const yamlContent = await Bun.file(
+        `${this.configDir}/features.yaml`
+      ).text();
       const config = Bun.YAML.parse(yamlContent);
       const parsed = EnvParser.parse(config);
       const validated = validateFeaturesConfig(parsed);
@@ -349,12 +355,13 @@ export class EnhancedConfigService {
 
       return validated;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error('Failed to load features configuration:', {
         error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
         environment: this.environment,
-        configDir: this.configDir
+        configDir: this.configDir,
       });
       throw error;
     }

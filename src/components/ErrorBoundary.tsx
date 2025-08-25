@@ -36,12 +36,12 @@ export class ErrorBoundary extends Component<Props, State> {
       component: 'react',
       action: 'componentError',
       componentStack: errorInfo.componentStack,
-      errorBoundary: 'ErrorBoundary'
+      errorBoundary: 'ErrorBoundary',
     });
 
     this.setState({
       errorInfo,
-      errorId: loggedError.id
+      errorId: loggedError.id,
     });
 
     // Call custom error handler if provided
@@ -68,44 +68,51 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default fallback UI
       return (
-        <div className="error-boundary">
-          <div className="error-boundary-container">
-            <div className="error-boundary-icon">⚠️</div>
-            <h2 className="error-boundary-title">Something went wrong</h2>
-            <p className="error-boundary-description">
-              We encountered an unexpected error. The error has been logged and our team has been notified.
+        <div className='error-boundary'>
+          <div className='error-boundary-container'>
+            <div className='error-boundary-icon'>⚠️</div>
+            <h2 className='error-boundary-title'>Something went wrong</h2>
+            <p className='error-boundary-description'>
+              We encountered an unexpected error. The error has been logged and
+              our team has been notified.
             </p>
-            
+
             {this.state.errorId && (
-              <p className="error-boundary-id">
+              <p className='error-boundary-id'>
                 Error ID: <code>{this.state.errorId}</code>
               </p>
             )}
 
-            <div className="error-boundary-actions">
-              <button 
-                className="error-boundary-button primary"
+            <div className='error-boundary-actions'>
+              <button
+                className='error-boundary-button primary'
                 onClick={() => window.location.reload()}
               >
                 Reload Page
               </button>
-              <button 
-                className="error-boundary-button secondary"
-                onClick={() => this.setState({ hasError: false, error: undefined, errorInfo: undefined })}
+              <button
+                className='error-boundary-button secondary'
+                onClick={() =>
+                  this.setState({
+                    hasError: false,
+                    error: undefined,
+                    errorInfo: undefined,
+                  })
+                }
               >
                 Try Again
               </button>
             </div>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="error-boundary-details">
+              <details className='error-boundary-details'>
                 <summary>Error Details (Development)</summary>
-                <pre className="error-boundary-stack">
+                <pre className='error-boundary-stack'>
                   {this.state.error.toString()}
                   {this.state.error.stack}
                 </pre>
                 {this.state.errorInfo && (
-                  <pre className="error-boundary-component-stack">
+                  <pre className='error-boundary-component-stack'>
                     {this.state.errorInfo.componentStack}
                   </pre>
                 )}

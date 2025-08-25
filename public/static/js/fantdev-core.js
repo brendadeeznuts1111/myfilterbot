@@ -1,28 +1,192 @@
 /**
- * FantDev Trading Platform - Core JavaScript
- * Unified functionality for all portal pages
+ * FantDev Trading Platform - Enhanced Core JavaScript
+ * Unified functionality for all portal pages with modern features
+ * Version: 1.6.0 - Enhanced with PWA, performance optimizations, and advanced features
  */
 
 class FantDevApp {
     constructor() {
+        // Core state
         this.theme = localStorage.getItem('fantdev-theme') || 'light';
         this.notifications = [];
         this.userDropdownOpen = false;
         this.notificationPanelOpen = false;
-        
+
+        // Enhanced features
+        this.isOnline = navigator.onLine;
+        this.performanceMetrics = {};
+        this.eventListeners = new Map();
+        this.observers = new Map();
+        this.cache = new Map();
+        this.retryQueue = [];
+
+        // Performance monitoring
+        this.startTime = performance.now();
+
         this.init();
     }
     
-    init() {
-        this.setupTheme();
-        this.setupEventListeners();
-        this.loadNotifications();
+    async init() {
+        try {
+            // Initialize core features
+            this.setupTheme();
+            this.setupEventListeners();
+            this.setupPerformanceMonitoring();
+            this.setupNetworkMonitoring();
+            this.setupIntersectionObserver();
+
+            // Load data
+            await this.loadNotifications();
+
+            // Initialize PWA features
+            this.initializePWA();
+
+            // Setup error handling
+            this.setupErrorHandling();
+
+            // Mark initialization complete
+            this.performanceMetrics.initTime = performance.now() - this.startTime;
+            this.dispatchEvent('appInitialized', { metrics: this.performanceMetrics });
+
+            console.log(`FantDev App initialized in ${this.performanceMetrics.initTime.toFixed(2)}ms`);
+        } catch (error) {
+            console.error('Failed to initialize FantDev App:', error);
+            this.handleError(error, 'initialization');
+        }
     }
     
+    // Enhanced Performance Monitoring
+    setupPerformanceMonitoring() {
+        // Monitor Core Web Vitals
+        if ('PerformanceObserver' in window) {
+            // Largest Contentful Paint
+            new PerformanceObserver((list) => {
+                for (const entry of list.getEntries()) {
+                    this.performanceMetrics.lcp = entry.startTime;
+                }
+            }).observe({ entryTypes: ['largest-contentful-paint'] });
+
+            // First Input Delay
+            new PerformanceObserver((list) => {
+                for (const entry of list.getEntries()) {
+                    this.performanceMetrics.fid = entry.processingStart - entry.startTime;
+                }
+            }).observe({ entryTypes: ['first-input'] });
+
+            // Cumulative Layout Shift
+            new PerformanceObserver((list) => {
+                let clsValue = 0;
+                for (const entry of list.getEntries()) {
+                    if (!entry.hadRecentInput) {
+                        clsValue += entry.value;
+                    }
+                }
+                this.performanceMetrics.cls = clsValue;
+            }).observe({ entryTypes: ['layout-shift'] });
+        }
+    }
+
+    // Network Monitoring
+    setupNetworkMonitoring() {
+        // Online/offline detection
+        window.addEventListener('online', () => {
+            this.isOnline = true;
+            this.showToast('Connection restored', 'success');
+            this.processRetryQueue();
+        });
+
+        window.addEventListener('offline', () => {
+            this.isOnline = false;
+            this.showToast('Connection lost - working offline', 'warning');
+        });
+
+        // Network quality detection
+        if ('connection' in navigator) {
+            const connection = navigator.connection;
+            this.performanceMetrics.networkType = connection.effectiveType;
+            this.performanceMetrics.downlink = connection.downlink;
+
+            connection.addEventListener('change', () => {
+                this.performanceMetrics.networkType = connection.effectiveType;
+                this.performanceMetrics.downlink = connection.downlink;
+                this.optimizeForNetwork();
+            });
+        }
+    }
+
+    // Intersection Observer for lazy loading
+    setupIntersectionObserver() {
+        if ('IntersectionObserver' in window) {
+            this.observers.set('lazy', new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        this.loadLazyContent(entry.target);
+                        this.observers.get('lazy').unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: '50px' }));
+        }
+    }
+
+    // PWA Initialization
+    initializePWA() {
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('SW registered:', registration);
+                    this.setupPushNotifications(registration);
+                })
+                .catch(error => {
+                    console.log('SW registration failed:', error);
+                });
+        }
+
+        // Install prompt handling
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallPrompt();
+        });
+
+        // App installed detection
+        window.addEventListener('appinstalled', () => {
+            this.showToast('App installed successfully!', 'success');
+            this.deferredPrompt = null;
+        });
+    }
+
+    // Enhanced Error Handling
+    setupErrorHandling() {
+        window.addEventListener('error', (event) => {
+            this.handleError(event.error, 'javascript', {
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno
+            });
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            this.handleError(event.reason, 'promise');
+            event.preventDefault();
+        });
+    }
+
     // Theme Management
     setupTheme() {
         document.documentElement.setAttribute('data-theme', this.theme);
         this.updateThemeIcon();
+
+        // System theme detection
+        if (window.matchMedia) {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            mediaQuery.addEventListener('change', (e) => {
+                if (!localStorage.getItem('fantdev-theme')) {
+                    this.theme = e.matches ? 'dark' : 'light';
+                    this.setupTheme();
+                }
+            });
+        }
     }
     
     toggleTheme() {
@@ -55,10 +219,10 @@ class FantDevApp {
         }
     }
     
-    // Event Listeners
+    // Enhanced Event Listeners
     setupEventListeners() {
         // Close dropdowns when clicking outside
-        document.addEventListener('click', (e) => {
+        this.addEventListener(document, 'click', (e) => {
             if (!e.target.closest('.fantdev-user-profile') && !e.target.closest('.fantdev-user-dropdown')) {
                 this.closeUserDropdown();
             }
@@ -66,27 +230,74 @@ class FantDevApp {
                 this.closeNotificationPanel();
             }
         });
-        
+
         // Mobile menu toggle
-        document.addEventListener('click', (e) => {
+        this.addEventListener(document, 'click', (e) => {
             if (e.target.matches('.mobile-menu-toggle')) {
                 this.toggleMobileMenu();
             }
         });
-        
+
         // Form validation
-        document.addEventListener('submit', (e) => {
+        this.addEventListener(document, 'submit', (e) => {
             if (e.target.classList.contains('fantdev-form')) {
                 this.handleFormSubmit(e);
             }
         });
-        
+
         // Auto-save forms
-        document.addEventListener('input', (e) => {
+        this.addEventListener(document, 'input', (e) => {
             if (e.target.hasAttribute('data-autosave')) {
                 this.debounce(() => this.autoSave(e.target), 1000)();
             }
         });
+
+        // Keyboard shortcuts
+        this.addEventListener(document, 'keydown', (e) => {
+            this.handleKeyboardShortcuts(e);
+        });
+
+        // Lazy loading observer
+        this.addEventListener(document, 'DOMContentLoaded', () => {
+            this.observeLazyElements();
+        });
+
+        // Page visibility for performance optimization
+        this.addEventListener(document, 'visibilitychange', () => {
+            if (document.hidden) {
+                this.pauseNonEssentialTasks();
+            } else {
+                this.resumeNonEssentialTasks();
+            }
+        });
+    }
+
+    // Enhanced event listener management
+    addEventListener(element, event, handler, options = {}) {
+        const key = `${element.constructor.name}-${event}`;
+        if (!this.eventListeners.has(key)) {
+            this.eventListeners.set(key, []);
+        }
+        this.eventListeners.get(key).push({ handler, options });
+        element.addEventListener(event, handler, options);
+    }
+
+    removeEventListener(element, event, handler) {
+        const key = `${element.constructor.name}-${event}`;
+        if (this.eventListeners.has(key)) {
+            const listeners = this.eventListeners.get(key);
+            const index = listeners.findIndex(l => l.handler === handler);
+            if (index > -1) {
+                listeners.splice(index, 1);
+                element.removeEventListener(event, handler);
+            }
+        }
+    }
+
+    // Custom event dispatcher
+    dispatchEvent(eventName, detail = {}) {
+        const event = new CustomEvent(`fantdev:${eventName}`, { detail });
+        document.dispatchEvent(event);
     }
     
     // Navigation
@@ -110,7 +321,274 @@ class FantDevApp {
         const mobileNav = document.getElementById('mobile-nav');
         if (mobileNav) {
             mobileNav.classList.toggle('active');
+
+            // Animate hamburger icon
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            if (toggle) {
+                toggle.classList.toggle('active');
+            }
+
+            // Prevent body scroll when menu is open
+            document.body.style.overflow = mobileNav.classList.contains('active') ? 'hidden' : '';
         }
+    }
+
+    // Enhanced keyboard shortcuts
+    handleKeyboardShortcuts(e) {
+        // Ctrl/Cmd + K for search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            this.openSearch();
+        }
+
+        // Ctrl/Cmd + / for help
+        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+            e.preventDefault();
+            this.showHelp();
+        }
+
+        // Escape to close modals/dropdowns
+        if (e.key === 'Escape') {
+            this.closeAllDropdowns();
+            this.closeAllModals();
+        }
+
+        // Alt + T for theme toggle
+        if (e.altKey && e.key === 't') {
+            e.preventDefault();
+            this.toggleTheme();
+        }
+    }
+
+    // Performance optimization methods
+    pauseNonEssentialTasks() {
+        // Pause animations, reduce polling frequency, etc.
+        this.dispatchEvent('taskspaused');
+    }
+
+    resumeNonEssentialTasks() {
+        // Resume normal operations
+        this.dispatchEvent('tasksresumed');
+    }
+
+    // Lazy loading management
+    observeLazyElements() {
+        const lazyElements = document.querySelectorAll('[data-lazy]');
+        if (this.observers.has('lazy')) {
+            lazyElements.forEach(el => this.observers.get('lazy').observe(el));
+        }
+    }
+
+    loadLazyContent(element) {
+        const src = element.dataset.lazy;
+        if (src) {
+            if (element.tagName === 'IMG') {
+                element.src = src;
+            } else if (element.tagName === 'IFRAME') {
+                element.src = src;
+            }
+            element.removeAttribute('data-lazy');
+            element.classList.add('loaded');
+        }
+    }
+
+    // Network optimization
+    optimizeForNetwork() {
+        const connection = navigator.connection;
+        if (connection) {
+            if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
+                // Reduce image quality, disable animations
+                document.body.classList.add('slow-connection');
+                this.dispatchEvent('slowconnection');
+            } else {
+                document.body.classList.remove('slow-connection');
+                this.dispatchEvent('fastconnection');
+            }
+        }
+    }
+
+    // Retry queue for offline actions
+    addToRetryQueue(action) {
+        this.retryQueue.push({
+            action,
+            timestamp: Date.now(),
+            attempts: 0
+        });
+    }
+
+    async processRetryQueue() {
+        const maxAttempts = 3;
+        const retryDelay = 1000;
+
+        for (let i = this.retryQueue.length - 1; i >= 0; i--) {
+            const item = this.retryQueue[i];
+
+            if (item.attempts >= maxAttempts) {
+                this.retryQueue.splice(i, 1);
+                continue;
+            }
+
+            try {
+                await item.action();
+                this.retryQueue.splice(i, 1);
+                this.showToast('Offline action completed', 'success');
+            } catch (error) {
+                item.attempts++;
+                if (item.attempts >= maxAttempts) {
+                    this.retryQueue.splice(i, 1);
+                    this.showToast('Failed to sync offline action', 'error');
+                } else {
+                    setTimeout(() => this.processRetryQueue(), retryDelay * item.attempts);
+                }
+            }
+        }
+    }
+
+    // Enhanced error handling
+    handleError(error, context = 'unknown', metadata = {}) {
+        const errorInfo = {
+            message: error.message || error,
+            stack: error.stack,
+            context,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            url: window.location.href,
+            ...metadata
+        };
+
+        // Log to console
+        console.error('FantDev Error:', errorInfo);
+
+        // Send to error tracking service (if available)
+        if (window.errorTracker) {
+            window.errorTracker.captureException(error, errorInfo);
+        }
+
+        // Show user-friendly message
+        if (context !== 'initialization') {
+            this.showToast('Something went wrong. Please try again.', 'error');
+        }
+
+        // Dispatch error event
+        this.dispatchEvent('error', errorInfo);
+    }
+
+    // PWA Install prompt
+    showInstallPrompt() {
+        if (this.deferredPrompt) {
+            const installBanner = document.createElement('div');
+            installBanner.className = 'install-banner';
+            installBanner.innerHTML = `
+                <div class="install-content">
+                    <i class="fas fa-download"></i>
+                    <span>Install FantDev Trading for a better experience</span>
+                    <button class="install-btn">Install</button>
+                    <button class="install-close">×</button>
+                </div>
+            `;
+
+            document.body.appendChild(installBanner);
+
+            installBanner.querySelector('.install-btn').addEventListener('click', () => {
+                this.installApp();
+            });
+
+            installBanner.querySelector('.install-close').addEventListener('click', () => {
+                installBanner.remove();
+            });
+        }
+    }
+
+    async installApp() {
+        if (this.deferredPrompt) {
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+
+            if (outcome === 'accepted') {
+                this.showToast('App will be installed shortly', 'success');
+            }
+
+            this.deferredPrompt = null;
+            document.querySelector('.install-banner')?.remove();
+        }
+    }
+
+    // Push notifications setup
+    async setupPushNotifications(registration) {
+        if ('PushManager' in window && 'Notification' in window) {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    // Subscribe to push notifications
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: this.urlBase64ToUint8Array(
+                            'YOUR_VAPID_PUBLIC_KEY' // Replace with actual VAPID key
+                        )
+                    });
+
+                    // Send subscription to server
+                    await this.sendSubscriptionToServer(subscription);
+                }
+            } catch (error) {
+                console.error('Push notification setup failed:', error);
+            }
+        }
+    }
+
+    urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async sendSubscriptionToServer(subscription) {
+        // Send subscription to your server
+        try {
+            await this.apiRequest('/api/push-subscribe', {
+                method: 'POST',
+                body: JSON.stringify(subscription)
+            });
+        } catch (error) {
+            console.error('Failed to send subscription to server:', error);
+        }
+    }
+
+    // Helper methods
+    openSearch() {
+        const searchModal = document.getElementById('search-modal');
+        if (searchModal) {
+            this.showModal('search-modal');
+            const searchInput = searchModal.querySelector('input[type="search"]');
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }
+    }
+
+    showHelp() {
+        this.showModal('help-modal');
+    }
+
+    closeAllDropdowns() {
+        this.closeUserDropdown();
+        this.closeNotificationPanel();
+    }
+
+    closeAllModals() {
+        document.querySelectorAll('.modal[style*="flex"]').forEach(modal => {
+            modal.style.display = 'none';
+        });
+        document.body.style.overflow = '';
     }
     
     // Notifications
@@ -308,35 +786,135 @@ class FantDevApp {
         return container;
     }
     
-    // API Utilities
+    // Enhanced API Utilities with caching and retry logic
     async apiRequest(endpoint, options = {}) {
+        const cacheKey = `${endpoint}-${JSON.stringify(options)}`;
+        const useCache = options.cache !== false;
+        const maxRetries = options.maxRetries || 3;
+        const retryDelay = options.retryDelay || 1000;
+
+        // Check cache first for GET requests
+        if (useCache && (!options.method || options.method === 'GET')) {
+            const cached = this.cache.get(cacheKey);
+            if (cached && Date.now() - cached.timestamp < (options.cacheTime || 300000)) {
+                return cached.data;
+            }
+        }
+
         const config = {
             headers: {
                 'Content-Type': 'application/json',
                 'ngrok-skip-browser-warning': 'true',
+                'X-Requested-With': 'XMLHttpRequest',
                 ...options.headers
             },
             ...options
         };
-        
-        try {
-            const response = await fetch(endpoint, config);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return await response.json();
-            } else {
-                return await response.text();
-            }
-        } catch (error) {
-            console.error('API request failed:', error);
-            this.showToast(`Request failed: ${error.message}`, 'error');
-            throw error;
+
+        // Add auth token if available
+        const token = this.getToken();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
+
+        let lastError;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                const startTime = performance.now();
+                const response = await fetch(endpoint, config);
+                const endTime = performance.now();
+
+                // Track API performance
+                this.performanceMetrics.apiCalls = this.performanceMetrics.apiCalls || [];
+                this.performanceMetrics.apiCalls.push({
+                    endpoint,
+                    duration: endTime - startTime,
+                    status: response.status,
+                    timestamp: Date.now()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                let data;
+
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+
+                // Cache successful GET requests
+                if (useCache && (!options.method || options.method === 'GET')) {
+                    this.cache.set(cacheKey, {
+                        data,
+                        timestamp: Date.now()
+                    });
+                }
+
+                return data;
+
+            } catch (error) {
+                lastError = error;
+
+                // Don't retry on client errors (4xx)
+                if (error.message.includes('HTTP 4')) {
+                    break;
+                }
+
+                // If offline, add to retry queue
+                if (!this.isOnline) {
+                    this.addToRetryQueue(() => this.apiRequest(endpoint, options));
+                    throw new Error('Request queued for when connection is restored');
+                }
+
+                // Wait before retry
+                if (attempt < maxRetries) {
+                    await this.delay(retryDelay * Math.pow(2, attempt)); // Exponential backoff
+                }
+            }
+        }
+
+        console.error('API request failed after retries:', lastError);
+        this.showToast(`Request failed: ${lastError.message}`, 'error');
+        throw lastError;
+    }
+
+    // Enhanced caching with size limits
+    setCacheItem(key, value, ttl = 300000) {
+        // Implement LRU cache with size limit
+        if (this.cache.size >= 100) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+
+        this.cache.set(key, {
+            data: value,
+            timestamp: Date.now(),
+            ttl
+        });
+    }
+
+    getCacheItem(key) {
+        const item = this.cache.get(key);
+        if (item && Date.now() - item.timestamp < item.ttl) {
+            return item.data;
+        }
+        this.cache.delete(key);
+        return null;
+    }
+
+    clearCache() {
+        this.cache.clear();
+        this.showToast('Cache cleared', 'info');
+    }
+
+    // Utility delay function
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
     
     // Form Handling
@@ -684,22 +1262,157 @@ class FantDevApp {
         
         return csvContent;
     }
+
+    // Enhanced cleanup and memory management
+    destroy() {
+        // Remove all event listeners
+        this.eventListeners.forEach((listeners, key) => {
+            listeners.forEach(({ handler }) => {
+                const [elementType, event] = key.split('-');
+                if (elementType === 'Document') {
+                    document.removeEventListener(event, handler);
+                } else if (elementType === 'Window') {
+                    window.removeEventListener(event, handler);
+                }
+            });
+        });
+
+        // Disconnect observers
+        this.observers.forEach(observer => observer.disconnect());
+
+        // Clear caches
+        this.cache.clear();
+
+        // Clear retry queue
+        this.retryQueue = [];
+
+        console.log('FantDev App destroyed and cleaned up');
+    }
+
+    // Performance reporting
+    getPerformanceReport() {
+        return {
+            ...this.performanceMetrics,
+            cacheSize: this.cache.size,
+            retryQueueSize: this.retryQueue.length,
+            isOnline: this.isOnline,
+            theme: this.theme,
+            notificationCount: this.notifications.length,
+            unreadNotifications: this.notifications.filter(n => !n.read).length
+        };
+    }
+
+    // Health check
+    async healthCheck() {
+        const health = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            checks: {}
+        };
+
+        try {
+            // Check API connectivity
+            health.checks.api = await this.apiRequest('/api/health', {
+                cache: false,
+                maxRetries: 1
+            }).then(() => 'ok').catch(() => 'error');
+
+            // Check local storage
+            try {
+                localStorage.setItem('health-check', 'test');
+                localStorage.removeItem('health-check');
+                health.checks.localStorage = 'ok';
+            } catch {
+                health.checks.localStorage = 'error';
+            }
+
+            // Check service worker
+            health.checks.serviceWorker = 'serviceWorker' in navigator ? 'ok' : 'not-supported';
+
+            // Check performance
+            health.checks.performance = this.performanceMetrics.lcp < 2500 ? 'ok' : 'warning';
+
+        } catch (error) {
+            health.status = 'unhealthy';
+            health.error = error.message;
+        }
+
+        return health;
+    }
 }
 
-// Global functions for template compatibility
-window.toggleTheme = () => app.toggleTheme();
-window.toggleNotifications = () => app.toggleNotifications();
-window.toggleUserMenu = () => app.toggleUserMenu();
-window.markAllRead = () => app.markAllRead();
-window.updateThemeIcon = () => app.updateThemeIcon();
-window.loadNotifications = () => app.loadNotifications();
+// Enhanced global functions for template compatibility
+window.toggleTheme = () => app?.toggleTheme();
+window.toggleNotifications = () => app?.toggleNotifications();
+window.toggleUserMenu = () => app?.toggleUserMenu();
+window.markAllRead = () => app?.markAllRead();
+window.updateThemeIcon = () => app?.updateThemeIcon();
+window.loadNotifications = () => app?.loadNotifications();
+window.showToast = (message, type, duration) => app?.showToast(message, type, duration);
+window.showModal = (modalId) => app?.showModal(modalId);
+window.hideModal = (modalId) => app?.hideModal(modalId);
+window.exportData = (data, filename, format) => app?.exportData(data, filename, format);
+window.clearCache = () => app?.clearCache();
+window.getPerformanceMetrics = () => app?.performanceMetrics;
 
-// Initialize app when DOM is ready
+// Enhanced initialization with error handling and performance monitoring
 let app;
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+
+async function initializeApp() {
+    try {
+        const initStart = performance.now();
         app = new FantDevApp();
-    });
-} else {
-    app = new FantDevApp();
+
+        // Wait for app to fully initialize
+        await app.init();
+
+        const initTime = performance.now() - initStart;
+        console.log(`✅ FantDev App fully initialized in ${initTime.toFixed(2)}ms`);
+
+        // Dispatch global ready event
+        window.dispatchEvent(new CustomEvent('fantdev:ready', {
+            detail: {
+                app,
+                initTime,
+                version: '1.6.0'
+            }
+        }));
+
+        // Optional: Run health check in development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            setTimeout(async () => {
+                const health = await app.healthCheck();
+                console.log('🏥 Health Check:', health);
+            }, 2000);
+        }
+
+    } catch (error) {
+        console.error('❌ Failed to initialize FantDev App:', error);
+
+        // Show fallback error message
+        document.body.insertAdjacentHTML('beforeend', `
+            <div style="position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 16px; border-radius: 8px; z-index: 10000;">
+                <strong>Initialization Error</strong><br>
+                Please refresh the page. If the problem persists, contact support.
+            </div>
+        `);
+    }
 }
+
+// Initialize based on document state
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (app && typeof app.destroy === 'function') {
+        app.destroy();
+    }
+});
+
+// Export for global access
+window.FantDevApp = FantDevApp;
+window.fantdevApp = app;

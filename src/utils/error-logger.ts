@@ -49,7 +49,7 @@ class ErrorLogger {
   ): LoggedError {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
-    
+
     const loggedError: LoggedError = {
       id: this.generateErrorId(),
       timestamp: new Date().toISOString(),
@@ -57,7 +57,7 @@ class ErrorLogger {
       message: errorMessage,
       stack,
       context,
-      handled: true
+      handled: true,
     };
 
     // Add to internal log
@@ -67,14 +67,18 @@ class ErrorLogger {
     }
 
     // Console logging with structured format
-    const logMethod = level === 'error' ? console.error : 
-                     level === 'warn' ? console.warn : console.log;
-    
+    const logMethod =
+      level === 'error'
+        ? console.error
+        : level === 'warn'
+          ? console.warn
+          : console.log;
+
     logMethod(`[${level.toUpperCase()}] ${errorMessage}`, {
       id: loggedError.id,
       timestamp: loggedError.timestamp,
       context,
-      stack: stack?.split('\n').slice(0, 5).join('\n') // First 5 lines only
+      stack: stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines only
     });
 
     return loggedError;
@@ -93,7 +97,8 @@ class ErrorLogger {
       component: 'database',
       action: operation,
       table,
-      query: query?.substring(0, 200) + (query && query.length > 200 ? '...' : '')
+      query:
+        query?.substring(0, 200) + (query && query.length > 200 ? '...' : ''),
     });
   }
 
@@ -110,7 +115,7 @@ class ErrorLogger {
       component: 'api',
       url: url.pathname,
       method: req.method,
-      ...context
+      ...context,
     });
   }
 
@@ -127,7 +132,7 @@ class ErrorLogger {
       component: 'service',
       service,
       action,
-      ...context
+      ...context,
     });
   }
 
@@ -142,14 +147,17 @@ class ErrorLogger {
     return this.logError(error, {
       component: 'config',
       configFile,
-      operation
+      operation,
     });
   }
 
   /**
    * Get recent errors
    */
-  getRecentErrors(limit = 50, level?: 'error' | 'warn' | 'info'): LoggedError[] {
+  getRecentErrors(
+    limit = 50,
+    level?: 'error' | 'warn' | 'info'
+  ): LoggedError[] {
     let filtered = this.errorLog;
     if (level) {
       filtered = filtered.filter(log => log.level === level);
@@ -168,8 +176,8 @@ class ErrorLogger {
     recentDay: number;
   } {
     const now = Date.now();
-    const hourAgo = now - (60 * 60 * 1000);
-    const dayAgo = now - (24 * 60 * 60 * 1000);
+    const hourAgo = now - 60 * 60 * 1000;
+    const dayAgo = now - 24 * 60 * 60 * 1000;
 
     const byLevel: Record<string, number> = {};
     const byComponent: Record<string, number> = {};
@@ -178,14 +186,14 @@ class ErrorLogger {
 
     for (const error of this.errorLog) {
       const timestamp = new Date(error.timestamp).getTime();
-      
+
       // Count by level
       byLevel[error.level] = (byLevel[error.level] || 0) + 1;
-      
+
       // Count by component
       const component = error.context.component || 'unknown';
       byComponent[component] = (byComponent[component] || 0) + 1;
-      
+
       // Count recent errors
       if (timestamp > hourAgo) recentHour++;
       if (timestamp > dayAgo) recentDay++;
@@ -196,7 +204,7 @@ class ErrorLogger {
       byLevel,
       byComponent,
       recentHour,
-      recentDay
+      recentDay,
     };
   }
 
@@ -212,15 +220,15 @@ class ErrorLogger {
    */
   private setupGlobalErrorHandlers(): void {
     // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       this.logError(error, {
         component: 'process',
         action: 'uncaughtException',
-        fatal: true
+        fatal: true,
       });
-      
+
       console.error('🚨 Uncaught Exception - Application may crash:', error);
-      
+
       // In production, we might want to gracefully shutdown
       if (process.env.NODE_ENV === 'production') {
         setTimeout(() => {
@@ -236,21 +244,25 @@ class ErrorLogger {
         {
           component: 'process',
           action: 'unhandledRejection',
-          promise: promise.toString()
+          promise: promise.toString(),
         }
       );
-      
+
       console.error('🚨 Unhandled Promise Rejection:', reason);
     });
 
     // Handle warnings
-    process.on('warning', (warning) => {
-      this.logError(warning.message, {
-        component: 'process',
-        action: 'warning',
-        warningName: warning.name,
-        warningCode: (warning as any).code
-      }, 'warn');
+    process.on('warning', warning => {
+      this.logError(
+        warning.message,
+        {
+          component: 'process',
+          action: 'warning',
+          warningName: warning.name,
+          warningCode: (warning as any).code,
+        },
+        'warn'
+      );
     });
   }
 
@@ -266,19 +278,33 @@ class ErrorLogger {
 export const errorLogger = ErrorLogger.getInstance();
 
 // Convenience functions
-export const logError = (error: Error | string, context?: ErrorContext) => 
+export const logError = (error: Error | string, context?: ErrorContext) =>
   errorLogger.logError(error, context);
 
-export const logDatabaseError = (error: Error | string, operation: string, table?: string, query?: string) =>
-  errorLogger.logDatabaseError(error, operation, table, query);
+export const logDatabaseError = (
+  error: Error | string,
+  operation: string,
+  table?: string,
+  query?: string
+) => errorLogger.logDatabaseError(error, operation, table, query);
 
-export const logApiError = (error: Error | string, req: Request, context?: ErrorContext) =>
-  errorLogger.logApiError(error, req, context);
+export const logApiError = (
+  error: Error | string,
+  req: Request,
+  context?: ErrorContext
+) => errorLogger.logApiError(error, req, context);
 
-export const logServiceError = (error: Error | string, service: string, action: string, context?: ErrorContext) =>
-  errorLogger.logServiceError(error, service, action, context);
+export const logServiceError = (
+  error: Error | string,
+  service: string,
+  action: string,
+  context?: ErrorContext
+) => errorLogger.logServiceError(error, service, action, context);
 
-export const logConfigError = (error: Error | string, configFile: string, operation: 'load' | 'save' | 'validate') =>
-  errorLogger.logConfigError(error, configFile, operation);
+export const logConfigError = (
+  error: Error | string,
+  configFile: string,
+  operation: 'load' | 'save' | 'validate'
+) => errorLogger.logConfigError(error, configFile, operation);
 
 export default errorLogger;

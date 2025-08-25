@@ -622,6 +622,18 @@ const server = serve({
       });
     }
 
+    // Serve dashboard HTML
+    if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
+      const dashboardFile = Bun.file('./public/portals/dashboard.html');
+      if (await dashboardFile.exists()) {
+        return new Response(await dashboardFile.text(), {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+      // Fallback to redirect if file doesn't exist
+      return Response.redirect('/', 302);
+    }
+
     // Serve main admin portal
     if (url.pathname === '/' || url.pathname === '/admin' || url.pathname === '/enhanced') {
       return new Response(enhancedAdminPortal);

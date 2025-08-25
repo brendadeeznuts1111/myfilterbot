@@ -1,10 +1,10 @@
 import { serve } from "bun";
 import { execSync } from "child_process";
-import { server, monitoring } from "../../../config/app.yaml";
+import appConfig from "../../../config/app.yaml";
 import { yamlConfigService, checkFeature } from "../../services/yaml-config-service";
 
 // Get server configuration from YAML
-const adminConfig = server.admin;
+const adminConfig = appConfig.server.admin;
 const port = adminConfig.port || 3000;
 const host = adminConfig.host || "0.0.0.0";
 
@@ -38,8 +38,8 @@ serve({
       
       if (enhancedHealth) {
         healthData.monitoring = {
-          enabled: monitoring?.enabled || false,
-          level: monitoring?.logging?.level || 'info'
+          enabled: appConfig.monitoring?.enabled || false,
+          level: appConfig.monitoring?.logging?.level || 'info'
         };
       }
       

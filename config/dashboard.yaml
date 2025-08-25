@@ -53,6 +53,146 @@ dashboard:
       footerHeight: 40
       maxContentWidth: 1400
     
+    # Navigation configuration
+    navigation:
+      collapsible: true
+      persistState: true
+      mobileBreakpoint: 768
+      defaultExpanded:
+        - reporting
+        - tools
+      items:
+        - id: transactions
+          label: Transactions
+          icon: exchange-alt
+          action: get-transactions
+          order: 1
+          
+        - id: reporting
+          label: Reporting
+          icon: chart-bar
+          order: 2
+          subItems:
+            - id: agent-performance
+              label: Agent Performance
+              icon: user-tie
+              action: get-agent-performance
+              roles: [admin, master_agent]
+            - id: analysis
+              label: Analysis
+              icon: analytics
+              action: get-analysis
+            - id: ip-tracker
+              label: IP Tracker
+              icon: network-wired
+              action: get-ip-tracker
+              roles: [admin]
+            - id: transaction-history
+              label: Transaction History
+              icon: history
+              action: get-transaction-history
+            - id: collections
+              label: Collections
+              icon: money-check-alt
+              action: get-collections
+            - id: deleted-wagers
+              label: Deleted Wagers
+              icon: trash-alt
+              action: get-deleted-wagers
+              roles: [admin, master_agent]
+              
+        - id: tools
+          label: Tools
+          icon: tools
+          order: 3
+          subItems:
+            - id: bet-ticker
+              label: Bet Ticker
+              icon: scroll
+              action: get-bet-ticker
+              featureFlag: bettingTools
+            - id: ticketwriter
+              label: Ticketwriter
+              icon: edit
+              action: get-ticketwriter
+              featureFlag: bettingTools
+            - id: sportsbook-lines
+              label: Sportsbook Lines
+              icon: list-alt
+              action: get-sportsbook-lines
+              featureFlag: sportsbookIntegration
+            - id: scores
+              label: Scores
+              icon: football-ball
+              action: get-scores
+              featureFlag: liveScores
+              
+        - id: add-players
+          label: Add Players
+          icon: user-plus
+          action: add-account
+          order: 4
+          roles: [admin, master_agent, agent]
+          
+        - id: live-betting-limits
+          label: Live Betting Limits
+          icon: tachometer-alt
+          action: get-live-betting-limits
+          order: 5
+          featureFlag: liveBetting
+          
+        - id: billing
+          label: Billing
+          icon: file-invoice-dollar
+          action: get-billing
+          order: 6
+          badge: New
+          badgeColor: red
+          
+        - id: rules
+          label: Rules
+          icon: gavel
+          action: get-rules
+          order: 7
+          
+        - id: contact
+          label: Contact
+          icon: address-card
+          action: get-contact
+          order: 8
+          
+        - id: divider-1
+          divider: true
+          order: 9
+          
+        - id: settings
+          label: Settings
+          icon: cog
+          action: show-settings-modal
+          order: 10
+          
+        - id: desktop-view
+          label: Desktop View
+          icon: desktop
+          action: switch-to-desktop
+          order: 11
+          
+        - id: mobile-view
+          label: Mobile View
+          icon: mobile-alt
+          action: switch-to-mobile
+          order: 12
+          
+        - id: divider-2
+          divider: true
+          order: 13
+          
+        - id: logout
+          label: Logout
+          icon: sign-out-alt
+          href: /logout
+          order: 14
+    
     # Dashboard tabs
     tabs:
       - id: overview

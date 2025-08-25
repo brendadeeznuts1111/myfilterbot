@@ -1,6 +1,44 @@
 # Services Configuration
 # Configuration for authentication, notifications, caching, and other services
 
+# Service Integration Architecture
+integration:
+  unified_server:
+    name: "Unified Orchestrator"
+    description: "Central service managing state and coordinating all services"
+    port: 4000
+    endpoints:
+      dashboard: "/"
+      websocket: "/ws"
+      api: "/api/*"
+      health: "/health"
+    features:
+      - real-time state synchronization
+      - WebSocket broadcasting
+      - shared state management
+      - automatic service discovery
+  
+  microservices:
+    admin_api:
+      port: 3000
+      purpose: "Admin operations and dashboard serving"
+    data_api:
+      port: 3001
+      purpose: "Data operations and transactions"
+    websocket_server:
+      port: 3002
+      purpose: "Real-time bidirectional communication"
+  
+  communication:
+    type: "event-driven"
+    protocol: "WebSocket + REST"
+    state_sync: "real-time"
+    data_flow:
+      - "Admin API → Unified Server (REST)"
+      - "Data API → Unified Server (REST)"
+      - "Unified Server → All Clients (WebSocket)"
+      - "WebSocket Server → Unified Server (Relay)"
+
 services:
   # Authentication Service
   authentication:
@@ -32,7 +70,7 @@ services:
         sameSite: strict
       store:
         type: ${SESSION_STORE:-memory} # memory, redis, postgres
-        prefix: sess:
+        prefix: "sess:"
         ttl: 86400
         
     # OAuth Providers
@@ -191,16 +229,16 @@ services:
     strategies:
       users:
         ttl: 600
-        prefix: user:
+        prefix: "user:"
       sessions:
         ttl: 3600
-        prefix: session:
+        prefix: "session:"
       api:
         ttl: 60
-        prefix: api:
+        prefix: "api:"
       static:
         ttl: 86400
-        prefix: static:
+        prefix: "static:"
         
   # Queue Service
   queue:
@@ -357,7 +395,7 @@ services:
         enabled: ${BACKUP_S3_ENABLED:-false}
         bucket: ${BACKUP_S3_BUCKET}
         region: ${BACKUP_S3_REGION}
-        prefix: backups/
+        prefix: "backups/"
         retention: 30 # days
         
     databases:

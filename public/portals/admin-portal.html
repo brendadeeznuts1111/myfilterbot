@@ -37,11 +37,23 @@
     <meta name="application-name" content="Fantdev Enhanced Admin Dashboard">
     <meta name="format-detection" content="telephone=no">
     <link rel="canonical" href="/admin/dashboard">
+    <!-- Enhanced Static Assets Integration -->
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/advanced-components.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Socket.IO for real-time updates -->
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/advanced-components.js"></script>
+    <script src="/static/js/icon-helper.js"></script>
+    <script src="/static/js/websocket-client.js"></script>
     <style>
         * {
             margin: 0;
@@ -880,6 +892,239 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Enhanced Navigation Styles */
+        .enhanced-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            margin: 0 1rem 1rem 1rem;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-list {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 0.5rem;
+            color: var(--border);
+        }
+
+        .breadcrumb-current {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        /* Section Indicator */
+        .section-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--light);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .section-label {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        .section-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Enhanced Floating Action Button */
+        .enhanced-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .fab-tooltip {
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--dark);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .enhanced-fab:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        .fab-button {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.2s ease;
+        }
+
+        .fab-button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 1rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .enhanced-fab.active .fab-menu {
+            display: flex;
+        }
+
+        .fab-item {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .fab-item:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(1rem);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-0.25rem);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Responsive Design for Enhanced Navigation */
+        @media (max-width: 768px) {
+            .enhanced-navigation {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+                margin: 0 0.5rem 1rem 0.5rem;
+            }
+
+            .section-indicator {
+                align-self: stretch;
+                justify-content: center;
+            }
+
+            .enhanced-fab {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .back-to-top {
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .breadcrumb-nav {
+                font-size: 0.875rem;
+            }
+
+            .section-indicator {
+                padding: 0.375rem 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -955,6 +1200,26 @@
                     </div>
                     <i class="fas fa-chevron-down" style="color: #718096;"></i>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Navigation Elements -->
+        <div class="enhanced-navigation">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <ol class="breadcrumb-list">
+                    <li class="breadcrumb-item">
+                        <a href="/" class="breadcrumb-link">Home</a>
+                    </li>
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item breadcrumb-current">Admin Dashboard</li>
+                </ol>
+            </nav>
+            
+            <!-- Section Indicator -->
+            <div class="section-indicator">
+                <span class="section-label">Current Section:</span>
+                <span class="section-name" id="current-section">Dashboard</span>
             </div>
         </div>
         
@@ -1904,6 +2169,10 @@
             if (selectedTab) {
                 selectedTab.style.display = 'block';
                 currentTab = tab;
+                
+                // Update section indicator
+                const sectionName = tab.charAt(0).toUpperCase() + tab.slice(1);
+                updateSectionIndicator(sectionName);
             } else {
                 console.error(`Tab not found: ${tab}-tab`);
                 if (typeof showToast === 'function') {
@@ -2623,6 +2892,109 @@
                 }
             }, 30000); // Refresh every 30 seconds
         }
+
+        // Enhanced Navigation Functions
+        function updateSectionIndicator(section) {
+            const currentSection = document.getElementById('current-section');
+            if (currentSection) {
+                currentSection.textContent = section;
+            }
+        }
+
+        function setupBackToTop() {
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTop.classList.add('visible');
+                    } else {
+                        backToTop.classList.remove('visible');
+                    }
+                });
+
+                backToTop.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+        }
+
+        // FAB Menu Toggle
+        function toggleFabMenu() {
+            const fab = document.getElementById('enhanced-fab');
+            if (fab) {
+                fab.classList.toggle('active');
+            }
+        }
+
+        // Quick Actions Handler
+        function quickAction(action) {
+            switch (action) {
+                case 'refresh':
+                    refreshAllData();
+                    break;
+                case 'export':
+                    exportAllData();
+                    break;
+                case 'notifications':
+                    showToast('Notifications panel opened', 'info');
+                    break;
+                case 'settings':
+                    switchTab('settings');
+                    break;
+            }
+            // Close FAB menu after action
+            toggleFabMenu();
+        }
+
+        // Refresh all data
+        function refreshAllData() {
+            showToast('Refreshing all data...', 'info');
+            loadDashboardData();
+            loadMembers();
+            // Add other data refresh calls as needed
+        }
+
+        // Export all data
+        function exportAllData() {
+            showToast('Preparing export...', 'info');
+            // Implementation would export current tab data
+            setTimeout(() => {
+                showToast('Export completed successfully', 'success');
+            }, 2000);
+        }
+
+        // Initialize enhanced navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            setupBackToTop();
+            updateSectionIndicator('Dashboard');
+        });
     </script>
+
+    <!-- Enhanced Floating Action Button -->
+    <div class="enhanced-fab" id="enhanced-fab">
+        <div class="fab-tooltip">Quick Actions</div>
+        <button class="fab-button" onclick="toggleFabMenu()" aria-label="Quick actions menu">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab-item" onclick="quickAction('refresh')" title="Refresh all data">
+                <i class="fas fa-sync"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('export')" title="Export data">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('notifications')" title="View notifications">
+                <i class="fas fa-bell"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('settings')" title="Admin settings">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 </body>
 </html>

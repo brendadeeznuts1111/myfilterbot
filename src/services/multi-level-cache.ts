@@ -45,10 +45,10 @@ interface RedisConfig {
 
 /**
  * LRU (Least Recently Used) Cache Implementation
- * 
+ *
  * High-performance in-memory cache with TTL support and automatic eviction.
  * Used as L1 cache in the multi-level caching system.
- * 
+ *
  * @template T The type of values stored in the cache
  */
 class LRUCache<T = any> {
@@ -64,7 +64,7 @@ class LRUCache<T = any> {
 
   /**
    * Create a new LRU cache
-   * 
+   *
    * @param maxSize Maximum number of entries to store (default: 1000)
    */
   constructor(maxSize: number = 1000) {
@@ -73,7 +73,7 @@ class LRUCache<T = any> {
 
   /**
    * Store a value in the cache with optional TTL
-   * 
+   *
    * @param key Cache key
    * @param value Value to cache
    * @param ttl Time to live in milliseconds (default: 5 minutes)
@@ -233,7 +233,7 @@ class MultiLevelCache {
   private l3Stats = { hits: 0, misses: 0, size: 0 };
 
   constructor(
-    l1MaxSize: number = 1000, 
+    l1MaxSize: number = 1000,
     redisConfig: RedisConfig = { enabled: false },
     l3CacheDir: string = './cache'
   ) {
@@ -262,19 +262,21 @@ class MultiLevelCache {
     try {
       // Dynamic import to avoid bundling Redis if not needed
       const Redis = await import('ioredis').catch(() => null);
-      
+
       if (Redis) {
-        this.redisClient = new Redis.default(redisUrl || 'redis://localhost:6379');
-        
+        this.redisClient = new Redis.default(
+          redisUrl || 'redis://localhost:6379'
+        );
+
         this.redisClient.on('connect', () => {
           console.log('🔗 L2 Redis cache connected');
         });
-        
+
         this.redisClient.on('error', (error: Error) => {
           console.warn('⚠️ Redis L2 cache error:', error.message);
           this.redisClient = null;
         });
-        
+
         // Test connection
         await this.redisClient.ping();
       } else {
@@ -313,11 +315,13 @@ class MultiLevelCache {
    */
   private async cleanupL3Cache(): Promise<void> {
     try {
-      const cacheFiles = await Bun.file(this.l3CacheDir).arrayBuffer().then(
-        () => [], // Handle case where it's a directory
-        () => []
-      );
-      
+      const cacheFiles = await Bun.file(this.l3CacheDir)
+        .arrayBuffer()
+        .then(
+          () => [], // Handle case where it's a directory
+          () => []
+        );
+
       // This is a simplified cleanup - in production you'd scan the directory
       // and check file timestamps against TTL
     } catch (error) {
@@ -342,10 +346,10 @@ class MultiLevelCache {
         if (l2Result !== null) {
           this.l2Stats.hits++;
           const parsed = JSON.parse(l2Result);
-          
+
           // Promote to L1 cache
           this.l1Cache.set(key, parsed.value, parsed.ttl || 300000);
-          
+
           return parsed.value as T;
         } else {
           this.l2Stats.misses++;
@@ -360,29 +364,33 @@ class MultiLevelCache {
     try {
       const filePath = this.getL3FilePath(key);
       const file = Bun.file(filePath);
-      
+
       if (await file.exists()) {
         const content = await file.json();
         const now = Date.now();
-        
+
         // Check if expired
         if (!content.expiresAt || now < content.expiresAt) {
           this.l3Stats.hits++;
-          
+
           // Promote to L1 and L2 caches
           this.l1Cache.set(key, content.value, content.ttl || 300000);
-          
+
           if (this.redisClient) {
             try {
-              await this.redisClient.setex(key, Math.floor((content.ttl || 300000) / 1000), JSON.stringify({
-                value: content.value,
-                ttl: content.ttl
-              }));
+              await this.redisClient.setex(
+                key,
+                Math.floor((content.ttl || 300000) / 1000),
+                JSON.stringify({
+                  value: content.value,
+                  ttl: content.ttl,
+                })
+              );
             } catch (error) {
               // Silent Redis promotion failure
             }
           }
-          
+
           return content.value as T;
         } else {
           // File expired, clean up
@@ -393,7 +401,7 @@ class MultiLevelCache {
           }
         }
       }
-      
+
       this.l3Stats.misses++;
     } catch (error) {
       this.l3Stats.misses++;
@@ -414,7 +422,7 @@ class MultiLevelCache {
       try {
         const ttlSeconds = Math.floor(ttl / 1000);
         const payload = JSON.stringify({ value, ttl });
-        
+
         if (ttlSeconds > 0) {
           await this.redisClient.setex(key, ttlSeconds, payload);
         } else {
@@ -428,18 +436,19 @@ class MultiLevelCache {
     // Store in L3 (File system) cache for large data
     try {
       const dataSize = JSON.stringify(value).length;
-      
+
       // Only store in L3 if data is larger than 10KB or has long TTL
-      if (dataSize > 10240 || ttl > 3600000) { // 1 hour TTL threshold
+      if (dataSize > 10240 || ttl > 3600000) {
+        // 1 hour TTL threshold
         const filePath = this.getL3FilePath(key);
         const cacheEntry = {
           value,
           ttl,
           createdAt: Date.now(),
           expiresAt: ttl > 0 ? Date.now() + ttl : null,
-          size: dataSize
+          size: dataSize,
         };
-        
+
         await Bun.write(filePath, JSON.stringify(cacheEntry));
         this.l3Stats.size++;
       }
@@ -472,10 +481,10 @@ class MultiLevelCache {
     try {
       const filePath = this.getL3FilePath(key);
       const file = Bun.file(filePath);
-      
+
       if (await file.exists()) {
         const content = await file.json();
-        
+
         // Check if expired
         if (!content.expiresAt || Date.now() < content.expiresAt) {
           return true;
@@ -515,7 +524,7 @@ class MultiLevelCache {
     try {
       const filePath = this.getL3FilePath(key);
       const file = Bun.file(filePath);
-      
+
       if (await file.exists()) {
         await Bun.write(filePath, ''); // Delete file
         this.l3Stats.size = Math.max(0, this.l3Stats.size - 1);
@@ -562,7 +571,8 @@ class MultiLevelCache {
     const l1Stats = this.l1Cache.getStats();
 
     const totalHits = l1Stats.l1_hits + this.l2Stats.hits + this.l3Stats.hits;
-    const totalMisses = l1Stats.l1_misses + this.l2Stats.misses + this.l3Stats.misses;
+    const totalMisses =
+      l1Stats.l1_misses + this.l2Stats.misses + this.l3Stats.misses;
     const totalRequests = totalHits + totalMisses;
 
     return {
