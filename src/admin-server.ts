@@ -4,26 +4,53 @@ import { SignJWT, jwtVerify } from "jose";
 // Import YAML configurations using Bun's native support
 import appConfig from '../config/app.yaml';
 import featuresConfig from '../config/features.yaml';
-import telegramConfig from '../config/telegram.yaml';
+
+// Load telegram configuration dynamically
+let telegramConfig: any = { telegram: {} };
+try {
+  const { YAML } = await import('bun');
+  const telegramFile = Bun.file('./config/telegram.yaml');
+  if (await telegramFile.exists()) {
+    telegramConfig = YAML.parse(await telegramFile.text());
+  }
+} catch (error) {
+  console.warn('⚠️ telegram.yaml config missing or invalid - using empty config');
+}
 
 import enhancedAdminPortal from '../public/portals/admin-portal.html';
 import { apiRouter } from './server/api/router';
-import { dashboardRouter } from './server/api/dashboard-router';
+import { createDashboardRouter } from './server/api/dashboard-router';
 import { dashboardConfigService } from './services/dashboard-config-service';
 import { LazyCustomerLoader, type Customer } from './services/lazy-customer-loader';
 import { PerformanceMonitor } from './services/performance-monitor';
-import { MultiLevelCache } from './services/multi-level-cache';
+import { MultiLevelCache, type RedisConfig } from './services/multi-level-cache';
 import { ResponseCacheMiddleware } from './middleware/response-cache';
+import { CacheWarmingService } from './services/cache-warming-service';
 import { commissionCalculator } from './lib/commission';
 import { db } from './lib/data';
 import { buildTable, exportToCSV } from './lib/table';
 import { telegramBridge } from './lib/telegram-bridge';
+import { errorLogger, logConfigError, logApiError } from './utils/error-logger';
+import { formatYAML, validateYAML, normalizeYAML } from './utils/yaml-formatter';
 
 // Initialize services
 const customerLoader = new LazyCustomerLoader();
 const performanceMonitor = new PerformanceMonitor();
-const cache = new MultiLevelCache(2000); // 2000 items max in L1 cache
+
+// Configure Redis cache if available
+const redisConfig: RedisConfig = {
+  enabled: Boolean(Bun.env.REDIS_URL || process.env.NODE_ENV === 'production'),
+  url: Bun.env.REDIS_URL || 'redis://localhost:6379'
+};
+
+const cache = new MultiLevelCache(
+  2000, // 2000 items max in L1 cache
+  redisConfig, // Redis L2 cache
+  './cache' // L3 file cache directory
+);
 const responseCache = new ResponseCacheMiddleware(cache);
+const cacheWarmingService = new CacheWarmingService(cache);
+const dashboardRouter = createDashboardRouter(responseCache);
 
 // Load agents and masters configuration dynamically
 let agentsConfig: any = { agents: { list: [] }, masters: { list: [] }, commission: {} };
@@ -34,7 +61,10 @@ try {
     agentsConfig = YAML.parse(await agentsFile.text());
   }
 } catch (error) {
-  console.warn('⚠️ agents.yml config missing or invalid - using empty agent list');
+  console.warn('⚠️ agents.yml config missing or invalid - using empty agent list', {
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
+  });
 }
 
 // Track startup performance
@@ -54,15 +84,32 @@ Promise.all([
     await customerLoader.startBackgroundLoad();
     performanceMonitor.endMetric('customer_loading');
     performanceMonitor.warnIfSlow('customer_loading', 5000);
+  })(),
+  (async () => {
+    performanceMonitor.startMetric('cache_warming');
+    await cacheWarmingService.warmCache(['critical', 'important']);
+    performanceMonitor.endMetric('cache_warming');
+    performanceMonitor.warnIfSlow('cache_warming', 3000);
   })()
 ]).then(() => {
   performanceMonitor.endPhase('data_initialization');
   performanceMonitor.startPhase('server_startup');
   performanceMonitor.endMetric('total_startup');
   performanceMonitor.completeStartup();
+  
+  // Start periodic cache warming every 5 minutes
+  cacheWarmingService.startPeriodicWarming(300000);
 }).catch(error => {
-  console.error('❌ Startup error:', error);
-  performanceMonitor.endPhase('data_initialization', error.message);
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error('❌ Startup error:', {
+    error: errorMessage,
+    stack: error instanceof Error ? error.stack : undefined,
+    timestamp: new Date().toISOString()
+  });
+  performanceMonitor.endPhase('data_initialization', errorMessage);
+  
+  // Attempt graceful degradation
+  console.log('⚠️ Continuing with limited functionality due to startup errors');
 });
 
 // JWT Authentication Setup
@@ -84,7 +131,11 @@ async function verifyToken(token?: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload as { sub: string; role: string };
-  } catch {
+  } catch (error) {
+    console.warn('JWT verification failed:', {
+      error: error instanceof Error ? error.message : String(error),
+      tokenLength: token?.length || 0
+    });
     return null;
   }
 }
@@ -553,6 +604,29 @@ const server = serve({
         runtime: performanceMonitor.getRuntimeStats(),
         metrics: performanceMonitor.getMetrics(),
         cache: cache.getStats(),
+        errors: errorLogger.getErrorStats(),
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Error logs endpoint
+    if (url.pathname === "/api/errors" && req.method === "GET") {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const level = url.searchParams.get('level') as 'error' | 'warn' | 'info' | undefined;
+      
+      return Response.json({
+        errors: errorLogger.getRecentErrors(limit, level),
+        stats: errorLogger.getErrorStats(),
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Clear error logs endpoint
+    if (url.pathname === "/api/errors" && req.method === "DELETE") {
+      errorLogger.clearLogs();
+      return Response.json({
+        success: true,
+        message: "Error logs cleared successfully",
         timestamp: new Date().toISOString()
       }, { headers: corsHeaders });
     }
@@ -575,6 +649,42 @@ const server = serve({
       }, { headers: corsHeaders });
     }
 
+    // Cache warming endpoints
+    if (url.pathname === "/api/cache/warming" && req.method === "GET") {
+      const report = await cacheWarmingService.getWarmingReport();
+      return Response.json({
+        ...report,
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    if (url.pathname === "/api/cache/warming" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const priorities = body.priorities || ['critical', 'important'];
+      
+      // Trigger cache warming
+      await cacheWarmingService.warmCache(priorities);
+      
+      return Response.json({
+        success: true,
+        message: `Cache warming completed for priorities: ${priorities.join(', ')}`,
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Warm specific cache key
+    if (url.pathname.startsWith("/api/cache/warm/") && req.method === "POST") {
+      const key = url.pathname.replace("/api/cache/warm/", "");
+      const success = await cacheWarmingService.warmSpecific(key);
+      
+      return Response.json({
+        success,
+        key,
+        message: success ? `Cache key '${key}' warmed successfully` : `Failed to warm cache key '${key}'`,
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
     // Real Health Checks with actual pings (cached)
     if (url.pathname === "/api/bot/status" && req.method === "GET") {
       return await responseCache.withCache(async (req: Request) => {
@@ -589,10 +699,15 @@ const server = serve({
             timestamp: new Date().toISOString()
           }, { headers: corsHeaders });
         } catch (e: any) {
+          const errorMessage = e instanceof Error ? e.message : String(e);
+          console.error('Bot status check failed:', {
+            error: errorMessage,
+            stack: e instanceof Error ? e.stack : undefined
+          });
           return Response.json({ 
             status: "error", 
             bot: "disconnected", 
-            error: e.message,
+            error: errorMessage,
             timestamp: new Date().toISOString()
           }, { status: 503, headers: corsHeaders });
         }
@@ -975,6 +1090,124 @@ const server = serve({
           }
         }
 
+        // === YAML CONFIGURATION ENDPOINTS ===
+        if (url.pathname.startsWith('/api/yaml/') && req.method === "GET") {
+          const configName = url.pathname.split('/api/yaml/')[1];
+          console.log(`🔍 YAML Config Request: ${configName}`);
+          
+          let configPath = `./config/${configName}.yaml`;
+          let configFile = Bun.file(configPath);
+          let yamlExists = await configFile.exists();
+          
+          console.log(`📁 Checking ${configPath}: ${yamlExists}`);
+          
+          // Handle .yml files as well
+          if (!yamlExists) {
+            configPath = `./config/${configName}.yml`;
+            configFile = Bun.file(configPath);
+            const ymlExists = await configFile.exists();
+            console.log(`📁 Fallback to ${configPath}: ${ymlExists}`);
+          }
+          
+          try {
+            if (await configFile.exists()) {
+              const configContent = await configFile.text();
+              console.log(`✅ Successfully loaded config: ${configName} (${configContent.length} bytes)`);
+              
+              // Add cache-busting headers
+              const noCacheHeaders = {
+                ...corsHeaders,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              };
+              
+              return Response.json({ 
+                success: true,
+                config: configName,
+                content: configContent,
+                path: configPath,
+                timestamp: new Date().toISOString()
+              }, { headers: noCacheHeaders });
+            } else {
+              console.log(`❌ Config file not found: ${configName}`);
+              return Response.json({ 
+                success: false,
+                error: `Configuration file ${configName}.yaml/.yml not found`,
+                path: configPath,
+                attempted: [`./config/${configName}.yaml`, `./config/${configName}.yml`],
+                timestamp: new Date().toISOString()
+              }, { 
+                status: 404, 
+                headers: { ...corsHeaders, 'Cache-Control': 'no-cache' }
+              });
+            }
+          } catch (error: any) {
+            console.error(`💥 YAML config error for ${configName}:`, error.message);
+            return Response.json({ 
+              success: false,
+              error: `Failed to read configuration: ${error.message}`,
+              path: configPath,
+              timestamp: new Date().toISOString()
+            }, { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Cache-Control': 'no-cache' }
+            });
+          }
+        }
+
+        // Save YAML configuration
+        if (url.pathname.startsWith('/api/yaml/') && req.method === "POST") {
+          const configName = url.pathname.split('/api/yaml/')[1];
+          const { content } = await req.json();
+          console.log(`💾 Saving YAML Config: ${configName}`);
+          
+          let configPath = `./config/${configName}.yaml`;
+          
+          // Handle .yml files as well
+          if (!await Bun.file(configPath).exists()) {
+            configPath = `./config/${configName}.yml`;
+          }
+          
+          try {
+            // Validate YAML syntax
+            const { YAML } = await import('bun');
+            const parsedContent = YAML.parse(content);
+            console.log(`✅ YAML validation passed for ${configName}`);
+            
+            // Write the file
+            await Bun.write(configPath, content);
+            console.log(`💾 File saved: ${configPath}`);
+            
+            // Reload agents config if it's the agents file
+            if (configName === 'agents') {
+              agentsConfig = parsedContent;
+              console.log(`🔄 Reloaded agents config in memory`);
+            }
+            
+            // Add cache-busting headers
+            const noCacheHeaders = {
+              ...corsHeaders,
+              'Cache-Control': 'no-cache, no-store, must-revalidate'
+            };
+            
+            return Response.json({ 
+              success: true,
+              message: `Configuration ${configName} saved successfully`,
+              path: configPath,
+              timestamp: new Date().toISOString()
+            }, { headers: noCacheHeaders });
+            
+          } catch (error: any) {
+            console.error(`💥 YAML save error for ${configName}:`, error.message);
+            return Response.json({ 
+              success: false,
+              error: `Failed to save configuration: ${error.message}`,
+              timestamp: new Date().toISOString()
+            }, { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-cache' } });
+          }
+        }
+
         // System Info endpoint
         if (url.pathname === "/api/admin/system") {
           return Response.json({
@@ -1154,6 +1387,9 @@ const server = serve({
           const customerId = url.searchParams.get('customer');
           const from = url.searchParams.get('from');
           const to = url.searchParams.get('to');
+          
+          // Get customers for transaction generation
+          const customers = await getCustomers();
           
           // Generate sample transactions
           const transactions = Array.from({ length: 100 }, (_, i) => ({

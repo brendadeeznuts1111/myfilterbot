@@ -957,3 +957,222 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
 }
+
+/* Enhanced Customer Table Styles */
+.customer-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.name-primary {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.name-secondary {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: 'Courier New', monospace;
+}
+
+.agent-cell {
+    font-size: 0.875rem;
+    color: var(--accent-blue);
+}
+
+.transactions-cell .transaction-count {
+    display: inline-block;
+    background: var(--accent-green);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.transactions-cell .transaction-count:hover {
+    background: var(--accent-blue);
+    transform: scale(1.05);
+}
+
+/* Transaction Modal Styles */
+.transaction-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.transaction-modal .modal-content {
+    background: var(--bg-card);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.transaction-modal .modal-header {
+    background: var(--bg-secondary);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.transaction-modal .modal-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.transaction-modal .close-modal {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.transaction-modal .close-modal:hover {
+    background: var(--accent-red);
+    color: white;
+}
+
+.transaction-modal .modal-body {
+    padding: 1.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.transaction-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.transaction-summary .summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.transaction-summary .summary-item span:first-child {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.transaction-summary .summary-item span:last-child {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.transactions-table {
+    overflow-x: auto;
+}
+
+.transactions-table table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.transactions-table th {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.transactions-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.transactions-table tr:last-child td {
+    border-bottom: none;
+}
+
+.transaction-type-deposit {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.transaction-type-withdrawal {
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
+.transaction-type-bet {
+    color: var(--accent-yellow);
+    font-weight: 600;
+}
+
+.transaction-type-payout {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+/* Real-time Alert Styles */
+.alert-indicator {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: var(--accent-red);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(255, 68, 88, 0.3);
+    z-index: 9999;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.alert-indicator.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.alert-indicator.success {
+    background: var(--accent-green);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.3);
+}
+
+.alert-indicator.warning {
+    background: var(--accent-yellow);
+    color: var(--bg-primary);
+    box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+}
