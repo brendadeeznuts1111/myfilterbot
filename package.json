@@ -26,7 +26,7 @@
     "start:admin": "bun --define process.env.NODE_ENV=\"'production'\" src/client/admin-mobile/dev-server.ts",
     "build": "bun run scripts/build-with-defines.js",
     "build:legacy": "bun run src/build.ts",
-    "test": "bun run scripts/run-tests.ts",
+    "test": "bun --define process.env.NODE_ENV=\"'test'\" test",
     "test:all": "concurrently \"bun run test:python\" \"bun run test:ts\"",
     "test:python": "python3 -m pytest tests/python/ -v",
     "test:ts": "bun --env-file=.env.local --define process.env.NODE_ENV=\"'test'\" --define ENABLE_CONSOLE_LOGS=true test tests/unit/ tests/integration/",

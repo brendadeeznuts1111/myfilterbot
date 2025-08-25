@@ -12,8 +12,11 @@ console.log('🧪 Starting test suite with proper environment...');
 // Set NODE_ENV to test
 process.env.NODE_ENV = 'test';
 
-// Run the test command
-const testProcess = spawn('bun', ['test'], {
+// Run the test command with proper environment setup
+const testProcess = spawn('bun', [
+  '--define', 'process.env.NODE_ENV="test"',
+  'test'
+], {
   stdio: 'inherit',
   env: {
     ...process.env,
