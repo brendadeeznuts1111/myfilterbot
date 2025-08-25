@@ -8,9 +8,6 @@ import Redis from 'ioredis';
 import { ClickHouse } from 'clickhouse';
 import { enhancedConfig } from '../config/enhanced-config-service';
 import type {
-  PostgresConfig,
-  RedisConfig,
-  ClickHouseConfig,
   DatabaseConfig,
 } from '../config/schemas';
 
@@ -60,7 +57,13 @@ export class DatabaseConnectionManager {
       this.isInitialized = true;
       console.log('✅ All database connections initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize database connections:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('❌ Failed to initialize database connections:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        initialized: this.isInitialized,
+        timestamp: new Date().toISOString()
+      });
       throw error;
     }
   }
@@ -108,7 +111,16 @@ export class DatabaseConnectionManager {
         this.handleConnectionError('postgres');
       });
     } catch (error) {
-      console.error('Failed to connect to PostgreSQL:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to connect to PostgreSQL:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        config: {
+          host: pgConfig.host,
+          port: pgConfig.port,
+          database: pgConfig.database
+        }
+      });
       this.scheduleReconnect('postgres');
       throw error;
     }
@@ -163,7 +175,16 @@ export class DatabaseConnectionManager {
         this.clearReconnectTimer('redis');
       });
     } catch (error) {
-      console.error('Failed to connect to Redis:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to connect to Redis:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        config: {
+          host: redisConfig.host,
+          port: redisConfig.port,
+          db: redisConfig.db
+        }
+      });
       this.scheduleReconnect('redis');
       throw error;
     }
@@ -195,7 +216,16 @@ export class DatabaseConnectionManager {
       await this.clickhouseClient.query('SELECT 1').toPromise();
       console.log('✅ ClickHouse connected successfully');
     } catch (error) {
-      console.error('Failed to connect to ClickHouse:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to connect to ClickHouse:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        config: {
+          host: chConfig.host,
+          port: chConfig.port,
+          database: chConfig.database
+        }
+      });
       this.scheduleReconnect('clickhouse');
       // Don't throw as ClickHouse might be optional
     }
@@ -241,7 +271,13 @@ export class DatabaseConnectionManager {
       const result = await pool.query(sql, params);
       return result.rows;
     } catch (error) {
-      console.error('Query error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Database query error:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
+        paramsCount: params?.length || 0
+      });
       throw error;
     }
   }
@@ -259,7 +295,18 @@ export class DatabaseConnectionManager {
       await client.query('COMMIT');
       return result;
     } catch (error) {
-      await client.query('ROLLBACK');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Database transaction error:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Failed to rollback transaction:', {
+          rollbackError: rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
+        });
+      }
       throw error;
     } finally {
       client.release();
@@ -276,7 +323,12 @@ export class DatabaseConnectionManager {
       const value = await redis.get(key);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.error('Cache get error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Cache get error:', {
+        key,
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       return null;
     }
   }
@@ -295,7 +347,13 @@ export class DatabaseConnectionManager {
         await redis.set(key, serialized);
       }
     } catch (error) {
-      console.error('Cache set error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Cache set error:', {
+        key,
+        ttl,
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
     }
   }
 
@@ -312,7 +370,12 @@ export class DatabaseConnectionManager {
         await redis.del(key);
       }
     } catch (error) {
-      console.error('Cache delete error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Cache delete error:', {
+        key: Array.isArray(key) ? `[${key.length} keys]` : key,
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
     }
   }
 
@@ -329,7 +392,12 @@ export class DatabaseConnectionManager {
       }
       console.log(`Cleared ${keys.length} cache entries`);
     } catch (error) {
-      console.error('Cache clear error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Cache clear error:', {
+        pattern,
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
     }
   }
 
