@@ -47,12 +47,34 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 - **API Rate Limiting** - Better control over external API requests
 - **Monitoring & Debugging** - Easy identification of request sources
 
+## 📁 Project Structure
+
+```
+fantdev-trading-bot/
+├── src/                    # Source code
+│   ├── server/            # Python server components
+│   ├── bot/               # Bot-specific TypeScript code
+│   ├── web/               # Web frontend and React components
+│   ├── services/          # Shared services
+│   └── utils/             # Utility functions
+├── tests/                  # Test files
+│   ├── typescript/        # TypeScript tests
+│   ├── python/            # Python tests
+│   └── integration/       # Integration tests
+├── data/                   # Data files and databases
+├── config/                 # Configuration files
+├── scripts/                # Utility scripts
+├── docs/                   # Documentation
+├── public/                 # Static assets and PWA manifest
+└── templates/              # HTML templates
+```
+
 ## 📦 Installation
 
 ### Prerequisites
 
 - **Python 3.8+** - Core bot functionality
-- **Bun 1.2.20+** - TypeScript runtime and package management
+- **Bun 1.2.21+** - TypeScript runtime and package management
 - **Telegram Bot Token** - From [@BotFather](https://t.me/botfather)
 - **Admin Chat ID** - Your Telegram chat ID for admin notifications
 

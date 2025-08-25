@@ -101,6 +101,71 @@ pip install -r config/requirements_portal_integration.txt
 bun install
 ```
 
+## 🧹 Final Cleanup Phase (v3.0.0)
+
+### Phase: `cleanup-final` - Repository Reorganization
+
+The final cleanup phase has been completed, bringing the project to its pristine, professional state:
+
+#### 1. Repository Root Cleanup
+- **Source Code Files**: Moved all `.ts`, `.js`, `.py`, `.html` files from root to appropriate `src/` subdirectories
+- **Test Files**: Consolidated test files into `tests/typescript/` and `tests/python/`
+- **Data Files**: Moved all JSON databases and data files to `data/` directory
+- **Utility Scripts**: Relocated utility scripts to `scripts/` directory
+- **Result**: Root directory now contains only essential project-level configuration and core documentation
+
+#### 2. Comprehensive `.gitignore` Update
+- Expanded `.gitignore` to robustly exclude all generated files, build artifacts, temporary files, and backup directories
+- Ensures clean `git status` for all future development
+
+#### 3. Documentation Consolidation & Update
+- All project documentation centralized in `docs/` directory
+- **New Documentation**:
+  - `docs/bun-yaml.md`: Guide to Bun's native YAML support
+  - `docs/bunx-for-bots.md`: Advanced `bunx --package` scenarios for bot development
+  - `docs/bun-v1-2-21-highlights.md`: Key features of the latest Bun release
+- **PWA Integration**: Implemented `public/manifest.json` with detailed app metadata
+
+#### 4. Refactor & Clean-up of Legacy Components
+- **Dashboard Navigation**: Refactored sidebar navigation HTML into Jinja2 component with `fantdev-*` styling
+- **Wager Alert Settings Modal**: Converted legacy HTML into Jinja2 component with `fantdev-*` styling
+- **Legacy Templates**: Integrated into `templates/components/` structure or removed
+
+#### 5. PWA Integration & Frontend Asset Management
+- Implemented `public/manifest.json` with comprehensive PWA features
+- Linked manifest in root HTML files for proper PWA functionality
+- Ensured `dev-server.ts` correctly serves static assets from `public/` and `docs/`
+
+#### 6. Removed Old/Redundant Files
+- Aggressively removed files with `_old`, `_temp`, `_backup`, `_v2`, `_seo_update`, `_integrated`, `demo_` patterns
+- Deleted `API_DOCUMENTATION.md` and `API_DOCUMENTATION_ENHANCED.md`
+- Eliminated waste and redundancy throughout the codebase
+
+#### Final Project Structure
+```
+fantdev-trading-bot/
+├── src/                    # Source code (organized by domain)
+│   ├── server/            # Python server components
+│   ├── bot/               # Bot-specific TypeScript code
+│   ├── web/               # Web frontend and React components
+│   ├── services/          # Shared services
+│   └── utils/             # Utility functions
+├── tests/                  # Test files (organized by language)
+│   ├── typescript/        # TypeScript tests
+│   ├── python/            # Python tests
+│   └── integration/       # Integration tests
+├── data/                   # Data files and databases
+├── config/                 # Configuration files
+├── scripts/                # Utility scripts
+├── docs/                   # Comprehensive documentation
+├── public/                 # Static assets and PWA manifest
+└── templates/              # HTML templates
+```
+
+**Result**: The project is now in its final, pristine state with clean organization, comprehensive documentation, and professional structure ready for production deployment.
+bun install
+```
+
 ### Step 4: Update Import Paths
 
 If you have custom code, update imports:
