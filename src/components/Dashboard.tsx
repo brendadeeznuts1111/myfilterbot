@@ -1,1 +1,272 @@
-import React, { useState, useEffect } from "react";\nimport { useApi } from "../hooks/useApi";\nimport { useTheme } from "../hooks/useTheme";\nimport { LoadingSpinner } from "./LoadingSpinner";\nimport { MetricCard } from "./MetricCard";\nimport { TransactionChart } from "./TransactionChart";\nimport { ActivityFeed } from "./ActivityFeed";\nimport { TopPerformers } from "./TopPerformers";\n\nexport function Dashboard() {\n  const { api } = useApi();\n  const { theme } = useTheme();\n  const [stats, setStats] = useState<any>(null);\n  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);\n  const [statsLoading, setStatsLoading] = useState(true);\n  const [transactionsLoading, setTransactionsLoading] = useState(true);\n\n  useEffect(() => {\n    // Fetch stats\n    const fetchStats = async () => {\n      try {\n        const data = await api.getStats();\n        setStats(data);\n      } catch (error) {\n        console.error('Failed to fetch stats:', error);\n        // Set mock data for demo\n        setStats({\n          total_customers: 25,\n          active_customers: 18,\n          total_balance: 125000,\n          total_weekly_pnl: 8500,\n          customer_growth: 12,\n          active_growth: 8,\n          balance_change: 5.2,\n          pnl_change: 15.3,\n          transaction_history: [40, 65, 25, 80, 55, 90, 45],\n          top_performers: [\n            { customer_id: 'BB1042', weekly_pnl: 2500 },\n            { customer_id: 'CC2041', weekly_pnl: 1800 },\n            { customer_id: 'DD3052', weekly_pnl: 1200 }\n          ]\n        });\n      } finally {\n        setStatsLoading(false);\n      }\n    };\n\n    // Fetch transactions\n    const fetchTransactions = async () => {\n      try {\n        const data = await api.getRecentTransactions();\n        setRecentTransactions(data);\n      } catch (error) {\n        console.error('Failed to fetch transactions:', error);\n        // Set mock data for demo\n        setRecentTransactions([\n          { id: 1, type: 'deposit', amount: 500, time: '2:45 PM', status: 'completed', message: 'Credit from BB1042' },\n          { id: 2, type: 'withdrawal', amount: 200, time: '2:30 PM', status: 'completed', message: 'Withdrawal to CC2041' },\n          { id: 3, type: 'deposit', amount: 750, time: '2:15 PM', status: 'pending', message: 'Pending deposit from DD3052' }\n        ]);\n      } finally {\n        setTransactionsLoading(false);\n      }\n    };\n\n    fetchStats();\n    fetchTransactions();\n\n    // Set up intervals for refreshing\n    const statsInterval = setInterval(fetchStats, 30000);\n    const transactionsInterval = setInterval(fetchTransactions, 10000);\n\n    return () => {\n      clearInterval(statsInterval);\n      clearInterval(transactionsInterval);\n    };\n  }, [api]);\n\n  if (statsLoading) {\n    return <LoadingSpinner />;\n  }\n\n  return (\n    <div className=\"space-y-8\">\n      {/* Header */}\n      <div className=\"text-center space-y-4\">\n        <h1 className={`text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent`}>\n          Trading Dashboard\n        </h1>\n        <p className={`text-lg ${\n          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'\n        }`}>\n          Real-time trading analytics and customer management\n        </p>\n      </div>\n\n      {/* Key Metrics */}\n      <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6\">\n        <MetricCard\n          title=\"Total Customers\"\n          value={stats?.total_customers || 0}\n          icon=\"👥\"\n          trend={stats?.customer_growth || 0}\n          color=\"blue\"\n        />\n        <MetricCard\n          title=\"Active Customers\"\n          value={stats?.active_customers || 0}\n          icon=\"🟢\"\n          trend={stats?.active_growth || 0}\n          color=\"green\"\n        />\n        <MetricCard\n          title=\"Total Balance\"\n          value={`$${(stats?.total_balance || 0).toLocaleString()}`}\n          icon=\"💰\"\n          trend={stats?.balance_change || 0}\n          color=\"yellow\"\n        />\n        <MetricCard\n          title=\"Weekly P&L\"\n          value={`$${(stats?.total_weekly_pnl || 0).toLocaleString()}`}\n          icon=\"📈\"\n          trend={stats?.pnl_change || 0}\n          color={stats?.total_weekly_pnl >= 0 ? 'green' : 'red'}\n        />\n      </div>\n\n      {/* Charts and Analytics */}\n      <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">\n        {/* Transaction Chart */}\n        <div className={`p-6 rounded-xl shadow-lg ${\n          theme === 'dark' \n            ? 'bg-gray-800/50 border border-gray-700' \n            : 'bg-white border border-gray-200'\n        }`}>\n          <h3 className=\"text-xl font-semibold mb-4\">Transaction Volume</h3>\n          <TransactionChart data={stats?.transaction_history || []} />\n        </div>\n\n        {/* Top Performers */}\n        <div className={`p-6 rounded-xl shadow-lg ${\n          theme === 'dark' \n            ? 'bg-gray-800/50 border border-gray-700' \n            : 'bg-white border border-gray-200'\n        }`}>\n          <h3 className=\"text-xl font-semibold mb-4\">Top Performers</h3>\n          <TopPerformers performers={stats?.top_performers || []} />\n        </div>\n      </div>\n\n      {/* Recent Activity */}\n      <div className={`p-6 rounded-xl shadow-lg ${\n        theme === 'dark' \n          ? 'bg-gray-800/50 border border-gray-700' \n          : 'bg-white border border-gray-200'\n      }`}>\n        <div className=\"flex items-center justify-between mb-6\">\n          <h3 className=\"text-xl font-semibold\">Recent Activity</h3>\n          <div className=\"flex items-center space-x-2\">\n            <div className={`w-3 h-3 rounded-full bg-green-500 animate-pulse`}></div>\n            <span className={`text-sm ${\n              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'\n            }`}>\n              Live Updates\n            </span>\n          </div>\n        </div>\n        <ActivityFeed \n          transactions={recentTransactions || []} \n          loading={transactionsLoading}\n        />\n      </div>\n\n      {/* System Status */}\n      <div className=\"grid grid-cols-1 md:grid-cols-3 gap-6\">\n        <SystemStatusCard\n          title=\"Bot Status\"\n          status=\"online\"\n          details=\"Processing messages\"\n          icon=\"🤖\"\n        />\n        <SystemStatusCard\n          title=\"Database\"\n          status=\"healthy\"\n          details=\"All systems operational\"\n          icon=\"💾\"\n        />\n        <SystemStatusCard\n          title=\"API Server\"\n          status=\"running\"\n          details=\"Port 5000 active\"\n          icon=\"🌐\"\n        />\n      </div>\n    </div>\n  );\n}\n\nfunction SystemStatusCard({ \n  title, \n  status, \n  details, \n  icon \n}: { \n  title: string; \n  status: string; \n  details: string; \n  icon: string; \n}) {\n  const { theme } = useTheme();\n  \n  const statusColors: Record<string, string> = {\n    online: 'text-green-500',\n    healthy: 'text-green-500',\n    running: 'text-green-500',\n    warning: 'text-yellow-500',\n    error: 'text-red-500',\n  };\n\n  return (\n    <div className={`p-4 rounded-lg border transition-colors duration-200 ${\n      theme === 'dark' \n        ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50' \n        : 'bg-white border-gray-200 hover:bg-gray-50'\n    }`}>\n      <div className=\"flex items-center space-x-3\">\n        <span className=\"text-2xl\">{icon}</span>\n        <div>\n          <h4 className=\"font-medium\">{title}</h4>\n          <p className={`text-sm capitalize ${statusColors[status] || 'text-gray-500'}`}>\n            {status}\n          </p>\n          <p className={`text-xs ${\n            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'\n          }`}>\n            {details}\n          </p>\n        </div>\n      </div>\n    </div>\n  );\n}
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useAPI } from '../hooks/useAPI';
+import { useTheme } from '../hooks/useTheme';
+import { useDashboardData } from '../hooks/useEnhancedAPI';
+import { PerformanceKPI } from './analytics/PerformanceKPI';
+import { RecentActivity } from './analytics/RecentActivity';
+import { EquityCurveChart } from './analytics/EquityCurveChart';
+
+export function Dashboard() {
+  const { user, isAuthenticated } = useAuth();
+  const { theme } = useTheme();
+  const [selectedPeriod, setSelectedPeriod] = useState('7d');
+  const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'activity'>('overview');
+
+  // Enhanced dashboard data with real-time updates
+  const {
+    balance,
+    analytics,
+    transactions,
+    isLoading,
+    hasError,
+    isConnected,
+    lastUpdate,
+    apiPerformance,
+    refresh
+  } = useDashboardData();
+
+  // Fallback to legacy API hook for backward compatibility
+  const { data: legacyAnalytics } = useAPI('/customer/analytics', {
+    customerId: user?.customer_id,
+    refreshInterval: 10000
+  });
+
+  const { data: systemHealth } = useAPI('/health');
+
+  // Use enhanced data when available, fallback to legacy
+  const displayAnalytics = analytics?.analytics || legacyAnalytics;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Authentication Required
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Please log in to access the dashboard.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Enhanced Header with Real-time Status */}
+          <div className="md:flex md:items-center md:justify-between mb-8">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-3">
+                <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
+                  Trading Dashboard
+                </h2>
+                <div className={`flex items-center space-x-1 text-xs ${
+                  isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                  }`}></div>
+                  <span>{isConnected ? 'Live' : 'Offline'}</span>
+                </div>
+              </div>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Welcome back, {user?.customer_id} • {apiPerformance.isHealthy ? '⚡ System Healthy' : '⚠️ Performance Issues'}
+              </p>
+            </div>
+            
+            {/* Enhanced Controls */}
+            <div className="mt-4 flex items-center space-x-4 md:mt-0 md:ml-4">
+              {/* Tab Navigation */}
+              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                {[
+                  { id: 'overview', label: '📊 Overview', description: 'Key metrics' },
+                  { id: 'performance', label: '📈 Performance', description: 'Detailed analytics' },
+                  { id: 'activity', label: '🔄 Activity', description: 'Recent transactions' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`px-3 py-2 text-xs font-medium rounded-md transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                    title={tab.description}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                onClick={refresh}
+                disabled={isLoading}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                <span className={isLoading ? 'animate-spin' : ''}>🔄</span>
+                <span className="ml-1 hidden sm:inline">Refresh</span>
+              </button>
+
+              {/* Period Selector */}
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="block pl-3 pr-8 py-2 text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+              >
+                <option value="1d">24 Hours</option>
+                <option value="7d">7 Days</option>
+                <option value="30d">30 Days</option>
+                <option value="90d">90 Days</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Main Content - Tab-based Layout */}
+          <div className="space-y-8">
+            {/* Error State */}
+            {hasError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <span className="text-red-400 text-xl">⚠️</span>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                      Data Loading Error
+                    </h3>
+                    <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                      Some dashboard data could not be loaded. Using cached data where available.
+                    </p>
+                    <button
+                      onClick={refresh}
+                      className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-500 underline"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <>
+                {/* Enhanced Performance KPIs */}
+                <PerformanceKPI customerId={user?.customer_id} />
+
+                {/* Quick Summary Cards - Legacy Fallback */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+                    <div className="px-4 py-5 sm:p-6">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="mr-2">📊</span>
+                        Performance Overview
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500 dark:text-gray-400">ROI</span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {displayAnalytics?.performance_metrics?.roi_percentage?.toFixed(2) || '0.00'}%
+                            </span>
+                          </div>
+                          <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                (displayAnalytics?.performance_metrics?.roi_percentage || 0) >= 0 
+                                  ? 'bg-green-500' : 'bg-red-500'
+                              }`}
+                              style={{ 
+                                width: `${Math.min(Math.abs(displayAnalytics?.performance_metrics?.roi_percentage || 0), 100)}%` 
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+                    <div className="px-4 py-5 sm:p-6">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="mr-2">🔧</span>
+                        System Status
+                        <span className="ml-2 text-xs text-gray-500">
+                          {apiPerformance.averageResponseTime.toFixed(1)}ms avg
+                        </span>
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">API Health</span>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            apiPerformance.isHealthy
+                              ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' 
+                              : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                          }`}>
+                            {apiPerformance.isHealthy ? 'Healthy' : 'Degraded'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Success Rate</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {(apiPerformance.successRate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">WebSocket</span>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            isConnected
+                              ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' 
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                          }`}>
+                            {isConnected ? 'Connected' : 'Disconnected'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'performance' && (
+              <>
+                {/* Equity Curve Chart */}
+                <EquityCurveChart customerId={user?.customer_id} height={400} />
+                
+                {/* Additional Performance Metrics */}
+                <PerformanceKPI customerId={user?.customer_id} />
+              </>
+            )}
+
+            {activeTab === 'activity' && (
+              <>
+                {/* Recent Activity Feed */}
+                <RecentActivity 
+                  customerId={user?.customer_id} 
+                  limit={20}
+                  showFilters={true}
+                  autoScroll={true}
+                />
+              </>
+            )}
+          </div>
+
+          {/* Footer with Last Update Info */}
+          {lastUpdate && (
+            <div className="mt-8 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Last updated: {new Date(lastUpdate.timestamp || Date.now()).toLocaleString()}
+                {lastUpdate.type && ` • ${lastUpdate.type}`}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

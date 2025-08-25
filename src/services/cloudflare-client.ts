@@ -159,7 +159,7 @@ export class CloudflareWorkerClient {
   }
 }
 
-// Export singleton instance for easy use
+// Export singleton instance for easy use (using Bun.env for better performance)
 export const cloudflareClient = new CloudflareWorkerClient(
-  process.env.CLOUDFLARE_WORKER_URL || 'https://telegram-bot-worker.workers.dev'
+  Bun.env.CLOUDFLARE_WORKER_URL || 'https://telegram-bot-worker.workers.dev'
 );

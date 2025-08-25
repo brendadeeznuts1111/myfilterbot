@@ -1,1 +1,34 @@
-import React from 'react';\nimport { useTheme } from '../hooks/useTheme';\n\nexport function TradingView() {\n  const { theme } = useTheme();\n\n  return (\n    <div className=\"space-y-8\">\n      {/* Header */}\n      <div className=\"text-center space-y-4\">\n        <h1 className=\"text-4xl font-bold bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent\">\n          Trading View\n        </h1>\n        <p className={`text-lg ${\n          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'\n        }`}>\n          Real-time trading analysis and market data\n        </p>\n      </div>\n\n      {/* Coming Soon */}\n      <div className={`p-12 rounded-xl shadow-lg text-center ${\n        theme === 'dark' \n          ? 'bg-gray-800/50 border border-gray-700' \n          : 'bg-white border border-gray-200'\n      }`}>\n        <div className=\"text-8xl mb-6\">📈</div>\n        <h2 className=\"text-3xl font-bold mb-4\">Trading View Coming Soon</h2>\n        <p className={`text-lg mb-8 ${\n          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'\n        }`}>\n          Advanced trading charts, technical analysis, and real-time market data integration.\n        </p>\n        \n        <div className=\"grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto\">\n          <div className={`p-6 rounded-lg ${\n            theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'\n          }`}>\n            <div className=\"text-3xl mb-3\">📊</div>\n            <h3 className=\"font-semibold mb-2\">Live Charts</h3>\n            <p className={`text-sm ${\n              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'\n            }`}>\n              Real-time candlestick charts with multiple timeframes\n            </p>\n          </div>\n          \n          <div className={`p-6 rounded-lg ${\n            theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'\n          }`}>\n            <div className=\"text-3xl mb-3\">🔍</div>\n            <h3 className=\"font-semibold mb-2\">Technical Analysis</h3>\n            <p className={`text-sm ${\n              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'\n            }`}>\n              Advanced indicators and drawing tools\n            </p>\n          </div>\n          \n          <div className={`p-6 rounded-lg ${\n            theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'\n          }`}>\n            <div className=\"text-3xl mb-3\">⚡</div>\n            <h3 className=\"font-semibold mb-2\">Market Data</h3>\n            <p className={`text-sm ${\n              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'\n            }`}>\n              Live market data and order book information\n            </p>\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n}
+import React from 'react';
+import { useTheme } from '../hooks/useTheme';
+
+export function TradingView() {
+  const { theme } = useTheme();
+
+  return (
+    <div className={`trading-view ${theme === 'dark' ? 'dark' : ''}`}>
+      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          Trading View
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              Market Overview
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Real-time market data and trading insights will be displayed here.
+            </p>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              Portfolio Performance
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Your trading performance metrics and analytics.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

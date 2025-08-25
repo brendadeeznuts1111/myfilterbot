@@ -90,7 +90,6 @@ class CustomerAPI {
           
           this.customerDatabase.set(customerId, customerData);
           console.log(`✅ Loaded Fantasy402.com customer: ${customerId} (@${config.telegram_username})`);
-        }
           
           // Use existing transactions if available, otherwise generate realistic history
           const customerTransactions = existingTransactions.filter((tx: any) => tx.customer_id === customerId);
@@ -116,7 +115,7 @@ class CustomerAPI {
         console.log(`✅ Loaded ${this.customerDatabase.size} real customers into Bun API`);
         console.log(`📊 Sample customer data:`, Array.from(this.customerDatabase.values()).slice(0, 2));
       } else {
-        console.warn("⚠️ Customer database file not found, using empty database");
+        console.warn("⚠️ Customer database files not found, using empty database");
       }
     } catch (error) {
       console.error("❌ Failed to load customer database:", error);

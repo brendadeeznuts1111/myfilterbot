@@ -1,1 +1,166 @@
-import React from 'react';\nimport { useTheme } from '../hooks/useTheme';\nimport { useAuth } from '../hooks/useAuth';\n\nexport function Settings() {\n  const { theme, toggleTheme } = useTheme();\n  const { user, logout } = useAuth();\n\n  return (\n    <div className=\"space-y-8\">\n      {/* Header */}\n      <div className=\"text-center space-y-4\">\n        <h1 className=\"text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent\">\n          Settings\n        </h1>\n        <p className={`text-lg ${\n          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'\n        }`}>\n          Customize your trading bot experience\n        </p>\n      </div>\n\n      {/* Settings Sections */}\n      <div className=\"max-w-4xl mx-auto space-y-6\">\n        {/* Appearance */}\n        <div className={`p-6 rounded-xl shadow-lg ${\n          theme === 'dark' \n            ? 'bg-gray-800/50 border border-gray-700' \n            : 'bg-white border border-gray-200'\n        }`}>\n          <h3 className=\"text-xl font-semibold mb-4 flex items-center\">\n            <span className=\"text-2xl mr-3\">🎨</span>\n            Appearance\n          </h3>\n          <div className=\"space-y-4\">\n            <div className=\"flex items-center justify-between\">\n              <div>\n                <label className=\"font-medium\">Dark Mode</label>\n                <p className={`text-sm ${\n                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'\n                }`}>\n                  Toggle between light and dark themes\n                </p>\n              </div>\n              <button\n                onClick={toggleTheme}\n                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${\n                  theme === 'dark' ? 'bg-blue-600' : 'bg-gray-200'\n                }`}\n              >\n                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${\n                  theme === 'dark' ? 'translate-x-6' : 'translate-x-1'\n                }`} />\n              </button>\n            </div>\n          </div>\n        </div>\n\n        {/* Account */}\n        <div className={`p-6 rounded-xl shadow-lg ${\n          theme === 'dark' \n            ? 'bg-gray-800/50 border border-gray-700' \n            : 'bg-white border border-gray-200'\n        }`}>\n          <h3 className=\"text-xl font-semibold mb-4 flex items-center\">\n            <span className=\"text-2xl mr-3\">👤</span>\n            Account\n          </h3>\n          <div className=\"space-y-4\">\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <div>\n                <label className={`block text-sm font-medium mb-1 ${\n                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'\n                }`}>\n                  Customer ID\n                </label>\n                <input\n                  type=\"text\"\n                  value={user?.customer_id || ''}\n                  disabled\n                  className={`w-full px-3 py-2 rounded-lg border ${\n                    theme === 'dark'\n                      ? 'bg-gray-700 border-gray-600 text-gray-300'\n                      : 'bg-gray-100 border-gray-300 text-gray-500'\n                  }`}\n                />\n              </div>\n              <div>\n                <label className={`block text-sm font-medium mb-1 ${\n                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'\n                }`}>\n                  Balance\n                </label>\n                <input\n                  type=\"text\"\n                  value={`$${user?.balance?.toLocaleString() || '0'}`}\n                  disabled\n                  className={`w-full px-3 py-2 rounded-lg border ${\n                    theme === 'dark'\n                      ? 'bg-gray-700 border-gray-600 text-gray-300'\n                      : 'bg-gray-100 border-gray-300 text-gray-500'\n                  }`}\n                />\n              </div>\n            </div>\n            \n            <div className=\"pt-4 border-t border-gray-200 dark:border-gray-700\">\n              <button\n                onClick={logout}\n                className={`px-6 py-2 rounded-lg font-medium transition-colors duration-200 ${\n                  theme === 'dark'\n                    ? 'bg-red-600 hover:bg-red-700 text-white'\n                    : 'bg-red-500 hover:bg-red-600 text-white'\n                }`}\n              >\n                Sign Out\n              </button>\n            </div>\n          </div>\n        </div>\n\n        {/* Notifications */}\n        <div className={`p-6 rounded-xl shadow-lg ${\n          theme === 'dark' \n            ? 'bg-gray-800/50 border border-gray-700' \n            : 'bg-white border border-gray-200'\n        }`}>\n          <h3 className=\"text-xl font-semibold mb-4 flex items-center\">\n            <span className=\"text-2xl mr-3\">🔔</span>\n            Notifications\n          </h3>\n          <div className=\"space-y-4\">\n            <div className=\"flex items-center justify-between\">\n              <div>\n                <label className=\"font-medium\">Trading Alerts</label>\n                <p className={`text-sm ${\n                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'\n                }`}>\n                  Get notified about trading activities\n                </p>\n              </div>\n              <input type=\"checkbox\" className=\"rounded\" defaultChecked />\n            </div>\n            <div className=\"flex items-center justify-between\">\n              <div>\n                <label className=\"font-medium\">Balance Alerts</label>\n                <p className={`text-sm ${\n                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'\n                }`}>\n                  Receive low balance warnings\n                </p>\n              </div>\n              <input type=\"checkbox\" className=\"rounded\" defaultChecked />\n            </div>\n            <div className=\"flex items-center justify-between\">\n              <div>\n                <label className=\"font-medium\">System Updates</label>\n                <p className={`text-sm ${\n                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'\n                }`}>\n                  Important system notifications\n                </p>\n              </div>\n              <input type=\"checkbox\" className=\"rounded\" defaultChecked />\n            </div>\n          </div>\n        </div>\n\n        {/* System Information */}\n        <div className={`p-6 rounded-xl shadow-lg ${\n          theme === 'dark' \n            ? 'bg-gray-800/50 border border-gray-700' \n            : 'bg-white border border-gray-200'\n        }`}>\n          <h3 className=\"text-xl font-semibold mb-4 flex items-center\">\n            <span className=\"text-2xl mr-3\">ℹ️</span>\n            System Information\n          </h3>\n          <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4 text-sm\">\n            <div className=\"space-y-2\">\n              <div className=\"flex justify-between\">\n                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Version:</span>\n                <span>2.0.0</span>\n              </div>\n              <div className=\"flex justify-between\">\n                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Build:</span>\n                <span>Enhanced React Client</span>\n              </div>\n              <div className=\"flex justify-between\">\n                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Status:</span>\n                <span className=\"text-green-500 flex items-center\">\n                  <span className=\"w-2 h-2 bg-green-500 rounded-full mr-2\"></span>\n                  Online\n                </span>\n              </div>\n            </div>\n            <div className=\"space-y-2\">\n              <div className=\"flex justify-between\">\n                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Framework:</span>\n                <span>React + Bun</span>\n              </div>\n              <div className=\"flex justify-between\">\n                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>API:</span>\n                <span>Flask Backend</span>\n              </div>\n              <div className=\"flex justify-between\">\n                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>WebSocket:</span>\n                <span className=\"text-green-500\">Connected</span>\n              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n}
+import React from 'react';
+import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../hooks/useAuth';
+
+export function Settings() {
+  const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+
+  return (
+    <div className={`settings-page ${theme === 'dark' ? 'dark' : ''}`}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-6">
+                Settings
+              </h3>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4">
+                    Appearance
+                  </h4>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        Dark Mode
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Switch between light and dark themes
+                      </p>
+                    </div>
+                    <button
+                      onClick={toggleTheme}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                        theme === 'dark' ? 'bg-indigo-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span className="sr-only">Toggle dark mode</span>
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4">
+                    Account Information
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Customer ID
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {user?.customer_id || 'Not available'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Account Status
+                      </label>
+                      <p className={`text-sm ${
+                        user?.active 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {user?.active ? 'Active' : 'Inactive'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Telegram ID
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {user?.telegram_id || 'Not connected'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Username
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {user?.username || 'Not set'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4">
+                    Preferences
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          Email Notifications
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Receive updates via email
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          Push Notifications
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Get real-time alerts on your device
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          Telegram Notifications
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Receive updates via Telegram bot
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4">
+                    Actions
+                  </h4>
+                  <div className="space-y-3">
+                    <button
+                      onClick={logout}
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

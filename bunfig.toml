@@ -1,32 +1,192 @@
-
-[serve.static]
-plugins = ["bun-plugin-tailwind"]
-env = "BUN_PUBLIC_*"
+# Bun Test Runner Configuration
+# https://bun.sh/docs/cli/test
+# https://bun.sh/docs/runtime/bunfig
 
 [test]
+# =============================================================================
+# TEST DISCOVERY AND EXECUTION
+# =============================================================================
+
+# Test file discovery - scan entire project for maximum test coverage
+# root = "src"                    # Uncomment to limit scanning to src directory only
+timeout = 30000                   # Default timeout: 30 seconds per test
+bail = 0                         # Run all tests (0 = don't stop on failures)
+smol = true                      # Enable memory-saving mode for large test suites
+
+# =============================================================================
+# COVERAGE CONFIGURATION
+# =============================================================================
+
+# Always enable coverage reporting by default
+coverage = true
+
+# Coverage output configuration
+coverageReporter = ["text", "lcov"]  # Console output + LCOV file for CI/CD
+coverageDir = "coverage"             # Output directory for coverage files
+
+# Exclude test files from coverage calculation (recommended best practice)
+coverageSkipTestFiles = true
+
+# Coverage thresholds - test run fails if below these percentages
+# This automatically enables fail_on_low_coverage behavior
+coverageThreshold = {
+  lines = 0.80,        # 80% line coverage required
+  functions = 0.75,    # 75% function coverage required
+  statements = 0.80    # 80% statement coverage required
+}
+
+# Files and patterns to exclude from coverage analysis
+# Uses glob patterns similar to Jest's collectCoverageFrom ignore patterns
 coveragePathIgnorePatterns = [
+  # Test files and directories
+  "**/*.test.ts",
+  "**/*.test.js",
+  "**/*.spec.ts",
+  "**/*.spec.js",
+  "**/test-setup.ts",
   "**/__tests__/**",
-  "**/test_*.py",
-  "**/smoke_test.py",
-  "**/backup/**",
-  "**/cloudflare-worker/dist/**"
+  "**/tests/**",
+
+  # Dependencies and external code
+  "**/node_modules/**",
+  "**/vendor/**",
+
+  # Configuration files
+  "**/*.config.js",
+  "**/*.config.ts",
+  "**/*.config.mjs",
+  "**/webpack.config.*",
+  "**/vite.config.*",
+  "**/rollup.config.*",
+  "bunfig.toml",
+  "package.json",
+  "tsconfig.json",
+  "*.json",
+
+  # Build artifacts and generated files
+  "**/dist/**",
+  "**/build/**",
+  "**/out/**",
+  "**/.next/**",
+  "**/.nuxt/**",
+  "**/coverage/**",
+  "**/*.min.js",
+  "**/*.bundle.js",
+
+  # Documentation and assets
+  "*.md",
+  "**/*.md",
+  "**/*.txt",
+  "**/docs/**",
+  "**/assets/**",
+  "**/public/**",
+  "**/static/**",
+
+  # TypeScript declaration files and maps
+  "**/*.d.ts",
+  "**/*.map",
+
+  # Development and tooling files
+  "**/.env*",
+  "**/.*rc.*",
+  "**/*.log",
+  "**/tmp/**",
+  "**/temp/**"
 ]
 
-[run]
-console.depth = 4
+# Use sourcemaps for accurate coverage mapping (recommended)
+coverageIgnoreSourcemaps = false
 
-# Cloudflare Worker configuration
-[worker]
-env = [
-  "CLOUDFLARE_ACCOUNT_ID",
-  "CLOUDFLARE_API_TOKEN",
-  "BOT_TOKEN",
-  "ADMIN_CHAT_ID",
-  "WEBHOOK_SECRET"
-]
+# =============================================================================
+# CI/CD INTEGRATION
+# =============================================================================
 
-[worker.build]
-target = "browser"
-format = "esm"
-minify = true
-sourcemap = "linked"
+# JUnit XML reporter configuration for CI/CD pipelines
+# This complements the --reporter=junit CLI flag
+[test.reporter]
+junit = "test-results/junit.xml"     # JUnit XML output path for CI systems
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+
+# Environment variables for test execution
+# Note: Some environment variables may need to be set via CLI or shell
+[test.env]
+# NODE_ENV = "test"                  # May not work in current Bun version
+TZ = "UTC"                          # Use UTC timezone for consistent results ✅ WORKING
+# FORCE_COLOR = "1"                 # May not work in current Bun version
+# CI = "true"                       # May not work in current Bun version
+
+# Alternative: Set environment variables via shell commands:
+# NODE_ENV=test bun test
+# Or use a test script in package.json
+
+# =============================================================================
+# PERFORMANCE AND MEMORY OPTIMIZATION
+# =============================================================================
+
+# Memory and performance settings for large test suites
+# smol = true is already set above for memory-saving mode
+
+# Additional performance considerations:
+# - Use bail = 1 in CI to fail fast on first error
+# - Increase timeout for integration tests if needed
+# - Consider parallel execution limits based on CI resources
+
+# =============================================================================
+# NETWORK AND REGISTRY CONFIGURATION
+# =============================================================================
+
+# Network settings (inherits from [install] section for private registries)
+[install]
+# registry = "https://registry.npmjs.org/"  # Default registry
+# cache = "~/.bun/install/cache"            # Package cache location
+
+# =============================================================================
+# EXAMPLE USAGE COMMANDS
+# =============================================================================
+
+# Basic test execution (uses bunfig.toml defaults):
+#   bun test                                    # Run all tests with coverage
+#   bun test tests/math.test.ts                # Run specific test file
+#   bun test tests/                            # Run all tests in directory
+#
+# Coverage and reporting:
+#   bun test --coverage                        # Explicit coverage (already default)
+#   bun test --coverage-reporter=lcov          # Override reporter format
+#   bun test --coverage-dir=./custom-coverage  # Custom coverage directory
+#   bun test --coverage-threshold=0.90         # Override coverage threshold
+#
+# CI/CD integration:
+#   bun test --reporter=junit --reporter-outfile=test-results/junit.xml
+#   NODE_ENV=test bun test                     # Set environment variables
+#   bun test --bail=1                          # Fail fast for CI
+#
+# Performance and filtering:
+#   bun test --timeout=60000                   # Custom timeout (60 seconds)
+#   bun test --test-name-pattern="should.*"    # Filter by test name regex
+#   bun test --smol                           # Memory-saving mode (already default)
+#
+# Advanced usage:
+#   bun test $(find . -name "*.test.ts" -not -name "problematic.test.ts")
+#   bun test --reporter=junit --reporter-outfile=./junit.xml tests/
+#
+# =============================================================================
+# CURRENT LIMITATIONS (Bun v1.2.21)
+# =============================================================================
+#
+# - Coverage reporting may not work automatically in all cases
+# - Some [test.env] variables may not be applied consistently
+# - JUnit reporter configuration in bunfig.toml may not be fully supported
+# - Use CLI flags as fallback for critical CI/CD requirements
+#
+# =============================================================================
+# VERIFICATION COMMANDS
+# =============================================================================
+#
+# Test the configuration:
+#   bun test tests/config-test.test.ts         # Verify environment setup
+#   bun test --reporter=junit --reporter-outfile=test-results/junit.xml tests/math.test.ts
+#   ls -la coverage/                           # Check coverage output
+#   ls -la test-results/                       # Check JUnit XML output

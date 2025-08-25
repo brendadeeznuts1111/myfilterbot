@@ -1,10 +1,10 @@
 # 🚀 Fantdev Trading Bot - Enterprise Trading Platform
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-3.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
-![Bun](https://img.shields.io/badge/bun-1.2.20+-orange)
+![Bun](https://img.shields.io/badge/bun-1.2.21+-orange)
 ![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue)
-![React](https://img.shields.io/badge/react-18.0+-cyan)
+![React](https://img.shields.io/badge/react-19+-cyan)
 ![License](https://img.shields.io/badge/license-MIT-purple)
 
 A comprehensive, enterprise-grade Telegram trading bot platform with real-time monitoring, React-based admin dashboard, and high-performance worker thread processing.

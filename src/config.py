@@ -5,28 +5,32 @@ import os
 import json
 from typing import Dict, List, Any
 from dataclasses import dataclass
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 @dataclass
 class BotConfig:
     """Bot configuration settings"""
-    token: str = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0"
-    admin_chat_id: str = "-2714719687"
-    database_path: str = "customer_database.json"
+    token: str = os.getenv("BOT_TOKEN", "")
+    admin_chat_id: str = os.getenv("ADMIN_CHAT_ID", "-2714719687")
+    database_path: str = os.getenv("DATABASE_PATH", "data/customer_database.json")
     
     # Message settings
     max_message_length: int = 4096
     forward_delay: float = 0.5  # Delay between forwards to prevent spam
     
     # Alert thresholds
-    low_balance_threshold: int = 100
-    large_deposit_threshold: int = 1000
-    large_withdrawal_threshold: int = 500
-    inactive_days_threshold: int = 3
+    low_balance_threshold: int = int(os.getenv("LOW_BALANCE_THRESHOLD", "100"))
+    large_deposit_threshold: int = int(os.getenv("LARGE_DEPOSIT_THRESHOLD", "1000"))
+    large_withdrawal_threshold: int = int(os.getenv("LARGE_WITHDRAWAL_THRESHOLD", "500"))
+    inactive_days_threshold: int = int(os.getenv("INACTIVE_DAYS_THRESHOLD", "3"))
     
     # Feature flags
-    auto_balance_update: bool = True
-    send_customer_alerts: bool = True
-    enable_analytics: bool = True
+    auto_balance_update: bool = os.getenv("ENABLE_AUTO_BALANCE_UPDATE", "true").lower() == "true"
+    send_customer_alerts: bool = os.getenv("ENABLE_CUSTOMER_ALERTS", "true").lower() == "true"
+    enable_analytics: bool = os.getenv("ENABLE_ANALYTICS", "true").lower() == "true"
     
     @classmethod
     def from_env(cls):
