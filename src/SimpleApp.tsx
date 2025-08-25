@@ -1,6 +1,6 @@
-import React from 'react';
 
 export function SimpleApp() {
+
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>🚀 Enhanced Analytics Dashboard</h1>

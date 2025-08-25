@@ -78,6 +78,25 @@ bun run worker:kv:create    # Create KV namespace
    - `chat_tracker.db` - Chat tracking (SQLite)
    - `group_monitor.db` - Group monitoring (SQLite)
 
+### 🆕 Recent Optimizations (2025)
+
+#### Code Quality Improvements
+- **✅ Type Annotations**: All Python files now have comprehensive type hints
+- **✅ Import Standardization**: Consistent import patterns across TypeScript/Python
+- **✅ Error Handling**: Standardized error handling with retry logic and classification
+- **✅ Configuration Management**: Centralized constants in `config/app_constants.py|ts`
+
+#### Performance Enhancements
+- **✅ Rate Limiting**: Configurable rate limiting with circuit breaker patterns
+- **✅ Caching**: Optimized caching strategies with TTL configuration
+- **✅ Batch Processing**: Configurable batch sizes for database operations
+- **✅ Worker Pools**: Scalable worker pool configuration
+
+#### Maintainability Features
+- **✅ Package.json Scripts**: Consistent `bun run` syntax across all scripts
+- **✅ CI/CD Updates**: Latest GitHub Actions versions with improved caching
+- **✅ Documentation**: Updated to reflect current architecture and best practices
+
 ### Key Modules
 
 #### Bot Handlers (`src/bot/handlers/handlers.py`)
@@ -119,9 +138,38 @@ CACHE_TTL=300
 
 ### Key Configuration Files
 - `src/bot/config.py` - Bot configuration (✅ environment-based)
+- `config/app_constants.py` - **NEW**: Centralized Python constants
+- `config/app_constants.ts` - **NEW**: Centralized TypeScript constants
 - `config/customer_config.json` - Customer metadata
 - `bunfig.toml` - Bun test and coverage configuration
 - `tsconfig.json` - TypeScript configuration (✅ bun-types working)
+
+### 🔧 Configuration Management
+
+#### Centralized Constants
+All hardcoded values are now centralized in `config/app_constants.*`:
+
+```python
+# Python usage
+from config.app_constants import TIMEOUT_CONFIG, THRESHOLD_CONFIG
+session_timeout = TIMEOUT_CONFIG.SESSION_TIMEOUT
+max_retries = THRESHOLD_CONFIG.MAX_REQUESTS_PER_WINDOW
+```
+
+```typescript
+// TypeScript usage
+import { TIMEOUT_CONFIG, THRESHOLD_CONFIG } from '@config/app_constants';
+const sessionTimeout = TIMEOUT_CONFIG.SESSION_TIMEOUT;
+const maxRetries = THRESHOLD_CONFIG.MAX_REQUESTS_PER_WINDOW;
+```
+
+#### Configuration Categories
+- **Timeout Config**: Session, API, and circuit breaker timeouts
+- **Threshold Config**: Financial limits, rate limits, error thresholds
+- **Network Config**: Ports, hosts, API endpoints
+- **Performance Config**: Worker pools, cache settings, batch sizes
+- **Security Config**: Token lengths, password requirements
+- **Monitoring Config**: Health checks, metrics collection intervals
 
 ## 🔧 Common Development Tasks
 

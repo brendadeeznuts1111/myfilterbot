@@ -15,8 +15,10 @@ logger = logging.getLogger(__name__)
 
 class SecureRegistrationSystem:
     """Enhanced registration system with security controls"""
+    db_path: str
+    pending_registrations: Any
     
-    def __init__(self, db_path: str = "data/customer_database.json"):
+    def __init__(self, db_path: str = "data/customer_database.json") -> None:
         self.db_path = db_path
         self.pending_registrations = {}  # Temporary storage for multi-step registration
         

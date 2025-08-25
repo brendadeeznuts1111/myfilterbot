@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { test, expect } from 'bun:test';
 
 test("NODE_ENV is automatically set to test", () => {
   expect(process.env.NODE_ENV).toBe("test");

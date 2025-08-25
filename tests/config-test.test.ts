@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { test, expect } from 'bun:test';
 
 test("bunfig.toml environment variables are set correctly", () => {
   // Test NODE_ENV is set to "test" via package.json script (not bunfig.toml)

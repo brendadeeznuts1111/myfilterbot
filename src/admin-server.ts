@@ -1,6 +1,7 @@
-import { serve } from "bun";
-import enhancedAdminPortal from "./enhanced_admin_portal.html";
-import { apiRouter } from "./src/api/router";
+import { serve } from 'bun';
+
+import enhancedAdminPortal from './enhanced_admin_portal.html';
+import { apiRouter } from './src/api/router';
 
 // Load ONLY real Fantasy402.com customers - NO MORE MOCK DATA
 const configFile = await Bun.file("./customer_config.json");

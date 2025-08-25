@@ -1,6 +1,7 @@
-import { serve } from "bun";
-import { config, validateEnv } from "../config/env.config";
-import adminPortal from "../public/admin_portal_improved.html";
+import { serve } from 'bun';
+
+import adminPortal from '../public/admin_portal_improved.html';
+import { config, validateEnv } from '../config/env.config';
 
 // Validate environment on startup
 try {

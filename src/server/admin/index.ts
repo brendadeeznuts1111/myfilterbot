@@ -1,5 +1,6 @@
-import { serve } from "bun";
-import { apiRouter } from "../api/router";
+import { serve } from 'bun';
+
+import { apiRouter } from '../api/router';
 
 // Load ONLY real Fantasy402.com customers - NO MORE MOCK DATA
 const configFile = await Bun.file("data/customer_config.json");

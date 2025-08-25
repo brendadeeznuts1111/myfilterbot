@@ -3,10 +3,10 @@
  * Features: TypeScript transpilation, Hot-reloading, API proxy, WebSocket support, Tailwind CSS processing
  */
 
-import { serve, file } from "bun";
-import { watch } from "fs";
-import { join, resolve } from "path";
-import tailwindPlugin from "bun-plugin-tailwind";
+import { serve, file } from 'bun';
+import { watch } from 'fs';
+import { join, resolve } from 'path';
+import tailwindPlugin from 'bun-plugin-tailwind';
 
 // Hot-reload WebSocket clients
 const wsClients = new Set<WebSocket>();

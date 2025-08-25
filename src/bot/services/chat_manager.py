@@ -30,7 +30,7 @@ class ChatInfo:
     permissions: Optional[Dict] = None
     statistics: Optional[Dict] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.date_added:
             self.date_added = datetime.now().isoformat()
         if not self.last_activity:
@@ -49,8 +49,12 @@ class ChatInfo:
 
 class ChatManager:
     """Manages chat tracking and synchronization with Cloudflare Worker"""
+    worker_url: Any
+    api_key: Any
+    local_chats: Any
+    headers: Any
     
-    def __init__(self, worker_url: str = None, api_key: str = None):
+    def __init__(self, worker_url: str = None, api_key: str = None) -> None:
         """
         Initialize ChatManager
         

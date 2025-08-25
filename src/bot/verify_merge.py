@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Dict, List, Optional, Any, Tuple, Set, Union
 import json
 
 # Load merged database

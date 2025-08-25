@@ -2,6 +2,7 @@
 Enhanced Bot Handlers with Session Persistence and Dashboard Integration
 """
 
+from typing import Dict, List, Optional, Any, Tuple, Set, Union
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.constants import ParseMode

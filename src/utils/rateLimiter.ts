@@ -3,6 +3,8 @@
  * Prevents API flooding and implements circuit breaker pattern
  */
 
+import { TIMEOUT_CONFIG, THRESHOLD_CONFIG } from '@config/app_constants';
+
 interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
   maxRequests: number; // Maximum requests per window
@@ -138,22 +140,23 @@ export class RateLimiter {
   }
 }
 
-// Create default rate limiters
+// Create default rate limiters using centralized configuration
 export const apiRateLimiter = new RateLimiter({
-  windowMs: 10000, // 10 seconds
-  maxRequests: 30, // 30 requests per 10 seconds
+  windowMs: TIMEOUT_CONFIG.RATE_LIMIT_WINDOW * 1000, // Convert to milliseconds
+  maxRequests: THRESHOLD_CONFIG.MAX_REQUESTS_PER_WINDOW,
   circuitBreaker: {
-    errorThreshold: 10, // Open circuit after 10 errors
-    resetTimeout: 30000, // Reset after 30 seconds
+    errorThreshold: THRESHOLD_CONFIG.ERROR_THRESHOLD,
+    resetTimeout: TIMEOUT_CONFIG.CIRCUIT_BREAKER_RESET_TIMEOUT * 1000,
   },
 });
 
 export const aggressiveRateLimiter = new RateLimiter({
-  windowMs: 1000, // 1 second
-  maxRequests: 5, // 5 requests per second
+  windowMs: TIMEOUT_CONFIG.AGGRESSIVE_RATE_LIMIT_WINDOW * 1000,
+  maxRequests: THRESHOLD_CONFIG.AGGRESSIVE_MAX_REQUESTS,
   skipSuccessful: true, // Only count failed requests
   circuitBreaker: {
-    errorThreshold: 3, // Open circuit after 3 errors
-    resetTimeout: 10000, // Reset after 10 seconds
+    errorThreshold: THRESHOLD_CONFIG.AGGRESSIVE_ERROR_THRESHOLD,
+    resetTimeout:
+      TIMEOUT_CONFIG.AGGRESSIVE_CIRCUIT_BREAKER_RESET_TIMEOUT * 1000,
   },
 });

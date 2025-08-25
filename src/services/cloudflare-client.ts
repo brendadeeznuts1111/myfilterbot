@@ -3,7 +3,7 @@ import { fetchJSON } from '../utils/stream-helpers';
 
 export class CloudflareWorkerClient {
   private baseUrl: string;
-  private headers: HeadersInit;
+  private headers: Record<string, string>;
 
   constructor(workerUrl: string, apiKey?: string) {
     this.baseUrl = workerUrl;

@@ -66,7 +66,7 @@ class GroupMember:
     permissions: Dict = None
     customer_id: Optional[str] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.permissions is None:
             self.permissions = {
                 "can_view": False,
@@ -87,8 +87,10 @@ class GroupMember:
 
 class Database:
     """Database manager with proper error handling and validation"""
+    db_path: str
+    data: Any
     
-    def __init__(self, db_path: str = "data/customer_database.json"):
+    def __init__(self, db_path: str = "data/customer_database.json") -> None:
         self.db_path = db_path
         self.data = self._load()
         self._ensure_structure()
@@ -130,7 +132,7 @@ class Database:
             }
         }
     
-    def _ensure_structure(self):
+    def _ensure_structure(self) -> None:
         """Ensure database has all required fields"""
         default = self._default_structure()
         for key, value in default.items():
@@ -150,7 +152,7 @@ class Database:
             logger.error(f"Error saving database: {e}")
             return False
     
-    def _create_backup(self):
+    def _create_backup(self) -> None:
         """Create backup of database"""
         try:
             backup_path = f"{self.db_path}.backup"

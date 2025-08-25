@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Dict, List, Optional, Any, Tuple, Set, Union
 """
 Database Merger Script
 Merges customer data from customer_database_REAL_temp.json into the main customer_database.json

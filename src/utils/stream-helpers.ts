@@ -26,9 +26,9 @@ export interface StreamResult<T> {
 /**
  * Safely consume a ReadableStream as JSON with error handling
  */
-export async function consumeStreamAsJSON<T = any>(
+export async function consumeStreamAsJSON<T = unknown>(
   stream: ReadableStream,
-  options: StreamOptions = {}
+  _options: StreamOptions = {}
 ): Promise<StreamResult<T>> {
   const startTime = performance.now();
 
@@ -57,7 +57,7 @@ export async function consumeStreamAsJSON<T = any>(
  */
 export async function consumeStreamAsText(
   stream: ReadableStream,
-  options: StreamOptions = {}
+  _options: StreamOptions = {}
 ): Promise<StreamResult<string>> {
   const startTime = performance.now();
 
@@ -86,7 +86,7 @@ export async function consumeStreamAsText(
  */
 export async function consumeStreamAsBytes(
   stream: ReadableStream,
-  options: StreamOptions = {}
+  _options: StreamOptions = {}
 ): Promise<StreamResult<Uint8Array>> {
   const startTime = performance.now();
 
@@ -114,10 +114,10 @@ export async function consumeStreamAsBytes(
  * Enhanced fetch with direct stream consumption
  * Replaces the pattern: const response = await fetch(); const data = await response.json()
  */
-export async function fetchJSON<T = any>(
+export async function fetchJSON<T = unknown>(
   input: string | URL | Request,
-  init?: RequestInit,
-  options: StreamOptions = {}
+  init?: Record<string, unknown>,
+  _options: StreamOptions = {}
 ): Promise<StreamResult<T>> {
   const startTime = performance.now();
 
@@ -158,8 +158,8 @@ export async function fetchJSON<T = any>(
  */
 export async function fetchText(
   input: string | URL | Request,
-  init?: RequestInit,
-  options: StreamOptions = {}
+  init?: Record<string, unknown>,
+  _options: StreamOptions = {}
 ): Promise<StreamResult<string>> {
   const startTime = performance.now();
 
@@ -244,10 +244,10 @@ export class StreamBenchmark {
   /**
    * Compare old vs new stream consumption methods
    */
-  async compareStreamMethods<T>(
+  async compareStreamMethods(
     stream1: ReadableStream,
     stream2: ReadableStream,
-    testData: any
+    _testData: unknown
   ) {
     // Old method (using Response wrapper)
     const oldStart = performance.now();
@@ -289,7 +289,11 @@ export class StreamBenchmark {
   getSummary() {
     if (this.results.length < 2) return null;
 
-    const [old, current] = this.results;
+    const old = this.results[0];
+    const current = this.results[1];
+
+    if (!old || !current) return null;
+
     const improvement =
       ((old.duration - current.duration) / old.duration) * 100;
 

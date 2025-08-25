@@ -1,8 +1,9 @@
-import React from 'react';
-import { useTheme } from '../hooks/useTheme';
-import { useAuth } from '../hooks/useAuth';
 
 export function Settings() {
+
+import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
+
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
 
