@@ -38,8 +38,8 @@
     "validate": "bun run src/validate_bun_native.ts",
     "validate:repo": "bun run src/validate_repo_wide_bun_native.ts",
     "type-check": "tsc --noEmit",
-    "worker:dev": "bunx wrangler dev cloudflare-worker/src/index.ts",
-    "worker:deploy": "bunx wrangler deploy",
+    "worker:dev": "bunx --package wrangler wrangler dev cloudflare-worker/src/index.ts",
+    "worker:deploy": "bunx --package wrangler wrangler deploy",
     "worker:build": "bun build cloudflare-worker/src/index.ts --target=browser --outdir=cloudflare-worker/dist",
     "lint": "eslint src/**/*.{ts,tsx}",
     "lint:fix": "eslint src/**/*.{ts,tsx} --fix",
@@ -111,5 +111,12 @@
   "engines": {
     "bun": ">=1.2.20",
     "node": ">=20"
-  }
+  },
+  "sideEffects": [
+    "**/*.css",
+    "src/styles/**/*",
+    "src/static/**/*",
+    "src/html/**/*",
+    "src/client/**/*.css"
+  ]
 }
