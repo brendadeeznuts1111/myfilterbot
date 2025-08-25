@@ -6,9 +6,9 @@
 import { serve } from "bun";
 
 // Service endpoints
-const ADMIN_PORTAL_URL = "http://localhost:3003";
-const TELEGRAM_BOT_URL = "http://localhost:3004";
-const CLOUDFLARE_WORKER_URL = "http://localhost:8787";
+const ADMIN_PORTAL_URL = process.env.ADMIN_SERVER_URL || "http://localhost:3003";
+const TELEGRAM_BOT_URL = process.env.TELEGRAM_BOT_URL || "http://localhost:3004";
+const CLOUDFLARE_WORKER_URL = process.env.WORKER_URL || "http://localhost:8787";
 
 // Load configurations
 const databaseFile = await Bun.file("./customer_database.json");

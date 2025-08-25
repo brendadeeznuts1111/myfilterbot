@@ -201,8 +201,8 @@ myfilterbot/
 ├── main_bot.py                 # Main bot entry point
 ├── portal_server.py            # Flask API server
 ├── enhanced_portal_server.py   # Enhanced API with WebSocket support
-├── auto_reporter.py            # Automated reporting system
-├── smoke_test.py               # Basic functionality tests
+├── src/auto_reporter.py            # Automated reporting system
+├── tests/python/smoke_test.py               # Basic functionality tests
 ├── test_integration.py         # Integration tests
 ├── test_enhanced_portal.py     # Portal tests
 │
@@ -215,7 +215,7 @@ myfilterbot/
 │   └── payment_gateway.py     # Payment processing (placeholder)
 │
 ├── backup/                     # Legacy implementations
-│   ├── enhanced_bot.py
+│   ├── main_bot_enhanced.py
 │   ├── filter_bot.py
 │   ├── multi_customer_bot.py
 │   └── webapp_server.py
@@ -300,7 +300,7 @@ export DATABASE_PATH="customer_database.json"
 
 5. **Verify Installation**
 ```bash
-python3 smoke_test.py
+python3 tests/python/smoke_test.py
 ```
 
 ---
@@ -667,11 +667,11 @@ Simple interface for viewing bot messages and transactions.
 
 ## Testing
 
-### Unit Tests (smoke_test.py)
+### Unit Tests (tests/python/smoke_test.py)
 
 Basic functionality tests:
 ```bash
-python3 smoke_test.py
+python3 tests/python/smoke_test.py
 ```
 
 Tests include:
@@ -717,7 +717,7 @@ python3 portal_server.py
 
 3. **Start Auto-Reporter (Optional):**
 ```bash
-python3 auto_reporter.py
+python3 src/auto_reporter.py
 ```
 
 ### Production Deployment

@@ -9,6 +9,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import json
 import asyncio
+import os
 from decimal import Decimal
 from datetime import datetime
 import sys
@@ -101,7 +102,7 @@ def get_deposit_methods():
     return jsonify({'methods': methods})
 
 @app.route('/api/payment/deposit/request', methods=['POST'])
-async def request_deposit():
+def request_deposit():
     """Request a deposit"""
     try:
         data = request.json
@@ -111,7 +112,7 @@ async def request_deposit():
         payment_method = PaymentMethod(data.get('payment_method'))
         
         # Process through cashier manager
-        result = await cashier_manager.request_deposit(
+        result = cashier_manager.request_deposit(
             customer_id=customer_id,
             amount=amount,
             currency=currency,
@@ -185,7 +186,7 @@ def get_withdrawal_methods():
     return jsonify({'methods': methods})
 
 @app.route('/api/payment/withdrawal/request', methods=['POST'])
-async def request_withdrawal():
+def request_withdrawal():
     """Request a withdrawal"""
     try:
         data = request.json
@@ -196,7 +197,7 @@ async def request_withdrawal():
         destination = data.get('destination', {})
         
         # Process through cashier manager
-        result = await cashier_manager.request_withdrawal(
+        result = cashier_manager.request_withdrawal(
             customer_id=customer_id,
             amount=amount,
             currency=currency,
@@ -229,14 +230,14 @@ async def request_withdrawal():
         return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/api/payment/withdrawal/<request_id>/approve', methods=['POST'])
-async def approve_withdrawal(request_id):
+def approve_withdrawal(request_id):
     """Approve a withdrawal request (admin only)"""
     try:
         data = request.json
         approved_by = data.get('approved_by', 'admin')
         override_checks = data.get('override_checks', False)
         
-        result = await cashier_manager.approve_withdrawal(
+        result = cashier_manager.approve_withdrawal(
             request_id=request_id,
             approved_by=approved_by,
             override_checks=override_checks
@@ -305,10 +306,10 @@ def reject_withdrawal(request_id):
 # ============= Transaction Endpoints =============
 
 @app.route('/api/payment/transaction/<transaction_id>/verify', methods=['GET'])
-async def verify_transaction(transaction_id):
+def verify_transaction(transaction_id):
     """Verify transaction status"""
     try:
-        result = await payment_gateway.verify_transaction(transaction_id)
+        result = payment_gateway.verify_transaction(transaction_id)
         
         return jsonify({
             'transaction_id': result.transaction_id,
@@ -470,7 +471,7 @@ def get_payment_statistics():
 # ============= Webhook Endpoints =============
 
 @app.route('/api/payment/webhook/stripe', methods=['POST'])
-async def stripe_webhook():
+def stripe_webhook():
     """Handle Stripe webhooks"""
     try:
         payload = request.get_data()
@@ -503,7 +504,7 @@ async def stripe_webhook():
         return jsonify({'error': str(e)}), 400
 
 @app.route('/api/payment/webhook/paypal', methods=['POST'])
-async def paypal_webhook():
+def paypal_webhook():
     """Handle PayPal webhooks"""
     try:
         # Similar implementation for PayPal
@@ -552,13 +553,14 @@ def handle_subscribe(data):
 # ============= Main =============
 
 if __name__ == '__main__':
-    print("=" * 50)
-    print("PAYMENT SERVER")
-    print("=" * 50)
-    print(f"Starting payment server on http://localhost:5001")
-    print(f"Payment gateway initialized")
-    print(f"Cashier manager initialized")
-    print("-" * 50)
+        print("=" * 50)
+        print("PAYMENT SERVER")
+        print("=" * 50)
+        payment_url = os.getenv('PAYMENT_SERVER_URL', 'http://localhost:5001')
+        print(f"Starting payment server on {payment_url}")
+        print(f"Payment gateway initialized")
+        print(f"Cashier manager initialized")
+        print("-" * 50)
     
-    # Run with WebSocket support
-    socketio.run(app, host='0.0.0.0', port=5001, debug=True, allow_unsafe_werkzeug=True)
+        # Run with WebSocket support
+        socketio.run(app, host='0.0.0.0', port=5001, debug=False, allow_unsafe_werkzeug=True)

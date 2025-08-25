@@ -55,7 +55,7 @@ git clone https://github.com/fantdev/trading-bot.git
 cd trading-bot
 
 # 2. Copy environment configuration
-cp .env.example .env
+cp config/.env.example .env
 # Edit .env with your configuration
 
 # 3. Install Python dependencies
@@ -84,7 +84,7 @@ cd myfilterbot
 2. **Set up environment variables**
 ```bash
 # Copy the example environment file
-cp .env.example .env
+cp config/.env.example .env
 
 # Edit with your actual values
 nano .env

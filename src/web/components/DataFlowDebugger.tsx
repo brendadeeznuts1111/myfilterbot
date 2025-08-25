@@ -96,7 +96,7 @@ export const DataFlowDebugger: React.FC = () => {
               <strong>Context Ready:</strong> {isReady ? '✅ Yes' : '❌ No'}
             </div>
             <div>
-              <strong>API Base URL:</strong> {apiClient ? 'http://localhost:3003' : 'N/A'}
+                              <strong>API Base URL:</strong> {apiClient ? (process.env.REACT_APP_API_URL || 'http://localhost:3003') : 'N/A'}
             </div>
           </div>
         </div>

@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // For this demo, we'll use the API to validate the customer
       const response = await fetch(
-        `http://localhost:3003/api/customer/profile`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3003'}/api/customer/profile`,
         {
           headers: {
             'X-Customer-ID': customerId,

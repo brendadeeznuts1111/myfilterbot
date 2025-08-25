@@ -382,7 +382,8 @@ if __name__ == '__main__':
     print(f"   • Pending Verifications: {len(pending_verifications)}")
     print(f"   • Active Admins: {len(admin_sessions)}")
     print("-" * 50)
-    print("🌐 Server starting on: http://localhost:5001")
+            payment_url = os.getenv('PAYMENT_SERVER_URL', 'http://localhost:5001')
+        print(f"🌐 Server starting on: {payment_url}")
     print("🔌 WebSocket enabled for real-time updates")
     print("-" * 50)
     

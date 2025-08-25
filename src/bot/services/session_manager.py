@@ -388,7 +388,7 @@ class FraudDetector:
 class PlayerHistory:
     """Track and retrieve player history"""
     
-    def __init__(self, db_path: str = "customer_database.json"):
+    def __init__(self, db_path: str = "data/customer_database.json"):
         self.db_path = db_path
         
     def get_player_history(self, customer_id: str, days: int = 30) -> Dict[str, Any]:

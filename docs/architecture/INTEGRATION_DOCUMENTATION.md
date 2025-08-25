@@ -84,7 +84,7 @@ myfilterbot/
 ├── enhanced_portal_server_integrated.py      # Enhanced Flask server with WebSocket
 ├── websocket_integration.py                  # WebSocket communication handler
 ├── run_integrated_system.py                 # System runner script
-├── requirements_portal_integration.txt       # Complete dependency list
+├── config/requirements_portal_integration.txt       # Complete dependency list
 │
 ├── src/
 │   ├── portal_integration.py                # Bot-portal bridge module
@@ -165,7 +165,7 @@ myfilterbot/
 
 ### 1. Install Dependencies
 ```bash
-pip install -r requirements_portal_integration.txt
+pip install -r config/requirements_portal_integration.txt
 ```
 
 ### 2. Run Integrated System

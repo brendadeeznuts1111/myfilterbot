@@ -22,7 +22,9 @@ except ImportError:
     print("⚠️ Error tracking not available - running in standalone mode")
 
 class HealthChecker:
-    def __init__(self, base_url="http://localhost:5000"):
+    def __init__(self, base_url=None):
+        if base_url is None:
+            base_url = os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000')
         self.base_url = base_url
         self.error_tracker = ErrorTracker() if ERROR_TRACKING_AVAILABLE else None
         self.endpoints = [

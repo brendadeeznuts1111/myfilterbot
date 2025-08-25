@@ -4,11 +4,12 @@
  */
 
 import { serve } from "bun";
+import { config } from "../config/env.config";
 
 // Bot configuration from src/config.py
 const BOT_TOKEN = "7555654864:AAE8ZsVnJbRK_41JZVMZAXDSCFstGRcxCY0";
 const ADMIN_CHAT_ID = "-2714719687";
-const WEBHOOK_URL = "http://localhost:3004/webhook";
+const WEBHOOK_URL = `${config.WEBSOCKET_URL}/webhook`;
 
 // Load customer configuration
 const configFile = await Bun.file("./customer_config.json");
@@ -269,7 +270,7 @@ You'll now receive:
 📊 <b>Admin Dashboard</b>
 
 Access the web portal:
-🌐 http://localhost:3003/
+        🌐 ${config.ADMIN_SERVER_URL}/
 
 <b>Features:</b>
 • Customer management
@@ -287,7 +288,7 @@ Access the web portal:
   async updateCustomerBalance(customerId: string, transactionType: string) {
     // This would integrate with the admin portal API
     try {
-      await fetch('http://localhost:3003/api/admin/sync-balances', {
+              await fetch(`${config.API_BASE_URL}/admin/sync-balances`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -345,4 +346,4 @@ console.log(`🤖 Telegram Bot Service running on port 3004`);
 console.log(`📱 Bot Token: ${BOT_TOKEN.slice(0, 10)}...`);
 console.log(`👥 Admin Chat: ${ADMIN_CHAT_ID}`);
 console.log(`🔗 Webhook: ${WEBHOOK_URL}`);
-console.log(`⚡ Setup webhook: http://localhost:3004/setup`);
+    console.log(`⚡ Setup webhook: ${config.WEBSOCKET_URL}/setup`);

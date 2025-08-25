@@ -87,7 +87,7 @@ cp -r . ../myfilterbot-backup
 
 ### Step 2: Set Up Environment
 ```bash
-cp .env.example .env
+cp config/.env.example .env
 # Edit .env with your credentials
 ```
 

@@ -281,7 +281,7 @@ With all major issues resolved, the project is now ready for:
 ```bash
 git clone <repository>
 cd myfilterbot
-cp .env.example .env
+cp config/.env.example .env
 # Edit .env with your values
 ```
 

@@ -17,9 +17,9 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.database import db, GroupMember
-from src.config import config
-from src.error_handler import error_tracker, ErrorCategory, ErrorSeverity
+from database import db, GroupMember
+from config import config
+from error_handler import error_tracker, ErrorCategory, ErrorSeverity
 # from src.api.notification_api import register_notification_api  # Temporarily disabled - missing services module
 
 # Setup logging
@@ -1511,7 +1511,8 @@ if __name__ == '__main__':
     print(f"   • Registered Users: {stats.get('registered_users', 0)}")
     
     print("-" * 50)
-    print("🌐 Server starting on: http://localhost:5000")
+    portal_url = os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000')
+    print(f"🌐 Server starting on: {portal_url}")
     print("📱 To expose with ngrok:")
     print("   1. Run: ngrok http 5000")
     print("   2. Use the HTTPS URL provided")

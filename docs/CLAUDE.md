@@ -138,7 +138,7 @@ python3 main_bot.py
 python3 run_integrated_system.py
 
 # Auto-reporter for scheduled tasks
-python3 auto_reporter.py
+python3 src/auto_reporter.py
 ```
 
 ### Portal Servers (Multiple Implementations)
@@ -194,7 +194,7 @@ bun build src/index.tsx --analyze
 #### Python Setup
 ```bash
 # Install Python dependencies
-pip install -r requirements_portal_integration.txt
+pip install -r config/requirements_portal_integration.txt
 ```
 
 ### Testing

@@ -400,7 +400,7 @@ class NotificationWorker {
   ) {
     if (streamOptimized) {
       const result = await fetchJSON(
-        'http://localhost:5000/api/notifications/deliver-stream',
+        `${process.env.PORTAL_SERVER_URL || 'http://localhost:5000'}/api/notifications/deliver-stream`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -425,7 +425,7 @@ class NotificationWorker {
     } else {
       // Traditional fetch
       const response = await fetch(
-        'http://localhost:5000/api/notifications/deliver',
+        `${process.env.PORTAL_SERVER_URL || 'http://localhost:5000'}/api/notifications/deliver`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -592,7 +592,7 @@ class NotificationWorker {
     if (notifications.length === 0) return { delivered: 0 };
 
     const result = await fetchJSON(
-      'http://localhost:5000/api/notifications/batch-deliver',
+              `${process.env.PORTAL_SERVER_URL || 'http://localhost:5000'}/api/notifications/batch-deliver`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

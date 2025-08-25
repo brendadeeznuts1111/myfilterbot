@@ -5,7 +5,7 @@
  * Tests the newly integrated Bun TypeScript APIs
  */
 
-const BASE_URL = 'http://localhost:3003';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003';
 
 // Test configuration
 const tests = [

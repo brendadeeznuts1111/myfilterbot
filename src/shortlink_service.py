@@ -123,7 +123,7 @@ class ShortlinkService:
             Short URL or None
         """
         try:
-            base_url = "http://localhost:5000"
+            base_url = os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000')
             
             if customer_id:
                 target_url = f"{base_url}/customer/{customer_id}"

@@ -51,7 +51,7 @@ myfilterbot/
 ├── unified_server.py               # Unified Flask server with all routes
 ├── portal_server.py                # Basic portal server
 ├── enhanced_portal_server.py       # Enhanced server with WebSocket
-├── auto_reporter.py                # Automated reporting system
+├── src/auto_reporter.py                # Automated reporting system
 │
 ├── src/                            # Core modules
 │   ├── __init__.py
@@ -368,7 +368,7 @@ python3 main_bot.py
 python3 unified_server.py
 
 # Terminal 3: Auto Reporter (optional)
-python3 auto_reporter.py
+python3 src/auto_reporter.py
 ```
 
 ---
@@ -462,7 +462,7 @@ CMD ["python", "unified_server.py"]
 ### Run Tests
 ```bash
 # Basic smoke test
-python3 smoke_test.py
+python3 tests/python/smoke_test.py
 
 # Integration tests
 python3 test_integration.py

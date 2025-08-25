@@ -17,15 +17,15 @@ git clone https://github.com/fantdev/myfilterbot.git
 cd myfilterbot
 
 # Setup environment
-cp .env.example .env
+cp config/.env.example .env
 # Edit .env with your configuration
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r config/requirements_portal_integration.txt
 bun install
 
 # Run the bot
-python3 main_bot.py
+python3 src/main_bot_enhanced.py
 
 # Start admin portal
 bun run admin_portal_server.ts

@@ -19,7 +19,16 @@ interface EnvConfig {
   API_BASE_URL: string;
   PORTAL_SERVER_PORT: number;
   ADMIN_SERVER_PORT: number;
+  PAYMENT_SERVER_PORT: number;
+  DEV_SERVER_PORT: number;
   WORKER_URL: string;
+  
+  // URL Configuration
+  ADMIN_SERVER_URL: string;
+  PORTAL_SERVER_URL: string;
+  PAYMENT_API_URL: string;
+  TELEGRAM_BOT_URL: string;
+  WEBSOCKET_URL: string;
   
   // Cloudflare
   CLOUDFLARE_API_KEY?: string;
@@ -69,6 +78,9 @@ interface EnvConfig {
   OPENAI_API_KEY?: string;
   STRIPE_API_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  FANTASY402_BASE_URL: string;
+  FIRE22_BASE_URL: string;
+  FANTDEV_TRADING_URL: string;
   
   // Feature Flags
   ENABLE_WEBSOCKET: boolean;
@@ -128,6 +140,8 @@ export function loadEnvConfig(): EnvConfig {
     API_BASE_URL: getEnvVar('API_BASE_URL', 'http://localhost:3003/api'),
     PORTAL_SERVER_PORT: getEnvVar('PORTAL_SERVER_PORT', 5000),
     ADMIN_SERVER_PORT: getEnvVar('ADMIN_SERVER_PORT', 3003),
+    PAYMENT_SERVER_PORT: getEnvVar('PAYMENT_SERVER_PORT', 5001),
+    DEV_SERVER_PORT: getEnvVar('DEV_SERVER_PORT', 3006),
     WORKER_URL: getEnvVar('WORKER_URL', 'http://localhost:8787'),
     
     // Cloudflare
@@ -173,11 +187,21 @@ export function loadEnvConfig(): EnvConfig {
     REACT_APP_WS_URL: getEnvVar('REACT_APP_WS_URL', 'ws://localhost:3004'),
     REACT_APP_WORKER_URL: getEnvVar('REACT_APP_WORKER_URL', 'http://localhost:8787'),
     
+    // URL Configuration
+    ADMIN_SERVER_URL: getEnvVar('ADMIN_SERVER_URL', 'http://localhost:3003'),
+    PORTAL_SERVER_URL: getEnvVar('PORTAL_SERVER_URL', 'http://localhost:5000'),
+    PAYMENT_API_URL: getEnvVar('PAYMENT_API_URL', 'http://localhost:5001'),
+    TELEGRAM_BOT_URL: getEnvVar('TELEGRAM_BOT_URL', 'http://localhost:3004'),
+    WEBSOCKET_URL: getEnvVar('WEBSOCKET_URL', 'http://localhost:3003'),
+    
     // External Services
     TELEGRAM_API_URL: getEnvVar('TELEGRAM_API_URL', 'https://api.telegram.org'),
     OPENAI_API_KEY: getEnvVar('OPENAI_API_KEY', undefined),
     STRIPE_API_KEY: getEnvVar('STRIPE_API_KEY', undefined),
     STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET', undefined),
+    FANTASY402_BASE_URL: getEnvVar('FANTASY402_BASE_URL', 'https://fantasy402.com'),
+    FIRE22_BASE_URL: getEnvVar('FIRE22_BASE_URL', 'https://fire22.com'),
+    FANTDEV_TRADING_URL: getEnvVar('FANTDEV_TRADING_URL', 'https://fantdev.trading'),
     
     // Feature Flags
     ENABLE_WEBSOCKET: getEnvVar('ENABLE_WEBSOCKET', true),

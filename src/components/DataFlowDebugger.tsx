@@ -109,7 +109,7 @@ export const DataFlowDebugger: React.FC = () => {
             </div>
             <div>
               <strong>API Base URL:</strong>{' '}
-              {apiClient ? 'http://localhost:3003' : 'N/A'}
+                              {apiClient ? (process.env.REACT_APP_API_URL || 'http://localhost:3003') : 'N/A'}
             </div>
           </div>
         </div>

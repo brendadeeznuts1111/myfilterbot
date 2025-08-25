@@ -4,7 +4,7 @@
 - **Bot:** @fantdev_bot (ACTIVE)
 - **Customers:** 25 loaded
 - **Total Balance:** $17,209
-- **Portal:** https://brendadeeznuts1111.github.io/myfilterbot/customer_portal.html
+- **Portal:** http://localhost:5000/customer-portal.html
 
 ## 📱 Bot Commands
 
@@ -50,7 +50,7 @@ The bot automatically detects and forwards:
 
 ## 🌐 Customer Portal
 
-Visit: https://brendadeeznuts1111.github.io/myfilterbot/customer_portal.html
+Visit: http://localhost:5000/customer-portal.html
 
 Test login:
 - Customer ID: `BB1042`
@@ -66,22 +66,22 @@ Features:
 
 ```bash
 # Main bot (currently running)
-python3 enhanced_bot.py
+python3 src/main_bot_enhanced.py
 
 # Auto reporter (for daily/weekly summaries)
-python3 auto_reporter.py
+python3 src/auto_reporter.py
 
 # Run tests
-python3 smoke_test.py
+python3 tests/python/smoke_test.py
 ```
 
 ## 📝 Files Overview
 
-- `enhanced_bot.py` - Main bot with all features
-- `customer_database.json` - All 25 customers data
-- `customer_portal.html` - Web dashboard
-- `auto_reporter.py` - Scheduled reports
-- `smoke_test.py` - System tests
+- `src/main_bot_enhanced.py` - Main bot with all features
+- `data/customer_database.json` - All 25 customers data
+- `public/portals/customer-portal.html` - Web dashboard
+- `src/auto_reporter.py` - Scheduled reports
+- `tests/python/smoke_test.py` - System tests
 
 ## 💬 Testing Messages
 

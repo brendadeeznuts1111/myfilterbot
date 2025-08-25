@@ -21,7 +21,7 @@ import subprocess
 import socket
 import os
 
-from .database_enhanced import enhanced_db
+from .database_manager import enhanced_db
 from .cache_manager import cache_manager, connection_pool
 from .group_manager import multi_group_manager
 from .transaction_queue import transaction_queue

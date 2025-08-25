@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import uuid
 from collections import defaultdict
 
-from .database_enhanced import enhanced_db, Customer, Transaction
+from .database_manager import enhanced_db, Customer, Transaction
 from .payment_gateway import payment_gateway, PaymentRequest, PaymentResponse, PaymentStatus, TransactionType
 from .cache_manager import transaction_cache
 from .config import config

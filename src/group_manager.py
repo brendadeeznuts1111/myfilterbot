@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 from telegram import Update, Bot
 from telegram.ext import ContextTypes
 
-from .database_enhanced import enhanced_db, GroupChat
+from .database_manager import enhanced_db, GroupChat
 from .cache_manager import group_cache
 from .config import patterns, keywords
 from .utils import detect_transaction, rate_limiter

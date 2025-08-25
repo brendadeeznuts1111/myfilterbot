@@ -2,8 +2,8 @@ import { serve } from "bun";
 import { apiRouter } from "../api/router";
 
 // Load ONLY real Fantasy402.com customers - NO MORE MOCK DATA
-const configFile = await Bun.file("./config/customer_config.json");
-const databaseFile = await Bun.file("./data/customer_database.json");
+const configFile = await Bun.file("data/customer_config.json");
+const databaseFile = await Bun.file("data/customer_database.json");
 
 const customerConfig = await configFile.json();
 const customerDatabase = await databaseFile.json();
@@ -358,7 +358,7 @@ const server = serve({
 
     // Serve HTML for root paths
     if (url.pathname === "/" || url.pathname === "/admin" || url.pathname === "/enhanced") {
-      const htmlFile = await Bun.file("./public/portals/admin-portal.html").text();
+      const htmlFile = await Bun.file("public/portals/admin-portal.html").text();
       return new Response(htmlFile, {
         headers: {
           "Content-Type": "text/html"

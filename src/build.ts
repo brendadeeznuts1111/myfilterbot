@@ -119,9 +119,10 @@ if (await outdirFile.exists()) {
 
 const start = performance.now();
 
-const entrypoints = [...new Bun.Glob("**.html").scanSync("public")]
-  .map(a => path.resolve("src", a))
-  .filter(dir => !dir.includes("node_modules"));
+const entrypoints = [
+  ...[...new Bun.Glob("public/portals/*.html").scanSync()],
+  ...[...new Bun.Glob("src/index.html").scanSync()]
+].filter(file => !file.includes("node_modules"));
 console.log(`📄 Found ${entrypoints.length} HTML ${entrypoints.length === 1 ? "file" : "files"} to process\n`);
 
 const result = await Bun.build({
@@ -131,6 +132,7 @@ const result = await Bun.build({
   minify: true,
   target: "browser",
   sourcemap: "linked",
+  naming: "[dir]/[name]-[hash].[ext]",
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
   },

@@ -117,8 +117,8 @@ class FantdevBrandingSystem {
             },
             deployment: {
                 server_urls: {
-                    enhanced_portal: "http://localhost:5000",
-                    payment_api: "http://localhost:5001"
+                            enhanced_portal: process.env.PORTAL_SERVER_URL || "http://localhost:5000",
+        payment_api: process.env.PAYMENT_API_URL || "http://localhost:5001"
                 }
             }
         };
@@ -329,7 +329,7 @@ class FantdevBrandingSystem {
     async checkConnectionStatus() {
         try {
             const { deployment } = this.metadata;
-            const apiUrl = deployment?.server_urls?.payment_api || 'http://localhost:5001';
+            const apiUrl = deployment?.server_urls?.payment_api || process.env.PAYMENT_API_URL || 'http://localhost:5001';
             const response = await fetch(`${apiUrl}/api/payment/health`, {
                 method: 'GET',
                 timeout: 5000

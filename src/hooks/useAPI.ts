@@ -38,7 +38,7 @@ const apiCache = new Map<
 
 // Global config
 let globalConfig: APIConfig = {
-  baseURL: 'http://localhost:3003',
+        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003',
   refreshInterval: 30000, // 30 seconds - reduced from 5s to prevent flooding
   retryCount: 2, // Reduced from 3 to prevent excessive retries
   cache: true,

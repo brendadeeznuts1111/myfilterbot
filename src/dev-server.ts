@@ -12,7 +12,7 @@ import tailwindPlugin from "bun-plugin-tailwind";
 const wsClients = new Set<WebSocket>();
 
 // API server configuration
-const API_SERVER_URL = 'http://localhost:3003';
+const API_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003';
 
 // CSS cache for processed Tailwind output
 const cssCache = new Map<string, { content: string; mtime: number }>();
@@ -22,7 +22,7 @@ const HOT_RELOAD_SCRIPT = `
 <script>
 (function() {
   console.log('🔥 Hot-reload enabled');
-  const ws = new WebSocket('ws://localhost:3006/ws');
+  const ws = new WebSocket('ws://localhost:' + (process.env.DEV_SERVER_PORT || 3006) + '/ws');
   
   ws.onopen = () => console.log('📡 Hot-reload connected');
   ws.onmessage = (event) => {

@@ -301,7 +301,7 @@ python3 portal_server.py           # Flask on port 5000
 bun run enhanced_admin_server.ts   # TypeScript on port 3001
 
 # Start auto-reporter
-python3 auto_reporter.py
+python3 src/auto_reporter.py
 ```
 
 ## Future Roadmap

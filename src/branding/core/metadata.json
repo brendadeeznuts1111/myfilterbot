@@ -62,9 +62,9 @@
   "deployment": {
     "environment": "development",
     "server_urls": {
-      "enhanced_portal": "http://localhost:5000",
-      "payment_api": "http://localhost:5001",
-      "websocket": "ws://localhost:5001"
+              "enhanced_portal": "${PORTAL_SERVER_URL:-http://localhost:5000}",
+        "payment_api": "${PAYMENT_API_URL:-http://localhost:5001}",
+        "websocket": "${WEBSOCKET_URL:-ws://localhost:5001}"
     },
     "access_points": {
       "customer_portal": "/",

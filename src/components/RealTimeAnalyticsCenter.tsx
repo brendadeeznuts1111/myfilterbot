@@ -281,7 +281,7 @@ export const RealTimeAnalyticsCenter: React.FC<
   useEffect(() => {
     // Configure the API for optimal performance
     configureAPI({
-      baseURL: 'http://localhost:3003',
+              baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003',
       refreshInterval: 2000, // 2 second refresh for real-time feel
       customerId,
       cache: true,

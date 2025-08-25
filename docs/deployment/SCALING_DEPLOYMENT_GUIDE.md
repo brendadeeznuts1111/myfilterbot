@@ -167,7 +167,7 @@ pip install -r requirements.txt
 pip install -r requirements-prod.txt
 
 # Set up configuration
-cp .env.example .env
+cp config/.env.example .env
 # Edit .env with your production values
 
 # Initialize database

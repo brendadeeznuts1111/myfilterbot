@@ -88,7 +88,7 @@ class GroupMember:
 class Database:
     """Database manager with proper error handling and validation"""
     
-    def __init__(self, db_path: str = "customer_database.json"):
+    def __init__(self, db_path: str = "data/customer_database.json"):
         self.db_path = db_path
         self.data = self._load()
         self._ensure_structure()

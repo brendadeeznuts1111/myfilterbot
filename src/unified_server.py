@@ -668,7 +668,8 @@ if __name__ == '__main__':
     
     print(f"🎨 Branding: {len(BRANDING)} configuration items loaded")
     print("-" * 60)
-    print("🌐 Server starting on: http://localhost:5000")
+            portal_url = os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000')
+        print(f"🌐 Server starting on: {portal_url}")
     print("📱 Available routes:")
     print("   • /login - Authentication")
     print("   • /dashboard - Main dashboard")

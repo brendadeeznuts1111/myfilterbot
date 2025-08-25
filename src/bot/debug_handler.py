@@ -347,7 +347,7 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         """Show database health status"""
         try:
             # Check database file
-            db_file = "customer_database.json"
+            db_file = "data/customer_database.json"
             db_exists = os.path.exists(db_file)
             db_size = os.path.getsize(db_file) / 1024 if db_exists else 0  # KB
             

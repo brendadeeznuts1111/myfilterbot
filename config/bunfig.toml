@@ -66,7 +66,7 @@ cors = true
 
 # Custom scripts for trading bot
 [scripts]
-bot = "python3 main_bot.py"
+bot = "python3 src/bot/main.py"
 portal = "python3 portal_server.py"
 benchmark = "python3 quick_bench.py"
 load_test = "python3 test_load_200_customers.py"

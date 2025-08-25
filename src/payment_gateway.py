@@ -947,8 +947,8 @@ if __name__ == "__main__":
             amount=Decimal('100'),
             currency="USD",
             payment_method=PaymentMethod.STRIPE,
-            return_url="http://localhost:5000/payment/success",
-            callback_url="http://localhost:5000/payment/cancel"
+                    return_url=os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000') + "/payment/success",
+        callback_url=os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000') + "/payment/cancel"
         )
         
         print(f"Deposit response: {response}")

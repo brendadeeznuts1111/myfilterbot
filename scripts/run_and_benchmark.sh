@@ -215,7 +215,7 @@ start_bot() {
     
     # Start bot in background
     echo "Starting bot process..."
-    python3 main_bot.py > bot.log 2>&1 &
+    python3 src/bot/main.py > bot.log 2>&1 &
     BOT_PID=$!
     
     # Wait for bot to initialize

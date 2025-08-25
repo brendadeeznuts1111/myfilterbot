@@ -17,10 +17,14 @@ from .database import db
 
 logger = logging.getLogger(__name__)
 
+import os
+
 class PortalIntegration:
     """Handles communication between bot and customer portal"""
     
-    def __init__(self, portal_base_url: str = "http://localhost:5001"):
+    def __init__(self, portal_base_url: str = None):
+        if portal_base_url is None:
+            portal_base_url = os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000')
         self.portal_base_url = portal_base_url
         self.enabled = True
         self.retry_count = 3
