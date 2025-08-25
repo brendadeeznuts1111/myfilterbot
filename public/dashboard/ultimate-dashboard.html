@@ -543,6 +543,402 @@
             </div>
         </div>
 
+        <!-- Transactions Management -->
+        <div x-show="activeTab === 'transactions'" class="space-y-6">
+            <!-- Transaction Filters -->
+            <div class="widget-card">
+                <div class="flex flex-wrap gap-3">
+                    <select class="px-3 py-2 bg-gray-800 rounded-lg">
+                        <option>All Transactions</option>
+                        <option>Deposits</option>
+                        <option>Withdrawals</option>
+                        <option>Bets</option>
+                        <option>Winnings</option>
+                    </select>
+                    <input type="date" class="px-3 py-2 bg-gray-800 rounded-lg">
+                    <input type="text" placeholder="Search by customer ID..." class="px-3 py-2 bg-gray-800 rounded-lg flex-1">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Transactions Data Table -->
+            <div class="widget-card overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left py-3 px-4">Transaction ID</th>
+                            <th class="text-left py-3 px-4">Customer</th>
+                            <th class="text-left py-3 px-4">Type</th>
+                            <th class="text-right py-3 px-4">Amount</th>
+                            <th class="text-left py-3 px-4">Status</th>
+                            <th class="text-left py-3 px-4">Date</th>
+                            <th class="text-center py-3 px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="transaction in transactions" :key="transaction.id">
+                            <tr class="border-b border-gray-800 hover:bg-gray-800">
+                                <td class="py-3 px-4 font-mono text-sm" x-text="transaction.id"></td>
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center space-x-3">
+                                        <img :src="'https://ui-avatars.com/api/?name=' + transaction.customerName + '&background=random'" 
+                                             class="w-8 h-8 rounded-full">
+                                        <div>
+                                            <p class="font-medium" x-text="transaction.customerId"></p>
+                                            <p class="text-sm text-gray-400" x-text="transaction.customerName"></p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 rounded-full text-xs"
+                                          :class="{
+                                              'bg-green-600 text-white': transaction.type === 'deposit',
+                                              'bg-red-600 text-white': transaction.type === 'withdrawal',
+                                              'bg-blue-600 text-white': transaction.type === 'bet',
+                                              'bg-purple-600 text-white': transaction.type === 'win'
+                                          }"
+                                          x-text="transaction.type"></span>
+                                </td>
+                                <td class="py-3 px-4 text-right font-medium"
+                                    :class="transaction.amount > 0 ? 'text-green-400' : 'text-red-400'">
+                                    $<span x-text="formatNumber(Math.abs(transaction.amount))"></span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 rounded-full text-xs"
+                                          :class="{
+                                              'bg-green-600 text-white': transaction.status === 'completed',
+                                              'bg-yellow-600 text-white': transaction.status === 'pending',
+                                              'bg-red-600 text-white': transaction.status === 'failed'
+                                          }"
+                                          x-text="transaction.status"></span>
+                                </td>
+                                <td class="py-3 px-4 text-sm text-gray-400" x-text="transaction.date"></td>
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <button class="p-1 hover:bg-gray-700 rounded tooltip" data-tooltip="View Details">
+                                            <i class="fas fa-eye text-blue-400"></i>
+                                        </button>
+                                        <button class="p-1 hover:bg-gray-700 rounded tooltip" data-tooltip="Process">
+                                            <i class="fas fa-cog text-green-400"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Crypto Trading -->
+        <div x-show="activeTab === 'crypto'" class="space-y-6">
+            <!-- Crypto Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">BTC Price</span>
+                        <i class="fab fa-bitcoin text-orange-500"></i>
+                    </div>
+                    <div class="text-2xl font-bold">$<span x-text="cryptoPrices.btc"></span></div>
+                    <div class="text-sm" :class="cryptoChanges.btc >= 0 ? 'text-green-400' : 'text-red-400'">
+                        <i :class="cryptoChanges.btc >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                        <span x-text="cryptoChanges.btc + '%'"></span>
+                    </div>
+                </div>
+                
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">ETH Price</span>
+                        <i class="fab fa-ethereum text-blue-500"></i>
+                    </div>
+                    <div class="text-2xl font-bold">$<span x-text="cryptoPrices.eth"></span></div>
+                    <div class="text-sm" :class="cryptoChanges.eth >= 0 ? 'text-green-400' : 'text-red-400'">
+                        <i :class="cryptoChanges.eth >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                        <span x-text="cryptoChanges.eth + '%'"></span>
+                    </div>
+                </div>
+                
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">24h Volume</span>
+                        <i class="fas fa-chart-line text-purple-500"></i>
+                    </div>
+                    <div class="text-2xl font-bold">$<span x-text="formatNumber(cryptoStats.volume24h)"></span></div>
+                    <div class="text-sm text-green-400">
+                        <i class="fas fa-arrow-up"></i> +12.5%
+                    </div>
+                </div>
+                
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Active Traders</span>
+                        <i class="fas fa-users text-green-500"></i>
+                    </div>
+                    <div class="text-2xl font-bold" x-text="cryptoStats.activeTraders"></div>
+                    <div class="text-sm text-blue-400">Online now</div>
+                </div>
+            </div>
+
+            <!-- Crypto Chart -->
+            <div class="widget-card">
+                <h3 class="text-lg font-semibold mb-4">Bitcoin Price Chart</h3>
+                <div id="cryptoChart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- Sports Betting -->
+        <div x-show="activeTab === 'sports'" class="space-y-6">
+            <!-- Sports Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="widget-card">
+                    <h3 class="text-lg font-semibold mb-4">Live Matches</h3>
+                    <div class="space-y-3">
+                        <template x-for="match in liveMatches" :key="match.id">
+                            <div class="p-3 bg-gray-800 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium" x-text="match.teams"></span>
+                                    <span class="live-indicator relative pl-3 text-xs text-green-400">LIVE</span>
+                                </div>
+                                <div class="text-sm text-gray-400" x-text="match.league"></div>
+                                <div class="flex justify-between mt-2 text-sm">
+                                    <span x-text="match.score"></span>
+                                    <span x-text="match.time"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <h3 class="text-lg font-semibold mb-4">Popular Bets</h3>
+                    <div class="space-y-3">
+                        <template x-for="bet in popularBets" :key="bet.id">
+                            <div class="p-3 bg-gray-800 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium" x-text="bet.event"></span>
+                                    <span class="text-sm text-yellow-400" x-text="bet.odds"></span>
+                                </div>
+                                <div class="text-sm text-gray-400" x-text="bet.market"></div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    $<span x-text="formatNumber(bet.amount)"></span> wagered
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <h3 class="text-lg font-semibold mb-4">Sports Revenue</h3>
+                    <div id="sportsChart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Affiliates Management -->
+        <div x-show="activeTab === 'affiliates'" class="space-y-6">
+            <!-- Affiliates Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Total Affiliates</span>
+                        <i class="fas fa-users text-blue-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold" x-text="affiliateStats.total"></div>
+                    <div class="text-sm text-blue-400 mt-2">
+                        <i class="fas fa-arrow-up"></i> +15 new this month
+                    </div>
+                </div>
+                
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Commission Paid</span>
+                        <i class="fas fa-dollar-sign text-green-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold">$<span x-text="formatNumber(affiliateStats.commissionPaid)"></span></div>
+                    <div class="text-sm text-green-400 mt-2">
+                        This month
+                    </div>
+                </div>
+                
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Referred Players</span>
+                        <i class="fas fa-user-plus text-purple-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold" x-text="affiliateStats.referredPlayers"></div>
+                    <div class="text-sm text-purple-400 mt-2">
+                        Active players
+                    </div>
+                </div>
+                
+                <div class="widget-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Conversion Rate</span>
+                        <i class="fas fa-percentage text-yellow-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold"><span x-text="affiliateStats.conversionRate"></span>%</div>
+                    <div class="text-sm text-yellow-400 mt-2">
+                        Above average
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Affiliates -->
+            <div class="widget-card">
+                <h3 class="text-lg font-semibold mb-4">Top Performing Affiliates</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-3 px-4">Affiliate</th>
+                                <th class="text-right py-3 px-4">Referrals</th>
+                                <th class="text-right py-3 px-4">Revenue</th>
+                                <th class="text-right py-3 px-4">Commission</th>
+                                <th class="text-left py-3 px-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="affiliate in topAffiliates" :key="affiliate.id">
+                                <tr class="border-b border-gray-800 hover:bg-gray-800">
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center space-x-3">
+                                            <img :src="'https://ui-avatars.com/api/?name=' + affiliate.name + '&background=random'" 
+                                                 class="w-8 h-8 rounded-full">
+                                            <div>
+                                                <p class="font-medium" x-text="affiliate.name"></p>
+                                                <p class="text-sm text-gray-400" x-text="affiliate.code"></p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4 text-right" x-text="affiliate.referrals"></td>
+                                    <td class="py-3 px-4 text-right font-medium">$<span x-text="formatNumber(affiliate.revenue)"></span></td>
+                                    <td class="py-3 px-4 text-right font-medium text-green-400">$<span x-text="formatNumber(affiliate.commission)"></span></td>
+                                    <td class="py-3 px-4">
+                                        <span class="px-2 py-1 rounded-full text-xs bg-green-600 text-white"
+                                              x-text="affiliate.status"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bot Management -->
+        <div x-show="activeTab === 'bot'" class="space-y-6">
+            <!-- Bot Status -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="widget-card">
+                    <h3 class="text-lg font-semibold mb-4">Bot Status</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span>Telegram Bot</span>
+                            <span class="px-2 py-1 rounded-full text-xs"
+                                  :class="botStatus.telegram ? 'bg-green-600 text-white' : 'bg-red-600 text-white'"
+                                  x-text="botStatus.telegram ? 'Online' : 'Offline'"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>Trading Bot</span>
+                            <span class="px-2 py-1 rounded-full text-xs"
+                                  :class="botStatus.trading ? 'bg-green-600 text-white' : 'bg-red-600 text-white'"
+                                  x-text="botStatus.trading ? 'Active' : 'Inactive'"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>API Service</span>
+                            <span class="px-2 py-1 rounded-full text-xs"
+                                  :class="botStatus.api ? 'bg-green-600 text-white' : 'bg-red-600 text-white'"
+                                  x-text="botStatus.api ? 'Running' : 'Stopped'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <h3 class="text-lg font-semibold mb-4">Bot Performance</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Messages Processed</span>
+                                <span x-text="botPerformance.messagesProcessed"></span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" :style="'width: ' + Math.min(botPerformance.messagesProcessed / 1000 * 100, 100) + '%'"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Response Time</span>
+                                <span x-text="botPerformance.responseTime + 'ms'"></span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" :style="'width: ' + Math.max(0, 100 - botPerformance.responseTime / 10) + '%'"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Error Rate</span>
+                                <span x-text="botPerformance.errorRate + '%'"></span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="bg-red-500 h-2 rounded-full" :style="'width: ' + botPerformance.errorRate + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <h3 class="text-lg font-semibold mb-4">Bot Controls</h3>
+                    <div class="space-y-3">
+                        <button @click="toggleBot('telegram')" 
+                                :class="botStatus.telegram ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
+                                class="w-full px-4 py-2 text-white rounded-lg">
+                            <i class="fas fa-power-off mr-2"></i>
+                            <span x-text="botStatus.telegram ? 'Stop Telegram Bot' : 'Start Telegram Bot'"></span>
+                        </button>
+                        <button @click="toggleBot('trading')" 
+                                :class="botStatus.trading ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
+                                class="w-full px-4 py-2 text-white rounded-lg">
+                            <i class="fas fa-robot mr-2"></i>
+                            <span x-text="botStatus.trading ? 'Stop Trading Bot' : 'Start Trading Bot'"></span>
+                        </button>
+                        <button @click="restartBot()" 
+                                class="w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                            <i class="fas fa-redo mr-2"></i>Restart All Services
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bot Logs -->
+            <div class="widget-card">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Recent Bot Activity</h3>
+                    <button @click="clearLogs()" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                        Clear Logs
+                    </button>
+                </div>
+                <div class="space-y-2 max-h-96 overflow-y-auto font-mono text-sm">
+                    <template x-for="log in botLogs" :key="log.id">
+                        <div class="p-2 bg-gray-800 rounded"
+                             :class="{
+                                 'border-l-4 border-green-500': log.level === 'info',
+                                 'border-l-4 border-yellow-500': log.level === 'warning',
+                                 'border-l-4 border-red-500': log.level === 'error'
+                             }">
+                            <span class="text-gray-400" x-text="log.time"></span>
+                            <span class="ml-2" :class="{
+                                'text-green-400': log.level === 'info',
+                                'text-yellow-400': log.level === 'warning',
+                                'text-red-400': log.level === 'error'
+                            }" x-text="log.message"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
         <!-- Real-time Analytics -->
         <div x-show="activeTab === 'analytics'" class="space-y-6">
             <!-- Performance Metrics -->
@@ -815,8 +1211,22 @@
                 players: [],
                 notifications: [],
                 topPerformers: [],
+                transactions: [],
+                cryptoPrices: { btc: '42,567', eth: '2,234' },
+                cryptoChanges: { btc: 2.5, eth: -1.2 },
+                cryptoStats: { volume24h: 1250000000, activeTraders: 15420 },
+                liveMatches: [],
+                popularBets: [],
+                affiliateStats: { total: 156, commissionPaid: 45600, referredPlayers: 892, conversionRate: 12.5 },
+                topAffiliates: [],
+                botStatus: { telegram: true, trading: false, api: true },
+                botPerformance: { messagesProcessed: 847, responseTime: 45, errorRate: 0.2 },
+                botLogs: [],
                 
                 lastUpdate: new Date().toLocaleTimeString(),
+                databaseLoaded: false,
+                loading: false,
+                error: null,
                 
                 get totalPages() {
                     return Math.ceil(this.totalPlayers / this.itemsPerPage);
@@ -829,11 +1239,126 @@
                 },
                 
                 async loadData() {
-                    // Generate sample data
+                    this.loading = true;
+                    try {
+                        // Try to load real data from database
+                        await this.loadDatabaseData();
+                        
+                        // Fallback to sample data if database fails
+                        if (!this.databaseLoaded) {
+                            this.generateSampleData();
+                        }
+                    } catch (error) {
+                        console.error('Failed to load data:', error);
+                        this.error = 'Failed to load data. Using sample data.';
+                        this.generateSampleData();
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async loadDatabaseData() {
+                    try {
+                        // Load real data from API endpoints
+                        const [playersRes, transactionsRes, activitiesRes] = await Promise.all([
+                            fetch('/api/players').then(r => r.json()).catch(() => null),
+                            fetch('/api/transactions').then(r => r.json()).catch(() => null),
+                            fetch('/api/activities').then(r => r.json()).catch(() => null)
+                        ]);
+
+                        if (playersRes && playersRes.data) {
+                            this.players = playersRes.data;
+                            this.totalPlayers = playersRes.total || this.players.length;
+                        }
+
+                        if (transactionsRes && transactionsRes.data) {
+                            this.transactions = transactionsRes.data;
+                        }
+
+                        if (activitiesRes && activitiesRes.data) {
+                            this.activities = activitiesRes.data;
+                        }
+
+                        // Load KPIs
+                        const kpisRes = await fetch('/api/kpis').then(r => r.json()).catch(() => null);
+                        if (kpisRes && kpisRes.data) {
+                            this.kpis = kpisRes.data;
+                        }
+
+                        this.databaseLoaded = true;
+                    } catch (error) {
+                        console.warn('Database loading failed, using sample data:', error);
+                        this.databaseLoaded = false;
+                    }
+                },
+
+                generateSampleData() {
                     this.generateActivities();
                     this.generatePlayers();
                     this.generateNotifications();
                     this.generateTopPerformers();
+                    this.generateTransactions();
+                    this.generateCryptoData();
+                    this.generateSportsData();
+                    this.generateAffiliateData();
+                    this.generateBotData();
+                },
+                
+                initCharts() {
+                    // Initialize Chart.js charts
+                    setTimeout(() => {
+                        this.createRevenueChart();
+                        this.createHeatmapChart();
+                        this.createProfitChart();
+                        this.createDemographicsChart();
+                        this.createCryptoChart();
+                        this.createSportsChart();
+                    }, 100);
+                },
+                
+                createCryptoChart() {
+                    const element = document.getElementById('cryptoChart');
+                    if (element && typeof ApexCharts !== 'undefined') {
+                        const options = {
+                            series: [{
+                                name: 'BTC Price',
+                                data: [42000, 42500, 42300, 42800, 43200, 42900, 43500]
+                            }],
+                            chart: {
+                                type: 'line',
+                                height: 300,
+                                toolbar: { show: false }
+                            },
+                            colors: ['#f59e0b'],
+                            stroke: {
+                                curve: 'smooth'
+                            },
+                            xaxis: {
+                                categories: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00']
+                            }
+                        };
+                        
+                        const chart = new ApexCharts(element, options);
+                        chart.render();
+                    }
+                },
+                
+                createSportsChart() {
+                    const element = document.getElementById('sportsChart');
+                    if (element && typeof ApexCharts !== 'undefined') {
+                        const options = {
+                            series: [65, 28, 7],
+                            chart: {
+                                type: 'donut',
+                                height: 300
+                            },
+                            labels: ['Sports Betting', 'Live Casino', 'Other'],
+                            colors: ['#3b82f6', '#22c55e', '#eab308']
+                        };
+                        
+                        const chart = new ApexCharts(element, options);
+                        chart.render();
+                    }
                 },
                 
                 startRealTimeUpdates() {
@@ -952,16 +1477,6 @@
                         { id: 4, name: 'Emily White', profit: 5400 },
                         { id: 5, name: 'David Lee', profit: 4200 }
                     ];
-                },
-                
-                initCharts() {
-                    // Initialize Chart.js charts
-                    setTimeout(() => {
-                        this.createRevenueChart();
-                        this.createHeatmapChart();
-                        this.createProfitChart();
-                        this.createDemographicsChart();
-                    }, 100);
                 },
                 
                 createRevenueChart() {
@@ -1136,6 +1651,102 @@
                 
                 nextPage() {
                     if (this.currentPage < this.totalPages) this.currentPage++;
+                },
+
+                // Generate data for all tabs
+                generateTransactions() {
+                    this.transactions = Array.from({ length: 15 }, (_, i) => ({
+                        id: 'TXN' + Math.floor(Math.random() * 1000000),
+                        customerId: 'CUST' + Math.floor(Math.random() * 10000),
+                        customerName: ['John Doe', 'Jane Smith', 'Bob Johnson', 'Alice Brown'][i % 4],
+                        type: ['deposit', 'withdrawal', 'bet', 'win'][Math.floor(Math.random() * 4)],
+                        amount: Math.floor(Math.random() * 10000) * (Math.random() > 0.5 ? 1 : -1),
+                        status: ['completed', 'pending', 'failed'][Math.floor(Math.random() * 3)],
+                        date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+                    }));
+                },
+
+                generateCryptoData() {
+                    this.cryptoPrices = {
+                        btc: (42000 + Math.random() * 5000).toFixed(0),
+                        eth: (2200 + Math.random() * 500).toFixed(0)
+                    };
+                    this.cryptoChanges = {
+                        btc: (Math.random() * 10 - 5).toFixed(1),
+                        eth: (Math.random() * 10 - 5).toFixed(1)
+                    };
+                    this.cryptoStats = {
+                        volume24h: Math.floor(Math.random() * 2000000000),
+                        activeTraders: Math.floor(Math.random() * 20000)
+                    };
+                },
+
+                generateSportsData() {
+                    this.liveMatches = [
+                        { id: 1, teams: 'Lakers vs Warriors', league: 'NBA', score: '98-95', time: 'Q4 2:34' },
+                        { id: 2, teams: 'Man Utd vs Liverpool', league: 'EPL', score: '1-1', time: '67\'' },
+                        { id: 3, teams: 'Yankees vs Red Sox', league: 'MLB', score: '5-3', time: '8th' }
+                    ];
+
+                    this.popularBets = [
+                        { id: 1, event: 'Lakers vs Warriors', market: 'Moneyline', odds: '+150', amount: 25000 },
+                        { id: 2, event: 'Man Utd vs Liverpool', market: 'Over 2.5', odds: '-110', amount: 18000 },
+                        { id: 3, event: 'Yankees vs Red Sox', market: 'Run Line', odds: '+120', amount: 15000 }
+                    ];
+                },
+
+                generateAffiliateData() {
+                    this.topAffiliates = [
+                        { id: 1, name: 'AffiliatePro', code: 'AFF001', referrals: 245, revenue: 125000, commission: 12500, status: 'active' },
+                        { id: 2, name: 'BonusKing', code: 'AFF002', referrals: 189, revenue: 98000, commission: 9800, status: 'active' },
+                        { id: 3, name: 'CasinoExpert', code: 'AFF003', referrals: 156, revenue: 76000, commission: 7600, status: 'active' },
+                        { id: 4, name: 'SportsGuru', code: 'AFF004', referrals: 134, revenue: 54000, commission: 5400, status: 'pending' },
+                        { id: 5, name: 'PokerMaster', code: 'AFF005', referrals: 98, revenue: 42000, commission: 4200, status: 'active' }
+                    ];
+                },
+
+                generateBotData() {
+                    this.botLogs = [
+                        { id: 1, time: new Date().toLocaleTimeString(), level: 'info', message: 'Telegram bot started successfully' },
+                        { id: 2, time: new Date(Date.now() - 30000).toLocaleTimeString(), level: 'info', message: 'Processed 15 user messages' },
+                        { id: 3, time: new Date(Date.now() - 60000).toLocaleTimeString(), level: 'warning', message: 'High API response time detected' },
+                        { id: 4, time: new Date(Date.now() - 90000).toLocaleTimeString(), level: 'info', message: 'Trading algorithm updated' },
+                        { id: 5, time: new Date(Date.now() - 120000).toLocaleTimeString(), level: 'error', message: 'Failed to connect to exchange API' }
+                    ];
+                },
+
+                // Bot control methods
+                toggleBot(botType) {
+                    this.botStatus[botType] = !this.botStatus[botType];
+                    this.addBotLog(`${botType} bot ${this.botStatus[botType] ? 'started' : 'stopped'}`, 'info');
+                },
+
+                restartBot() {
+                    this.addBotLog('Restarting all bot services...', 'info');
+                    setTimeout(() => {
+                        this.botStatus.telegram = true;
+                        this.botStatus.trading = true;
+                        this.botStatus.api = true;
+                        this.addBotLog('All bot services restarted successfully', 'info');
+                    }, 2000);
+                },
+
+                clearLogs() {
+                    this.botLogs = [];
+                    this.addBotLog('Bot logs cleared', 'info');
+                },
+
+                addBotLog(message, level = 'info') {
+                    this.botLogs.unshift({
+                        id: Date.now(),
+                        time: new Date().toLocaleTimeString(),
+                        level: level,
+                        message: message
+                    });
+                    
+                    if (this.botLogs.length > 50) {
+                        this.botLogs.pop();
+                    }
                 }
             }
         }

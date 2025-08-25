@@ -423,21 +423,8 @@
                 
                 // Service Worker Setup
                 setupServiceWorker() {
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.register('/sw.js')
-                            .then(registration => {
-                                // Check for updates
-                                registration.addEventListener('updatefound', () => {
-                                    const newWorker = registration.installing;
-                                    newWorker.addEventListener('statechange', () => {
-                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                            document.getElementById('updateNotification').classList.add('show');
-                                        }
-                                    });
-                                });
-                            })
-                            .catch(error => console.error('SW registration failed:', error));
-                    }
+                    // Disabled for now - service worker not available
+                    console.log('Service worker disabled');
                 },
                 
                 // Offline Detection
@@ -678,7 +665,8 @@
                     if (tab && tab.cached) return;
                     
                     try {
-                        const data = await this.fetchWithCache(`/api/dashboard/${tabId}`);
+                        const endpoint = this.getEndpointForTab(tabId);
+                        const data = await this.fetchWithCache(endpoint);
                         if (tab) {
                             tab.cached = true;
                         }
@@ -693,7 +681,8 @@
                     this.activeTab = tabId;
                     
                     try {
-                        const data = await this.fetchWithCache(`/api/dashboard/${tabId}`);
+                        const endpoint = this.getEndpointForTab(tabId);
+                        const data = await this.fetchWithCache(endpoint);
                         this.processTabData(tabId, data);
                     } catch (error) {
                         console.error('Failed to load tab:', error);
@@ -704,16 +693,63 @@
                     }
                 },
                 
+                getEndpointForTab(tabId) {
+                    const endpoints = {
+                        'overview': '/api/extended/crypto/prices',
+                        'players': '/api/extended/sports/odds',
+                        'analytics': '/api/extended/analytics/risk',
+                        'transactions': '/api/extended/crypto/portfolio',
+                        'settings': '/api/extended/analytics/predictions'
+                    };
+                    return endpoints[tabId] || '/api/extended/crypto/prices';
+                },
+                
                 processTabData(tabId, data) {
                     switch (tabId) {
                         case 'overview':
-                            this.kpis = data.kpis || this.generateSampleKPIs();
-                            this.activities = data.activities || this.generateSampleActivities();
+                            // Process crypto prices as KPIs
+                            if (data.prices) {
+                                this.kpis = data.prices.slice(0, 4).map(crypto => ({
+                                    id: crypto.symbol,
+                                    label: crypto.name,
+                                    value: `$${crypto.price.toLocaleString()}`,
+                                    trend: crypto.change24h,
+                                    icon: 'fas fa-coins text-yellow-500'
+                                }));
+                            } else {
+                                this.kpis = this.generateSampleKPIs();
+                            }
+                            this.activities = this.generateSampleActivities();
                             break;
                         case 'players':
-                            this.players = data.players || this.generateSamplePlayers();
-                            this.visiblePlayers = this.players.slice(0, 50); // Virtual scrolling
+                            // Process sports odds as players
+                            if (data.odds) {
+                                this.players = data.odds.map((game, i) => ({
+                                    id: i,
+                                    name: `${game.homeTeam} vs ${game.awayTeam}`,
+                                    status: 'active',
+                                    balance: Math.floor(Math.random() * 50000)
+                                }));
+                            } else {
+                                this.players = this.generateSamplePlayers();
+                            }
+                            this.visiblePlayers = this.players.slice(0, 50);
                             break;
+                        case 'analytics':
+                            // Process risk analysis
+                            if (data.factors) {
+                                this.updateAnalyticsChart(data);
+                            }
+                            break;
+                    }
+                },
+                
+                updateAnalyticsChart(data) {
+                    // Update chart with risk analysis data
+                    const ctx = document.getElementById('perfChart');
+                    if (ctx && data.factors) {
+                        // Chart will be initialized later
+                        console.log('Chart data ready:', data);
                     }
                 },
                 
@@ -722,9 +758,10 @@
                     this.loading = true;
                     
                     try {
-                        const data = await this.fetchWithCache('/api/dashboard/overview');
+                        const data = await this.fetchWithCache('/api/extended/crypto/prices');
                         this.processTabData('overview', data);
                     } catch (error) {
+                        console.log('Using sample data due to API error:', error.message);
                         // Use sample data if API fails
                         this.kpis = this.generateSampleKPIs();
                         this.activities = this.generateSampleActivities();
@@ -871,19 +908,8 @@
                 
                 // Version Checking
                 async checkForUpdates() {
-                    try {
-                        const response = await fetch('/api/version');
-                        const data = await response.json();
-                        
-                        const currentVersion = localStorage.getItem('appVersion');
-                        if (currentVersion && data.version !== currentVersion) {
-                            document.getElementById('updateNotification').classList.add('show');
-                        }
-                        
-                        localStorage.setItem('appVersion', data.version);
-                    } catch (error) {
-                        console.error('Version check failed:', error);
-                    }
+                    // Disabled for now - version endpoint not available
+                    console.log('Version check disabled');
                 },
                 
                 // Sample Data Generators
