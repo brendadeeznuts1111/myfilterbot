@@ -201,3 +201,99 @@ archived-*
 # Data files (should be in data/ directory if needed)
 real_transactions_sample.json
 clean_trading_database.json
+
+# Additional cleanup entries for final project structure
+# Test cache and temporary test files
+test-cache/
+test_cache/
+*.test-cache
+
+# Build artifacts and compiled files
+build/
+dist/
+out/
+.next/
+.nuxt/
+.vuepress/dist/
+
+# Temporary and cache directories
+cache/
+.cache/
+tmp/
+temp/
+
+# Legacy and old files
+*_old*
+*_temp*
+*_backup*
+*_v2*
+*_seo_update*
+*_integrated*
+demo_*
+
+# Development artifacts
+*.tsbuildinfo
+.eslintcache
+.prettiercache
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Package manager files (keep only essential)
+# bun.lock is kept for reproducible builds
+# package-lock.json and yarn.lock are ignored if they exist
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment and configuration overrides
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Coverage and test reports
+coverage/
+.nyc_output/
+*.lcov
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Logs and debugging
+*.log
+logs/
+debug/
+debug_*.log
+
+# Backup and version control
+*.orig
+*.rej
+*.bak
+*.swp
+*.swo
+*~
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Project-specific exclusions
+# Keep these files as they are part of the core project
+!src/manifest.json
+!public/manifest.json
+!templates/**/*.html
+!static/**/*
+!docs/**/*
+!config/**/*
+!scripts/**/*
+!data/**/*
