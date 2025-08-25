@@ -84,7 +84,7 @@ export class ExtendedDataRouter {
     return null;
   }
 
-  private async getCryptoPrices(req: Request): Promise<Response> {
+  private async getCryptoPrices(_req: Request): Promise<Response> {
     return this.responseCache.withCache(async () => {
       const prices = [
         { symbol: 'BTC', name: 'Bitcoin', price: 42567.89, change24h: 2.34, volume: 28945678901, marketCap: 834567890123 },
@@ -100,10 +100,10 @@ export class ExtendedDataRouter {
       ];
 
       return Response.json({ prices, timestamp: new Date().toISOString() }, { headers: this.corsHeaders });
-    }, { ttl: 30000, maxAge: 30, staleWhileRevalidate: 60 })(req);
+    }, { ttl: 30000, maxAge: 30, staleWhileRevalidate: 60 })(_req);
   }
 
-  private async getCryptoPortfolio(req: Request): Promise<Response> {
+  private async getCryptoPortfolio(_req: Request): Promise<Response> {
     const portfolio = {
       totalValue: 125678.90,
       totalProfit: 23456.78,
@@ -124,7 +124,7 @@ export class ExtendedDataRouter {
     return Response.json(portfolio, { headers: this.corsHeaders });
   }
 
-  private async getCryptoTrends(req: Request): Promise<Response> {
+  private async getCryptoTrends(_req: Request): Promise<Response> {
     const trends = {
       bullish: ['BTC', 'SOL', 'AVAX', 'INJ', 'TIA'],
       bearish: ['ADA', 'XRP', 'ALGO'],
@@ -183,10 +183,10 @@ export class ExtendedDataRouter {
       ];
 
       return Response.json({ odds, timestamp: new Date().toISOString() }, { headers: this.corsHeaders });
-    }, { ttl: 60000, maxAge: 60, staleWhileRevalidate: 120 })(req);
+    }, { ttl: 60000, maxAge: 60, staleWhileRevalidate: 120 })(_req);
   }
 
-  private async getLiveSports(req: Request): Promise<Response> {
+  private async getLiveSports(_req: Request): Promise<Response> {
     const live = [
       {
         id: 'live_001',
@@ -214,7 +214,7 @@ export class ExtendedDataRouter {
     return Response.json({ live, timestamp: new Date().toISOString() }, { headers: this.corsHeaders });
   }
 
-  private async getActiveBets(req: Request): Promise<Response> {
+  private async getActiveBets(_req: Request): Promise<Response> {
     const bets = [
       {
         id: 'bet_001',
@@ -248,7 +248,7 @@ export class ExtendedDataRouter {
     return Response.json({ bets, totalActive: 47, totalPending: 123 }, { headers: this.corsHeaders });
   }
 
-  private async getCurrentWeather(req: Request): Promise<Response> {
+  private async getCurrentWeather(_req: Request): Promise<Response> {
     const weather = {
       location: 'New York, NY',
       temperature: 22,
@@ -270,7 +270,7 @@ export class ExtendedDataRouter {
     return Response.json(weather, { headers: this.corsHeaders });
   }
 
-  private async getLocationActivity(req: Request): Promise<Response> {
+  private async getLocationActivity(_req: Request): Promise<Response> {
     const activity = {
       activeRegions: [
         { region: 'North America', users: 4567, growth: 12.3 },
@@ -296,7 +296,7 @@ export class ExtendedDataRouter {
     return Response.json(activity, { headers: this.corsHeaders });
   }
 
-  private async getRiskAnalysis(req: Request): Promise<Response> {
+  private async getRiskAnalysis(_req: Request): Promise<Response> {
     const analysis = {
       overallRisk: 'Medium',
       riskScore: 62,
@@ -321,7 +321,7 @@ export class ExtendedDataRouter {
     return Response.json(analysis, { headers: this.corsHeaders });
   }
 
-  private async getPredictions(req: Request): Promise<Response> {
+  private async getPredictions(_req: Request): Promise<Response> {
     const predictions = {
       revenue: {
         current: 125678,
@@ -353,7 +353,7 @@ export class ExtendedDataRouter {
     return Response.json(predictions, { headers: this.corsHeaders });
   }
 
-  private async getPatterns(req: Request): Promise<Response> {
+  private async getPatterns(_req: Request): Promise<Response> {
     const patterns = {
       transactionPatterns: [
         { pattern: 'Peak Hours', description: '2-4 PM EST highest activity', frequency: 'Daily' },
@@ -374,7 +374,7 @@ export class ExtendedDataRouter {
     return Response.json(patterns, { headers: this.corsHeaders });
   }
 
-  private async getForexRates(req: Request): Promise<Response> {
+  private async getForexRates(_req: Request): Promise<Response> {
     const rates = {
       base: 'USD',
       rates: {
@@ -398,7 +398,7 @@ export class ExtendedDataRouter {
     return Response.json(rates, { headers: this.corsHeaders });
   }
 
-  private async getStockPrices(req: Request): Promise<Response> {
+  private async getStockPrices(_req: Request): Promise<Response> {
     const stocks = [
       { symbol: 'AAPL', name: 'Apple', price: 172.45, change: 1.23, changePercent: 0.72, volume: 54234567 },
       { symbol: 'GOOGL', name: 'Google', price: 141.89, change: -0.56, changePercent: -0.39, volume: 23456789 },
@@ -410,7 +410,7 @@ export class ExtendedDataRouter {
     return Response.json({ stocks, marketStatus: 'Open', timestamp: new Date().toISOString() }, { headers: this.corsHeaders });
   }
 
-  private async getCommodities(req: Request): Promise<Response> {
+  private async getCommodities(_req: Request): Promise<Response> {
     const commodities = [
       { name: 'Gold', symbol: 'XAU', price: 2045.67, change: 8.90, unit: 'oz' },
       { name: 'Silver', symbol: 'XAG', price: 23.45, change: -0.12, unit: 'oz' },
@@ -422,7 +422,7 @@ export class ExtendedDataRouter {
     return Response.json(commodities, { headers: this.corsHeaders });
   }
 
-  private async getSocialSentiment(req: Request): Promise<Response> {
+  private async getSocialSentiment(_req: Request): Promise<Response> {
     const sentiment = {
       overall: 'Positive',
       score: 72,
@@ -445,7 +445,7 @@ export class ExtendedDataRouter {
     return Response.json(sentiment, { headers: this.corsHeaders });
   }
 
-  private async getTrendingTopics(req: Request): Promise<Response> {
+  private async getTrendingTopics(_req: Request): Promise<Response> {
     const topics = [
       { topic: 'Bitcoin Halving', mentions: 5678, growth: 234, sentiment: 'positive' },
       { topic: 'AI Trading Bots', mentions: 3456, growth: 156, sentiment: 'neutral' },
@@ -474,7 +474,7 @@ export class ExtendedDataRouter {
         return success ? undefined : new Response('WebSocket upgrade failed', { status: 400 });
       },
       websocket: {
-        open(ws: any) {
+        open(ws: WebSocket) {
           console.log('WebSocket connected');
           ws.subscribe('crypto-prices');
           ws.subscribe('sports-odds');
@@ -487,7 +487,7 @@ export class ExtendedDataRouter {
             timestamp: new Date().toISOString()
           }));
         },
-        message(ws: any, message: string) {
+        message(ws: WebSocket, message: string) {
           const data = JSON.parse(message);
           
           if (data.type === 'subscribe') {
@@ -504,7 +504,7 @@ export class ExtendedDataRouter {
             }));
           }
         },
-        close(ws: any) {
+        close(_ws: WebSocket) {
           console.log('WebSocket disconnected');
         }
       }

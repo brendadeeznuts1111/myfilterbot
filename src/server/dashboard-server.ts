@@ -45,7 +45,7 @@ class DashboardServer {
   private config: Record<string, unknown> = {};
   public dashboardRouter: ReturnType<typeof createDashboardRouter>;
   public extendedDataRouter: ReturnType<typeof createExtendedDataRouter>;
-  public wsServer: any;
+  public wsServer: ReturnType<ExtendedDataRouter['createWebSocketServer']>;
 
   constructor() {
     // Initialize the dashboard router with response cache
@@ -157,8 +157,10 @@ class DashboardServer {
     return groupNames.map((name, index) => {
       const maxMembers = index < 2 ? 100 : 1000;
       // Ensure member count never exceeds max
-      const memberCount = Math.floor(Math.random() * (maxMembers * 0.9)) + Math.floor(maxMembers * 0.1);
-      
+      const memberCount =
+        Math.floor(Math.random() * (maxMembers * 0.9)) +
+        Math.floor(maxMembers * 0.1);
+
       return {
         id: `group_${index + 1}`,
         name,
@@ -391,10 +393,10 @@ class DashboardServer {
         status: 404,
         headers: corsHeaders,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Dashboard API error:', error);
       return Response.json(
-        { error: error.message },
+        { error: (error as Error).message },
         {
           status: 500,
           headers: corsHeaders,
@@ -1018,7 +1020,9 @@ const dashboardServer = new DashboardServer();
 // Start the server (commented to avoid unused variable warning)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _server = serve({
-  port: process.env.DASHBOARD_PORT ? parseInt(process.env.DASHBOARD_PORT) : 3005,
+  port: process.env.DASHBOARD_PORT
+    ? parseInt(process.env.DASHBOARD_PORT)
+    : 3005,
   websocket: dashboardServer.wsServer.websocket,
   async fetch(req) {
     const url = new URL(req.url);
@@ -1028,24 +1032,26 @@ const _server = serve({
       const unifiedFile = Bun.file('./public/dashboard/unified-dashboard.html');
       const content = await unifiedFile.text();
       return new Response(content, {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
-    
+
     if (url.pathname === '/enhanced' || url.pathname === '/enhanced/') {
-      const enhancedFile = Bun.file('./public/dashboard/unified-dashboard-enhanced.html');
+      const enhancedFile = Bun.file(
+        './public/dashboard/unified-dashboard-enhanced.html'
+      );
       if (await enhancedFile.exists()) {
         return new Response(await enhancedFile.text(), {
-          headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
         });
       }
     }
-    
+
     if (url.pathname === '/players' || url.pathname === '/players/') {
       const playersFile = Bun.file('./public/dashboard/players-dashboard.html');
       if (await playersFile.exists()) {
         return new Response(await playersFile.text(), {
-          headers: { 'Content-Type': 'text/html' }
+          headers: { 'Content-Type': 'text/html' },
         });
       }
     }
@@ -1066,17 +1072,21 @@ const _server = serve({
 
     // Handle WebSocket upgrade for extended data
     if (url.pathname === '/ws/extended') {
-      return dashboardServer.wsServer.upgrade(req) || new Response('WebSocket upgrade failed', { status: 400 });
+      return (
+        dashboardServer.wsServer.upgrade(req) ||
+        new Response('WebSocket upgrade failed', { status: 400 })
+      );
     }
 
     // Handle other API routes
     if (url.pathname.startsWith('/api/')) {
       // Try extended data router first
-      const extendedResponse = await dashboardServer.extendedDataRouter.handleRequest(req);
+      const extendedResponse =
+        await dashboardServer.extendedDataRouter.handleRequest(req);
       if (extendedResponse) {
         return extendedResponse;
       }
-      
+
       // Fall back to main dashboard router
       const response = await dashboardServer.dashboardRouter.handleRequest(req);
       return (
@@ -1124,7 +1134,9 @@ const _server = serve({
   },
 });
 
-const port = process.env.DASHBOARD_PORT ? parseInt(process.env.DASHBOARD_PORT) : 3005;
+const port = process.env.DASHBOARD_PORT
+  ? parseInt(process.env.DASHBOARD_PORT)
+  : 3005;
 console.log(`🎛️ Dashboard Server running on http://localhost:${port}`);
 console.log(`📊 Dashboard available at: http://localhost:${port}/dashboard`);
 console.log(`🔗 API endpoints: /api/dashboard/*`);
