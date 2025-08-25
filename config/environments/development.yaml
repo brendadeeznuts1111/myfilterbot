@@ -1,0 +1,84 @@
+# Development environment configuration
+defaults: &defaults
+  debug: true
+  hotReload: true
+  verboseLogging: true
+  
+server:
+  bot:
+    host: localhost
+    port: 8080
+    workers: 1
+    debug: true
+  
+  admin:
+    host: localhost
+    port: 3000
+    workers: 1
+    devTools: true
+  
+  api:
+    host: localhost
+    port: 3001
+    cors:
+      origins:
+        - http://localhost:3000
+        - http://localhost:3001
+        - http://localhost:8080
+      credentials: true
+  
+  websocket:
+    port: 3002
+    debug: true
+
+database:
+  primary:
+    host: localhost
+    port: 5432
+    database: fantdev_dev
+    username: postgres
+    password: postgres
+    logging: true
+    synchronize: true
+  
+  cache:
+    host: localhost
+    port: 6379
+    db: 1
+    keyPrefix: fantdev:dev:
+
+security:
+  jwt:
+    secret: dev-secret-key-change-in-production
+    expiresIn: 7d
+  
+  encryption:
+    key: dev-encryption-key-32-chars-long!!
+  
+  rateLimit:
+    enabled: false
+
+monitoring:
+  logging:
+    level: debug
+    format: pretty
+    destination: stdout
+  
+  sentry:
+    enabled: false
+  
+  prometheus:
+    enabled: false
+
+features:
+  debugMode: true
+  devTools: true
+  mockData: true
+  testEndpoints: true
+  apiDocumentation: true
+  
+paths:
+  uploads: ./dev/uploads
+  temp: ./dev/temp
+  logs: ./dev/logs
+  static: ./public

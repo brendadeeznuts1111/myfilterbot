@@ -1,7 +1,9 @@
 /**
  * Environment Configuration Loader for FantDev Trading Platform
- * TypeScript/Bun implementation for loading environment variables
+ * TypeScript/Bun implementation with YAML configuration support
  */
+
+import { getAppConfig, getDatabaseConfig, isFeatureEnabled } from "./utils/yaml-config";
 
 // Bun automatically loads .env files in the following order:
 // 1. .env
@@ -79,9 +81,11 @@ interface ConfigSchema {
 class ConfigLoader {
   private static instance: ConfigLoader;
   private config: ConfigSchema;
+  private yamlConfig: any = null;
 
   private constructor() {
     this.config = this.loadConfig();
+    this.initYamlConfig();
   }
 
   public static getInstance(): ConfigLoader {
@@ -91,6 +95,14 @@ class ConfigLoader {
     return ConfigLoader.instance;
   }
 
+  private async initYamlConfig(): Promise<void> {
+    try {
+      this.yamlConfig = await getAppConfig();
+    } catch (error) {
+      console.warn('Failed to load YAML config, falling back to env vars:', error);
+    }
+  }
+
   private loadConfig(): ConfigSchema {
     // Use Bun.env for optimal performance (native to Bun runtime)
     const env = Bun.env;
@@ -98,8 +110,8 @@ class ConfigLoader {
     
     return {
       // Bot Configuration
-      BOT_TOKEN: env.BOT_TOKEN || '',
-      ADMIN_CHAT_ID: env.ADMIN_CHAT_ID || '-2714719687',
+      BOT_TOKEN: env.BOT_TOKEN || env.TELEGRAM_BOT_TOKEN || '',
+      ADMIN_CHAT_ID: env.ADMIN_CHAT_ID || env.TELEGRAM_ADMIN_CHAT_ID || '-2714719687',
       
       // Database Configuration
       DATABASE_PATH: env.DATABASE_PATH || 'customer_database.json',
@@ -233,6 +245,30 @@ class ConfigLoader {
     return safeConfig;
   }
 
+  public async getYamlValue(path: string): Promise<any> {
+    if (!this.yamlConfig) {
+      await this.initYamlConfig();
+    }
+    
+    const keys = path.split('.');
+    let value = this.yamlConfig;
+    
+    for (const key of keys) {
+      value = value?.[key];
+      if (value === undefined) break;
+    }
+    
+    return value;
+  }
+
+  public async checkFeature(featureName: string, userId?: string): Promise<boolean> {
+    return isFeatureEnabled(featureName, userId);
+  }
+
+  public async getDatabaseConnection(name: string = 'postgres'): Promise<any> {
+    return getDatabaseConfig(name);
+  }
+
   public printConfig(): void {
     console.log('\n=== FantDev Trading Platform Configuration ===');
     console.log(`Environment: ${this.config.NODE_ENV}`);
@@ -242,6 +278,7 @@ class ConfigLoader {
     console.log(`Flask Port: ${this.config.FLASK_PORT}`);
     console.log(`Bun Port: ${this.config.BUN_PORT}`);
     console.log(`Database: ${this.getDatabaseUrl()}`);
+    console.log(`YAML Config: ${this.yamlConfig ? 'Loaded' : 'Not loaded'}`);
     console.log('=' + '='.repeat(49) + '\n');
   }
 }

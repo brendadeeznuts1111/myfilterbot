@@ -1,4 +1,10 @@
 import pytest
+import sys
+import os
+
+# Add the project root to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+
 from src.portal.utils.auth_utils import generate_jwt_token
 import base64
 import json

@@ -1,0 +1,127 @@
+# Production environment configuration
+defaults: &defaults
+  debug: false
+  hotReload: false
+  verboseLogging: false
+
+server:
+  bot:
+    host: 0.0.0.0
+    port: ${PORT:-8080}
+    workers: ${WORKERS:-4}
+    debug: false
+  
+  admin:
+    host: 0.0.0.0
+    port: ${ADMIN_PORT:-3000}
+    workers: ${ADMIN_WORKERS:-2}
+    devTools: false
+  
+  api:
+    host: 0.0.0.0
+    port: ${API_PORT:-3001}
+    cors:
+      origins:
+        - https://fantdev.com
+        - https://app.fantdev.com
+        - https://api.fantdev.com
+      credentials: true
+  
+  websocket:
+    port: ${WS_PORT:-3002}
+    debug: false
+    compression: true
+    maxConnections: 10000
+
+database:
+  primary:
+    host: ${DB_HOST}
+    port: ${DB_PORT:-5432}
+    database: ${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    logging: false
+    synchronize: false
+    ssl:
+      rejectUnauthorized: true
+      ca: ${DB_SSL_CA}
+    pool:
+      min: 10
+      max: 50
+      idleTimeout: 30000
+  
+  cache:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT:-6379}
+    password: ${REDIS_PASS}
+    db: 0
+    keyPrefix: fantdev:prod:
+    tls:
+      enabled: true
+  
+  analytics:
+    host: ${ANALYTICS_HOST}
+    port: ${ANALYTICS_PORT:-8123}
+    database: ${ANALYTICS_DB}
+    username: ${ANALYTICS_USER}
+    password: ${ANALYTICS_PASS}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiresIn: 1d
+    refreshExpiresIn: 7d
+  
+  encryption:
+    key: ${ENCRYPTION_KEY}
+  
+  rateLimit:
+    enabled: true
+    window: 60000
+    max: 100
+  
+  headers:
+    hsts: true
+    xssProtection: true
+    noSniff: true
+    frameOptions: DENY
+
+monitoring:
+  logging:
+    level: ${LOG_LEVEL:-error}
+    format: json
+    destination: ${LOG_DESTINATION:-cloudwatch}
+  
+  sentry:
+    enabled: true
+    dsn: ${SENTRY_DSN}
+    environment: production
+    tracesSampleRate: 0.1
+  
+  prometheus:
+    enabled: true
+    port: ${PROMETHEUS_PORT:-9090}
+
+features:
+  debugMode: false
+  devTools: false
+  mockData: false
+  testEndpoints: false
+  apiDocumentation: false
+  
+cache:
+  cdn:
+    enabled: true
+    provider: cloudflare
+  
+  static:
+    maxAge: 31536000
+  
+  api:
+    maxAge: 300
+
+paths:
+  uploads: ${UPLOAD_PATH:-/var/app/uploads}
+  temp: ${TEMP_PATH:-/tmp}
+  logs: ${LOG_PATH:-/var/log/fantdev}
+  static: ${STATIC_PATH:-/var/app/public}

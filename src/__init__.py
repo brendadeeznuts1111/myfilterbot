@@ -6,8 +6,9 @@ __version__ = "2.0.0"
 __author__ = "Fantdev"
 
 from .config import config, patterns, keywords, messages
-from .database import db, Customer, Transaction
-from .handlers import handlers
+from src.portal.db.repositories import db
+from src.portal.db.models import Customer, Transaction
+from src.bot.handlers import handlers
 from .utils import (
     detect_transaction,
     format_currency,

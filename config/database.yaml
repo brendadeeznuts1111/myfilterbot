@@ -1,0 +1,226 @@
+# Database configuration
+connections:
+  # PostgreSQL - Main database
+  postgres: &postgres
+    type: postgres
+    host: ${DB_HOST:-localhost}
+    port: ${DB_PORT:-5432}
+    database: ${DB_NAME:-fantdev_trading}
+    username: ${DB_USER:-postgres}
+    password: ${DB_PASS}
+    schema: public
+    
+    # Connection pool settings
+    pool:
+      min: ${DB_POOL_MIN:-2}
+      max: ${DB_POOL_MAX:-10}
+      acquireTimeout: 30000
+      idleTimeout: 30000
+      connectionTimeout: 30000
+      evictionRunInterval: 60000
+    
+    # SSL configuration
+    ssl:
+      enabled: ${DB_SSL_ENABLED:-false}
+      rejectUnauthorized: ${DB_SSL_REJECT_UNAUTHORIZED:-true}
+      ca: ${DB_SSL_CA}
+      cert: ${DB_SSL_CERT}
+      key: ${DB_SSL_KEY}
+    
+    # Query settings
+    logging: ${DB_LOGGING:-false}
+    synchronize: ${DB_SYNCHRONIZE:-false}
+    dropSchema: false
+    migrationsRun: ${DB_MIGRATIONS_RUN:-true}
+    migrationsTableName: migrations
+    migrationsDir: ./migrations
+    
+    # Performance settings
+    cache:
+      enabled: true
+      duration: 60000
+      type: database
+    
+    # Retry configuration
+    retry:
+      enabled: true
+      maxAttempts: 3
+      delay: 1000
+      multiplier: 2
+
+  # Redis - Cache and session store
+  redis: &redis
+    type: redis
+    host: ${REDIS_HOST:-localhost}
+    port: ${REDIS_PORT:-6379}
+    password: ${REDIS_PASS}
+    db: ${REDIS_DB:-0}
+    
+    # Connection settings
+    family: 4 # 4 (IPv4) or 6 (IPv6)
+    connectTimeout: 10000
+    commandTimeout: 5000
+    keepAlive: 30000
+    noDelay: true
+    
+    # Key configuration
+    keyPrefix: ${REDIS_KEY_PREFIX:-fantdev:}
+    
+    # TLS configuration
+    tls:
+      enabled: ${REDIS_TLS_ENABLED:-false}
+      rejectUnauthorized: true
+      cert: ${REDIS_TLS_CERT}
+      key: ${REDIS_TLS_KEY}
+      ca: ${REDIS_TLS_CA}
+    
+    # Retry configuration
+    retryStrategy:
+      times: 3
+      delay: 1000
+    
+    # Sentinel configuration (for HA)
+    sentinel:
+      enabled: ${REDIS_SENTINEL_ENABLED:-false}
+      hosts:
+        - host: ${REDIS_SENTINEL_HOST1}
+          port: ${REDIS_SENTINEL_PORT1:-26379}
+        - host: ${REDIS_SENTINEL_HOST2}
+          port: ${REDIS_SENTINEL_PORT2:-26379}
+        - host: ${REDIS_SENTINEL_HOST3}
+          port: ${REDIS_SENTINEL_PORT3:-26379}
+      name: ${REDIS_SENTINEL_NAME:-mymaster}
+
+  # ClickHouse - Analytics database
+  clickhouse: &clickhouse
+    type: clickhouse
+    host: ${CLICKHOUSE_HOST:-localhost}
+    port: ${CLICKHOUSE_PORT:-8123}
+    database: ${CLICKHOUSE_DB:-analytics}
+    username: ${CLICKHOUSE_USER}
+    password: ${CLICKHOUSE_PASS}
+    
+    # Connection settings
+    protocol: ${CLICKHOUSE_PROTOCOL:-http}
+    requestTimeout: 30000
+    compression:
+      request: true
+      response: true
+    
+    # Query settings
+    maxExecutionTime: 60
+    insertQuorum: 1
+    insertQuorumTimeout: 10000
+    
+    # Performance settings
+    maxBlockSize: 10000
+    maxThreads: ${CLICKHOUSE_MAX_THREADS:-4}
+    
+    # Cluster configuration
+    cluster:
+      enabled: ${CLICKHOUSE_CLUSTER_ENABLED:-false}
+      name: ${CLICKHOUSE_CLUSTER_NAME}
+      nodes:
+        - ${CLICKHOUSE_NODE1}
+        - ${CLICKHOUSE_NODE2}
+
+  # MongoDB - Document store (optional)
+  mongodb:
+    type: mongodb
+    url: ${MONGODB_URL:-mongodb://localhost:27017/fantdev}
+    options:
+      useNewUrlParser: true
+      useUnifiedTopology: true
+      maxPoolSize: 10
+      minPoolSize: 2
+      serverSelectionTimeoutMS: 5000
+      socketTimeoutMS: 45000
+      family: 4
+
+# Migration settings
+migrations:
+  autoRun: ${AUTO_MIGRATE:-false}
+  directory: ./src/migrations
+  pattern: ^.*\.(ts|js)$
+  cli:
+    migrationsDir: src/migrations
+    entitiesDir: src/entities
+    subscribersDir: src/subscribers
+
+# Seeding configuration
+seeds:
+  enabled: ${SEED_DATABASE:-false}
+  directory: ./src/seeds
+  runOnMigration: false
+  files:
+    - users.seed
+    - customers.seed
+    - transactions.seed
+
+# Backup configuration
+backup:
+  enabled: ${BACKUP_ENABLED:-true}
+  schedule: ${BACKUP_SCHEDULE:-0 2 * * *} # Daily at 2 AM
+  retention:
+    days: ${BACKUP_RETENTION_DAYS:-30}
+    count: ${BACKUP_RETENTION_COUNT:-10}
+  
+  destinations:
+    - type: s3
+      bucket: ${BACKUP_S3_BUCKET}
+      region: ${BACKUP_S3_REGION}
+      prefix: backups/
+    
+    - type: local
+      path: ${BACKUP_LOCAL_PATH:-/var/backups}
+
+# Monitoring
+monitoring:
+  slowQueryLog:
+    enabled: true
+    threshold: 1000 # milliseconds
+    
+  connectionPool:
+    logEvents: true
+    warnThreshold: 0.8 # Warn when 80% of connections are used
+    
+  metrics:
+    enabled: true
+    interval: 60000 # Collect metrics every minute
+    
+# Environment-specific overrides
+environments:
+  development:
+    postgres:
+      <<: *postgres
+      logging: true
+      synchronize: true
+    redis:
+      <<: *redis
+      db: 1
+      keyPrefix: fantdev:dev:
+      
+  staging:
+    postgres:
+      <<: *postgres
+      logging: false
+      synchronize: false
+    redis:
+      <<: *redis
+      db: 2
+      keyPrefix: fantdev:staging:
+      
+  production:
+    postgres:
+      <<: *postgres
+      logging: false
+      synchronize: false
+      pool:
+        min: 10
+        max: 50
+    redis:
+      <<: *redis
+      db: 0
+      keyPrefix: fantdev:prod:
+      tls:
+        enabled: true
