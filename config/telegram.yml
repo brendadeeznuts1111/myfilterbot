@@ -109,3 +109,6 @@ telegram:
       - callback_query
       - inline_query
       - channel_post
+# Test hot-reload
+testValue: hotreload-working
+vipThreshold: 1000

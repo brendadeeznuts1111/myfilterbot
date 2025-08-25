@@ -1,5 +1,5 @@
 import { serve } from 'bun';
-import { config } from '../../config/env.config';
+import { config } from '../../../config/env.config';
 
 // Cache for static responses to enable automatic ETag
 const staticResponses = {

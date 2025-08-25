@@ -17,19 +17,40 @@ git clone https://github.com/fantdev/myfilterbot.git
 cd myfilterbot
 
 # Setup environment
-cp config/.env.example .env
+cp config/env.example .env
 # Edit .env with your configuration
 
 # Install dependencies
-pip install -r config/requirements_portal_integration.txt
+pip install -r config/requirements_enhanced.txt
 bun install
 
-# Run the bot
-python3 src/main_bot_enhanced.py
+# Start admin portal (recommended first)
+ADMIN_PASSWORD=your_password PORT=3000 bun run src/admin-server.ts
 
-# Start admin portal
-bun run admin_portal_server.ts
+# Or start individual services
+bun run dev:admin      # Admin portal
+bun run dev:bot        # Telegram bot
+bun run dev:server     # Main server
 ```
+
+### ⚠️ **IMPORTANT: Configuration Best Practices**
+
+**DO NOT** create new YAML parsers or configuration systems. The codebase already has a **comprehensive, production-ready** configuration system at `src/utils/yaml-config.ts`.
+
+**✅ CORRECT:**
+```typescript
+import { getConfig } from '@/utils/yaml-config';
+const appConfig = await getConfig('app.yaml');
+```
+
+**❌ WRONG:**
+```typescript
+// Don't do this - duplicates existing functionality
+import { parse } from "yaml";
+import { expandEnv } from "./env-expander";
+```
+
+See [Configuration Best Practices](./CONFIGURATION_BEST_PRACTICES.md) for complete guidelines.
 
 ## 🛠️ Development Environment
 
@@ -94,16 +115,59 @@ myfilterbot/
 │   ├── hooks/            # React hooks
 │   ├── services/         # Business logic
 │   ├── telegram_dashboard/ # Telegram integration
-│   ├── config.py         # Bot configuration
-│   ├── database.py       # Database layer
-│   ├── handlers.py       # Command handlers
-│   └── env.config.ts     # Environment config
+│   ├── utils/            # Utilities (including YAML config)
+│   ├── bot/              # Python bot implementation
+│   └── server/           # Server implementations
+├── config/                # Configuration files
+│   ├── *.yaml            # YAML configuration files
+│   ├── environments/     # Environment-specific configs
+│   └── env.config.ts     # Environment variables
 ├── templates/             # HTML templates
 ├── logs/                 # Application logs
-├── tests/                # Test files
-├── main_bot.py          # Bot entry point
-└── admin_portal_server.ts # Admin server
+├── tests/                # Test suites
+│   ├── typescript/       # TypeScript tests
+│   └── python/           # Python tests
+└── main_bot.py          # Bot entry point
 ```
+
+## ⚙️ **Configuration System**
+
+### **Current Implementation Status** ✅
+
+The project has a **comprehensive, production-ready** configuration system:
+
+- **YAML Configuration**: `src/utils/yaml-config.ts` - Full-featured with hot-reload
+- **Environment Variables**: `config/env.config.ts` - Centralized environment config
+- **Feature Flags**: Built-in feature flag system with rollout percentages
+- **Hot-Reload**: Automatic configuration reloading during development
+- **Caching**: Performance-optimized with intelligent caching
+- **Validation**: Schema validation support with Zod
+
+### **Key Configuration Files**
+- `config/app.yaml` - Main application configuration
+- `config/features.yaml` - Feature flags and toggles
+- `config/telegram.yaml` - Telegram bot configuration
+- `config/database.yaml` - Database connection settings
+- `config/services.yaml` - Service configurations
+
+### **Usage Examples**
+```typescript
+// Load configuration
+import { getConfig } from '@/utils/yaml-config';
+const appConfig = await getConfig('app.yaml');
+
+// Use feature flags
+import { isFeatureEnabled } from '@/utils/yaml-config';
+const isDebugMode = await isFeatureEnabled('debug_mode');
+
+// Hot-reload support
+import { configManager } from '@/utils/yaml-config';
+configManager.watch('app.yaml', (newConfig) => {
+  console.log('Configuration updated!');
+});
+```
+
+**⚠️ Important:** Do not create new configuration systems. Use the existing robust system.
 
 ## 🔧 Development Workflow
 

@@ -41,8 +41,8 @@ describe('Enhanced Configuration System', () => {
           websocket: { port: 3002, compression: true, maxConnections: 1000 },
         },
         security: {
-          jwt: { secret: 'test-secret-key-32-characters-long!', expiresIn: '7d' },
-          encryption: { algorithm: 'aes-256-gcm', key: 'test-key-32-characters-long!!!!' },
+          jwt: { secret: 'test-secret-key-that-is-exactly-32-characters!!', expiresIn: '7d' },
+          encryption: { algorithm: 'aes-256-gcm', key: 'test-encryption-key-32-characters-minimum-length' },
           cors: { origins: ['http://localhost:3000'], credentials: true },
           rateLimit: { enabled: true, window: 60000, max: 100 },
         },

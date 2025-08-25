@@ -1,11 +1,11 @@
 import { test, expect, beforeEach, afterEach } from "bun:test";
-import { initializeRbacDatabase, getRbacDatabase } from "../src/server/rbac/database";
-import { rbacApp } from "../src/server/rbac";
-import { authAppRoutes, generateAccessToken, generateRefreshToken } from "../src/server/auth";
-import { Role, PermissionResource, PermissionAction } from "../src/server/rbac/types";
+import { initializeRbacDatabase, getRbacDatabase } from "../../src/server/rbac/database";
+import { rbacApp } from "../../src/server/rbac";
+import { authAppRoutes, generateAccessToken, generateRefreshToken } from "../../src/server/auth";
+import { Role, PermissionResource, PermissionAction } from "../../src/server/rbac/types";
 import { verify } from "hono/jwt"; // Import verify
 import type { Context } from "hono"; // Import Context as type
-import type { RefreshTokenPayload } from "../src/server/auth/types"; // Import RefreshTokenPayload as type
+import type { RefreshTokenPayload } from "../../src/server/auth/types"; // Import RefreshTokenPayload as type
 
 // Use a unique in-memory database for each test file
 const TEST_DB_PATH = ":memory:";

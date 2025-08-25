@@ -13,7 +13,7 @@ interface ConfigOptions {
  */
 export function interpolateEnvVars(value: any): any {
   if (typeof value === "string") {
-    return value.replace(
+    const result = value.replace(
       /\${([^:-]+)(?::([^}]+))?}/g,
       (_, key, defaultValue) => {
         const envValue = process.env[key];
@@ -27,6 +27,16 @@ export function interpolateEnvVars(value: any): any {
         return "";
       }
     );
+    
+    // Try to parse as number if the result looks numeric
+    if (/^\d+$/.test(result)) {
+      return parseInt(result, 10);
+    }
+    if (/^\d+\.\d+$/.test(result)) {
+      return parseFloat(result);
+    }
+    
+    return result;
   }
 
   if (Array.isArray(value)) {

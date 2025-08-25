@@ -212,8 +212,11 @@ console.log(`🌍 Timezone set to: ${timezone}`);
 console.log(`🔥 Hot-reload: ${dashboardConfigService.getHotReloadStatus().active ? 'Active' : 'Inactive'}`);
 console.log(`📊 Feature flags loaded: ${Object.keys(featuresConfig?.features || {}).length} features`);
 
+// Get port from environment or use default
+const PORT = Number(process.env.PORT || process.env.ADMIN_PORT || 3000);
+
 const server = serve({
-  port: appConfig?.server?.admin?.port || 3003,
+  port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
     const corsHeaders = {
@@ -1754,3 +1757,6 @@ dashboardConfigService.on('feature:toggled', ({ feature, enabled }) => {
 dashboardConfigService.on('hotreload:triggered', ({ file }) => {
   console.log(`🔥 Hot-reload triggered for: ${file}.yaml`);
 });
+
+console.log(`🚀 Server listening on http://localhost:${PORT}`);
+console.log(`📊 Dashboard available at http://localhost:${PORT}/dashboard`);
