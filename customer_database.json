@@ -1,0 +1,16 @@
+{
+  "customers": {
+    "BB1001": {
+      "balance": 2500.00,
+      "weekly_pnl": 150.25,
+      "phone": "+1-555-0123",
+      "last_activity": "2025-08-25T10:00:00Z"
+    },
+    "BB1002": {
+      "balance": 1750.50,
+      "weekly_pnl": -75.00,
+      "phone": "+1-555-0456",
+      "last_activity": "2025-08-25T09:30:00Z"
+    }
+  }
+}

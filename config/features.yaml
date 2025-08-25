@@ -43,7 +43,7 @@ features:
   # UI/UX features
   darkMode:
     enabled: true
-    rolloutPercentage: 100
+    rolloutPercentage: 50
     description: Dark mode theme support
     default: auto # auto, light, dark
     config:

@@ -3,6 +3,9 @@
  * Combines functionality from both dashboard versions with Bun YAML support
  */
 
+// Centralized API configuration
+const API_BASE = `${window.location.origin}/api`;
+
 class UnifiedDashboard {
     constructor() {
         this.currentTab = 'overview';
@@ -13,8 +16,8 @@ class UnifiedDashboard {
         this.logsPaused = false;
         this.eventSource = null;
         this.refreshIntervals = {};
-        this.apiBaseUrl = window.location.origin;
-        this.wsUrl = `ws://${window.location.hostname}:3002`;
+        this.apiBaseUrl = API_BASE;
+        this.wsUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws`;
         
         this.init();
     }
@@ -103,6 +106,50 @@ class UnifiedDashboard {
         });
     }
 
+    setupServerSentEvents() {
+        // Set up Server-Sent Events for real-time updates
+        if (typeof EventSource !== 'undefined') {
+            try {
+                this.eventSource = new EventSource(`${API_BASE}/dashboard/stream`);
+                
+                this.eventSource.onopen = () => {
+                    this.addLog('SSE connection established', 'success');
+                };
+                
+                this.eventSource.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        this.handleServerSentEvent(data);
+                    } catch (e) {
+                        console.log('SSE message:', event.data);
+                    }
+                };
+                
+                this.eventSource.onerror = () => {
+                    this.addLog('SSE connection error', 'warn');
+                };
+            } catch (error) {
+                console.log('SSE not supported or failed to connect:', error);
+            }
+        }
+    }
+
+    handleServerSentEvent(data) {
+        switch (data.type) {
+            case 'metrics':
+                this.updateMetrics(data.data);
+                break;
+            case 'log':
+                this.addLog(data.message, data.level || 'info');
+                break;
+            case 'service_status':
+                this.updateServiceStatus(data.service, data.status);
+                break;
+            default:
+                console.log('Unknown SSE event:', data);
+        }
+    }
+
     switchTab(tabName) {
         // Update active tab
         document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -142,7 +189,7 @@ class UnifiedDashboard {
 
     async loadOverviewData() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/admin/stats`);
+            const response = await fetch(`${API_BASE}/admin/stats`);
             if (response.ok) {
                 const data = await response.json();
                 
@@ -162,12 +209,12 @@ class UnifiedDashboard {
 
     async checkAllServices() {
         const services = [
-            { id: 'telegram', url: '/api/bot/status', name: 'Telegram Bot' },
-            { id: 'portal', url: '/health', port: 5000, name: 'Portal Server' },
-            { id: 'admin', url: '/health', port: 3003, name: 'Admin Server' },
-            { id: 'websocket', port: 3002, name: 'WebSocket Server', checkWs: true },
-            { id: 'database', url: '/api/db/status', name: 'Database' },
-            { id: 'redis', url: '/api/redis/status', name: 'Redis Cache' }
+            { id: 'telegram', url: `${API_BASE}/bot/status`, name: 'Telegram Bot' },
+            { id: 'portal', url: `${API_BASE}/health`, name: 'Portal Server' },
+            { id: 'admin', url: `${API_BASE}/health`, name: 'Admin Server' },
+            { id: 'websocket', url: `${API_BASE}/ws/status`, name: 'WebSocket Server' },
+            { id: 'database', url: `${API_BASE}/db/status`, name: 'Database' },
+            { id: 'redis', url: `${API_BASE}/redis/status`, name: 'Redis Cache' }
         ];
 
         for (const service of services) {
@@ -197,9 +244,7 @@ class UnifiedDashboard {
                 }
             } else {
                 // Check HTTP endpoint
-                const url = service.port ? 
-                    `http://${window.location.hostname}:${service.port}${service.url || '/health'}` :
-                    `${this.apiBaseUrl}${service.url}`;
+                const url = service.url;
                     
                 const response = await fetch(url, {
                     method: 'GET',
@@ -236,7 +281,7 @@ class UnifiedDashboard {
         document.querySelector(`[data-file="${configName}"]`)?.classList.add('active');
         
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/yaml/${configName}`);
+            const response = await fetch(`${API_BASE}/yaml/${configName}`);
             if (response.ok) {
                 const data = await response.json();
                 document.getElementById('yaml-editor').value = data.content || '';
@@ -254,7 +299,7 @@ class UnifiedDashboard {
         const content = document.getElementById('yaml-editor').value;
         
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/yaml/${this.currentConfig}`, {
+            const response = await fetch(`${API_BASE}/yaml/${this.currentConfig}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content })
@@ -282,7 +327,7 @@ class UnifiedDashboard {
         const content = document.getElementById('yaml-editor').value;
         
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/yaml/validate`, {
+            const response = await fetch(`${API_BASE}/yaml/validate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content })
@@ -301,7 +346,7 @@ class UnifiedDashboard {
 
     async loadFeatureFlags() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/features`);
+            const response = await fetch(`${API_BASE}/features`);
             if (response.ok) {
                 const features = await response.json();
                 this.renderFeatureFlags(features);
@@ -336,7 +381,7 @@ class UnifiedDashboard {
 
     async toggleFeature(featureName) {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/features/${featureName}/toggle`, {
+            const response = await fetch(`${API_BASE}/features/${featureName}/toggle`, {
                 method: 'POST'
             });
             
@@ -483,7 +528,7 @@ class UnifiedDashboard {
     }
 
     updateHotReloadStatus() {
-        fetch(`${this.apiBaseUrl}/api/hotreload/status`)
+        fetch(`${API_BASE}/hotreload/status`)
             .then(res => res.json())
             .then(data => {
                 document.getElementById('hot-reload-status').textContent = data.active ? 'Active' : 'Inactive';
@@ -653,7 +698,7 @@ class UnifiedDashboard {
     async startAllServices() {
         this.addLog('Starting all services...', 'info');
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/services/start`, {
+            const response = await fetch(`${API_BASE}/services/start`, {
                 method: 'POST'
             });
             if (response.ok) {
@@ -668,7 +713,7 @@ class UnifiedDashboard {
     async stopAllServices() {
         this.addLog('Stopping all services...', 'warn');
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/services/stop`, {
+            const response = await fetch(`${API_BASE}/services/stop`, {
                 method: 'POST'
             });
             if (response.ok) {
@@ -688,7 +733,7 @@ class UnifiedDashboard {
     async runHealthCheck() {
         this.addLog('Running health check...', 'info');
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/health/full`);
+            const response = await fetch(`${API_BASE}/health/full`);
             const data = await response.json();
             
             this.addLog(`Health check complete: ${data.healthy ? 'All systems operational' : 'Issues detected'}`, 
@@ -703,7 +748,7 @@ class UnifiedDashboard {
     async exportData() {
         this.addLog('Exporting data...', 'info');
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/export/all`);
+            const response = await fetch(`${API_BASE}/export/all`);
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -742,7 +787,7 @@ class UnifiedDashboard {
 
     updateFooterInfo() {
         // Update version information
-        fetch(`${this.apiBaseUrl}/api/version`)
+        fetch(`${API_BASE}/version`)
             .then(res => res.json())
             .then(data => {
                 document.getElementById('app-version').textContent = data.app || '3.0.0';
@@ -754,7 +799,7 @@ class UnifiedDashboard {
     startMonitoring() {
         // Update memory and CPU usage every 5 seconds
         setInterval(() => {
-            fetch(`${this.apiBaseUrl}/api/system/stats`)
+            fetch(`${API_BASE}/system/stats`)
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('memory-usage').textContent = `${data.memory || 0} MB`;

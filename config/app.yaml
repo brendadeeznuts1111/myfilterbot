@@ -2,6 +2,7 @@
 app:
   name: fantdev-trading-bot
   version: 2.1.0
+  timezone: Europe/London
   description: Enterprise-grade Telegram trading platform with web portals, real-time monitoring, and automated reporting
   environment: ${NODE_ENV:-development}
   

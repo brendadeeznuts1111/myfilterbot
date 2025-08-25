@@ -1,0 +1,26 @@
+{
+  "customers": {
+    "BB1001": {
+      "password": "demo123",
+      "telegram_id": 123456789,
+      "telegram_username": "@demo_user",
+      "active": true,
+      "keywords": ["trading", "crypto"],
+      "group_chat_id": "-2714719687"
+    },
+    "BB1002": {
+      "password": "demo456",
+      "telegram_id": 987654321,
+      "telegram_username": "@test_user",
+      "active": true,
+      "keywords": ["forex", "stocks"],
+      "group_chat_id": "-2714719687"
+    }
+  },
+  "group_chats": {
+    "main_group": {
+      "chat_id": "-2714719687",
+      "name": "Main Trading Group"
+    }
+  }
+}
