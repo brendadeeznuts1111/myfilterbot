@@ -155,26 +155,7 @@ myfilterbot/
 │   ├── server/               # TypeScript server code
 │   │   ├── admin/            # Admin server
 │   │   ├── api/              # API endpoints
-│   │   └── analytics-v2/     # Enhanced analytics
-│   ├── client/               # React client applications
-│   │   ├── App.tsx           # Main app component
-│   │   ├── admin-mobile/     # Mobile admin interface
-│   │   └── frontend.tsx      # Frontend components
-│   ├── hooks/                # React hooks (consolidated)
-│   │   ├── useAPI.ts         # High-performance API hook
-│   │   ├── useAuth.tsx       # Authentication hook
-│   │   ├── useEnhancedAPI.tsx # Enhanced API with TanStack Query
-│   │   └── useTheme.tsx      # Theme management
-│   ├── services/             # Business logic services
-│   │   ├── bun-sql-service.ts     # Native Bun.SQL integration
-│   │   ├── bun-yaml-service.ts    # Native Bun YAML handling
-│   │   ├── dashboard-config-service.ts # Dashboard configuration
-│   │   ├── yaml-config-service.ts     # YAML configuration management
-│   │   ├── cloudflare-client.ts       # Cloudflare Worker client
-│   │   ├── cache-warming-service.ts   # Cache management
-│   │   ├── multi-level-cache.ts       # Multi-level caching system
-│   │   ├── performance-monitor.ts     # Performance monitoring
-│   │   └── websocket-service.ts      # WebSocket communication
+│   │   └── workers/          # Background processing
 │   ├── web/                  # React web components
 │   │   ├── components/       # Reusable React components
 │   │   │   ├── analytics/    # Analytics charts and KPIs
@@ -188,25 +169,150 @@ myfilterbot/
 │   │   ├── api-client.ts     # API client with rate limiting
 │   │   ├── telegram-bridge.ts # Telegram integration
 │   │   └── yaml-config.ts    # YAML configuration utilities
-│   └── utils/                # Utility functions
+│   ├── utils/                # Utility functions
+│   │   └── test-yaml.ts      # YAML testing utilities
+│   └── services/             # Business logic services
+│       ├── bun-sql-service.ts     # Native Bun.SQL integration
+│       ├── bun-yaml-service.ts    # Native Bun YAML handling
+│       ├── dashboard-config-service.ts # Dashboard configuration
+│       ├── yaml-config-service.ts     # YAML configuration management
+│       ├── cloudflare-client.ts       # Cloudflare Worker client
+│       ├── cache-warming-service.ts   # Cache management
+│       ├── multi-level-cache.ts       # Multi-level caching system
+│       ├── performance-monitor.ts     # Performance monitoring
+│       └── websocket-service.ts      # WebSocket communication
 ├── tests/                    # Automated test suites
-│   ├── unit/                 # Unit tests (TypeScript)
-│   ├── integration/          # Integration tests
+│   ├── typescript/           # TypeScript unit tests
 │   ├── python/               # Python bot tests
-│   └── e2e/                  # End-to-end tests
+│   ├── integration/          # Integration tests
+│   ├── e2e/                  # End-to-end tests
+│   └── unit/                 # Additional unit tests
 ├── config/                   # Configuration files
-├── docs/                     # Documentation
-│   ├── USER_AGENT_CUSTOMIZATION.md # User-Agent customization guide
-│   └── ...                   # Other documentation
+│   ├── branding.json         # Brand configuration
+│   └── requirements_enhanced.txt # Python dependencies
+├── docs/                     # Comprehensive documentation
+│   ├── BOT_SETUP.md          # Bot setup guide
+│   ├── CACHE_ARCHITECTURE.md # Cache system documentation
+│   ├── CHANGELOG.md          # Version history
+│   ├── CONTRIBUTING.md       # Contribution guidelines
+│   ├── MERGE_CHECKLIST.md    # PR merge checklist
+│   ├── NAMING_CONVENTIONS.md # Code naming standards
+│   ├── README_ADMIN.md       # Admin documentation
+│   ├── README_USER_AGENT.md  # User-Agent customization
+│   ├── TEST_REPORT.md        # Testing documentation
+│   ├── YAML_VALIDATION_SUMMARY.md # YAML validation guide
+│   ├── API_ENDPOINT_INVENTORY.md # API documentation
+│   ├── API_YAML_FORMATTING.md # YAML formatting guide
+│   ├── API_YAML_QUICK_REFERENCE.md # Quick reference
+│   ├── CHAT_TRACKING_IMPLEMENTATION.md # Chat tracking docs
+│   ├── CURRENT_STATUS_REPORT.md # Current status
+│   ├── DOCUMENTATION_REVIEW_PROCESS.md # Documentation process
+│   ├── DOCUMENTATION_STYLE_GUIDE.md # Style guide
+│   ├── DOCUMENTATION_VALIDATION_REPORT.md # Validation report
+│   ├── PERSISTENT_SESSION_GUIDE.md # Session management
+│   ├── PROJECT_DOCUMENTATION.md # Project overview
+│   ├── README_WORKERS.md     # Worker system docs
+│   ├── TELEGRAM_RATE_LIMITS.md # Rate limiting guide
+│   ├── TIMEZONE_CONFIGURATION.md # Timezone setup
+│   ├── USER_AGENT_CUSTOMIZATION.md # User-Agent guide
+│   ├── USER_FEEDBACK_SYSTEM.md # Feedback system
+│   ├── worker_system_diagrams.md # Worker architecture
+│   ├── load_test_plan.md     # Load testing guide
+│   ├── performance_analysis.md # Performance analysis
+│   └── deployment/           # Deployment guides
 ├── examples/                 # Example scripts
 │   ├── user-agent-demo.ts    # User-Agent demonstration
 │   └── user-agent-integration-examples.md # Integration examples
 ├── scripts/                  # Utility scripts
 │   ├── start-services-with-user-agents.sh # Service startup script
-│   └── stop-services.sh      # Service shutdown script
-├── public/                   # Static assets
+│   ├── stop-services.sh      # Service shutdown script
+│   ├── enhanced_verify.sh    # Enhanced verification
+│   ├── final_verify.sh       # Final verification
+│   ├── verify-bun-native.ts  # Bun native verification
+│   ├── analyze-feedback.ts   # Feedback analysis
+│   ├── analyze-typescript-errors.ts # TypeScript error analysis
+│   ├── build-with-defines.js # Build optimization
+│   ├── collect_metrics.ts    # Metrics collection
+│   ├── dependency-audit.js   # Dependency auditing
+│   ├── dev-with-defines.js   # Development with defines
+│   ├── error_budget.ts       # Error budget tracking
+│   ├── final-bot-test.ts     # Final bot testing
+│   ├── fix_python_test_imports.py # Python import fixes
+│   ├── gen-index.ts          # Index generation
+│   ├── generate-customers.ts # Customer generation
+│   ├── monitor-documentation-pipelines.ts # Documentation monitoring
+│   ├── restart_server.sh     # Server restart
+│   ├── run-tests.ts          # Test runner
+│   ├── run-and-benchmark.sh  # Benchmarking
+│   ├── setup-test-env.ts     # Test environment setup
+│   ├── setup_integration.sh  # Integration setup
+│   ├── standardize_imports.ts # Import standardization
+│   ├── start-dashboard.ts    # Dashboard startup
+│   ├── start_optimized.sh    # Optimized startup
+│   ├── start_server.sh       # Server startup
+│   ├── test-dashboard-integration.ts # Dashboard integration testing
+│   ├── test-dashboard.ts     # Dashboard testing
+│   ├── test-integration.ts   # Integration testing
+│   ├── test-new-bot.ts       # New bot testing
+│   ├── test-telegram-integration.ts # Telegram integration testing
+│   ├── test_api.sh           # API testing
+│   ├── validate-config.ts    # Configuration validation
+│   └── validate_links.py     # Link validation
+├── public/                   # Static assets and PWA
+│   ├── manifest.json         # PWA manifest
+│   ├── images/               # App icons and screenshots
+│   └── portals/              # Portal HTML files
 ├── templates/                # HTML templates
-└── README_USER_AGENT.md      # User-Agent feature overview
+│   ├── components/           # Jinja2 components
+│   │   ├── _navigation.html  # Navigation component
+│   │   ├── _user_menu.html   # User menu component
+│   │   ├── _base_layouts.html # Base layouts
+│   │   └── _forms.html       # Form components
+│   ├── base_refactored.html  # Main base template
+│   ├── dashboard_refactored.html # Dashboard template
+│   ├── customers_refactored.html # Customers template
+│   └── other templates...    # Additional page templates
+├── data/                     # Data files and databases
+│   ├── customer_database.json # Customer database
+│   ├── customer_config.json  # Customer configuration
+│   ├── customers.json        # Customer list
+│   ├── wager-snapshot.json   # Wager snapshots
+│   ├── real_transactions_sample.json # Transaction samples
+│   ├── social_metadata.json  # Social media metadata
+│   ├── telegram_groups.jsonl # Telegram groups
+│   ├── telegram_messages.jsonl # Telegram messages
+│   ├── telegram_onboarding.jsonl # Onboarding data
+│   ├── telegram_referrals.jsonl # Referral data
+│   ├── telegram_roles.jsonl  # Role definitions
+│   ├── transactions.jsonl    # Transaction data
+│   ├── bets.jsonl            # Betting data
+│   ├── bot_events.jsonl      # Bot event logs
+│   ├── deposits.jsonl        # Deposit records
+│   ├── escrows.jsonl         # Escrow records
+│   ├── p2p_deposits.jsonl    # P2P deposits
+│   ├── p2p_withdrawals.jsonl # P2P withdrawals
+│   ├── benchmark_results.json # Performance benchmarks
+│   └── customer_profiles.jsonl # Customer profiles
+├── cache/                    # Cache files
+├── test-cache/               # Test cache files
+├── benchmarks/               # Benchmark results
+├── services/                 # Service definitions
+├── static/                   # Static assets
+├── .github/                  # GitHub workflows
+├── .husky/                   # Git hooks
+├── package.json              # Node.js dependencies
+├── bunfig.toml              # Bun configuration
+├── tsconfig.json            # TypeScript configuration
+├── eslint.config.js         # ESLint configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+├── .prettierrc              # Prettier configuration
+├── .gitignore               # Git ignore rules
+├── .gitattributes           # Git attributes
+├── .markdown-link-check.json # Markdown link checking
+├── .markdownlint.json       # Markdown linting
+├── audit-ci.json            # CI audit configuration
+├── bun.lock                 # Bun lock file
+└── readme.md                # This file
 ```
 
 ## 🎯 Core Components
