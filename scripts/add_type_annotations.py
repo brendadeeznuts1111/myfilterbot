@@ -18,6 +18,13 @@ class TypeAnnotationAdder:
     """Adds type annotations to Python files"""
     
     def __init__(self):
+        """
+        Initialize the TypeAnnotationAdder.
+        
+        Sets up:
+        - results: list to collect per-file processing summaries.
+        - common_types: mapping of simple type keywords to their canonical typing names used by the heuristics (e.g., 'list' -> 'List', 'dict' -> 'Dict').
+        """
         self.results = []
         self.common_types = {
             'str': 'str',
@@ -33,7 +40,17 @@ class TypeAnnotationAdder:
         }
         
     def process_directory(self, directory: str) -> None:
-        """Process all Python files in directory"""
+        """
+        Recursively process all Python files under the given directory, applying type-annotation fixes.
+        
+        For each `.py` file found under `directory` this method:
+        - skips files for which `should_skip_file` returns True,
+        - calls `process_file` to parse and (if needed) update the file,
+        - logs an info message at start and logs errors for individual files without halting the overall run.
+        
+        Parameters:
+            directory (str): Path to the directory to traverse (absolute or relative). No return value; file modifications (if any) are performed by `process_file`.
+        """
         logger.info(f"Processing directory: {directory}")
         
         for py_file in Path(directory).rglob("*.py"):
@@ -62,7 +79,19 @@ class TypeAnnotationAdder:
         return any(pattern in filepath for pattern in skip_patterns)
         
     def process_file(self, filepath: str) -> None:
-        """Process a single Python file"""
+        """
+        Process a single Python file: parse its AST, add missing typing imports, add function return annotations, and add class attribute annotations.
+        
+        Reads the file at `filepath`, parses it into an AST (returns early on SyntaxError), runs add_missing_imports, add_function_annotations, and add_class_annotations in that order. If the file content changes, overwrites the file with the updated content and appends an "Updated: <filepath>" entry to self.results.
+        
+        Parameters:
+            filepath (str): Path to the Python file to process.
+        
+        Side effects:
+            - May modify the file on disk by rewriting it with added annotations/imports.
+            - Appends an entry to `self.results` when the file is updated.
+            - Logs progress, errors, and the update/no-change outcome.
+        """
         logger.info(f"Processing: {filepath}")
         
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -95,7 +124,13 @@ class TypeAnnotationAdder:
             logger.info(f"⏭️  No changes needed: {filepath}")
             
     def add_missing_imports(self, content: str, tree: ast.AST) -> str:
-        """Add missing typing imports"""
+        """
+        Ensure a standard `typing` import line exists in the module source and insert it if missing.
+        
+        If the content already contains a `from typing import ...` or `import typing` statement, the original content is returned unchanged. Otherwise this function inserts the line
+            from typing import Dict, List, Optional, Any, Tuple, Set, Union
+        after the module-level docstring (if present) or before the first non-comment, non-blank line (typically before the first import or code line), and returns the modified source as a single string.
+        """
         lines = content.split('\n')
         
         # Check if typing imports exist
@@ -135,15 +170,43 @@ class TypeAnnotationAdder:
         return '\n'.join(lines)
         
     def add_function_annotations(self, content: str, tree: ast.AST) -> str:
-        """Add type annotations to functions"""
+        """
+        Add missing return type annotations to top-level function and async function definitions.
+        
+        Scans the provided AST for functions and async functions that do not have an explicit return annotation and injects a best-effort return annotation into the corresponding source line. The inferred return type is obtained from self.infer_return_type(func), and the annotation is only inserted when the function definition line contains a colon and does not already include '->'. Returns a new source string with updated function definition lines; other lines are left unchanged.
+        
+        Parameters:
+            content (str): Original Python source code.
+            tree (ast.AST): Parsed AST for the source code.
+        
+        Returns:
+            str: Source code with added return type annotations where applicable.
+        """
         lines = content.split('\n')
         
         class FunctionVisitor(ast.NodeVisitor):
             def __init__(self):
+                """
+                Initialize the instance.
+                
+                Creates an empty list used to collect function metadata encountered during AST traversal (functions that may need return annotations).
+                """
                 self.functions = []
                 
             def visit_FunctionDef(self, node):
                 # Skip if already has return annotation
+                """
+                Visit a FunctionDef node and record functions that lack an explicit return annotation.
+                
+                This method is called during AST traversal. For each ast.FunctionDef with no return annotation,
+                it appends a dict to self.functions containing:
+                - 'name': function name (str)
+                - 'lineno': definition line number (int)
+                - 'args': list of argument names (List[str])
+                - 'has_return': True if the function body contains any ast.Return node, else False
+                
+                Then continues generic traversal of the node.
+                """
                 if node.returns is None:
                     self.functions.append({
                         'name': node.name,
@@ -155,6 +218,18 @@ class TypeAnnotationAdder:
                 
             def visit_AsyncFunctionDef(self, node):
                 # Skip if already has return annotation
+                """
+                Handle async function definitions in the AST.
+                
+                If the async function has no return annotation, append a dict to self.functions capturing:
+                - 'name': function name
+                - 'lineno': definition line number
+                - 'args': list of argument names
+                - 'has_return': True if a Return node exists anywhere in the function body
+                - 'is_async': True
+                
+                Continues normal traversal of child nodes.
+                """
                 if node.returns is None:
                     self.functions.append({
                         'name': node.name,
@@ -189,7 +264,28 @@ class TypeAnnotationAdder:
         return '\n'.join(lines)
         
     def infer_return_type(self, func_info: Dict) -> str:
-        """Infer return type based on function characteristics"""
+        """
+        Infer a best-effort return type annotation for a function based on its name and metadata.
+        
+        Given a function metadata mapping, returns a string suitable for use as a return annotation (e.g. "bool", "List[Any]", "Optional[Any]", "None", "Any"). The inference is heuristic and based on common name patterns and flags:
+        - boolean predicates (names starting with "is_", "has_", "can_") -> "bool"
+        - getters with "list" or "dict" in the name -> "List[Any]" or "Dict[str, Any]"
+        - generic "get_*" -> "Optional[Any]"
+        - names ending with "_count" or "_id" -> "int"
+        - names ending with "_name" or "_message" -> "str"
+        - functions without a return or lifecycle-like functions ("__init__", "setup", "cleanup") -> "None"
+        - async functions default to "None" unless otherwise specified
+        - fallback -> "Any"
+        
+        Parameters:
+            func_info (Dict): Metadata for the function. Expected keys:
+                - name (str): Function name.
+                - has_return (bool): Whether the function body contains an explicit return.
+                - is_async (bool, optional): Whether the function is async (defaults to False).
+        
+        Returns:
+            str: A string representing the inferred return type annotation.
+        """
         name = func_info['name']
         is_async = func_info.get('is_async', False)
         has_return = func_info['has_return']
@@ -215,15 +311,35 @@ class TypeAnnotationAdder:
             return 'Any'
             
     def add_class_annotations(self, content: str, tree: ast.AST) -> str:
-        """Add type annotations to class attributes"""
+        """
+        Add inferred type annotations for instance attributes defined in a class's __init__.
+        
+        Scans the AST for classes that define instance attributes via assignments to self.* inside __init__. For each such class, inserts class-level attribute annotations immediately after the class header (skipping a class docstring if present). Types are determined by infer_attribute_type for each attribute. Returns the updated source content with the inserted annotations; if no applicable classes or attributes are found, returns the original content unchanged.
+        """
         lines = content.split('\n')
         
         class ClassVisitor(ast.NodeVisitor):
             def __init__(self):
+                """
+                Initialize the instance.
+                
+                Creates an empty list self.classes used to collect class metadata discovered during AST traversal.
+                """
                 self.classes = []
                 
             def visit_ClassDef(self, node):
                 # Find __init__ method
+                """
+                Visit an AST ClassDef node, extract instance attribute assignments from its __init__, and record the class metadata.
+                
+                Searches the class body for an __init__ method, collects assignments to self.<attr> within that method (name, line number, and assigned value AST node), and appends a dictionary with the class name, its line number, and the list of discovered attributes to self.classes. Uses generic_visit at the end to continue traversal.
+                
+                Parameters:
+                    node (ast.ClassDef): The class definition AST node being visited.
+                
+                Side effects:
+                    Mutates self.classes by appending an entry when one or more instance attributes are found.
+                """
                 init_method = None
                 for item in node.body:
                     if isinstance(item, ast.FunctionDef) and item.name == '__init__':
@@ -293,7 +409,21 @@ class TypeAnnotationAdder:
         return '\n'.join(lines)
         
     def infer_attribute_type(self, attr_info: Dict) -> str:
-        """Infer attribute type from assignment"""
+        """
+        Infer a typing expression for a class attribute based on its name.
+        
+        This uses simple name-based heuristics to choose a best-effort type string suitable for insertion into a class annotation. Expects attr_info to be a dict containing the attribute's name under the 'name' key.
+        
+        Returns:
+            A string representing the inferred type annotation, one of:
+            - 'int'
+            - 'str'
+            - 'bool'
+            - 'List[Any]'
+            - 'Dict[str, Any]'
+            - 'Optional[datetime]'
+            - 'Any'
+        """
         name = attr_info['name']
         
         # Common patterns
@@ -313,7 +443,11 @@ class TypeAnnotationAdder:
             return 'Any'
 
 def main():
-    """Main function"""
+    """
+    Run the annotation tool across project directories and print a summary.
+    
+    Instantiates TypeAnnotationAdder, processes the 'src/bot' and 'tests/python' directories (writing updated files in-place when changes are made), and prints progress and a brief summary of annotated files to stdout. No return value.
+    """
     print("🔧 Adding type annotations to Python files...")
     
     annotator = TypeAnnotationAdder()

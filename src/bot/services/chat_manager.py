@@ -31,6 +31,17 @@ class ChatInfo:
     statistics: Optional[Dict] = None
     
     def __post_init__(self) -> None:
+        """
+        Finalize dataclass initialization by populating default timestamps and statistics if missing.
+        
+        If date_added or last_activity are falsy, they are set to the current time in ISO 8601 format. If statistics is falsy, it is initialized to a dict with keys:
+        - 'messages_received' (int)
+        - 'commands_processed' (int)
+        - 'transactions_detected' (int)
+        - 'customers_tracked' (list)
+        
+        This method mutates the instance's attributes in place.
+        """
         if not self.date_added:
             self.date_added = datetime.now().isoformat()
         if not self.last_activity:
@@ -56,11 +67,13 @@ class ChatManager:
     
     def __init__(self, worker_url: str = None, api_key: str = None) -> None:
         """
-        Initialize ChatManager
+        Create a ChatManager configured to sync with an optional Cloudflare Worker.
         
-        Args:
-            worker_url: Cloudflare Worker URL
-            api_key: Optional API key for authentication
+        If `worker_url` or `api_key` are not provided, values are read from the
+        environment variables `CLOUDFLARE_WORKER_URL` and `CLOUDFLARE_API_KEY`
+        respectively. Initializes an empty in-memory chat cache (`local_chats`)
+        and HTTP `headers` (Content-Type JSON), adding an Authorization header
+        when an API key is available.
         """
         self.worker_url = worker_url or os.getenv('CLOUDFLARE_WORKER_URL', 'https://telegram-bot-worker.workers.dev')
         self.api_key = api_key or os.getenv('CLOUDFLARE_API_KEY')

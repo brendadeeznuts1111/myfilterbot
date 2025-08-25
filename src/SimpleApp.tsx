@@ -1,4 +1,11 @@
-
+/**
+ * Simple presentational React component rendering a static "Enhanced Analytics Dashboard" UI.
+ *
+ * Renders three feature cards (Performance KPIs, Recent Activity, Development Features),
+ * a status report with completed and next-phase lists, and a footer with environment details.
+ *
+ * @returns The dashboard as JSX.Element for rendering in the React tree.
+ */
 export function SimpleApp() {
 
   return (

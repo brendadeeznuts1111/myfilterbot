@@ -3,7 +3,18 @@ from typing import Dict, List, Optional, Any, Tuple, Set, Union
 import json
 
 def analyze_current_database():
-    """Analyze the current merged database"""
+    """
+    Analyze the merged customer database file 'customer_database.json' and print a brief summary.
+    
+    Reads and parses 'customer_database.json', then prints:
+    - total number of customers,
+    - up to the first 10 customer IDs,
+    - the first 8 key/value fields of a sample customer record,
+    - which of the specific new-data IDs ['JP990', 'BBPERSONAL', 'DAKO', 'VALL'] are present in the current database.
+    
+    Returns:
+        dict | None: Parsed JSON data on success; None if an exception occurred while reading or parsing the file.
+    """
     try:
         with open('customer_database.json', 'r') as f:
             data = json.load(f)

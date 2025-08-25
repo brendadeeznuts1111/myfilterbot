@@ -12,6 +12,22 @@ import { app, server } from '../config/app.yaml';
 
 const defines = require('../config/bun-defines.js');
 
+/**
+ * Orchestrates a production build using Bun with configured define flags.
+ *
+ * Cleans and recreates the dist directory, formats production defines from config,
+ * builds multiple server and client entry points (targeting Bun), then builds the
+ * React app for the browser (into dist/static). Copies public/static assets into
+ * the output, generates a simple build report (total size and file count), and
+ * logs applied optimizations.
+ *
+ * Side effects:
+ * - Executes shell commands (bun build, rm, cp, du, find).
+ * - Writes files into the dist/ directory.
+ * - On build failure for any entry or the React app, the process exits with a non-zero code.
+ *
+ * @returns {Promise<void>} Resolves when the build completes (or the process exits on fatal errors).
+ */
 async function build() {
   console.log('🚀 Building with Bun --define optimizations...\n');
 

@@ -4,6 +4,16 @@ import { join, basename, extname } from 'path';
 const srcDir = './src';
 const indexFile = join(srcDir, 'index.ts');
 
+/**
+ * Scans the source directory and generates src/index.ts exporting non-index modules.
+ *
+ * Reads files from the configured srcDir, filters for .ts, .tsx, .js, and .jsx files
+ * while excluding index.* and files starting with `bun-env` or `custom.d`. For each
+ * included file it adds an `export * from './moduleName';` line, writes the aggregated
+ * export statements (with a header comment) to the index file, and logs success.
+ *
+ * @returns A promise that resolves when the index file has been written.
+ */
 async function generateIndex() {
   try {
     const files = await readdir(srcDir);

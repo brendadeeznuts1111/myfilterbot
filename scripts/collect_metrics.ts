@@ -298,7 +298,18 @@ class MetricsCollector {
   }
 }
 
-// CLI Interface
+/**
+ * CLI entry point that parses command-line flags and runs the appropriate metrics action.
+ *
+ * Supports three modes selected via process argv:
+ * - `--collect-baseline`: runs a full baseline collection and saves it.
+ * - `--compare`: compares current metrics against the stored baseline and writes a comparison report.
+ * - `--monitor`: starts continuous monitoring (non-blocking) that every 30s collects memory, system, and a health API check, and persists accumulated metrics every 5 minutes.
+ *
+ * If no recognized flag is provided, prints usage instructions to the console.
+ *
+ * @returns A promise that resolves when the chosen action completes. In `--monitor` mode the function returns after scheduling background intervals (monitoring continues until the process exits).
+ */
 async function main() {
   const args = process.argv.slice(2);
   const collector = new MetricsCollector();

@@ -7,7 +7,17 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
 
-// Get all source files
+/**
+ * Recursively collects source files under the given directory.
+ *
+ * Traverses `dir` synchronously, skipping directories whose names include
+ * `node_modules`, `.git`, or `dist`, and returns paths for files with
+ * extensions `.ts`, `.tsx`, `.js`, or `.jsx`.
+ *
+ * @param {string} dir - Directory path to scan.
+ * @param {string[]} [fileList=[]] - Accumulator for found file paths; used for recursion.
+ * @returns {string[]} Array of matching file paths.
+ */
 function getAllFiles(dir, fileList = []) {
   const files = readdirSync(dir);
   
@@ -27,7 +37,15 @@ function getAllFiles(dir, fileList = []) {
   return fileList;
 }
 
-// Check if dependency is used
+/**
+ * Return whether a dependency appears to be referenced in the given files.
+ *
+ * Scans each file's contents for common import/require/usage patterns that mention `depName` (e.g. `from "dep"`, `require("dep")`, or inline `import` occurrences). Files should be provided as an array of file paths; the function returns true on the first match and false if no matches are found.
+ *
+ * @param {string} depName - The package name to search for.
+ * @param {string[]} files - Array of file paths to scan.
+ * @return {boolean} True if any file contains a matching import/require usage of `depName`, otherwise false.
+ */
 function isDependencyUsed(depName, files) {
   const importPatterns = [
     `from ['"]${depName}`,
@@ -48,7 +66,19 @@ function isDependencyUsed(depName, files) {
   return false;
 }
 
-// Main audit function
+/**
+ * Audit project dependencies and scan source files for common dead-code patterns.
+ *
+ * Reads package.json to collect dependencies (including devDependencies), gathers project files
+ * (src, tests, scripts, and existing config files), and determines which dependencies are likely unused
+ * by searching for import/require patterns. Skips common tooling and `@types/*` packages. Prints a summary
+ * of used vs. potentially unused dependencies and a suggested `bun remove` command for removals.
+ *
+ * Additionally scans source files for several dead-code patterns (unused exports, console calls, TODOs,
+ * commented-out code, empty catch blocks, unused variables) and reports per-file findings and totals.
+ *
+ * @returns {Promise<void>} Resolves when the audit and reporting complete.
+ */
 async function auditDependencies() {
   console.log('🔍 Starting Dependency Audit...\n');
   

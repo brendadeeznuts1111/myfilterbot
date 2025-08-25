@@ -31,6 +31,19 @@ class DebugHandler:
     performance_metrics: Any
     
     def __init__(self) -> None:
+        """
+        Initialize DebugHandler state.
+        
+        Sets up runtime flags and an initial structure for collecting performance metrics.
+        
+        Attributes:
+            test_mode (bool): If True, enables simulated/test behavior for error generation and related flows.
+            monitoring (bool): If True, indicates active monitoring mode (used to gate ongoing background checks).
+            performance_metrics (dict): Containers for collected timings:
+                - "command_times" (list): Per-command execution durations.
+                - "message_processing_times" (list): Per-message processing durations.
+                - "database_query_times" (list): Database query durations.
+        """
         self.test_mode = False
         self.monitoring = False
         self.performance_metrics = {
@@ -40,7 +53,11 @@ class DebugHandler:
         }
     
     async def debug_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Main debug command - shows debug menu"""
+        """
+        Display the administrative debug and monitoring menu as an inline keyboard.
+        
+        This handler is admin-only; if the invoking user is not the configured admin, the command replies with an "Admin access required" message and returns. When allowed, it sends a Markdown-formatted message summarizing current debug mode and basic error statistics (last 24h, total, resolved) and presents an inline keyboard for navigating system status, recent errors, performance, database health, test error generation, logs, configuration, error clearing, debug mode toggle, and export of debug information.
+        """
         # Check if user is admin
         if str(update.message.chat_id) != config.admin_chat_id:
             await update.message.reply_text("⛔ Admin access required")
@@ -91,7 +108,19 @@ Select an option below:
         )
     
     async def handle_debug_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle debug menu callbacks"""
+        """
+        Dispatch incoming debug callback queries to the appropriate debug handler.
+        
+        Acknowledges the callback query and routes based on query.data:
+        - "debug_status", "debug_errors", "debug_performance", "debug_database",
+          "debug_test_error", "debug_logs", "debug_config", "debug_clear",
+          "debug_toggle", "debug_export", "debug_menu" → corresponding _show/_action methods.
+        - Values starting with "test_" → _simulate_error.
+        - "debug_error_<id>" → _show_error_details with the extracted id.
+        - "debug_resolve_<id>" → _resolve_error with the extracted id.
+        
+        This function performs no return value; handlers it calls are responsible for editing or replying to the original message.
+        """
         query = update.callback_query
         await query.answer()
         
@@ -129,7 +158,17 @@ Select an option below:
             await self._resolve_error(query, error_id)
     
     async def _show_system_status(self, query) -> None:
-        """Show system status and health"""
+        """
+        Update the callback message with a Markdown-formatted system and bot status report.
+        
+        Gathers system metrics (CPU, memory, disk, uptime, network) using psutil when available and falls back to safe placeholders if psutil is not installed. Retrieves database statistics from the repository and composes a summary that includes system resources, bot/database statistics, network I/O, and basic configuration flags. Replaces the existing message text with the generated report and a single "Refresh" inline button. On failure, edits the message with an error summary.
+        
+        Parameters:
+            query: The Telegram callback query whose message will be edited with the status report.
+        
+        Returns:
+            None
+        """
         try:
             # Get system info (if psutil is available)
             if psutil:
@@ -195,7 +234,18 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             await query.edit_message_text(f"Error getting system status: {e}")
     
     async def _show_recent_errors(self, query) -> None:
-        """Show recent errors"""
+        """
+        Display a short list of recent errors by editing the callback message with a formatted summary and per-error "View" buttons.
+        
+        Fetches recent errors (up to 10) from the error tracker and, if any are found, builds a Markdown-formatted message showing up to 5 entries with:
+        - resolved status and severity icons,
+        - category, truncated error type/message, error id, and a human-readable relative time.
+        
+        Adds an inline keyboard with a "View" button for each shown error (callback `debug_error_<id>`) and a "Back" button (`debug_menu`). If no recent errors exist, edits the message to indicate that no errors are present.
+        
+        Side effects:
+        - Edits the original callback message via the provided Telegram query object.
+        """
         errors = error_tracker.get_recent_errors(limit=10)
         
         if not errors:
@@ -239,7 +289,14 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         )
     
     async def _show_error_details(self, query, error_id: str) -> None:
-        """Show detailed error information"""
+        """
+        Display a detailed view of a tracked error by editing the callback query message.
+        
+        Looks up the error by `error_id` in the global `error_tracker.error_history`. If the error is not found, the message is edited to "Error not found". If found, the function builds a Markdown-formatted details view including ID, timestamp, category, severity, resolved status, error type, message, JSON context (truncated to ~500 characters) and traceback (truncated to ~800 characters), and edits the callback message to show it. If the error is unresolved, a "Mark Resolved" inline button is added; a "Back" button is always provided.
+        
+        Parameters:
+            error_id: The identifier of the error to display (used to locate the error in error_history).
+        """
         error = None
         for e in error_tracker.error_history:
             if e['id'] == error_id:
@@ -290,7 +347,17 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         )
     
     async def _show_performance_metrics(self, query) -> None:
-        """Show performance metrics"""
+        """
+        Show aggregated performance and error metrics and update the callback-query message.
+        
+        Builds an overview from error_tracker (total errors, last 24h, resolved rate, distribution by category and severity).
+        If psutil is available, appends basic system metrics (CPU, memory, process count). Safely handles absence or read errors from psutil.
+        Edits the original callback query message in-place with a Markdown-formatted report and a single "Back" button.
+        
+        Notes:
+        - Percentage values are reported as 0 when there are no recorded errors to avoid division-by-zero.
+        - This function performs no return and edits the message via the provided callback `query`.
+        """
         stats = error_tracker.get_error_stats()
         
         # Calculate error rate
@@ -347,7 +414,14 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         )
     
     async def _show_database_health(self, query) -> None:
-        """Show database health status"""
+        """
+        Show the database health report and edit the callback message with the results.
+        
+        Performs basic checks on the primary database file and its backup, queries database statistics, runs simple read and lookup tests, and presents a Markdown-formatted health summary with actions (backup, back). Any errors during the check are caught and reported by editing the same callback message.
+        
+        Parameters:
+            query: Telegram CallbackQuery object used to edit the original message with the health report.
+        """
         try:
             # Check database file
             db_file = "data/customer_database.json"
@@ -422,7 +496,15 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             await query.edit_message_text(f"Error checking database health: {e}")
     
     async def _test_error_handling(self, query, context) -> None:
-        """Test error handling system"""
+        """
+        Show an interactive menu to trigger simulated test errors of varying severities.
+        
+        Edits the callback message to present buttons for Critical, High, Medium, and Low test errors (and a Cancel/back option). The selected button will emit a callback data value used by the handler to simulate the corresponding error.
+        
+        Parameters:
+            query: The Telegram CallbackQuery whose message will be edited to display the test menu.
+            context: The Telegram callback context (passed through from the handler).
+        """
         keyboard = [
             [
                 InlineKeyboardButton("💥 Critical Error", callback_data="test_critical"),
@@ -446,7 +528,14 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         )
     
     async def _show_recent_logs(self, query) -> None:
-        """Show recent log entries"""
+        """
+        Show the most recent entries from today's debug log and display them in the current callback message.
+        
+        Reads the file named `debug_YYYYMMDD.log` from `error_tracker.log_dir`. If the file exists, the last 20 lines are extracted, each line is truncated to 100 characters, and the excerpt is sent as a Markdown code block with a "Back" button. If the log file does not exist, the message is replaced with "No logs found for today". Any file read errors result in the message being replaced with an error description.
+        
+        Parameters:
+            query: The Telegram CallbackQuery whose message will be edited to contain the log excerpt or an error/no-file notice.
+        """
         log_dir = error_tracker.log_dir
         today_log = log_dir / f"debug_{datetime.now().strftime('%Y%m%d')}.log"
         
@@ -479,7 +568,11 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             await query.edit_message_text(f"Error reading logs: {e}")
     
     async def _show_configuration(self, query) -> None:
-        """Show current configuration"""
+        """
+        Show the bot's current runtime configuration in a Markdown-formatted message and replace the callback message with it.
+        
+        Displays bot settings (token presence is indicated and partially masked), admin chat ID, database path, threshold values, feature flags, and debug settings. Replaces the current message via the callback query and adds a single "Back" button to return to the debug menu.
+        """
         config_text = f"""
 🔧 **Current Configuration**
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -515,7 +608,14 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         )
     
     async def _clear_errors(self, query) -> None:
-        """Clear old errors"""
+        """
+        Clear errors older than seven days and update the callback message with the result.
+        
+        Uses the module-level error_tracker to remove errors older than 7 days and then retrieves updated error statistics. Edits the supplied callback query's message to confirm the cleanup and show the remaining total.
+        
+        Parameters:
+            query: The Telegram CallbackQuery whose message will be edited with a confirmation.
+        """
         error_tracker.clear_old_errors(days=7)
         
         stats = error_tracker.get_error_stats()
@@ -528,7 +628,16 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         )
     
     async def _toggle_debug_mode(self, query) -> None:
-        """Toggle debug mode on/off"""
+        """
+        Toggle the bot's debug mode and update the triggering message to reflect the new state.
+        
+        This flips the global debug mode flag (via error_handler.enable_debug_mode) and edits the provided
+        CallbackQuery's message to show whether debug mode is now enabled or disabled and what that means
+        for error message verbosity.
+        
+        Parameters:
+            query: The CallbackQuery whose message will be edited to display the new debug mode status.
+        """
         current = error_handler.debug_mode
         error_handler.enable_debug_mode(not current)
         
@@ -542,7 +651,11 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
         )
     
     async def _export_debug_info(self, query, context) -> None:
-        """Export debug information to file"""
+        """
+        Export current debug and system state to a temporary JSON file and send it to the admin chat.
+        
+        Gathers a snapshot consisting of a timestamp, system metrics (platform, Python version, CPU/memory/disk usage), bot/database statistics, recent errors, and selected configuration flags. The snapshot is written to a timestamped JSON file, sent as a document to the chat that triggered the request, then the temporary file is removed. On success the callback is answered with a confirmation; on failure the message is edited to show the error.
+        """
         try:
             # Prepare debug info
             debug_info = {
@@ -587,7 +700,17 @@ Last Updated: {datetime.now().strftime('%H:%M:%S')}
             await query.edit_message_text(f"Error exporting debug info: {e}")
     
     async def _show_debug_menu(self, query) -> None:
-        """Show the main debug menu"""
+        """
+        Render and update the main debug & monitoring menu in the current callback query message.
+        
+        Displays current debug mode and basic error statistics (last 24h, total, resolved) and replaces the message text with an inline keyboard linking to the primary debug views (System Status, Recent Errors, Performance, Database Health).
+        
+        Parameters:
+            query: Telegram CallbackQuery object whose message will be edited to show the debug menu.
+        
+        Returns:
+            None
+        """
         debug_status = "🟢 Enabled" if error_handler.debug_mode else "🔴 Disabled"
         
         message = f"""
@@ -621,7 +744,22 @@ Select an option:
         )
     
     async def _simulate_error(self, query, error_type) -> None:
-        """Simulate different types of errors for testing"""
+        """
+        Simulate a test error and record it in the error tracker, then update the callback message with the simulation result.
+        
+        Useful for exercising error handling paths from the debug UI. The function logs a synthetic error (via the global error_tracker) with a severity and category derived from `error_type`, and edits the originating callback query message to report the generated error ID.
+        
+        Parameters:
+            query: The Telegram CallbackQuery that triggered the simulation; used to determine the initiating user (for the error context) and to edit the message shown to the user.
+            error_type (str): One of:
+                - "test_critical": create a CRITICAL configuration error
+                - "test_high": create a HIGH database error
+                - "test_medium": create a MEDIUM API error
+                - "test_low": create a LOW validation error
+        
+        Returns:
+            None
+        """
         from .error_handler import ErrorCategory, ErrorSeverity
         
         try:
@@ -674,7 +812,19 @@ Select an option:
             await query.edit_message_text(f"Error simulating error: {e}")
     
     async def _resolve_error(self, query, error_id: str) -> None:
-        """Mark an error as resolved"""
+        """
+        Mark an error as resolved and update the interactive message with the result.
+        
+        Attempts to mark the error identified by `error_id` as resolved via the global error_tracker.
+        Edits the originating callback message to confirm the resolution on success, or to indicate failure
+        (e.g., if the ID does not exist).
+        
+        Parameters:
+            error_id (str): The identifier of the error to resolve.
+        
+        Returns:
+            None
+        """
         success = error_tracker.resolve_error(error_id, "Manually resolved via debug interface")
         
         if success:

@@ -6,7 +6,15 @@
 import { reportGenerator } from './report_worker';
 import type { DatabaseSnapshot } from './report_worker';
 
-// Generate test data
+/**
+ * Create a synthetic DatabaseSnapshot containing the specified number of customers and sample transactions.
+ *
+ * Each customer entry is keyed by a customer_id (`CUST###`) and includes randomized fields (balance, weekly_pnl, active, telegram_id, last_activity).
+ * For every customer this generates five completed transactions with randomized type and amount.
+ *
+ * @param customerCount - Number of customer records to generate.
+ * @returns A DatabaseSnapshot with `customers` (map of customerCount entries), `transactions` (customerCount * 5 entries), and a `timestamp` for the snapshot.
+ */
 function generateTestData(customerCount: number): DatabaseSnapshot {
   const customers: Record<string, any> = {};
   const transactions: any[] = [];

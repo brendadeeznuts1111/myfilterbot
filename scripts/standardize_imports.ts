@@ -282,7 +282,14 @@ class ImportStandardizer {
   }
 }
 
-// Main execution
+/**
+ * Entrypoint that runs the import standardization pass and prints a final report.
+ *
+ * Runs the ImportStandardizer to scan and update TypeScript/TSX files, then generates a report.
+ * On failure the error is logged and the process exits with code 1.
+ *
+ * @returns A promise that resolves when processing and reporting complete.
+ */
 async function main() {
   console.log('🚀 Starting import standardization...\n');
   
