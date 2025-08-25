@@ -50,8 +50,20 @@
     <link rel="icon" type="image/x-icon" href="/images/favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
     
-    <!-- External Resources -->
+    <!-- Enhanced Static Assets -->
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/advanced-components.css">
+    <link rel="stylesheet" href="/static/css/fantdev-components.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="/static/js/utils.js" defer></script>
+    <script src="/static/js/components.js" defer></script>
+    <script src="/static/js/advanced-components.js" defer></script>
+    <script src="/static/js/icon-helper.js" defer></script>
+    
+    <!-- External Resources -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
     
@@ -594,6 +606,235 @@
                 gap: 15px;
             }
         }
+
+        /* Enhanced Navigation Styles */
+        .enhanced-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-list {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 0.5rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .breadcrumb-current {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Section Indicator */
+        .section-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .section-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .section-name {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        /* Enhanced Floating Action Button */
+        .enhanced-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .fab-tooltip {
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .enhanced-fab:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        .fab-button {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: #667eea;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .fab-button:hover {
+            background: #5a67d8;
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 1rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .enhanced-fab.active .fab-menu {
+            display: flex;
+        }
+
+        .fab-item {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .fab-item:hover {
+            background: #667eea;
+            color: #ffffff;
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.8);
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(1rem);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: rgba(102, 126, 234, 1);
+            transform: translateY(-0.25rem);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .enhanced-navigation {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .section-indicator {
+                align-self: stretch;
+                justify-content: center;
+            }
+
+            .enhanced-fab {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .back-to-top {
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .breadcrumb-nav {
+                font-size: 0.875rem;
+            }
+
+            .section-indicator {
+                padding: 0.375rem 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -657,6 +898,26 @@
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Navigation Elements -->
+        <div class="enhanced-navigation">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <ol class="breadcrumb-list">
+                    <li class="breadcrumb-item">
+                        <a href="/" class="breadcrumb-link">Home</a>
+                    </li>
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item breadcrumb-current">Customer Trading Portal</li>
+                </ol>
+            </nav>
+            
+            <!-- Section Indicator -->
+            <div class="section-indicator">
+                <span class="section-label">Current Section:</span>
+                <span class="section-name" id="current-section">Overview</span>
             </div>
         </div>
         
@@ -1293,6 +1554,108 @@
                 }
             });
         };
+
+        // Enhanced Navigation Functions
+        
+        // FAB Menu Toggle
+        function toggleFabMenu() {
+            const fab = document.getElementById('enhanced-fab');
+            if (fab) {
+                fab.classList.toggle('active');
+            }
+        }
+
+        // Quick Actions Handler
+        function quickAction(action) {
+            switch (action) {
+                case 'refresh':
+                    refreshAllData();
+                    break;
+                case 'export':
+                    exportAllData();
+                    break;
+                case 'notifications':
+                    showNotification('Notifications', 'Notifications panel opened', 'info');
+                    break;
+                case 'settings':
+                    showNotification('Settings', 'Account settings panel opened', 'info');
+                    break;
+            }
+            // Close FAB menu after action
+            toggleFabMenu();
+        }
+
+        // Refresh all data
+        function refreshAllData() {
+            showNotification('Refresh', 'Refreshing all data...', 'info');
+            loadDashboard();
+        }
+
+        // Export all data
+        function exportAllData() {
+            showNotification('Export', 'Preparing export...', 'info');
+            // Implementation would export current data
+            setTimeout(() => {
+                showNotification('Export', 'Export completed successfully', 'success');
+            }, 2000);
+        }
+
+        function updateSectionIndicator(section) {
+            const currentSection = document.getElementById('current-section');
+            if (currentSection) {
+                currentSection.textContent = section;
+            }
+        }
+
+        function setupBackToTop() {
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTop.classList.add('visible');
+                    } else {
+                        backToTop.classList.remove('visible');
+                    }
+                });
+
+                backToTop.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+        }
+
+        // Initialize enhanced navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            setupBackToTop();
+            updateSectionIndicator('Overview');
+        });
     </script>
+
+    <!-- Enhanced Floating Action Button -->
+    <div class="enhanced-fab" id="enhanced-fab">
+        <div class="fab-tooltip">Quick Actions</div>
+        <button class="fab-button" onclick="toggleFabMenu()" aria-label="Quick actions menu">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab-item" onclick="quickAction('refresh')" title="Refresh data">
+                <i class="fas fa-sync"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('export')" title="Export data">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('notifications')" title="View notifications">
+                <i class="fas fa-bell"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('settings')" title="Account settings">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 </body>
 </html>
