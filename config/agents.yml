@@ -1,0 +1,229 @@
+# Agent and Master Agent Configuration
+agents:
+  # Individual agents
+  list:
+    - id: A100
+      name: "Alice Chen"
+      code: "AC100"
+      master: M10
+      status: active
+      joined: "2024-01-15"
+      telegram_id: 100200300
+      customers: [1, 42, 77, 101, 155]
+      commission_rate: 0.05
+      balance: 5420.50
+      total_earned: 125000
+      
+    - id: A101
+      name: "Bob Smith"
+      code: "BS101"
+      master: M10
+      status: active
+      joined: "2024-02-01"
+      telegram_id: 100200301
+      customers: [99, 123, 201, 256]
+      commission_rate: 0.05
+      balance: 3200.75
+      total_earned: 87000
+      
+    - id: A102
+      name: "Carol Johnson"
+      code: "CJ102"
+      master: M11
+      status: active
+      joined: "2024-02-15"
+      telegram_id: 100200302
+      customers: [88, 144, 188, 245, 301, 355]
+      commission_rate: 0.055  # Higher rate for performance
+      balance: 7800.25
+      total_earned: 145000
+      
+    - id: A103
+      name: "David Lee"
+      code: "DL103"
+      master: M11
+      status: suspended
+      joined: "2024-03-01"
+      telegram_id: 100200303
+      customers: [177, 233]
+      commission_rate: 0.045
+      balance: 1200.00
+      total_earned: 35000
+      suspension_reason: "Fraud investigation"
+      
+    - id: A104
+      name: "Emma Wilson"
+      code: "EW104"
+      master: M12
+      status: active
+      joined: "2024-03-15"
+      telegram_id: 100200304
+      customers: [401, 402, 403, 404, 405, 450, 501]
+      commission_rate: 0.06  # Top performer rate
+      balance: 12500.80
+      total_earned: 210000
+
+# Master agents
+masters:
+  list:
+    - id: M10
+      name: "Master Mike Zhang"
+      code: "MZ10"
+      status: active
+      joined: "2023-06-01"
+      telegram_id: 200300400
+      agents: [A100, A101]
+      commission_rate: 0.02
+      override_rate: 0.01  # Additional override on agent commissions
+      balance: 25000.50
+      total_earned: 580000
+      tier: platinum
+      
+    - id: M11
+      name: "Master Sarah Brown"
+      code: "SB11"
+      status: active
+      joined: "2023-07-15"
+      telegram_id: 200300401
+      agents: [A102, A103]
+      commission_rate: 0.02
+      override_rate: 0.01
+      balance: 18500.75
+      total_earned: 420000
+      tier: gold
+      
+    - id: M12
+      name: "Master James Taylor"
+      code: "JT12"
+      status: active
+      joined: "2023-08-01"
+      telegram_id: 200300402
+      agents: [A104]
+      commission_rate: 0.025  # Higher master rate
+      override_rate: 0.015
+      balance: 35000.00
+      total_earned: 750000
+      tier: platinum
+
+# Commission structure
+commission:
+  # Base rates
+  base_rates:
+    agent: 0.05         # 5% default
+    master: 0.02        # 2% default
+    master_override: 0.01  # 1% override on agent sales
+  
+  # Performance tiers
+  performance_tiers:
+    bronze:
+      monthly_target: 10000
+      agent_bonus: 0
+      master_bonus: 0
+      
+    silver:
+      monthly_target: 50000
+      agent_bonus: 0.005  # +0.5%
+      master_bonus: 0.002  # +0.2%
+      
+    gold:
+      monthly_target: 100000
+      agent_bonus: 0.01   # +1%
+      master_bonus: 0.005  # +0.5%
+      
+    platinum:
+      monthly_target: 250000
+      agent_bonus: 0.015  # +1.5%
+      master_bonus: 0.01   # +1%
+  
+  # Special bonuses
+  bonuses:
+    new_customer: 50      # $50 per new customer
+    vip_customer: 500     # $500 per VIP customer
+    retention_bonus: 0.01  # 1% for 90%+ retention
+    volume_bonus:
+      tier1: { min: 100000, bonus: 1000 }
+      tier2: { min: 500000, bonus: 5000 }
+      tier3: { min: 1000000, bonus: 15000 }
+  
+  # Payment schedule
+  payment:
+    frequency: monthly    # weekly, bi-weekly, monthly
+    payment_day: 5       # 5th of each month
+    min_payout: 100      # Minimum $100 for payout
+    hold_period: 7       # 7 day hold for chargebacks
+    
+    # Payment methods
+    methods:
+      - bank_transfer
+      - crypto
+      - telegram_wallet
+      - company_credit
+  
+  # Clawback rules
+  clawback:
+    enabled: true
+    reasons:
+      - customer_chargeback
+      - fraudulent_activity
+      - bonus_abuse
+      - violation_of_terms
+    grace_period: 30  # 30 days to dispute
+
+# Hierarchy rules
+hierarchy:
+  # Promotion criteria
+  promotion:
+    agent_to_master:
+      min_agents_recruited: 5
+      min_monthly_volume: 500000
+      min_tenure_months: 12
+      min_customer_count: 100
+      
+  # Territory assignment
+  territories:
+    - id: T1
+      name: "North America"
+      masters: [M10]
+      countries: [US, CA, MX]
+      
+    - id: T2
+      name: "Europe"
+      masters: [M11]
+      countries: [GB, DE, FR, IT, ES]
+      
+    - id: T3
+      name: "Asia Pacific"
+      masters: [M12]
+      countries: [CN, JP, KR, AU, NZ]
+  
+  # Reporting structure
+  reporting:
+    agent_reports_to: master
+    master_reports_to: admin
+    escalation_path:
+      - agent
+      - master
+      - admin
+      - owner
+
+# KPIs and metrics
+metrics:
+  agent_kpis:
+    - customer_acquisition
+    - customer_retention
+    - monthly_volume
+    - average_customer_value
+    - churn_rate
+    
+  master_kpis:
+    - team_performance
+    - agent_retention
+    - territory_growth
+    - total_network_volume
+    
+  tracking:
+    - daily_signups
+    - weekly_deposits
+    - monthly_revenue
+    - quarterly_growth
+    - annual_profit

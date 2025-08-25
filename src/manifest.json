@@ -1,0 +1,69 @@
+{
+  "name": "Fantdev Trading Bot Admin Server",
+  "version": "3.0.0",
+  "description": "Single-port admin panel for bot, DB, Redis, customers, and dashboard",
+  "env": {
+    "ADMIN_PASSWORD": "Required. Login password (JWT signing key).",
+    "PORT": "Optional. Defaults to 3003.",
+    "NODE_ENV": "Optional. 'development' or 'production'.",
+    "JWT_SECRET": "Optional. Defaults to ADMIN_PASSWORD."
+  },
+  "routes": {
+    "auth": {
+      "GET  /login": "Public login page",
+      "POST /api/auth/login": "Public – issue JWT cookie",
+      "POST /api/auth/logout": "Public – clear cookie"
+    },
+    "dashboard": {
+      "GET  /": "Redirect to /dashboard",
+      "GET  /dashboard": "Protected SPA (JWT required)",
+      "GET  /dashboard/*": "Protected dashboard assets"
+    },
+    "health": {
+      "GET  /health": "Public – basic health check",
+      "GET  /api/health": "Public – detailed health status",
+      "GET  /api/admin/health/db": "Protected – DB ping + latency",
+      "GET  /api/admin/health/redis": "Protected – Redis ping + latency",
+      "GET  /api/admin/health/bot": "Protected – Bot status check"
+    },
+    "config": {
+      "GET  /api/admin/config": "Protected – live YAML config",
+      "GET  /api/yaml/:file": "Protected – specific YAML file",
+      "POST /api/yaml/:file": "Protected – update YAML file",
+      "GET  /api/dashboard/config": "Public – hot-reload config (no auth)"
+    },
+    "customers": {
+      "GET  /api/admin/customers": "Protected – list all customers",
+      "GET  /api/admin/customer/:id": "Protected – single customer",
+      "POST /api/admin/customer": "Protected – create customer",
+      "PUT  /api/admin/customer/:id": "Protected – update customer",
+      "DELETE /api/admin/customer/:id": "Protected – delete customer"
+    },
+    "monitoring": {
+      "GET  /api/admin/stats": "Protected – system statistics",
+      "GET  /api/admin/logs": "Protected – tail app logs",
+      "GET  /api/ws": "Protected – WebSocket for live updates",
+      "GET  /api/dashboard/stream": "Protected – SSE for real-time data"
+    },
+    "features": {
+      "GET  /api/features": "Protected – list feature flags",
+      "POST /api/features/:name/toggle": "Protected – toggle feature"
+    },
+    "assets": {
+      "GET  /favicon.ico": "Public – favicon",
+      "GET  /favicon-*.png": "Public – favicon variants",
+      "GET  /apple-touch-icon.png": "Public – Apple touch icon"
+    }
+  },
+  "middleware": {
+    "cors": "Applied to all routes",
+    "rateLimit": "Applied to API routes (100 req/min)",
+    "jwt": "Applied to protected routes via withAuth()",
+    "logging": "Applied to all routes"
+  },
+  "databases": {
+    "postgres": "Customer data, transactions, configs",
+    "redis": "Session cache, rate limiting, hot data",
+    "json": "Local customer_database.json fallback"
+  }
+}

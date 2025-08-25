@@ -1,0 +1,82 @@
+# Telegram Bot Configuration
+telegram:
+  # Bot tokens
+  botToken: ${TELEGRAM_BOT_TOKEN:-123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11}
+  cashierBotToken: ${TELEGRAM_CASHIER_TOKEN:-654321:XYZ-ABC5678mnoPq-rst90U3v4w567ab22}
+  
+  # VIP settings
+  vipThreshold: 500         # Minimum deposit for VIP status
+  vipBenefits:
+    rebate: 0.01           # 1% rebate on losses
+    priority_support: true
+    exclusive_groups: true
+    higher_limits: true
+  
+  # Fraud detection
+  fraudScoreLimit: 75       # Max allowed fraud score (0-100)
+  fraudChecks:
+    duplicate_accounts: true
+    velocity_check: true
+    pattern_analysis: true
+    blacklist_check: true
+  
+  # Group chats
+  groups:
+    main:
+      id: "-2714719687"
+      name: "Main Trading Group"
+      type: "public"
+      max_members: 5000
+    vip:
+      id: "-2814729688"
+      name: "VIP Trading Group"
+      type: "private"
+      max_members: 200
+    alerts:
+      id: "-2914739689"
+      name: "System Alerts"
+      type: "admin"
+      max_members: 10
+  
+  # Bot commands
+  commands:
+    public:
+      - /start
+      - /help
+      - /balance
+      - /deposit
+      - /withdraw
+      - /history
+      - /support
+    admin:
+      - /stats
+      - /broadcast
+      - /ban
+      - /unban
+      - /promote
+      - /demote
+  
+  # Message templates
+  templates:
+    welcome: "Welcome to Fantdev Trading Bot! 🤖"
+    balance: "Your balance: ${balance} USD"
+    deposit_success: "Deposit of ${amount} USD successful! ✅"
+    withdrawal_pending: "Withdrawal of ${amount} USD is being processed..."
+    vip_promotion: "Congratulations! You've been promoted to VIP! 🌟"
+  
+  # Rate limiting
+  rateLimit:
+    messages_per_minute: 30
+    commands_per_minute: 10
+    api_calls_per_minute: 100
+  
+  # Webhook settings
+  webhook:
+    url: ${TELEGRAM_WEBHOOK_URL:-https://api.fantdev.com/telegram/webhook}
+    secret: ${TELEGRAM_WEBHOOK_SECRET}
+    max_connections: 100
+    allowed_updates:
+      - message
+      - callback_query
+      - inline_query
+      - channel_post

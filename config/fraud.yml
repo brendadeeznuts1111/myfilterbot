@@ -1,0 +1,148 @@
+# Fraud Detection Configuration
+fraud:
+  # Scoring thresholds
+  scoring:
+    low_risk: 0-25
+    medium_risk: 26-50
+    high_risk: 51-75
+    critical_risk: 76-100
+    auto_block_threshold: 85
+  
+  # Detection rules
+  rules:
+    # Account patterns
+    duplicate_accounts:
+      enabled: true
+      weight: 30
+      checks:
+        - same_ip_address
+        - same_device_fingerprint
+        - similar_email_pattern
+        - same_phone_number
+    
+    # Velocity checks
+    velocity:
+      enabled: true
+      weight: 25
+      limits:
+        deposits_per_hour: 5
+        withdrawals_per_day: 3
+        bets_per_minute: 10
+        api_calls_per_minute: 100
+    
+    # Pattern analysis
+    patterns:
+      enabled: true
+      weight: 20
+      suspicious_patterns:
+        - rapid_deposit_withdrawal  # Deposit and withdraw within 5 mins
+        - martingale_betting        # Doubling bets after losses
+        - bonus_abuse              # Multiple accounts claiming bonuses
+        - arbitrage_betting        # Betting on all outcomes
+    
+    # Geographic checks
+    geo_restrictions:
+      enabled: true
+      weight: 15
+      blocked_countries:
+        - KP  # North Korea
+        - IR  # Iran
+        - SY  # Syria
+      vpn_detection: true
+      proxy_detection: true
+    
+    # Behavioral analysis
+    behavior:
+      enabled: true
+      weight: 10
+      indicators:
+        - unusual_betting_hours    # Betting at 3-5 AM local time
+        - sudden_stake_increase    # 10x normal bet size
+        - loss_chasing            # Increasing bets after losses
+        - suspicious_win_rate     # >80% win rate over 100+ bets
+  
+  # Blacklists
+  blacklists:
+    ip_addresses:
+      - 192.168.1.100
+      - 10.0.0.50
+    email_domains:
+      - tempmail.com
+      - guerrillamail.com
+      - mailinator.com
+    phone_prefixes:
+      - "+850"  # North Korea
+      - "+98"   # Iran
+    telegram_ids:
+      - 12345678
+      - 87654321
+  
+  # Whitelists (never flag these)
+  whitelists:
+    vip_customers: true    # VIP customers bypass certain checks
+    verified_accounts: true # KYC verified accounts
+    telegram_ids:
+      - 777000  # Telegram official
+    ip_addresses:
+      - 127.0.0.1
+      - ::1
+  
+  # Alert settings
+  alerts:
+    enabled: true
+    channels:
+      telegram:
+        enabled: true
+        chat_id: "-2914739689"  # Admin alerts group
+        min_score: 75
+      email:
+        enabled: false
+        recipients:
+          - security@fantdev.com
+        min_score: 85
+      webhook:
+        enabled: false
+        url: ${FRAUD_WEBHOOK_URL}
+        min_score: 90
+  
+  # Automated actions
+  actions:
+    score_75_plus:
+      - flag_for_review
+      - notify_admins
+      - limit_withdrawals
+    score_85_plus:
+      - suspend_account
+      - freeze_balance
+      - require_kyc
+    score_95_plus:
+      - permanent_ban
+      - report_to_authorities
+  
+  # Machine learning
+  ml_detection:
+    enabled: false
+    model: fraud_detector_v2
+    confidence_threshold: 0.8
+    features:
+      - transaction_velocity
+      - betting_patterns
+      - network_analysis
+      - device_fingerprint
+  
+  # Logging
+  logging:
+    enabled: true
+    file: logs/fraud.jsonl
+    retention_days: 90
+    include_metadata: true
+    
+  # Review queue
+  review:
+    auto_expire_hours: 72
+    max_queue_size: 1000
+    priority_scores:
+      critical: 90-100
+      high: 75-89
+      medium: 50-74
+      low: 0-49

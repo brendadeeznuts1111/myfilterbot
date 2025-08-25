@@ -1,0 +1,372 @@
+# Dashboard Configuration
+dashboard:
+  # Basic settings
+  title: Fantdev Trading Bot Dashboard
+  version: 3.0.0
+  environment: ${NODE_ENV:-development}
+  
+  # Branding
+  branding:
+    name: Fantdev Trading Systems
+    logo: 🤖
+    tagline: Enterprise Trading Platform
+    colors:
+      primary: "#2a5298"
+      secondary: "#1e3c72"
+      success: "#28a745"
+      warning: "#ffc107"
+      danger: "#dc3545"
+      info: "#17a2b8"
+    fonts:
+      heading: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+      body: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+      monospace: "'SF Mono', Monaco, 'Cascadia Code', monospace"
+  
+  # Authentication
+  auth:
+    enabled: true
+    sessionTimeout: 43200 # 12 hours in seconds
+    requireMFA: false
+    allowedDomains:
+      - fantdev.com
+      - fantasy402.com
+    passwordPolicy:
+      minLength: 8
+      requireNumbers: true
+      requireSpecialChars: true
+  
+  # UI Configuration
+  ui:
+    theme: auto # auto, light, dark
+    sidebarCollapsed: false
+    showNotifications: true
+    animationsEnabled: true
+    dateFormat: "YYYY-MM-DD"
+    timeFormat: "HH:mm:ss"
+    timezone: ${TZ:-UTC}
+    language: en
+    
+    # Layout options
+    layout:
+      headerHeight: 60
+      sidebarWidth: 260
+      footerHeight: 40
+      maxContentWidth: 1400
+    
+    # Dashboard tabs
+    tabs:
+      - id: overview
+        name: Overview
+        icon: chart-line
+        enabled: true
+        default: true
+      - id: services
+        name: Services
+        icon: server
+        enabled: true
+      - id: customers
+        name: Customers
+        icon: users
+        enabled: true
+      - id: api
+        name: API Testing
+        icon: code
+        enabled: true
+      - id: config
+        name: YAML Config
+        icon: cog
+        enabled: true
+      - id: features
+        name: Feature Flags
+        icon: toggle-on
+        enabled: true
+      - id: logs
+        name: Live Logs
+        icon: terminal
+        enabled: true
+      - id: analytics
+        name: Analytics
+        icon: chart-bar
+        enabled: false
+  
+  # Metrics & Monitoring
+  metrics:
+    refreshInterval: 30000 # 30 seconds
+    retentionDays: 30
+    enabledMetrics:
+      - activeUsers
+      - totalTransactions
+      - totalBalance
+      - systemUptime
+      - serviceHealth
+      - apiLatency
+      - errorRate
+    
+    # Alert thresholds
+    alerts:
+      errorRateThreshold: 5 # percent
+      latencyThreshold: 1000 # ms
+      uptimeThreshold: 99.9 # percent
+      balanceChangeThreshold: 10000 # dollars
+  
+  # API Configuration
+  api:
+    baseUrl: ${API_BASE_URL:-/api}
+    timeout: 30000 # 30 seconds
+    retryAttempts: 3
+    retryDelay: 1000 # 1 second
+    
+    # Rate limiting
+    rateLimit:
+      enabled: true
+      windowMs: 60000 # 1 minute
+      maxRequests: 100
+    
+    # CORS settings
+    cors:
+      enabled: true
+      origins:
+        - http://localhost:3003
+        - https://fantdev.com
+        - https://dashboard.fantdev.com
+      credentials: true
+  
+  # WebSocket Configuration
+  websocket:
+    enabled: true
+    reconnect: true
+    reconnectDelay: 5000 # 5 seconds
+    maxReconnectAttempts: 10
+    heartbeatInterval: 30000 # 30 seconds
+    
+    # Channels to subscribe
+    channels:
+      - config:changed
+      - feature:toggled
+      - hotreload:triggered
+      - customer:updated
+      - service:status
+      - system:alert
+  
+  # Logging
+  logging:
+    level: ${LOG_LEVEL:-info} # debug, info, warn, error
+    maxLines: 500
+    persistLogs: true
+    logFile: ./logs/dashboard.log
+    
+    # Log filters
+    filters:
+      - level: error
+        highlight: true
+        notify: true
+      - level: warn
+        highlight: true
+        notify: false
+  
+  # Export Options
+  export:
+    formats:
+      - json
+      - csv
+      - excel
+      - pdf
+    includeMetadata: true
+    compressFiles: true
+    emailEnabled: false
+  
+  # Feature Toggles (Dashboard-specific)
+  features:
+    customerManagement:
+      enabled: true
+      allowCreate: true
+      allowEdit: true
+      allowDelete: false
+    
+    yamlEditor:
+      enabled: true
+      syntaxHighlighting: true
+      autoSave: false
+      validation: true
+    
+    apiTesting:
+      enabled: true
+      saveHistory: true
+      maxHistoryItems: 50
+    
+    realTimeUpdates:
+      enabled: true
+      useWebSocket: true
+      useSSE: true
+    
+    advancedAnalytics:
+      enabled: false
+      chartLibrary: recharts
+      exportCharts: true
+  
+  # Service Endpoints
+  services:
+    telegram:
+      name: Telegram Bot
+      endpoint: /api/bot/status
+      healthCheck: true
+      icon: telegram
+    
+    portal:
+      name: Portal Server
+      endpoint: /api/health
+      healthCheck: true
+      icon: globe
+    
+    admin:
+      name: Admin Server
+      endpoint: /api/health
+      healthCheck: true
+      icon: user-shield
+    
+    websocket:
+      name: WebSocket Server
+      endpoint: /api/ws/status
+      healthCheck: true
+      icon: plug
+    
+    database:
+      name: Database
+      endpoint: /api/db/status
+      healthCheck: true
+      icon: database
+    
+    redis:
+      name: Redis Cache
+      endpoint: /api/redis/status
+      healthCheck: true
+      icon: bolt
+  
+  # Quick Actions
+  quickActions:
+    - id: start-all
+      name: Start All Services
+      icon: play
+      action: /api/services/start
+      method: POST
+      confirmRequired: true
+    
+    - id: stop-all
+      name: Stop All Services
+      icon: stop
+      action: /api/services/stop
+      method: POST
+      confirmRequired: true
+    
+    - id: restart-services
+      name: Restart Services
+      icon: sync
+      action: /api/services/restart
+      method: POST
+      confirmRequired: true
+    
+    - id: health-check
+      name: Health Check
+      icon: heartbeat
+      action: /api/health/full
+      method: GET
+      confirmRequired: false
+    
+    - id: export-data
+      name: Export Data
+      icon: download
+      action: /api/export/all
+      method: GET
+      confirmRequired: false
+    
+    - id: sync-balances
+      name: Sync Balances
+      icon: refresh
+      action: /api/admin/sync-balances
+      method: POST
+      confirmRequired: true
+  
+  # Permissions
+  permissions:
+    admin:
+      - "*" # All permissions
+    
+    manager:
+      - dashboard.view
+      - customers.view
+      - customers.edit
+      - config.view
+      - logs.view
+      - api.test
+    
+    viewer:
+      - dashboard.view
+      - customers.view
+      - logs.view
+    
+    developer:
+      - dashboard.view
+      - config.view
+      - config.edit
+      - api.test
+      - logs.view
+      - features.toggle
+  
+  # Integrations
+  integrations:
+    fantasy402:
+      enabled: true
+      baseUrl: https://fantasy402.com
+      syncInterval: 300000 # 5 minutes
+      endpoints:
+        - /api/get-agent-billing
+        - /app/api/billing
+        - /manager/api/balance
+    
+    telegram:
+      enabled: true
+      botToken: ${TELEGRAM_BOT_TOKEN}
+      webhookUrl: ${TELEGRAM_WEBHOOK_URL}
+    
+    slack:
+      enabled: false
+      webhookUrl: ${SLACK_WEBHOOK_URL}
+      channel: "#trading-alerts"
+    
+    discord:
+      enabled: false
+      webhookUrl: ${DISCORD_WEBHOOK_URL}
+  
+  # Security
+  security:
+    csrf:
+      enabled: true
+      tokenName: _csrf
+    
+    headers:
+      frameOptions: DENY
+      contentTypeOptions: nosniff
+      xssProtection: true
+      strictTransportSecurity: true
+    
+    encryption:
+      algorithm: aes-256-gcm
+      key: ${ENCRYPTION_KEY}
+  
+  # Development
+  development:
+    debugMode: ${DEBUG:-false}
+    verboseLogging: true
+    mockData: false
+    hotReload: true
+    sourceMaps: true
+    
+    # Development overrides
+    overrides:
+      auth:
+        enabled: false
+      rateLimit:
+        enabled: false
+      cors:
+        origins:
+          - "*"

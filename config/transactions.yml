@@ -1,0 +1,178 @@
+# Transaction and Commission Configuration
+transactions:
+  # Commission rates
+  commission:
+    agent: 0.05        # 5% to agent
+    master: 0.02       # 2% to master agent
+    company: 0.03      # 3% to company
+    
+  # Customer tiers and rebates
+  tiers:
+    basic:
+      min_deposit: 0
+      rebate: 0        # No rebate
+      withdrawal_fee: 0.02  # 2% fee
+      daily_limit: 1000
+      
+    silver:
+      min_deposit: 1000
+      rebate: 0.005    # 0.5% rebate on losses
+      withdrawal_fee: 0.015  # 1.5% fee
+      daily_limit: 5000
+      
+    gold:
+      min_deposit: 5000
+      rebate: 0.008    # 0.8% rebate on losses
+      withdrawal_fee: 0.01   # 1% fee
+      daily_limit: 10000
+      
+    vip:
+      min_deposit: 10000
+      rebate: 0.01     # 1% rebate on losses
+      withdrawal_fee: 0.005  # 0.5% fee
+      daily_limit: 50000
+      
+    platinum:
+      min_deposit: 50000
+      rebate: 0.015    # 1.5% rebate on losses
+      withdrawal_fee: 0      # No fees
+      daily_limit: 100000
+  
+  # Transaction types
+  types:
+    deposit:
+      min_amount: 10
+      max_amount: 100000
+      processing_time: instant
+      methods:
+        - credit_card
+        - bank_transfer
+        - crypto
+        - telegram_payment
+        
+    withdrawal:
+      min_amount: 50
+      max_amount: 50000
+      processing_time: 24h
+      methods:
+        - bank_transfer
+        - crypto
+        - telegram_wallet
+        
+    bet:
+      min_stake: 1
+      max_stake: 10000
+      types:
+        - sports
+        - casino
+        - lottery
+        - trading
+        
+    payout:
+      instant: true
+      max_multiplier: 1000
+      
+    adjustment:
+      requires_approval: true
+      max_amount: 10000
+      reasons:
+        - bonus
+        - refund
+        - correction
+        - compensation
+  
+  # Payment gateways
+  gateways:
+    stripe:
+      enabled: true
+      api_key: ${STRIPE_API_KEY}
+      webhook_secret: ${STRIPE_WEBHOOK_SECRET}
+      currencies: [USD, EUR, GBP]
+      
+    crypto:
+      enabled: true
+      networks:
+        bitcoin:
+          enabled: true
+          min_confirmations: 3
+          address: ${BTC_ADDRESS}
+        ethereum:
+          enabled: true
+          min_confirmations: 12
+          address: ${ETH_ADDRESS}
+        usdt:
+          enabled: true
+          networks: [TRC20, ERC20, BEP20]
+          address: ${USDT_ADDRESS}
+          
+    telegram:
+      enabled: true
+      bot_token: ${TELEGRAM_CASHIER_TOKEN}
+      supported_currencies: [USD, EUR, RUB]
+  
+  # Settlement rules
+  settlement:
+    auto_settle: true
+    settle_time: "00:00"  # UTC midnight
+    min_balance: 10       # Min balance to keep in account
+    
+    # Commission calculation
+    commission_period: monthly  # daily, weekly, monthly
+    commission_day: 1          # 1st of month
+    min_commission_payout: 100
+    
+    # Rebate calculation
+    rebate_period: weekly
+    rebate_day: monday
+    min_rebate_amount: 10
+  
+  # Limits and controls
+  limits:
+    daily_deposit_limit: 100000
+    daily_withdrawal_limit: 50000
+    monthly_transaction_limit: 1000000
+    
+    # Anti-money laundering
+    aml:
+      enabled: true
+      suspicious_amount: 10000
+      reporting_threshold: 15000
+      kyc_required: 5000
+  
+  # Fees
+  fees:
+    deposit:
+      credit_card: 0.029  # 2.9%
+      bank_transfer: 0
+      crypto: 0.001       # 0.1%
+      
+    withdrawal:
+      bank_transfer: 25   # Flat $25
+      crypto: 0.002       # 0.2%
+      
+    currency_conversion: 0.02  # 2%
+  
+  # Reporting
+  reporting:
+    daily_summary: true
+    weekly_report: true
+    monthly_statement: true
+    
+    # Report recipients
+    recipients:
+      - admin@fantdev.com
+      - finance@fantdev.com
+    
+    # Export formats
+    formats:
+      - pdf
+      - csv
+      - excel
+      
+  # Audit trail
+  audit:
+    enabled: true
+    retention_days: 2555  # 7 years
+    log_file: logs/transactions.jsonl
+    include_ip: true
+    include_user_agent: true

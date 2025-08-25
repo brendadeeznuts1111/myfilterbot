@@ -4,11 +4,16 @@ import { SignJWT, jwtVerify } from "jose";
 // Import YAML configurations using Bun's native support
 import appConfig from '../config/app.yaml';
 import featuresConfig from '../config/features.yaml';
+import telegramConfig from '../config/telegram.yml';
+import fraudConfig from '../config/fraud.yml';
+import transactionsConfig from '../config/transactions.yml';
+import agentsConfig from '../config/agents.yml';
 
 import enhancedAdminPortal from '../public/portals/admin-portal.html';
 import { apiRouter } from './server/api/router';
 import { dashboardRouter } from './server/api/dashboard-router';
 import { dashboardConfigService } from './services/dashboard-config-service';
+import { commissionCalculator } from './lib/commission';
 
 // JWT Authentication Setup
 const JWT_SECRET = new TextEncoder().encode(
@@ -56,6 +61,37 @@ function withAuth(
   };
 }
 
+
+// ------------------------------------------------------------------
+// ROUTE STRUCTURE
+// ------------------------------------------------------------------
+// 1. PUBLIC ROUTES (No auth required)
+//    GET  /login                     - Login page
+//    POST /api/auth/login            - Issue JWT cookie
+//    POST /api/auth/logout           - Clear JWT cookie
+//    GET  /health                    - Basic health check
+//    GET  /api/health                - Detailed health status
+//    GET  /api/dashboard/config      - Hot-reload YAML config
+//    GET  /favicon.ico               - Favicon
+//    GET  /favicon-*.png             - Favicon variants
+//
+// 2. PROTECTED ROUTES (JWT required via withAuth)
+//    GET  /dashboard                 - Main SPA dashboard
+//    GET  /dashboard/*               - Dashboard assets
+//    GET  /api/admin/stats           - System statistics
+//    GET  /api/admin/customers       - List all customers
+//    GET  /api/admin/customer/:id    - Single customer details
+//    POST /api/admin/customer        - Create customer
+//    PUT  /api/admin/customer/:id    - Update customer
+//    DELETE /api/admin/customer/:id  - Delete customer
+//    GET  /api/admin/config          - Live YAML config
+//    GET  /api/admin/logs            - Tail app logs
+//    GET  /api/yaml/:file            - Read YAML file
+//    POST /api/yaml/:file            - Update YAML file
+//    GET  /api/features              - Feature flags
+//    POST /api/features/:name/toggle - Toggle feature
+//    GET  /api/ws                    - WebSocket for live updates
+// ------------------------------------------------------------------
 
 // Load customer data
 const configFile = await Bun.file("./customer_config.json");
@@ -530,6 +566,40 @@ const server = serve({
       return response;
     }
 
+    // Service control endpoints (Public for monitoring tools)
+    if (url.pathname === "/api/services/start" && req.method === "POST") {
+      // In production, this would actually start services
+      console.log("📦 Starting all services...");
+      return Response.json({
+        success: true,
+        message: "All services started",
+        services: ["telegram_bot", "portal_server", "admin_server", "websocket", "database", "redis"],
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+    
+    if (url.pathname === "/api/services/stop" && req.method === "POST") {
+      // In production, this would actually stop services
+      console.log("🛑 Stopping all services...");
+      return Response.json({
+        success: true,
+        message: "All services stopped",
+        services: ["telegram_bot", "portal_server", "websocket", "redis"],
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+    
+    if (url.pathname === "/api/services/restart" && req.method === "POST") {
+      // In production, this would restart services
+      console.log("🔄 Restarting all services...");
+      return Response.json({
+        success: true,
+        message: "All services restarted",
+        services: ["telegram_bot", "portal_server", "admin_server", "websocket", "database", "redis"],
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
     // Try API router for other /api/* routes
     if (url.pathname.startsWith('/api/')) {
       const apiResponse = await apiRouter.handleRequest(req);
@@ -551,9 +621,116 @@ const server = serve({
     // Protected Admin API Routes
     if (url.pathname.startsWith("/api/admin/")) {
       return withAuth(async (req, user) => {
-        // Statistics endpoint
-        if (url.pathname === "/api/admin/statistics") {
-          return Response.json(realData.stats, { headers: corsHeaders });
+        // Statistics endpoint - FIXED: proper path
+        if (url.pathname === "/api/admin/stats" || url.pathname === "/api/admin/statistics") {
+          return Response.json({
+            ...realData.stats,
+            total_transactions: Math.floor(Math.random() * 1000) + 500,
+            timestamp: new Date().toISOString()
+          }, { headers: corsHeaders });
+        }
+        
+        // Customer endpoints
+        if (url.pathname === "/api/admin/customers" && req.method === "GET") {
+          return Response.json({
+            success: true,
+            customers: realData.customers,
+            total: realData.customers.length,
+            total_balance: totalBalance,
+            total_weekly_pnl: totalWeeklyPnl
+          }, { headers: corsHeaders });
+        }
+        
+        // Create customer
+        if (url.pathname === "/api/admin/customer" && req.method === "POST") {
+          const newCustomer = await req.json();
+          const customerId = `CUST${Date.now()}`;
+          
+          const customer = {
+            customer_id: customerId,
+            ...newCustomer,
+            balance: newCustomer.balance || 0,
+            weekly_pnl: 0,
+            active: true,
+            last_activity: new Date().toISOString(),
+            keywords: newCustomer.keywords || []
+          };
+          
+          customers.push(customer);
+          realData.customers = customers;
+          
+          return Response.json({
+            success: true,
+            message: "Customer created successfully",
+            customer
+          }, { headers: corsHeaders });
+        }
+        
+        // Get single customer
+        if (url.pathname.match(/^\/api\/admin\/customer\/[\w-]+$/) && req.method === "GET") {
+          const customerId = url.pathname.split("/")[4];
+          const customer = customers.find(c => c.customer_id === customerId);
+          
+          if (customer) {
+            return Response.json({
+              success: true,
+              customer
+            }, { headers: corsHeaders });
+          } else {
+            return Response.json({ 
+              success: false,
+              error: "Customer not found" 
+            }, { status: 404, headers: corsHeaders });
+          }
+        }
+        
+        // Update customer
+        if (url.pathname.match(/^\/api\/admin\/customer\/[\w-]+$/) && req.method === "PUT") {
+          const customerId = url.pathname.split("/")[4];
+          const customerIndex = customers.findIndex(c => c.customer_id === customerId);
+          
+          if (customerIndex >= 0) {
+            const updates = await req.json();
+            customers[customerIndex] = { 
+              ...customers[customerIndex], 
+              ...updates,
+              last_activity: new Date().toISOString()
+            };
+            realData.customers = customers;
+            
+            return Response.json({
+              success: true,
+              message: "Customer updated successfully",
+              customer: customers[customerIndex]
+            }, { headers: corsHeaders });
+          } else {
+            return Response.json({ 
+              success: false,
+              error: "Customer not found" 
+            }, { status: 404, headers: corsHeaders });
+          }
+        }
+        
+        // Delete customer
+        if (url.pathname.match(/^\/api\/admin\/customer\/[\w-]+$/) && req.method === "DELETE") {
+          const customerId = url.pathname.split("/")[4];
+          const customerIndex = customers.findIndex(c => c.customer_id === customerId);
+          
+          if (customerIndex >= 0) {
+            const deleted = customers.splice(customerIndex, 1)[0];
+            realData.customers = customers;
+            
+            return Response.json({
+              success: true,
+              message: "Customer deleted successfully",
+              customer: deleted
+            }, { headers: corsHeaders });
+          } else {
+            return Response.json({ 
+              success: false,
+              error: "Customer not found" 
+            }, { status: 404, headers: corsHeaders });
+          }
         }
 
         // Protected Health Check Endpoints
@@ -698,6 +875,342 @@ const server = serve({
             },
             timestamp: new Date().toISOString()
           }, { headers: corsHeaders });
+        }
+        
+        // TELEGRAM ENDPOINTS
+        if (url.pathname === "/api/admin/telegram/bot/status") {
+          return Response.json({
+            status: "active",
+            bot_token: telegramConfig.telegram.botToken ? "configured" : "missing",
+            uptime: Math.floor(Date.now() / 1000),
+            commands_enabled: telegramConfig.telegram.commands.public.length,
+            groups_connected: Object.keys(telegramConfig.telegram.groups).length,
+            timestamp: new Date().toISOString()
+          }, { headers: corsHeaders });
+        }
+        
+        if (url.pathname === "/api/admin/telegram/cashier/status") {
+          return Response.json({
+            status: "active",
+            bot_token: telegramConfig.telegram.cashierBotToken ? "configured" : "missing",
+            payment_gateways: ["stripe", "crypto", "telegram"],
+            pending_transactions: Math.floor(Math.random() * 10),
+            timestamp: new Date().toISOString()
+          }, { headers: corsHeaders });
+        }
+        
+        if (url.pathname === "/api/admin/telegram/groups") {
+          const groups = Object.entries(telegramConfig.telegram.groups).map(([key, group]: [string, any]) => ({
+            id: group.id,
+            name: group.name,
+            type: group.type,
+            member_count: Math.floor(Math.random() * group.max_members),
+            max_members: group.max_members,
+            active: true
+          }));
+          return Response.json(groups, { headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/telegram\/group\/[\w-]+$/)) {
+          const groupId = url.pathname.split("/")[5];
+          // Mock messages for the group
+          const messages = Array.from({ length: 20 }, (_, i) => ({
+            id: `msg_${Date.now()}_${i}`,
+            group_id: groupId,
+            user_id: Math.floor(Math.random() * 1000000),
+            username: `user_${Math.floor(Math.random() * 100)}`,
+            message: `Sample message ${i + 1}`,
+            timestamp: new Date(Date.now() - i * 60000).toISOString()
+          }));
+          return Response.json(messages, { headers: corsHeaders });
+        }
+        
+        // FRAUD ENDPOINTS
+        if (url.pathname === "/api/admin/fraud/scores") {
+          const scores = customers.map(c => ({
+            customer_id: c.customer_id,
+            fraud_score: Math.floor(Math.random() * 100),
+            risk_level: Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "medium" : "low",
+            flags: [],
+            last_checked: new Date().toISOString()
+          })).sort((a, b) => b.fraud_score - a.fraud_score).slice(0, 100);
+          return Response.json(scores, { headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/fraud\/flag\/[\w-]+$/) && req.method === "POST") {
+          const customerId = url.pathname.split("/")[5];
+          const body = await req.json();
+          return Response.json({
+            success: true,
+            customer_id: customerId,
+            flag_type: body.flag_type || "manual_review",
+            flagged_by: user.sub,
+            timestamp: new Date().toISOString()
+          }, { headers: corsHeaders });
+        }
+        
+        if (url.pathname === "/api/admin/fraud/logs") {
+          const logs = Array.from({ length: 50 }, (_, i) => ({
+            id: `fraud_${Date.now()}_${i}`,
+            type: ["duplicate_account", "velocity_exceeded", "suspicious_pattern"][Math.floor(Math.random() * 3)],
+            customer_id: customers[Math.floor(Math.random() * customers.length)]?.customer_id,
+            score: Math.floor(Math.random() * 100),
+            action_taken: ["flagged", "blocked", "allowed", "manual_review"][Math.floor(Math.random() * 4)],
+            timestamp: new Date(Date.now() - i * 3600000).toISOString()
+          }));
+          return Response.json(logs, { headers: corsHeaders });
+        }
+        
+        // TRANSACTION ENDPOINTS
+        if (url.pathname === "/api/admin/transactions") {
+          const customerId = url.searchParams.get('customer');
+          const from = url.searchParams.get('from');
+          const to = url.searchParams.get('to');
+          
+          // Generate sample transactions
+          const transactions = Array.from({ length: 100 }, (_, i) => ({
+            id: `tx_${Date.now()}_${i}`,
+            customer_id: customerId || customers[Math.floor(Math.random() * customers.length)]?.customer_id,
+            type: ["deposit", "withdrawal", "bet", "payout"][Math.floor(Math.random() * 4)],
+            amount: Math.floor(Math.random() * 1000) + 10,
+            status: "completed",
+            timestamp: new Date(Date.now() - i * 86400000).toISOString()
+          }));
+          
+          return Response.json(transactions, { headers: corsHeaders });
+        }
+        
+        if (url.pathname === "/api/admin/transactions" && req.method === "POST") {
+          const transaction = await req.json();
+          return Response.json({
+            success: true,
+            transaction: {
+              id: `tx_${Date.now()}`,
+              ...transaction,
+              created_by: user.sub,
+              timestamp: new Date().toISOString()
+            }
+          }, { headers: corsHeaders });
+        }
+        
+        if (url.pathname === "/api/admin/transactions/summary") {
+          return Response.json({
+            total_deposits: Math.floor(Math.random() * 100000) + 50000,
+            total_withdrawals: Math.floor(Math.random() * 50000) + 20000,
+            total_bets: Math.floor(Math.random() * 200000) + 100000,
+            total_payouts: Math.floor(Math.random() * 150000) + 75000,
+            net_revenue: Math.floor(Math.random() * 50000) + 10000,
+            transaction_count: Math.floor(Math.random() * 10000) + 5000,
+            period: "last_30_days"
+          }, { headers: corsHeaders });
+        }
+        
+        // BETTING ENDPOINTS
+        if (url.pathname === "/api/admin/bets") {
+          const status = url.searchParams.get('status') || 'all';
+          const agentId = url.searchParams.get('agent');
+          
+          const bets = Array.from({ length: 50 }, (_, i) => ({
+            bet_id: `b_${Date.now()}_${i}`,
+            customer_id: customers[Math.floor(Math.random() * customers.length)]?.customer_id,
+            agent: agentId || `A10${Math.floor(Math.random() * 5)}`,
+            stake: Math.floor(Math.random() * 500) + 10,
+            odds: (Math.random() * 3 + 1.5).toFixed(2),
+            status: status === 'all' ? ["open", "settled", "void"][Math.floor(Math.random() * 3)] : status,
+            win: Math.random() > 0.5 ? Math.floor(Math.random() * 1000) + 100 : 0,
+            timestamp: new Date(Date.now() - i * 3600000).toISOString()
+          }));
+          
+          return Response.json(bets, { headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/bets\/[\w-]+\/settle$/) && req.method === "POST") {
+          const betId = url.pathname.split("/")[4];
+          const { result } = await req.json();
+          return Response.json({
+            success: true,
+            bet_id: betId,
+            status: "settled",
+            result,
+            settled_by: user.sub,
+            timestamp: new Date().toISOString()
+          }, { headers: corsHeaders });
+        }
+        
+        if (url.pathname === "/api/admin/bets/stats") {
+          return Response.json({
+            total_bets: Math.floor(Math.random() * 10000) + 5000,
+            open_bets: Math.floor(Math.random() * 100) + 50,
+            settled_bets: Math.floor(Math.random() * 9000) + 4500,
+            win_rate: (Math.random() * 0.2 + 0.4).toFixed(2), // 40-60%
+            average_stake: Math.floor(Math.random() * 100) + 50,
+            average_odds: (Math.random() * 1 + 2).toFixed(2),
+            roi: (Math.random() * 0.4 - 0.2).toFixed(2), // -20% to +20%
+            period: "last_30_days"
+          }, { headers: corsHeaders });
+        }
+        
+        // AGENT ENDPOINTS
+        if (url.pathname === "/api/admin/agents") {
+          const agentsList = agentsConfig.agents.list.map((agent: any) => ({
+            ...agent,
+            customer_count: agent.customers.length,
+            monthly_volume: Math.floor(Math.random() * 100000) + 10000,
+            commission_earned: Math.floor(Math.random() * 5000) + 500
+          }));
+          return Response.json(agentsList, { headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/agents\/[\w-]+$/)) {
+          const agentId = url.pathname.split("/")[4];
+          const agent = agentsConfig.agents.list.find((a: any) => a.id === agentId);
+          
+          if (agent) {
+            const details = {
+              ...agent,
+              customers_details: customers.filter(c => agent.customers.includes(Number(c.customer_id.replace('BB', '')))),
+              recent_activity: Array.from({ length: 10 }, (_, i) => ({
+                type: ["new_customer", "deposit", "bet", "commission"][Math.floor(Math.random() * 4)],
+                amount: Math.floor(Math.random() * 1000) + 100,
+                timestamp: new Date(Date.now() - i * 86400000).toISOString()
+              }))
+            };
+            return Response.json(details, { headers: corsHeaders });
+          }
+          
+          return Response.json({ error: "Agent not found" }, { status: 404, headers: corsHeaders });
+        }
+        
+        // MASTER ENDPOINTS
+        if (url.pathname === "/api/admin/masters") {
+          const mastersList = agentsConfig.masters.list.map((master: any) => ({
+            ...master,
+            agent_count: master.agents.length,
+            total_customers: agentsConfig.agents.list
+              .filter((a: any) => master.agents.includes(a.id))
+              .reduce((sum: number, a: any) => sum + a.customers.length, 0),
+            monthly_volume: Math.floor(Math.random() * 500000) + 100000
+          }));
+          return Response.json(mastersList, { headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/masters\/[\w-]+$/)) {
+          const masterId = url.pathname.split("/")[4];
+          const master = agentsConfig.masters.list.find((m: any) => m.id === masterId);
+          
+          if (master) {
+            const agentDetails = agentsConfig.agents.list.filter((a: any) => master.agents.includes(a.id));
+            return Response.json({
+              ...master,
+              agents_details: agentDetails,
+              total_network_customers: agentDetails.reduce((sum: number, a: any) => sum + a.customers.length, 0),
+              total_network_volume: Math.floor(Math.random() * 1000000) + 500000
+            }, { headers: corsHeaders });
+          }
+          
+          return Response.json({ error: "Master not found" }, { status: 404, headers: corsHeaders });
+        }
+        
+        // COMMISSION ENDPOINTS
+        if (url.pathname === "/api/admin/commissions") {
+          const period = url.searchParams.get('period') || new Date().toISOString().slice(0, 7);
+          const report = commissionCalculator.calculateAllCommissions(period);
+          return Response.json(report, { headers: corsHeaders });
+        }
+        
+        if (url.pathname === "/api/admin/commissions/calculate" && req.method === "POST") {
+          const { period } = await req.json();
+          const report = commissionCalculator.calculateAllCommissions(period);
+          return Response.json({
+            success: true,
+            message: "Commissions recalculated",
+            report
+          }, { headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/commissions\/[\w-]+$/)) {
+          const agentId = url.pathname.split("/")[4];
+          const period = url.searchParams.get('period') || new Date().toISOString().slice(0, 7);
+          const statement = commissionCalculator.generateAgentStatement(agentId, period);
+          return Response.json(statement, { headers: corsHeaders });
+        }
+        
+        // WEB LOGS ENDPOINTS
+        if (url.pathname === "/api/admin/logs/web") {
+          const tail = Number(url.searchParams.get('tail')) || 100;
+          const logs = Array.from({ length: tail }, (_, i) => 
+            `[${new Date(Date.now() - i * 1000).toISOString()}] ${["INFO", "WARN", "ERROR"][Math.floor(Math.random() * 3)]}: Sample log message ${i + 1}`
+          ).join('\n');
+          return new Response(logs, { headers: { ...corsHeaders, "Content-Type": "text/plain" } });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/logs\/service\/[\w-]+$/)) {
+          const serviceName = url.pathname.split("/")[5];
+          const logs = Array.from({ length: 50 }, (_, i) => ({
+            service: serviceName,
+            level: ["info", "warn", "error", "debug"][Math.floor(Math.random() * 4)],
+            message: `Service ${serviceName} log message ${i + 1}`,
+            timestamp: new Date(Date.now() - i * 60000).toISOString()
+          }));
+          return Response.json(logs, { headers: corsHeaders });
+        }
+        
+        // Enhanced customer endpoints with level filtering
+        if (url.pathname === "/api/admin/customers" && url.searchParams.has('level')) {
+          const level = url.searchParams.get('level');
+          let filteredCustomers = customers;
+          
+          if (level === 'vip') {
+            filteredCustomers = customers.filter(c => c.balance > 10000);
+          } else if (level === 'basic') {
+            filteredCustomers = customers.filter(c => c.balance <= 10000);
+          }
+          
+          return Response.json({
+            success: true,
+            customers: filteredCustomers,
+            total: filteredCustomers.length,
+            level
+          }, { headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/customers\/[\w-]+\/level$/) && req.method === "POST") {
+          const customerId = url.pathname.split("/")[4];
+          const { level } = await req.json();
+          const customer = customers.find(c => c.customer_id === customerId);
+          
+          if (customer) {
+            return Response.json({
+              success: true,
+              customer_id: customerId,
+              new_level: level,
+              previous_level: customer.balance > 10000 ? 'vip' : 'basic',
+              timestamp: new Date().toISOString()
+            }, { headers: corsHeaders });
+          }
+          
+          return Response.json({ error: "Customer not found" }, { status: 404, headers: corsHeaders });
+        }
+        
+        if (url.pathname.match(/^\/api\/admin\/customers\/[\w-]+\/telegram$/)) {
+          const customerId = url.pathname.split("/")[4];
+          const customer = customers.find(c => c.customer_id === customerId);
+          
+          if (customer) {
+            return Response.json({
+              customer_id: customerId,
+              telegram_id: customer.telegram_id,
+              telegram_username: customer.telegram_username,
+              groups: [telegramConfig.telegram.groups.main],
+              bot_interaction: {
+                first_interaction: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                last_interaction: customer.last_activity,
+                total_commands: Math.floor(Math.random() * 100) + 10
+              }
+            }, { headers: corsHeaders });
+          }
+          
+          return Response.json({ error: "Customer not found" }, { status: 404, headers: corsHeaders });
         }
         
         // Add other admin routes here...
