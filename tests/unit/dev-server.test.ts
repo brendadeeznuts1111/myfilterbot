@@ -11,7 +11,7 @@ describe('Dev Server CSS Processing', () => {
 
   beforeAll(async () => {
     // Import and start the server
-    const { startServer } = await import('../dev-server');
+    const { startServer } = await import('../../src/dev-server');
     server = await startServer(TEST_PORT);
     console.log(`🚀 Starting dev server for testing...`);
 
