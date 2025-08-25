@@ -138,7 +138,7 @@ backup/
 *.bak
 
 # Generated files (if auto-generated)
-manifest.json
+# manifest.json  # Allow public/manifest.json for PWA
 robots.txt
 sitemap.xml
 
