@@ -1,17 +1,21 @@
 /**
  * Enhanced Bun Development Server for React App
- * Features: TypeScript transpilation, Hot-reloading, API proxy, WebSocket support
+ * Features: TypeScript transpilation, Hot-reloading, API proxy, WebSocket support, Tailwind CSS processing
  */
 
 import { serve, file } from "bun";
 import { watch } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
+import tailwindPlugin from "bun-plugin-tailwind";
 
 // Hot-reload WebSocket clients
 const wsClients = new Set<WebSocket>();
 
 // API server configuration
 const API_SERVER_URL = 'http://localhost:3003';
+
+// CSS cache for processed Tailwind output
+const cssCache = new Map<string, { content: string; mtime: number }>();
 
 // Hot-reload client script
 const HOT_RELOAD_SCRIPT = `
@@ -64,11 +68,12 @@ const watcher = watch("./src", { recursive: true }, (event, filename) => {
   }, 100);
 });
 
-const server = serve({
-  port: 3006,
-  development: true,
-  
-  async fetch(req) {
+export function startServer(port: number) {
+  const server = serve({
+    port,
+    development: true,
+    
+    async fetch(req) {
     const url = new URL(req.url);
     let pathname = url.pathname;
     
@@ -249,6 +254,75 @@ const server = serve({
         }
       }
       
+      // For CSS files, process them with Tailwind
+      if (pathname.endsWith('.css')) {
+        try {
+          // Check cache first
+          const stats = await fileObj.stat();
+          const mtime = stats.mtimeMs;
+          const cached = cssCache.get(filePath);
+          
+          if (cached && cached.mtime === mtime) {
+            // Serve from cache if file hasn't changed
+            return new Response(cached.content, {
+              headers: {
+                'Content-Type': 'text/css',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache'
+              }
+            });
+          }
+          
+          console.log(`📦 Processing CSS with Tailwind: ${pathname}`);
+          
+          // Process CSS directly with Tailwind plugin
+          const result = await Bun.build({
+            entrypoints: [filePath],
+            target: 'browser',
+            plugins: [tailwindPlugin],
+            minify: false,
+            // Don't output to disk, we'll serve from memory
+            outdir: undefined,
+          });
+          
+          if (result.outputs.length > 0) {
+            // Get the processed CSS output
+            const output = result.outputs[0];
+            let processedCSS = await output.text();
+            
+            // For index.css, also read and append custom.css content
+            if (pathname === '/index.css') {
+              const customCssPath = join(import.meta.dir, 'styles', 'custom.css');
+              const customCssFile = file(customCssPath);
+              if (await customCssFile.exists()) {
+                const customCss = await customCssFile.text();
+                processedCSS += '\n\n/* Custom CSS */\n' + customCss;
+              }
+            }
+            
+            // Cache the processed result
+            cssCache.set(filePath, {
+              content: processedCSS,
+              mtime: mtime
+            });
+            
+            return new Response(processedCSS, {
+              headers: {
+                'Content-Type': 'text/css',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache'
+              }
+            });
+          } else {
+            console.error('Tailwind processing produced no output');
+            // Fall through to serve raw CSS as fallback
+          }
+        } catch (error) {
+          console.error('CSS processing error:', error);
+          // Fall through to serve raw CSS as fallback
+        }
+      }
+      
       // Serve other files as-is
       return new Response(fileObj, {
         headers: {
@@ -276,7 +350,15 @@ const server = serve({
   }
 });
 
-console.log(`🚀 React Dev Server running at http://localhost:${server.port}/`);
-console.log(`📊 Test Dashboard: http://localhost:${server.port}/test-dashboard.html`);
-console.log(`⚛️  React App: http://localhost:${server.port}/index.html`);
-console.log(`🔧 Hot reload enabled for TypeScript/JSX files`);
+  console.log(`✅ Server ready at http://localhost:${port}`);
+  
+  return {
+    ...server,
+    stop: () => server.stop(),
+  };
+}
+
+// Keep the existing auto-start for regular dev usage
+if (import.meta.main) {
+  startServer(3006);
+}
