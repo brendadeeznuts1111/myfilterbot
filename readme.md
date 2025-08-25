@@ -43,7 +43,7 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 
 ### Prerequisites
 - Python 3.7+
-- Node.js 18+ and Bun runtime
+- Bun runtime 1.2.21+
 - Telegram Bot Token
 - Admin Chat ID
 
@@ -59,16 +59,18 @@ cp .env.example .env
 # Edit .env with your configuration
 
 # 3. Install Python dependencies
-pip install -r requirements.txt
+pip install -r config/requirements_portal_integration.txt
 
-# 4. Install Node/Bun dependencies
+# 4. Install Bun dependencies
 bun install
 
-# 5. Run the bot
-python3 main_bot.py
+# 5. Start all services
+bun run dev
 
-# 6. Start admin portal (in new terminal)
-bun run admin_portal_server.ts
+# 6. Or start individual services
+bun run dev:bot       # Bot only
+bun run dev:server    # Admin server only
+bun run dev:web       # React dev server only
 ```
 
 ### Detailed Installation
@@ -79,40 +81,38 @@ git clone https://github.com/fantdev/myfilterbot.git
 cd myfilterbot
 ```
 
-2. **Install Python dependencies**
+2. **Set up environment variables**
 ```bash
-pip install python-telegram-bot>=20.0
-pip install flask flask-cors
-pip install schedule
-pip install psutil
-pip install python-socketio
+# Copy the example environment file
+cp .env.example .env
+
+# Edit with your actual values
+nano .env
 ```
 
-3. **Install Node/Bun dependencies**
+3. **Install Python dependencies**
+```bash
+# Install python-dotenv for environment variable support
+pip install python-dotenv
+
+# Install all required packages
+pip install -r config/requirements_portal_integration.txt
+```
+
+4. **Install Bun dependencies**
 ```bash
 bun install
 ```
 
-4. **Configure the bot**
-Edit `src/config.py`:
-```python
-token = "YOUR_BOT_TOKEN"
-admin_chat_id = "YOUR_ADMIN_CHAT_ID"
-```
-
 5. **Start the services**
 ```bash
-# Start the main bot
-python3 main_bot.py
+# Start everything (recommended for development)
+bun run dev
 
-# Start the enhanced portal server
-python3 enhanced_portal_server.py
-
-# Start the React development server
-bun dev
-
-# Optional: Start auto-reporter
-python3 auto_reporter.py
+# Or start individual services:
+python3 src/bot/main.py                    # Main bot
+bun run src/server/admin/index.ts          # Admin server
+bun run src/dev-server.ts                  # React dev server
 ```
 
 ## 🏗️ System Architecture
@@ -133,7 +133,7 @@ python3 auto_reporter.py
 │  │  Dashboard   │◄───│    Server    │───►│   Threads    │   │
 │  └──────────────┘    └──────────────┘    └──────────────┘   │
 │         ▲                    │                    ▲           │
-│         │                    ▼                    │           │
+│         ▼                    │                    ▼           │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐   │
 │  │    React     │◄───│   REST API   │───►│   Portal     │   │
 │  │  Dashboard   │    │   Endpoints  │    │   Server     │   │
@@ -147,39 +147,48 @@ python3 auto_reporter.py
 ```
 myfilterbot/
 ├── src/
-│   ├── components/          # 23 React components
-│   ├── telegram_dashboard/  # Telegram integration modules
-│   ├── hooks/              # React hooks
-│   ├── config.py           # Bot configuration
-│   ├── database.py         # Database abstraction
-│   ├── handlers.py         # Bot command handlers
-│   └── *.worker.ts         # Worker thread implementations
-├── templates/              # HTML templates
-├── static/                 # Static assets
-├── main_bot.py            # Main bot entry
-├── enhanced_portal_server.py # Enhanced API server
-├── auto_reporter.py       # Automated reporting
-└── package.json           # Node dependencies
+│   ├── bot/                    # Python bot core
+│   │   ├── main.py            # Main bot entry point
+│   │   ├── handlers/          # Bot command handlers
+│   │   ├── services/          # Bot services
+│   │   └── utils/             # Bot utilities
+│   ├── server/                # TypeScript server code
+│   │   ├── admin/             # Admin server
+│   │   ├── api/               # API endpoints
+│   │   └── workers/           # Worker threads
+│   ├── web/                   # React frontend
+│   │   ├── components/        # 23 React components
+│   │   ├── hooks/             # React hooks
+│   │   └── contexts/          # React contexts
+│   └── shared/                # Shared types and utilities
+├── tests/                     # Comprehensive test suite
+│   ├── python/                # Python tests
+│   └── typescript/            # TypeScript tests
+├── config/                    # Configuration files
+├── public/                    # Static assets and portals
+├── docs/                      # Documentation
+└── scripts/                   # Utility scripts
 ```
 
 ## 🎯 Core Components
 
-### Telegram Dashboard (`src/telegram_dashboard/`)
-- **message_streamer.py** - Real-time message streaming (14KB)
-- **group_monitor.py** - Group/channel monitoring (26KB)
-- **bot_status.py** - Bot health monitoring (27KB)
-- **admin_interface.py** - Administrative controls (27KB)
+### Bot System (`src/bot/`)
+- **main.py** - Main bot entry point with command registration
+- **handlers/handlers.py** - All bot command implementations
+- **services/** - Chat management, notifications, and utilities
+- **config.py** - Environment-based configuration
 
-### React Components (`src/components/`)
-- **AdminPanel.tsx** - Main admin dashboard
-- **Dashboard.tsx** - Primary dashboard view
-- **CustomerPortal.tsx** - Customer interface
-- **MemberManagement.tsx** - Member administration
-- **NotificationSystem.tsx** - Real-time notifications
-- **SystemStatus.tsx** - System health display
-- And 17 more production-ready components...
+### Server System (`src/server/`)
+- **admin/index.ts** - High-performance admin server
+- **api/** - RESTful API endpoints with rate limiting
+- **workers/** - Background processing with Bun worker threads
 
-### Worker Threads (`src/`)
+### Web Components (`src/web/`)
+- **components/** - 23 production-ready React components
+- **hooks/** - Custom React hooks for API integration
+- **contexts/** - React context providers
+
+### Worker Threads
 - **admin_portal_worker_thread.ts** - Admin operations processing
 - **report_worker_thread.ts** - Report generation
 - **websocket_worker_thread.ts** - WebSocket message handling
@@ -209,11 +218,12 @@ myfilterbot/
 
 ## 🚀 Performance
 
-### Bun Worker Thread Optimization
-- **500x faster** string data transfer for large JSON payloads
+### Bun Runtime Benefits
+- **500x faster** worker postMessage() for large JSON payloads
 - **22x less memory** usage for multi-threaded operations
 - **Non-blocking** background processing
 - **Automatic batching** for optimal throughput
+- **Native TypeScript** execution without transpilation
 
 ### Benchmark Results
 | Operation | Traditional | Bun v1.2.21 | Improvement |
@@ -225,16 +235,19 @@ myfilterbot/
 ## 🧪 Testing
 
 ```bash
-# Python tests
-python3 smoke_test.py
-python3 test_integration.py
-python3 test_enhanced_portal.py
-python3 test_telegram_dashboard.py
+# Run all tests
+bun test
 
-# TypeScript/Bun tests
-bun test src/report_worker.test.ts
-bun test src/admin_portal_worker.test.ts
-bun test src/websocket_worker.test.ts
+# Run specific test suites
+bun run test:python          # Python tests only
+bun run test:ts              # TypeScript tests only
+
+# Run with coverage
+bun test --coverage
+
+# Run specific test files
+bun test tests/python/test_integration.py
+bun test tests/typescript/web_analysis.test.ts
 ```
 
 ## 📊 Monitoring & Analytics
@@ -250,6 +263,7 @@ The platform includes comprehensive monitoring:
 
 ## 🔒 Security Features
 
+- **Environment-based configuration** - No hardcoded credentials
 - JWT authentication for API endpoints
 - Rate limiting on all endpoints
 - Input validation and sanitization
@@ -258,14 +272,26 @@ The platform includes comprehensive monitoring:
 - Admin-only command restrictions
 - Audit logging for all actions
 
+## 🛠️ Development Tools
+
+### Code Quality
+- **ESLint** - TypeScript/JavaScript linting
+- **Prettier** - Code formatting
+- **TypeScript** - Type safety with bun-types
+- **Python type hints** - Full type annotation coverage
+
+### Development Experience
+- **Hot reload** - Instant feedback during development
+- **Path aliases** - Clean import statements
+- **Comprehensive testing** - 80% coverage requirement
+- **CI/CD pipeline** - Automated quality checks
+
 ## 📝 Documentation
 
-- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) - Complete technical documentation
-- [NEW_FEATURES.md](NEW_FEATURES.md) - Latest feature additions
-- [INTEGRATION_DOCUMENTATION.md](INTEGRATION_DOCUMENTATION.md) - Integration guides
-- [ERROR_HANDLING_GUIDE.md](ERROR_HANDLING_GUIDE.md) - Error handling reference
-- [SCALING_DEPLOYMENT_GUIDE.md](SCALING_DEPLOYMENT_GUIDE.md) - Deployment guide
-- [CLAUDE.md](CLAUDE.md) - Development guide for Claude AI
+- [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Complete migration guide
+- [CLAUDE.md](CLAUDE.md) - AI assistant development guide
+- [docs/](docs/) - Technical documentation
+- [API Documentation](docs/api/) - Complete API reference
 
 ## 🤝 Contributing
 
@@ -278,62 +304,62 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 Acknowledgments
 
 - Built with [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot)
-- React components powered by [React 18](https://react.dev/)
+- React components powered by [React 19](https://react.dev/)
 - High-performance runtime by [Bun](https://bun.sh/)
 - UI components styled with [Tailwind CSS](https://tailwindcss.com/)
 
-## 🆕 Recent Enhancements (v2.1.0)
+## 🆕 Recent Major Improvements (v3.0.0)
 
-### Environment Configuration
-- **Bun.env Integration** - Type-safe environment variables with automatic validation
-- **Multi-environment Support** - Separate configs for development, production, and test
-- **Automatic ETag Support** - Leverages Bun v1.2.20's automatic caching headers
-- **40x Faster AbortSignal** - Improved timeout handling for API requests
+### TypeScript Configuration
+- ✅ **Resolved bun-types configuration** - Proper TypeScript setup with Bun
+- ✅ **Path aliases** - Clean import statements with @server/, @web/, @api/
+- ✅ **Type safety** - Comprehensive type checking and validation
 
-### Meta Tags & SEO
-- **Enhanced Meta Tags** - Complete Open Graph and Twitter Card implementation
-- **PWA Support** - Progressive Web App capabilities with theme colors
-- **Security Headers** - noindex for admin pages, proper robots directives
-- **Canonical URLs** - Proper URL canonicalization for all portals
+### Testing Infrastructure
+- ✅ **Fixed all testing issues** - JSON parsing, dev-server refactoring, Python imports
+- ✅ **Comprehensive test suite** - 80% coverage requirement with CI/CD
+- ✅ **Performance testing** - Benchmark suite for worker threads
 
-### Project Standards
-- **Comprehensive Documentation** - PROJECT_STANDARDS.md with coding guidelines
-- **TypeScript Best Practices** - Strict typing and interface definitions
-- **Python Type Hints** - Full type annotation coverage
-- **Testing Standards** - 80% minimum code coverage requirement
+### Code Quality & Security
+- ✅ **ESLint/Prettier integration** - Consistent code formatting
+- ✅ **Environment variables** - No more hardcoded credentials
+- ✅ **Security scanning** - Automated vulnerability detection
+- ✅ **Performance optimization** - Bun worker threads and caching
 
-## 📚 Documentation
+### Development Experience
+- ✅ **Hot reload** - Instant feedback during development
+- ✅ **Path aliases** - Clean and maintainable imports
+- ✅ **Comprehensive documentation** - Up-to-date guides and examples
+- ✅ **CI/CD pipeline** - Automated quality assurance
 
-- [PROJECT_STANDARDS.md](./PROJECT_STANDARDS.md) - Coding standards and guidelines
-- [DEVELOPMENT.md](./DEVELOPMENT.md) - Development setup and workflow
-- [CLAUDE.md](./CLAUDE.md) - AI assistant instructions
-- [API Documentation](./docs/api.md) - Complete API reference
-- [Testing Guide](./docs/testing.md) - Testing strategies and examples
+## 🔍 Quick Verification
 
-## 🧪 Testing
+After setup, verify everything works:
 
 ```bash
-# Run Python tests
-python3 test_integration.py
-python3 test_enhanced_portal.py
-python3 test_error_handling.py
+# Check environment variables
+python3 -c "from dotenv import load_dotenv; load_dotenv(); import os; print('BOT_TOKEN:', 'SET' if os.getenv('BOT_TOKEN') else 'NOT_SET')"
 
-# Run TypeScript/Bun tests
+# Check TypeScript configuration
+bunx tsc --noEmit
+
+# Check test suite
 bun test
 
-# Run specific test suites
-bun test src/report_worker.test.ts
-bun test src/admin_portal_worker.test.ts
+# Check development servers
+bun run dev:bot      # Should start bot
+bun run dev:server   # Should start admin server
+bun run dev:web      # Should start React dev server
 ```
 
 ## 📞 Support
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
+- Check the [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
+- Review the [documentation](docs/)
 - Contact the development team
-- Check the documentation
-- Review [PROJECT_STANDARDS.md](./PROJECT_STANDARDS.md)
 
 ---
 
-**Version 2.1.0** | Last Updated: August 24, 2025 | Built with ❤️ by Fantdev Team
+**Version 3.0.0** | Last Updated: December 2024 | Built with ❤️ by Fantdev Team

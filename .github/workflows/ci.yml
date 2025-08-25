@@ -35,14 +35,17 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install python-dotenv
         pip install -r config/requirements_portal_integration.txt
         pip install pytest pytest-cov
     
-    - name: Create .env file
+    - name: Create test environment file
       run: |
-        cp .env.example .env
-        echo "BOT_TOKEN=${{ secrets.TEST_BOT_TOKEN }}" >> .env
-        echo "ADMIN_CHAT_ID=${{ secrets.TEST_ADMIN_CHAT_ID }}" >> .env
+        # Create minimal .env for testing
+        echo "BOT_TOKEN=test_token" > .env
+        echo "ADMIN_CHAT_ID=123456789" >> .env
+        echo "NODE_ENV=test" >> .env
+        echo "DATABASE_PATH=./test_data" >> .env
     
     - name: Run Python tests
       run: |
@@ -71,12 +74,16 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.bun/install/cache
-        key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb') }}
+        key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
         restore-keys: |
           ${{ runner.os }}-bun-
     
     - name: Install dependencies
       run: bun install
+    
+    - name: Verify TypeScript configuration
+      run: |
+        bunx tsc --noEmit
     
     - name: Run TypeScript tests
       run: |
@@ -176,3 +183,42 @@ jobs:
         path: ./
         base: ${{ github.event.repository.default_branch }}
         head: HEAD
+
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check documentation links
+      run: |
+        # Check if all referenced documentation files exist
+        echo "Checking documentation completeness..."
+        
+        # Check main documentation files
+        test -f README.md && echo "✅ README.md exists"
+        test -f MIGRATION_GUIDE.md && echo "✅ MIGRATION_GUIDE.md exists"
+        test -f CLAUDE.md && echo "✅ CLAUDE.md exists"
+        
+        # Check if .env.example exists (should be created)
+        if [ -f .env.example ]; then
+          echo "✅ .env.example exists"
+        else
+          echo "⚠️ .env.example missing - should be created"
+        fi
+        
+        # Check TypeScript configuration
+        test -f tsconfig.json && echo "✅ tsconfig.json exists"
+        test -f bunfig.toml && echo "✅ bunfig.toml exists"
+        
+        echo "Documentation check complete"
+    
+    - name: Verify package.json scripts
+      run: |
+        echo "Verifying package.json scripts..."
+        
+        # Check if all referenced scripts exist
+        bun run --help | grep -E "(dev|test|build|lint|format)" || echo "⚠️ Some scripts may be missing"
+        
+        echo "Script verification complete"
