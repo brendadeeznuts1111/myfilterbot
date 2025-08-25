@@ -1,0 +1,222 @@
+{# Base Layout Components - Reusable layout patterns #}
+
+{# Page Header Component #}
+{% macro page_header(title, description, actions=None) %}
+<div class="fantdev-page-header">
+    <div class="fantdev-page-header-content">
+        <div class="fantdev-page-header-text">
+            <h1 class="fantdev-page-title">{{ title }}</h1>
+            {% if description %}
+            <p class="fantdev-page-description">{{ description }}</p>
+            {% endif %}
+        </div>
+        {% if actions %}
+        <div class="fantdev-page-actions">
+            {{ actions | safe }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{# Card Component #}
+{% macro card(title=None, subtitle=None, content=None, footer=None, class="") %}
+<div class="fantdev-card {{ class }}">
+    {% if title or subtitle %}
+    <div class="fantdev-card-header">
+        {% if title %}
+        <h3 class="fantdev-card-title">{{ title }}</h3>
+        {% endif %}
+        {% if subtitle %}
+        <p class="fantdev-card-subtitle">{{ subtitle }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if content %}
+    <div class="fantdev-card-body">
+        {{ content | safe }}
+    </div>
+    {% endif %}
+    
+    {% if footer %}
+    <div class="fantdev-card-footer">
+        {{ footer | safe }}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Stats Grid Component #}
+{% macro stats_grid(stats, columns=4) %}
+<div class="fantdev-stats-grid" style="grid-template-columns: repeat({{ columns }}, 1fr);">
+    {% for stat in stats %}
+    <div class="fantdev-stat-card">
+        <div class="fantdev-stat-icon">
+            <i class="{{ stat.icon }}"></i>
+        </div>
+        <div class="fantdev-stat-content">
+            <div class="fantdev-stat-value">{{ stat.value }}</div>
+            <div class="fantdev-stat-label">{{ stat.label }}</div>
+            {% if stat.change %}
+            <div class="fantdev-stat-change {{ 'positive' if stat.change > 0 else 'negative' }}">
+                {{ stat.change }}%
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}
+
+{# Table Component #}
+{% macro table(headers, rows, actions=None, class="") %}
+<div class="fantdev-table-container">
+    <table class="fantdev-table {{ class }}">
+        <thead>
+            <tr>
+                {% for header in headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+                {% if actions %}
+                <th class="fantdev-table-actions">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for cell in row %}
+                <td>{{ cell }}</td>
+                {% endfor %}
+                {% if actions %}
+                <td class="fantdev-table-actions">
+                    {{ actions(row) | safe }}
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+{# Form Component #}
+{% macro form(method="POST", action="", class="", fields=None) %}
+<form method="{{ method }}" action="{{ action }}" class="fantdev-form {{ class }}">
+    {% if fields %}
+        {% for field in fields %}
+        <div class="fantdev-form-group">
+            <label for="{{ field.id }}" class="fantdev-form-label">
+                {{ field.label }}
+                {% if field.required %}
+                <span class="fantdev-required">*</span>
+                {% endif %}
+            </label>
+            {% if field.type == "textarea" %}
+            <textarea 
+                id="{{ field.id }}" 
+                name="{{ field.name }}" 
+                class="fantdev-form-input"
+                rows="{{ field.rows or 3 }}"
+                {% if field.required %}required{% endif %}
+                {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+            >{{ field.value or "" }}</textarea>
+            {% elif field.type == "select" %}
+            <select id="{{ field.id }}" name="{{ field.name }}" class="fantdev-form-select" {% if field.required %}required{% endif %}>
+                {% for option in field.options %}
+                <option value="{{ option.value }}" {% if option.value == field.value %}selected{% endif %}>
+                    {{ option.label }}
+                </option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <input 
+                type="{{ field.type or 'text' }}" 
+                id="{{ field.id }}" 
+                name="{{ field.name }}" 
+                class="fantdev-form-input"
+                value="{{ field.value or '' }}"
+                {% if field.required %}required{% endif %}
+                {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                {% if field.pattern %}pattern="{{ field.pattern }}"{% endif %}
+            />
+            {% endif %}
+            {% if field.help %}
+            <div class="fantdev-form-help">{{ field.help }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% block form_content %}{% endblock %}
+    
+    <div class="fantdev-form-actions">
+        {% block form_actions %}{% endblock %}
+    </div>
+</form>
+{% endmacro %}
+
+{# Button Component #}
+{% macro button(text, type="button", variant="primary", size="md", icon=None, class="", **attrs) %}
+<button 
+    type="{{ type }}" 
+    class="fantdev-btn fantdev-btn-{{ variant }} fantdev-btn-{{ size }} {{ class }}"
+    {% for key, value in attrs.items() %}
+    {{ key }}="{{ value }}"
+    {% endfor %}
+>
+    {% if icon %}
+    <i class="{{ icon }}"></i>
+    {% endif %}
+    {{ text }}
+</button>
+{% endmacro %}
+
+{# Link Button Component #}
+{% macro link_button(text, href, variant="primary", size="md", icon=None, class="") %}
+<a href="{{ href }}" class="fantdev-btn fantdev-btn-{{ variant }} fantdev-btn-{{ size }} {{ class }}">
+    {% if icon %}
+    <i class="{{ icon }}"></i>
+    {% endif %}
+    {{ text }}
+</a>
+{% endmacro %}
+
+{# Alert Component #}
+{% macro alert(message, type="info", dismissible=False) %}
+<div class="fantdev-alert fantdev-alert-{{ type }}" role="alert">
+    <div class="fantdev-alert-content">
+        {{ message | safe }}
+    </div>
+    {% if dismissible %}
+    <button type="button" class="fantdev-alert-close" onclick="this.parentElement.remove()">
+        <i class="fas fa-times"></i>
+    </button>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Modal Component #}
+{% macro modal(id, title, content, footer=None, size="md") %}
+<div class="fantdev-modal" id="{{ id }}" tabindex="-1" role="dialog">
+    <div class="fantdev-modal-dialog fantdev-modal-{{ size }}">
+        <div class="fantdev-modal-content">
+            <div class="fantdev-modal-header">
+                <h5 class="fantdev-modal-title">{{ title }}</h5>
+                <button type="button" class="fantdev-modal-close" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="fantdev-modal-body">
+                {{ content | safe }}
+            </div>
+            {% if footer %}
+            <div class="fantdev-modal-footer">
+                {{ footer | safe }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}

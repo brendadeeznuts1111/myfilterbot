@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Customer {{ customer.customer_id }} - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Customer Details{% endblock %}
+{% block page_description %}Detailed view of customer {{ customer.customer_id }}{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    <a href="{{ url_for('customers') }}" class="fantdev-btn fantdev-btn-ghost">
+        <i class="fas fa-arrow-left"></i>
+        Back to Customers
+    </a>
+    <button onclick="editCustomer()" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-edit"></i>
+        Edit Customer
+    </button>
+    <button onclick="showTransactionModal()" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-plus"></i>
+        Add Transaction
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Customer Overview Cards -->
+<div class="fantdev-grid fantdev-grid-4" style="margin-bottom: var(--space-6);">
+    <div class="fantdev-card">
+        <div class="fantdev-card-body">
+            <div class="fantdev-flex fantdev-items-center" style="gap: var(--space-3);">
+                <div class="fantdev-avatar fantdev-avatar-lg fantdev-bg-primary fantdev-text-white">
+                    {{ customer.customer_id[:2] }}
+                </div>
+                <div>
+                    <h3 class="fantdev-text-lg fantdev-font-bold">{{ customer.customer_id }}</h3>
+                    <p class="fantdev-text-muted">
+                        {% if customer.active %}
+                            <span class="fantdev-badge fantdev-badge-success">Active</span>
+                        {% else %}
+                            <span class="fantdev-badge fantdev-badge-danger">Inactive</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="fantdev-card">
+        <div class="fantdev-card-body">
+            <div class="fantdev-flex fantdev-items-center fantdev-justify-between">
+                <div>
+                    <p class="fantdev-text-muted fantdev-text-sm">Current Balance</p>
+                    <h3 class="fantdev-text-2xl fantdev-font-bold fantdev-text-success">
+                        ${{ "%.2f"|format(customer.balance) }}
+                    </h3>
+                </div>
+                <i class="fas fa-wallet fantdev-text-success fantdev-text-2xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="fantdev-card">
+        <div class="fantdev-card-body">
+            <div class="fantdev-flex fantdev-items-center fantdev-justify-between">
+                <div>
+                    <p class="fantdev-text-muted fantdev-text-sm">Weekly P&L</p>
+                    <h3 class="fantdev-text-2xl fantdev-font-bold {% if customer.weekly_pnl >= 0 %}fantdev-text-success{% else %}fantdev-text-danger{% endif %}">
+                        {% if customer.weekly_pnl >= 0 %}+{% endif %}${{ "%.2f"|format(customer.weekly_pnl) }}
+                    </h3>
+                </div>
+                <i class="fas fa-chart-line {% if customer.weekly_pnl >= 0 %}fantdev-text-success{% else %}fantdev-text-danger{% endif %} fantdev-text-2xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="fantdev-card">
+        <div class="fantdev-card-body">
+            <div class="fantdev-flex fantdev-items-center fantdev-justify-between">
+                <div>
+                    <p class="fantdev-text-muted fantdev-text-sm">Last Activity</p>
+                    <p class="fantdev-font-semibold">
+                        {% if customer.last_activity %}
+                            {{ customer.last_activity[:10] }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </p>
+                </div>
+                <i class="fas fa-clock fantdev-text-muted fantdev-text-2xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Information -->
+<div class="fantdev-grid fantdev-grid-2" style="gap: var(--space-6);">
+    <!-- Contact Information -->
+    <div class="fantdev-card">
+        <div class="fantdev-card-header">
+            <h4 class="fantdev-card-title">Contact Information</h4>
+        </div>
+        <div class="fantdev-card-body">
+            <div class="fantdev-space-y-4">
+                <div>
+                    <label class="fantdev-label">Customer ID</label>
+                    <p class="fantdev-font-mono">{{ customer.customer_id }}</p>
+                </div>
+                
+                {% if customer.phone %}
+                <div>
+                    <label class="fantdev-label">Phone Number</label>
+                    <p>{{ customer.phone }}</p>
+                </div>
+                {% endif %}
+                
+                {% if customer.telegram_username %}
+                <div>
+                    <label class="fantdev-label">Telegram Username</label>
+                    <p>@{{ customer.telegram_username }}</p>
+                </div>
+                {% endif %}
+                
+                {% if customer.telegram_id %}
+                <div>
+                    <label class="fantdev-label">Telegram ID</label>
+                    <p class="fantdev-font-mono">{{ customer.telegram_id }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Status -->
+    <div class="fantdev-card">
+        <div class="fantdev-card-header">
+            <h4 class="fantdev-card-title">Account Status</h4>
+        </div>
+        <div class="fantdev-card-body">
+            <div class="fantdev-space-y-4">
+                <div>
+                    <label class="fantdev-label">Status</label>
+                    {% if customer.active %}
+                        <span class="fantdev-badge fantdev-badge-success">Active</span>
+                    {% else %}
+                        <span class="fantdev-badge fantdev-badge-danger">Inactive</span>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="fantdev-label">Account Created</label>
+                    <p>{{ customer.last_activity[:10] if customer.last_activity else 'Unknown' }}</p>
+                </div>
+                
+                {% if customer.password %}
+                <div>
+                    <label class="fantdev-label">Password</label>
+                    <p class="fantdev-font-mono">{{ customer.password }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="fantdev-card" style="margin-top: var(--space-6);">
+    <div class="fantdev-card-header">
+        <h4 class="fantdev-card-title">Recent Transactions</h4>
+        <button onclick="showTransactionModal()" class="fantdev-btn fantdev-btn-sm fantdev-btn-primary">
+            <i class="fas fa-plus"></i>
+            Add Transaction
+        </button>
+    </div>
+    <div class="fantdev-card-body">
+        <div class="fantdev-table-container">
+            <table class="fantdev-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if transactions and transactions|length > 0 %}
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.timestamp[:16] if transaction.timestamp else 'N/A' }}</td>
+                            <td>
+                                <span class="fantdev-badge fantdev-badge-{{ 'success' if transaction.type == 'deposit' else 'warning' if transaction.type == 'withdrawal' else 'info' }}">
+                                    {{ transaction.type.title() }}
+                                </span>
+                            </td>
+                            <td class="fantdev-font-mono {% if transaction.amount >= 0 %}fantdev-text-success{% else %}fantdev-text-danger{% endif %}">
+                                {% if transaction.amount >= 0 %}+{% endif %}${{ "%.2f"|format(transaction.amount) }}
+                            </td>
+                            <td>
+                                <span class="fantdev-badge fantdev-badge-{{ 'success' if transaction.status == 'completed' else 'warning' if transaction.status == 'pending' else 'danger' }}">
+                                    {{ transaction.status.title() }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.description or 'No description' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="fantdev-text-center fantdev-text-muted">
+                            <div style="padding: var(--space-6);">
+                                <i class="fas fa-inbox fantdev-text-4xl" style="margin-bottom: var(--space-3);"></i>
+                                <p>No transactions found for this customer</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editCustomer() {
+    // TODO: Implement customer editing functionality
+    alert('Customer editing functionality coming soon!');
+}
+
+function showTransactionModal() {
+    // TODO: Implement transaction creation modal
+    alert('Transaction creation functionality coming soon!');
+}
+</script>
+{% endblock %}

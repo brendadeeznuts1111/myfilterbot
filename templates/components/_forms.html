@@ -1,0 +1,363 @@
+{# Form Components - Specialized forms for trading platform #}
+
+{# Trading Bot Configuration Form #}
+{% macro bot_config_form(bot_data=None, action="/bots/save") %}
+{% from "components/_base_layouts.html" import form, button %}
+{{ form(
+    method="POST",
+    action=action,
+    class="fantdev-bot-form",
+    fields=[
+        {
+            "id": "bot_name",
+            "name": "bot_name",
+            "label": "Bot Name",
+            "type": "text",
+            "value": bot_data.bot_name if bot_data else "",
+            "required": true,
+            "placeholder": "Enter a descriptive name for your bot",
+            "help": "Choose a name that clearly identifies this bot's strategy"
+        },
+        {
+            "id": "strategy_type",
+            "name": "strategy_type",
+            "label": "Strategy Type",
+            "type": "select",
+            "value": bot_data.strategy_type if bot_data else "",
+            "required": true,
+            "options": [
+                {"value": "trend_following", "label": "Trend Following"},
+                {"value": "mean_reversion", "label": "Mean Reversion"},
+                {"value": "arbitrage", "label": "Arbitrage"},
+                {"value": "grid_trading", "label": "Grid Trading"},
+                {"value": "custom", "label": "Custom Strategy"}
+            ],
+            "help": "Select the primary trading strategy for this bot"
+        },
+        {
+            "id": "trading_pairs",
+            "name": "trading_pairs",
+            "label": "Trading Pairs",
+            "type": "text",
+            "value": bot_data.trading_pairs if bot_data else "",
+            "required": true,
+            "placeholder": "BTC/USDT, ETH/USDT",
+            "help": "Comma-separated list of trading pairs"
+        },
+        {
+            "id": "risk_percentage",
+            "name": "risk_percentage",
+            "label": "Risk per Trade (%)",
+            "type": "number",
+            "value": bot_data.risk_percentage if bot_data else "2",
+            "required": true,
+            "pattern": "[0-9]*[.]?[0-9]+",
+            "help": "Maximum percentage of portfolio to risk per trade"
+        },
+        {
+            "id": "stop_loss",
+            "name": "stop_loss",
+            "label": "Stop Loss (%)",
+            "type": "number",
+            "value": bot_data.stop_loss if bot_data else "5",
+            "required": true,
+            "pattern": "[0-9]*[.]?[0-9]+",
+            "help": "Stop loss percentage for each trade"
+        },
+        {
+            "id": "take_profit",
+            "name": "take_profit",
+            "label": "Take Profit (%)",
+            "type": "number",
+            "value": bot_data.take_profit if bot_data else "10",
+            "required": true,
+            "pattern": "[0-9]*[.]?[0-9]+",
+            "help": "Take profit percentage for each trade"
+        },
+        {
+            "id": "description",
+            "name": "description",
+            "label": "Description",
+            "type": "textarea",
+            "value": bot_data.description if bot_data else "",
+            "rows": 4,
+            "placeholder": "Describe your bot's strategy and parameters",
+            "help": "Optional description for documentation purposes"
+        }
+    ]
+) }}
+{% block form_actions %}
+<div class="fantdev-form-actions">
+    {{ button("Save Bot", type="submit", variant="primary", icon="fas fa-save") }}
+    <a href="/bots" class="fantdev-btn fantdev-btn-outline">Cancel</a>
+</div>
+{% endblock %}
+{% endmacro %}
+
+{# Customer Registration Form #}
+{% macro customer_registration_form(customer_data=None, action="/customers/register") %}
+{% from "components/_base_layouts.html" import form, button %}
+{{ form(
+    method="POST",
+    action=action,
+    class="fantdev-customer-form",
+    fields=[
+        {
+            "id": "first_name",
+            "name": "first_name",
+            "label": "First Name",
+            "type": "text",
+            "value": customer_data.first_name if customer_data else "",
+            "required": true,
+            "placeholder": "Enter first name"
+        },
+        {
+            "id": "last_name",
+            "name": "last_name",
+            "label": "Last Name",
+            "type": "text",
+            "value": customer_data.last_name if customer_data else "",
+            "required": true,
+            "placeholder": "Enter last name"
+        },
+        {
+            "id": "email",
+            "name": "email",
+            "label": "Email Address",
+            "type": "email",
+            "value": customer_data.email if customer_data else "",
+            "required": true,
+            "placeholder": "Enter email address",
+            "help": "We'll send account confirmation to this email"
+        },
+        {
+            "id": "phone",
+            "name": "phone",
+            "label": "Phone Number",
+            "type": "tel",
+            "value": customer_data.phone if customer_data else "",
+            "placeholder": "Enter phone number (optional)"
+        },
+        {
+            "id": "company",
+            "name": "company",
+            "label": "Company",
+            "type": "text",
+            "value": customer_data.company if customer_data else "",
+            "placeholder": "Enter company name (optional)"
+        },
+        {
+            "id": "account_type",
+            "name": "account_type",
+            "label": "Account Type",
+            "type": "select",
+            "value": customer_data.account_type if customer_data else "individual",
+            "required": true,
+            "options": [
+                {"value": "individual", "label": "Individual"},
+                {"value": "business", "label": "Business"},
+                {"value": "institutional", "label": "Institutional"}
+            ]
+        },
+        {
+            "id": "investment_goals",
+            "name": "investment_goals",
+            "label": "Investment Goals",
+            "type": "select",
+            "value": customer_data.investment_goals if customer_data else "",
+            "required": true,
+            "options": [
+                {"value": "conservative", "label": "Conservative"},
+                {"value": "moderate", "label": "Moderate"},
+                {"value": "aggressive", "label": "Aggressive"}
+            ],
+            "help": "Select your preferred risk tolerance level"
+        }
+    ]
+) }}
+{% block form_actions %}
+<div class="fantdev-form-actions">
+    {{ button("Create Account", type="submit", variant="primary", icon="fas fa-user-plus") }}
+    <a href="/customers" class="fantdev-btn fantdev-btn-outline">Cancel</a>
+</div>
+{% endblock %}
+{% endmacro %}
+
+{# Trading Parameters Form #}
+{% macro trading_params_form(params=None, action="/trading/params/save") %}
+{% from "components/_base_layouts.html" import form, button %}
+{{ form(
+    method="POST",
+    action=action,
+    class="fantdev-trading-params-form",
+    fields=[
+        {
+            "id": "max_position_size",
+            "name": "max_position_size",
+            "label": "Maximum Position Size",
+            "type": "number",
+            "value": params.max_position_size if params else "1000",
+            "required": true,
+            "pattern": "[0-9]*[.]?[0-9]+",
+            "help": "Maximum USD value per position"
+        },
+        {
+            "id": "max_daily_trades",
+            "name": "max_daily_trades",
+            "label": "Maximum Daily Trades",
+            "type": "number",
+            "value": params.max_daily_trades if params else "10",
+            "required": true,
+            "pattern": "[0-9]+",
+            "help": "Maximum number of trades per day"
+        },
+        {
+            "id": "min_volume",
+            "name": "min_volume",
+            "label": "Minimum Volume",
+            "type": "number",
+            "value": params.min_volume if params else "100",
+            "required": true,
+            "pattern": "[0-9]*[.]?[0-9]+",
+            "help": "Minimum USD volume for trade execution"
+        },
+        {
+            "id": "slippage_tolerance",
+            "name": "slippage_tolerance",
+            "label": "Slippage Tolerance (%)",
+            "type": "number",
+            "value": params.slippage_tolerance if params else "0.5",
+            "required": true,
+            "pattern": "[0-9]*[.]?[0-9]+",
+            "help": "Maximum acceptable slippage percentage"
+        },
+        {
+            "id": "timeout_seconds",
+            "name": "timeout_seconds",
+            "label": "Order Timeout (seconds)",
+            "type": "number",
+            "value": params.timeout_seconds if params else "30",
+            "required": true,
+            "pattern": "[0-9]+",
+            "help": "Order timeout in seconds"
+        }
+    ]
+) }}
+{% block form_actions %}
+<div class="fantdev-form-actions">
+    {{ button("Save Parameters", type="submit", variant="primary", icon="fas fa-save") }}
+    <a href="/trading/params" class="fantdev-btn fantdev-btn-outline">Cancel</a>
+</div>
+{% endblock %}
+{% endmacro %}
+
+{# Search and Filter Form #}
+{% macro search_filter_form(filters=None, action="", method="GET") %}
+{% from "components/_base_layouts.html" import form, button %}
+<div class="fantdev-search-filter-form">
+    <form method="{{ method }}" action="{{ action }}" class="fantdev-form fantdev-form-inline">
+        <div class="fantdev-form-row">
+            <div class="fantdev-form-group">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="fantdev-form-input fantdev-form-input-search"
+                    placeholder="Search..."
+                    value="{{ filters.search if filters else '' }}"
+                />
+            </div>
+            
+            <div class="fantdev-form-group">
+                <select name="status" class="fantdev-form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if filters and filters.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if filters and filters.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="pending" {% if filters and filters.status == 'pending' %}selected{% endif %}>Pending</option>
+                </select>
+            </div>
+            
+            <div class="fantdev-form-group">
+                <select name="category" class="fantdev-form-select">
+                    <option value="">All Categories</option>
+                    <option value="customers" {% if filters and filters.category == 'customers' %}selected{% endif %}>Customers</option>
+                    <option value="transactions" {% if filters and filters.category == 'transactions' %}selected{% endif %}>Transactions</option>
+                    <option value="bots" {% if filters and filters.category == 'bots' %}selected{% endif %}>Bots</option>
+                </select>
+            </div>
+            
+            <div class="fantdev-form-group">
+                <input 
+                    type="date" 
+                    name="date_from" 
+                    class="fantdev-form-input"
+                    value="{{ filters.date_from if filters else '' }}"
+                />
+            </div>
+            
+            <div class="fantdev-form-group">
+                <input 
+                    type="date" 
+                    name="date_to" 
+                    class="fantdev-form-input"
+                    value="{{ filters.date_to if filters else '' }}"
+                />
+            </div>
+            
+            <div class="fantdev-form-group">
+                {{ button("Search", type="submit", variant="primary", icon="fas fa-search") }}
+                <a href="{{ request.path }}" class="fantdev-btn fantdev-btn-outline">Clear</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endmacro %}
+
+{# Pagination Component #}
+{% macro pagination(page_info, base_url="") %}
+{% if page_info and page_info.pages > 1 %}
+<nav class="fantdev-pagination" aria-label="Page navigation">
+    <ul class="fantdev-pagination-list">
+        <!-- Previous Page -->
+        {% if page_info.page > 1 %}
+        <li class="fantdev-pagination-item">
+            <a href="{{ base_url }}?page={{ page_info.page - 1 }}" class="fantdev-pagination-link">
+                <i class="fas fa-chevron-left"></i>
+                Previous
+            </a>
+        </li>
+        {% endif %}
+        
+        <!-- Page Numbers -->
+        {% for page_num in range(1, page_info.pages + 1) %}
+            {% if page_num == 1 or page_num == page_info.pages or (page_num >= page_info.page - 2 and page_num <= page_info.page + 2) %}
+            <li class="fantdev-pagination-item">
+                <a href="{{ base_url }}?page={{ page_num }}" 
+                   class="fantdev-pagination-link {% if page_num == page_info.page %}active{% endif %}">
+                    {{ page_num }}
+                </a>
+            </li>
+            {% elif page_num == page_info.page - 3 or page_num == page_info.page + 3 %}
+            <li class="fantdev-pagination-item">
+                <span class="fantdev-pagination-ellipsis">...</span>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        <!-- Next Page -->
+        {% if page_info.page < page_info.pages %}
+        <li class="fantdev-pagination-item">
+            <a href="{{ base_url }}?page={{ page_info.page + 1 }}" class="fantdev-pagination-link">
+                Next
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+    
+    <!-- Page Info -->
+    <div class="fantdev-pagination-info">
+        Showing {{ page_info.start }} to {{ page_info.end }} of {{ page_info.total }} results
+    </div>
+</nav>
+{% endif %}
+{% endmacro %}

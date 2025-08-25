@@ -1,0 +1,1080 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration Management - FantDev Trading Platform{% endblock %}
+
+{% block page_title %}Configuration Management{% endblock %}
+{% block page_description %}Environment setup and configuration guide for the FantDev Trading Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .config-section {
+        margin-bottom: var(--space-8);
+    }
+    
+    .config-example {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: var(--space-4);
+        margin: var(--space-4) 0;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        overflow-x: auto;
+    }
+    
+    .config-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: var(--space-4) 0;
+    }
+    
+    .config-table th,
+    .config-table td {
+        padding: var(--space-3);
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .config-table th {
+        background: var(--bg-secondary);
+        font-weight: var(--font-semibold);
+        color: var(--text-primary);
+    }
+    
+    .config-table tr:hover {
+        background: var(--bg-hover);
+    }
+    
+    .env-var {
+        font-family: var(--font-mono);
+        background: var(--bg-tertiary);
+        padding: 2px 6px;
+        border-radius: var(--border-radius-sm);
+        color: var(--primary);
+    }
+    
+    .priority-badge {
+        display: inline-block;
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--border-radius-full);
+        font-size: var(--text-xs);
+        font-weight: var(--font-medium);
+    }
+    
+    .priority-required {
+        background: var(--error-light);
+        color: var(--error-dark);
+    }
+    
+    .priority-recommended {
+        background: var(--warning-light);
+        color: var(--warning-dark);
+    }
+    
+    .priority-optional {
+        background: var(--info-light);
+        color: var(--info-dark);
+    }
+    
+    .config-nav {
+        position: sticky;
+        top: 80px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    
+    .config-nav-item {
+        display: block;
+        padding: var(--space-2) var(--space-3);
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+        margin-bottom: var(--space-1);
+    }
+    
+    .config-nav-item:hover {
+        background: var(--bg-hover);
+        color: var(--primary);
+    }
+    
+    .config-nav-item.active {
+        background: var(--bg-active);
+        color: var(--primary);
+        font-weight: var(--font-medium);
+    }
+    
+    .config-grid {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: var(--space-8);
+        align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+        .config-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .config-nav {
+            position: static;
+            margin-bottom: var(--space-6);
+        }
+    }
+    
+    .copy-button {
+        position: absolute;
+        top: var(--space-2);
+        right: var(--space-2);
+        padding: var(--space-2);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .copy-button:hover {
+        background: var(--bg-hover);
+        color: var(--primary);
+    }
+    
+    .copy-button.copied {
+        color: var(--success);
+    }
+    
+    .warning-box {
+        background: var(--warning-light);
+        border-left: 4px solid var(--warning);
+        padding: var(--space-4);
+        margin: var(--space-4) 0;
+        border-radius: var(--border-radius);
+    }
+    
+    .info-box {
+        background: var(--info-light);
+        border-left: 4px solid var(--info);
+        padding: var(--space-4);
+        margin: var(--space-4) 0;
+        border-radius: var(--border-radius);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="config-grid">
+    <!-- Navigation Sidebar -->
+    <nav class="config-nav">
+        <h3 class="fantdev-text-sm fantdev-font-semibold fantdev-text-muted fantdev-mb-3">CONFIGURATION SECTIONS</h3>
+        <a href="#overview" class="config-nav-item active">Overview</a>
+        <a href="#environment-setup" class="config-nav-item">Environment Setup</a>
+        <a href="#bot-configuration" class="config-nav-item">Bot Configuration</a>
+        <a href="#database-configuration" class="config-nav-item">Database Configuration</a>
+        <a href="#server-configuration" class="config-nav-item">Server Configuration</a>
+        <a href="#security-configuration" class="config-nav-item">Security Configuration</a>
+        <a href="#feature-flags" class="config-nav-item">Feature Flags</a>
+        <a href="#monitoring" class="config-nav-item">Monitoring & Logging</a>
+        <a href="#external-services" class="config-nav-item">External Services</a>
+        <a href="#deployment" class="config-nav-item">Deployment</a>
+        <a href="#troubleshooting" class="config-nav-item">Troubleshooting</a>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="config-content">
+        <!-- Overview Section -->
+        <section id="overview" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-cog"></i>
+                        Configuration Overview
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <p>The FantDev Trading Platform uses environment variables for configuration management, supporting both Python and Bun/TypeScript runtimes. This approach provides:</p>
+                    
+                    <ul style="margin: var(--space-4) 0; padding-left: var(--space-6);">
+                        <li>🔒 <strong>Security</strong>: Sensitive data stays out of version control</li>
+                        <li>🚀 <strong>Flexibility</strong>: Easy environment-specific configurations</li>
+                        <li>🔧 <strong>Simplicity</strong>: No code changes needed for deployment</li>
+                        <li>✅ <strong>Validation</strong>: Automatic checking of required fields</li>
+                        <li>🎯 <strong>Type Safety</strong>: Full TypeScript and Python type support</li>
+                    </ul>
+                    
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Quick Start:</strong> Copy <code>.env.example</code> to <code>.env</code> and update with your values to get started.
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Environment Setup Section -->
+        <section id="environment-setup" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-file-code"></i>
+                        Environment Setup
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <h3>Environment File Priority</h3>
+                    <p>Configuration files are loaded in the following order (highest priority first):</p>
+                    
+                    <ol style="margin: var(--space-4) 0; padding-left: var(--space-6);">
+                        <li><code>.env.local</code> - Local overrides (never committed)</li>
+                        <li><code>.env.[NODE_ENV]</code> - Environment-specific (e.g., .env.production)</li>
+                        <li><code>.env</code> - Base configuration</li>
+                    </ol>
+                    
+                    <h3>Initial Setup</h3>
+                    <div style="position: relative;">
+                        <pre class="config-example"><code># 1. Copy the example configuration
+cp .env.example .env
+
+# 2. Edit with your values
+nano .env  # or use your preferred editor
+
+# 3. For production deployment
+cp .env.example .env.production
+# Edit production-specific values
+
+# 4. For local development overrides
+cp .env.example .env.local
+# Add your local development settings</code></pre>
+                        <button class="copy-button" onclick="copyToClipboard(this)">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <h3>Runtime Environment Variables</h3>
+                    <p>You can also set variables directly when running commands:</p>
+                    
+                    <div style="position: relative;">
+                        <pre class="config-example"><code># Bun/Node.js
+NODE_ENV=production bun run server
+
+# Python
+BOT_TOKEN=xxx python3 main_bot.py
+
+# Multiple variables
+NODE_ENV=test LOG_LEVEL=debug bun test</code></pre>
+                        <button class="copy-button" onclick="copyToClipboard(this)">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Bot Configuration Section -->
+        <section id="bot-configuration" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-robot"></i>
+                        Bot Configuration
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                                <th>Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">BOT_TOKEN</span></td>
+                                <td>Telegram Bot API token from @BotFather</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ADMIN_CHAT_ID</span></td>
+                                <td>Telegram chat ID for admin notifications</td>
+                                <td>-2714719687</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">WEBHOOK_SECRET</span></td>
+                                <td>Secret for webhook validation</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-recommended">Recommended</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">TELEGRAM_API_ID</span></td>
+                                <td>Telegram API ID for MTProto</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">TELEGRAM_API_HASH</span></td>
+                                <td>Telegram API hash for MTProto</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">TELEGRAM_SESSION_NAME</span></td>
+                                <td>Session file name for Telegram</td>
+                                <td>fantdev_session</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="warning-box">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Security Note:</strong> Never commit your BOT_TOKEN or API credentials to version control. Always use environment variables or secure vaults.
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Database Configuration Section -->
+        <section id="database-configuration" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-database"></i>
+                        Database Configuration
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                                <th>Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">DATABASE_PATH</span></td>
+                                <td>Path to main customer database JSON file</td>
+                                <td>customer_database.json</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">SQLITE_DB_PATH</span></td>
+                                <td>SQLite database for group monitoring</td>
+                                <td>group_monitor.db</td>
+                                <td><span class="priority-badge priority-recommended">Recommended</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">CHAT_TRACKER_DB</span></td>
+                                <td>Database for chat tracking</td>
+                                <td>chat_tracker.db</td>
+                                <td><span class="priority-badge priority-recommended">Recommended</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">REDIS_URL</span></td>
+                                <td>Redis connection URL for caching</td>
+                                <td>redis://localhost:6379</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">REDIS_PASSWORD</span></td>
+                                <td>Redis authentication password</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Database Backup Settings</h3>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">BACKUP_ENABLED</span></td>
+                                <td>Enable automatic backups</td>
+                                <td>true</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">BACKUP_INTERVAL</span></td>
+                                <td>Backup interval in seconds</td>
+                                <td>3600 (1 hour)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">BACKUP_RETENTION_DAYS</span></td>
+                                <td>Days to retain backups</td>
+                                <td>30</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Server Configuration Section -->
+        <section id="server-configuration" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-server"></i>
+                        Server Configuration
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                                <th>Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">FLASK_PORT</span></td>
+                                <td>Flask API server port</td>
+                                <td>5000</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">BUN_PORT</span></td>
+                                <td>Bun/TypeScript server port</td>
+                                <td>3000</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">WEBSOCKET_PORT</span></td>
+                                <td>WebSocket server port</td>
+                                <td>8080</td>
+                                <td><span class="priority-badge priority-recommended">Recommended</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">API_BASE_URL</span></td>
+                                <td>Base URL for API endpoints</td>
+                                <td>http://localhost:3003/api</td>
+                                <td><span class="priority-badge priority-recommended">Recommended</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">WORKER_URL</span></td>
+                                <td>Cloudflare Worker URL</td>
+                                <td>http://localhost:8787</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Port Conflicts:</strong> The configuration loader automatically detects port conflicts and will warn you if multiple services are configured to use the same port.
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Security Configuration Section -->
+        <section id="security-configuration" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Security Configuration
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                                <th>Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">JWT_SECRET_KEY</span></td>
+                                <td>Secret key for JWT token signing</td>
+                                <td>dev-secret-key</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">SESSION_SECRET</span></td>
+                                <td>Secret for session management</td>
+                                <td>dev-session-secret</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ENCRYPTION_KEY</span></td>
+                                <td>Key for data encryption</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-recommended">Recommended</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ADMIN_USERNAME</span></td>
+                                <td>Admin panel username</td>
+                                <td>admin</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ADMIN_PASSWORD</span></td>
+                                <td>Admin panel password</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-required">Required</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Rate Limiting</h3>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">RATE_LIMIT_ENABLED</span></td>
+                                <td>Enable rate limiting</td>
+                                <td>true</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">RATE_LIMIT_REQUESTS</span></td>
+                                <td>Maximum requests per window</td>
+                                <td>100</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">RATE_LIMIT_WINDOW</span></td>
+                                <td>Time window in seconds</td>
+                                <td>60</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="warning-box">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Production Security:</strong> In production, you MUST:
+                        <ul style="margin: var(--space-2) 0; padding-left: var(--space-4);">
+                            <li>Generate cryptographically secure random keys (minimum 32 characters)</li>
+                            <li>Use strong, unique passwords</li>
+                            <li>Enable HTTPS/TLS for all connections</li>
+                            <li>Rotate keys regularly</li>
+                            <li>Never use default or example values</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Generating Secure Keys</h3>
+                    <div style="position: relative;">
+                        <pre class="config-example"><code># Generate a secure JWT secret
+openssl rand -base64 32
+
+# Generate using Node.js/Bun
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+# Generate using Python
+python3 -c "import secrets; print(secrets.token_hex(32))"</code></pre>
+                        <button class="copy-button" onclick="copyToClipboard(this)">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Feature Flags Section -->
+        <section id="feature-flags" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-toggle-on"></i>
+                        Feature Flags
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">ENABLE_DEBUG_MODE</span></td>
+                                <td>Enable debug logging and features</td>
+                                <td>false</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ENABLE_WEBSOCKET</span></td>
+                                <td>Enable WebSocket connections</td>
+                                <td>true</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ENABLE_AUTO_REPORTER</span></td>
+                                <td>Enable automated reporting</td>
+                                <td>true</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ENABLE_WORKER_THREADS</span></td>
+                                <td>Enable Bun worker threads</td>
+                                <td>true</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ENABLE_ERROR_TRACKING</span></td>
+                                <td>Enable error tracking system</td>
+                                <td>true</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ENABLE_METRICS</span></td>
+                                <td>Enable performance metrics</td>
+                                <td>true</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Performance Tip:</strong> Disable unused features to reduce resource consumption and improve performance.
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Monitoring Section -->
+        <section id="monitoring" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-chart-line"></i>
+                        Monitoring & Logging
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <h3>Logging Configuration</h3>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">LOG_LEVEL</span></td>
+                                <td>Logging level (DEBUG, INFO, WARNING, ERROR)</td>
+                                <td>INFO</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">LOG_FILE_PATH</span></td>
+                                <td>Path to log file</td>
+                                <td>logs/app.log</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ERROR_LOG_FILE</span></td>
+                                <td>Separate error log file</td>
+                                <td>logs/error.log</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>OpenTelemetry Configuration</h3>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">MONITORING_ENABLED</span></td>
+                                <td>Enable OpenTelemetry monitoring</td>
+                                <td>false</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">OTEL_EXPORTER_ENDPOINT</span></td>
+                                <td>OpenTelemetry collector endpoint</td>
+                                <td>http://localhost:4317</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- External Services Section -->
+        <section id="external-services" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-plug"></i>
+                        External Services
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                                <th>Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">NGROK_AUTH_TOKEN</span></td>
+                                <td>ngrok authentication token</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">CLOUDFLARE_API_TOKEN</span></td>
+                                <td>Cloudflare API token</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">CLOUDFLARE_ACCOUNT_ID</span></td>
+                                <td>Cloudflare account ID</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">PAYMENT_GATEWAY_API_KEY</span></td>
+                                <td>Payment processing API key</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">ANALYTICS_API_KEY</span></td>
+                                <td>Analytics service API key</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">OPENAI_API_KEY</span></td>
+                                <td>OpenAI API key for AI features</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">STRIPE_API_KEY</span></td>
+                                <td>Stripe payment API key</td>
+                                <td>None</td>
+                                <td><span class="priority-badge priority-optional">Optional</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Deployment Section -->
+        <section id="deployment" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-rocket"></i>
+                        Deployment Configuration
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <h3>Environment Selection</h3>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Environment</th>
+                                <th>NODE_ENV Value</th>
+                                <th>Configuration File</th>
+                                <th>Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Development</strong></td>
+                                <td><span class="env-var">development</span></td>
+                                <td>.env.development</td>
+                                <td>Local development</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Test</strong></td>
+                                <td><span class="env-var">test</span></td>
+                                <td>.env.test</td>
+                                <td>Running tests</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Production</strong></td>
+                                <td><span class="env-var">production</span></td>
+                                <td>.env.production</td>
+                                <td>Live deployment</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Production Checklist</h3>
+                    <ul style="margin: var(--space-4) 0; padding-left: var(--space-6);">
+                        <li>✅ All required environment variables are set</li>
+                        <li>✅ Secure random keys generated for JWT and session</li>
+                        <li>✅ Debug mode is disabled</li>
+                        <li>✅ Proper logging level configured</li>
+                        <li>✅ Database backups enabled</li>
+                        <li>✅ Rate limiting configured</li>
+                        <li>✅ HTTPS/TLS enabled</li>
+                        <li>✅ Monitoring and alerting configured</li>
+                        <li>✅ Error tracking enabled</li>
+                        <li>✅ Environment-specific API keys set</li>
+                    </ul>
+                    
+                    <h3>Docker Deployment</h3>
+                    <div style="position: relative;">
+                        <pre class="config-example"><code># Using Docker with environment file
+docker run --env-file .env.production fantdev-trading
+
+# Using Docker Compose
+docker-compose --env-file .env.production up
+
+# Kubernetes ConfigMap
+kubectl create configmap app-config --from-env-file=.env.production</code></pre>
+                        <button class="copy-button" onclick="copyToClipboard(this)">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <h3>Performance Tuning</h3>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="env-var">WORKER_POOL_SIZE</span></td>
+                                <td>Number of worker threads</td>
+                                <td>4</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">MAX_CONCURRENT_REQUESTS</span></td>
+                                <td>Maximum concurrent API requests</td>
+                                <td>50</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">CACHE_TTL</span></td>
+                                <td>Cache time-to-live in seconds</td>
+                                <td>300</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">CONNECTION_TIMEOUT</span></td>
+                                <td>Connection timeout in milliseconds</td>
+                                <td>5000</td>
+                            </tr>
+                            <tr>
+                                <td><span class="env-var">REQUEST_TIMEOUT</span></td>
+                                <td>Request timeout in milliseconds</td>
+                                <td>30000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Troubleshooting Section -->
+        <section id="troubleshooting" class="config-section">
+            <div class="fantdev-card">
+                <div class="fantdev-card-header">
+                    <h2 class="fantdev-card-title">
+                        <i class="fas fa-wrench"></i>
+                        Troubleshooting
+                    </h2>
+                </div>
+                <div class="fantdev-card-body">
+                    <h3>Common Issues</h3>
+                    
+                    <div class="fantdev-mb-6">
+                        <h4>1. Environment Variables Not Loading</h4>
+                        <div class="config-example">
+                            <code># Check if .env file exists
+ls -la .env
+
+# Verify file permissions
+chmod 644 .env
+
+# Test loading with Python
+python3 -c "from src.config_loader import Config; Config.print_config()"
+
+# Test loading with Bun
+bun run src/configLoader.ts</code>
+                        </div>
+                    </div>
+                    
+                    <div class="fantdev-mb-6">
+                        <h4>2. Port Already in Use</h4>
+                        <div class="config-example">
+                            <code># Find process using port
+lsof -i :5000
+
+# Kill process (replace PID with actual process ID)
+kill -9 PID
+
+# Or use different port
+FLASK_PORT=5001 python3 portal_server.py</code>
+                        </div>
+                    </div>
+                    
+                    <div class="fantdev-mb-6">
+                        <h4>3. Database Connection Issues</h4>
+                        <div class="config-example">
+                            <code># Check database file permissions
+ls -la *.db *.json
+
+# Fix permissions
+chmod 644 customer_database.json
+chmod 644 *.db
+
+# Test database connection
+python3 -c "from src.config_loader import Config; print(Config.get_database_url())"</code>
+                        </div>
+                    </div>
+                    
+                    <div class="fantdev-mb-6">
+                        <h4>4. Missing Required Variables</h4>
+                        <div class="config-example">
+                            <code># Validate configuration
+python3 src/config_loader.py
+
+# Check specific variable
+echo $BOT_TOKEN
+
+# Set variable temporarily
+export BOT_TOKEN="your_token_here"</code>
+                        </div>
+                    </div>
+                    
+                    <h3>Debug Mode</h3>
+                    <p>Enable debug mode for detailed logging:</p>
+                    <div class="config-example">
+                        <code>ENABLE_DEBUG_MODE=true LOG_LEVEL=DEBUG python3 main_bot.py</code>
+                    </div>
+                    
+                    <h3>Configuration Validation</h3>
+                    <p>Use the built-in validation to check your configuration:</p>
+                    
+                    <div style="position: relative;">
+                        <pre class="config-example"><code># Python validation
+from src.config_loader import Config
+
+if Config.validate():
+    print("✅ Configuration is valid")
+else:
+    print("❌ Configuration has errors")
+
+# TypeScript validation
+import { Config } from './src/configLoader';
+
+const { isValid, errors } = Config.validate();
+if (!isValid) {
+    console.error('Configuration errors:', errors);
+}</code></pre>
+                        <button class="copy-button" onclick="copyToClipboard(this)">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Need Help?</strong> Check the <a href="/docs">full documentation</a> or contact support if you continue to experience issues.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Copy to clipboard functionality
+    function copyToClipboard(button) {
+        const codeBlock = button.previousElementSibling;
+        const text = codeBlock.textContent;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            button.classList.add('copied');
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            
+            setTimeout(() => {
+                button.classList.remove('copied');
+                button.innerHTML = '<i class="fas fa-copy"></i>';
+            }, 2000);
+        });
+    }
+    
+    // Smooth scroll to sections
+    document.querySelectorAll('.config-nav-item').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetSection = document.getElementById(targetId);
+            
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Update active nav item
+                document.querySelectorAll('.config-nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Highlight active section on scroll
+    const sections = document.querySelectorAll('.config-section');
+    const navItems = document.querySelectorAll('.config-nav-item');
+    
+    const observerOptions = {
+        root: null,
+        rootMargin: '-100px 0px -70% 0px',
+        threshold: 0
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.getAttribute('id');
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('href') === `#${id}`) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, observerOptions);
+    
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+</script>
+{% endblock %}

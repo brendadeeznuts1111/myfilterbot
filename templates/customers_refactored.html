@@ -1,0 +1,379 @@
+{% extends "base_refactored.html" %}
+{% from "components/_base_layouts.html" import page_header, card, table, button, link_button %}
+{% from "components/_forms.html" import search_filter_form, pagination %}
+
+{% block title %}Customers - FantDev Trading Platform{% endblock %}
+
+{% block page_header %}
+{{ page_header(
+    title="Customer Management",
+    description="Manage your trading platform customers and their accounts",
+    actions=page_actions
+) }}
+{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    <a href="/customers/new" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-user-plus"></i>
+        Add Customer
+    </a>
+    <a href="/customers/export" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-download"></i>
+        Export Data
+    </a>
+    <a href="/customers/import" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-upload"></i>
+        Import Data
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filters -->
+<div class="fantdev-section">
+    {{ search_filter_form(
+        filters=request.args,
+        action=request.path,
+        method="GET"
+    ) }}
+</div>
+
+<!-- Customer Statistics -->
+<div class="fantdev-section">
+    <h2 class="fantdev-section-title">Customer Overview</h2>
+    <div class="fantdev-stats-grid">
+        <div class="fantdev-stat-card">
+            <div class="fantdev-stat-icon fantdev-stat-icon-primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="fantdev-stat-content">
+                <div class="fantdev-stat-value">{{ total_customers }}</div>
+                <div class="fantdev-stat-label">Total Customers</div>
+                <div class="fantdev-stat-change positive">+{{ new_customers_this_month }}</div>
+            </div>
+        </div>
+        
+        <div class="fantdev-stat-card">
+            <div class="fantdev-stat-icon fantdev-stat-icon-success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="fantdev-stat-content">
+                <div class="fantdev-stat-value">{{ active_customers }}</div>
+                <div class="fantdev-stat-label">Active Customers</div>
+                <div class="fantdev-stat-change positive">+{{ active_change }}%</div>
+            </div>
+        </div>
+        
+        <div class="fantdev-stat-card">
+            <div class="fantdev-stat-icon fantdev-stat-icon-warning">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="fantdev-stat-content">
+                <div class="fantdev-stat-value">{{ pending_customers }}</div>
+                <div class="fantdev-stat-label">Pending Approval</div>
+                <div class="fantdev-stat-change neutral">0%</div>
+            </div>
+        </div>
+        
+        <div class="fantdev-stat-card">
+            <div class="fantdev-stat-icon fantdev-stat-icon-info">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="fantdev-stat-content">
+                <div class="fantdev-stat-value">${{ total_volume }}</div>
+                <div class="fantdev-stat-label">Total Volume</div>
+                <div class="fantdev-stat-change positive">+{{ volume_change }}%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer List -->
+<div class="fantdev-section">
+    <div class="fantdev-section-header">
+        <h2 class="fantdev-section-title">Customer List</h2>
+        <div class="fantdev-section-actions">
+            <button class="fantdev-btn fantdev-btn-outline" onclick="bulkAction('activate')">
+                <i class="fas fa-check"></i>
+                Activate Selected
+            </button>
+            <button class="fantdev-btn fantdev-btn-outline" onclick="bulkAction('deactivate')">
+                <i class="fas fa-pause"></i>
+                Deactivate Selected
+            </button>
+            <button class="fantdev-btn fantdev-btn-outline" onclick="bulkAction('delete')">
+                <i class="fas fa-trash"></i>
+                Delete Selected
+            </button>
+        </div>
+    </div>
+    
+    {{ card(
+        content=customer_table,
+        footer=customer_table_footer
+    ) }}
+</div>
+
+<!-- Pagination -->
+<div class="fantdev-section">
+    {{ pagination(page_info, request.path) }}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fantdev-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-4);
+    }
+    
+    .fantdev-section-actions {
+        display: flex;
+        gap: var(--space-2);
+    }
+    
+    .fantdev-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    
+    .fantdev-stat-icon-primary {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .fantdev-stat-icon-success {
+        background: var(--success);
+        color: white;
+    }
+    
+    .fantdev-stat-icon-warning {
+        background: var(--warning);
+        color: white;
+    }
+    
+    .fantdev-stat-icon-info {
+        background: var(--info);
+        color: white;
+    }
+    
+    .fantdev-customer-actions {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+    
+    .fantdev-customer-status {
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--border-radius-sm);
+        font-size: var(--text-xs);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .fantdev-customer-status.active {
+        background: var(--success-light);
+        color: var(--success-dark);
+    }
+    
+    .fantdev-customer-status.inactive {
+        background: var(--error-light);
+        color: var(--error-dark);
+    }
+    
+    .fantdev-customer-status.pending {
+        background: var(--warning-light);
+        color: var(--warning-dark);
+    }
+    
+    @media (max-width: 768px) {
+        .fantdev-section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-3);
+        }
+        
+        .fantdev-section-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        
+        .fantdev-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Customer management functionality
+    let selectedCustomers = new Set();
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCustomerTable();
+        initializeBulkActions();
+    });
+    
+    function initializeCustomerTable() {
+        // Add click handlers for customer selection
+        const checkboxes = document.querySelectorAll('.customer-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const customerId = this.value;
+                if (this.checked) {
+                    selectedCustomers.add(customerId);
+                } else {
+                    selectedCustomers.delete(customerId);
+                }
+                updateBulkActionButtons();
+            });
+        });
+    }
+    
+    function initializeBulkActions() {
+        // Select all checkbox functionality
+        const selectAllCheckbox = document.getElementById('select-all-customers');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.customer-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                    if (this.checked) {
+                        selectedCustomers.add(checkbox.value);
+                    } else {
+                        selectedCustomers.delete(checkbox.value);
+                    }
+                });
+                updateBulkActionButtons();
+            });
+        }
+    }
+    
+    function updateBulkActionButtons() {
+        const bulkButtons = document.querySelectorAll('.fantdev-section-actions .fantdev-btn');
+        const hasSelection = selectedCustomers.size > 0;
+        
+        bulkButtons.forEach(button => {
+            button.disabled = !hasSelection;
+            if (!hasSelection) {
+                button.classList.add('fantdev-btn-disabled');
+            } else {
+                button.classList.remove('fantdev-btn-disabled');
+            }
+        });
+    }
+    
+    function bulkAction(action) {
+        if (selectedCustomers.size === 0) {
+            showAlert('Please select customers to perform this action.', 'warning');
+            return;
+        }
+        
+        const customerIds = Array.from(selectedCustomers);
+        const actionText = action.charAt(0).toUpperCase() + action.slice(1);
+        
+        if (confirm(`Are you sure you want to ${action} ${customerIds.length} selected customer(s)?`)) {
+            // Perform bulk action
+            fetch('/api/customers/bulk-action', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    action: action,
+                    customer_ids: customerIds
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Successfully ${action}ed ${customerIds.length} customer(s).`, 'success');
+                    // Refresh the page or update the table
+                    location.reload();
+                } else {
+                    showAlert(`Failed to ${action} customers: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Bulk action error:', error);
+                showAlert(`Error performing bulk action: ${error.message}`, 'error');
+            });
+        }
+    }
+    
+    function getCSRFToken() {
+        // Get CSRF token from meta tag or cookie
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        return metaTag ? metaTag.getAttribute('content') : '';
+    }
+    
+    function showAlert(message, type) {
+        // Create and show alert using FantDev alert system
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `fantdev-alert fantdev-alert-${type}`;
+        alertDiv.innerHTML = `
+            <div class="fantdev-alert-content">${message}</div>
+            <button type="button" class="fantdev-alert-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // Insert at top of content area
+        const contentArea = document.querySelector('.fantdev-content');
+        contentArea.insertBefore(alertDiv, contentArea.firstChild);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Customer quick actions
+    function viewCustomer(customerId) {
+        window.location.href = `/customers/${customerId}`;
+    }
+    
+    function editCustomer(customerId) {
+        window.location.href = `/customers/${customerId}/edit`;
+    }
+    
+    function toggleCustomerStatus(customerId, currentStatus) {
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        const actionText = newStatus === 'active' ? 'activate' : 'deactivate';
+        
+        if (confirm(`Are you sure you want to ${actionText} this customer?`)) {
+            fetch(`/api/customers/${customerId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCSRFToken()
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Customer ${actionText}d successfully.`, 'success');
+                    location.reload();
+                } else {
+                    showAlert(`Failed to ${actionText} customer: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Status toggle error:', error);
+                showAlert(`Error updating customer status: ${error.message}`, 'error');
+            });
+        }
+    }
+</script>
+{% endblock %}

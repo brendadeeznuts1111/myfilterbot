@@ -1,0 +1,246 @@
+{% extends "base_refactored.html" %}
+{% from "components/_base_layouts.html" import page_header, card, stats_grid, table %}
+
+{% block title %}Dashboard - FantDev Trading Platform{% endblock %}
+
+{% block page_header %}
+{{ page_header(
+    title="Welcome back, " + (user_name or "User") + "!",
+    description="Here's what's happening with your trading activity",
+    actions=page_actions
+) }}
+{% endblock %}
+
+{% block page_actions %}
+<div class="fantdev-flex" style="gap: var(--space-3);">
+    {% if user_role == 'admin' %}
+    <a href="/customers" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-users"></i>
+        Manage Customers
+    </a>
+    <a href="/analytics" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-chart-line"></i>
+        View Reports
+    </a>
+    {% else %}
+    <a href="/transactions" class="fantdev-btn fantdev-btn-primary">
+        <i class="fas fa-history"></i>
+        View History
+    </a>
+    <a href="/profile" class="fantdev-btn fantdev-btn-outline">
+        <i class="fas fa-user-cog"></i>
+        Settings
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Overview -->
+<div class="fantdev-section">
+    <h2 class="fantdev-section-title">Quick Overview</h2>
+    {{ stats_grid([
+        {
+            "icon": "fas fa-chart-line",
+            "value": "{{ total_trades or 0 }}",
+            "label": "Total Trades",
+            "change": "{{ trade_change or 0 }}"
+        },
+        {
+            "icon": "fas fa-dollar-sign",
+            "value": "${{ total_volume or '0' }}",
+            "label": "Trading Volume",
+            "change": "{{ volume_change or 0 }}"
+        },
+        {
+            "icon": "fas fa-percentage",
+            "value": "{{ success_rate or '0' }}%",
+            "label": "Success Rate",
+            "change": "{{ success_change or 0 }}"
+        },
+        {
+            "icon": "fas fa-clock",
+            "value": "{{ active_bots or 0 }}",
+            "label": "Active Bots",
+            "change": "{{ bot_change or 0 }}"
+        }
+    ]) }}
+</div>
+
+<!-- Main Dashboard Grid -->
+<div class="fantdev-dashboard-grid">
+    <!-- Trading Activity -->
+    <div class="fantdev-section">
+        <h2 class="fantdev-section-title">Recent Trading Activity</h2>
+        {{ card(
+            title="Latest Trades",
+            content=recent_trades_table,
+            footer=recent_trades_footer
+        ) }}
+    </div>
+    
+    <!-- Quick Actions & Alerts -->
+    <div class="fantdev-section">
+        <h2 class="fantdev-section-title">Quick Actions</h2>
+        
+        <!-- Quick Action Buttons -->
+        <div class="fantdev-quick-actions">
+            <a href="/transactions/new" class="fantdev-btn fantdev-btn-primary fantdev-btn-block">
+                <i class="fas fa-plus"></i>
+                New Trade
+            </a>
+            <a href="/bots/create" class="fantdev-btn fantdev-btn-outline fantdev-btn-block">
+                <i class="fas fa-robot"></i>
+                Create Bot
+            </a>
+            <a href="/analytics" class="fantdev-btn fantdev-btn-outline fantdev-btn-block">
+                <i class="fas fa-chart-bar"></i>
+                View Analytics
+            </a>
+            <a href="/settings" class="fantdev-btn fantdev-btn-outline fantdev-btn-block">
+                <i class="fas fa-cog"></i>
+                Settings
+            </a>
+        </div>
+        
+        <!-- System Alerts -->
+        {% if system_alerts %}
+        <div class="fantdev-section">
+            <h3 class="fantdev-section-subtitle">System Alerts</h3>
+            {% for alert in system_alerts %}
+            <div class="fantdev-alert fantdev-alert-{{ alert.type }}" role="alert">
+                <div class="fantdev-alert-content">
+                    <strong>{{ alert.title }}</strong>
+                    <p>{{ alert.message }}</p>
+                </div>
+                {% if alert.dismissible %}
+                <button type="button" class="fantdev-alert-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Performance Charts -->
+<div class="fantdev-section">
+    <h2 class="fantdev-section-title">Performance Overview</h2>
+    <div class="fantdev-charts-grid">
+        {{ card(
+            title="Equity Curve",
+            subtitle="Portfolio performance over time",
+            content=equity_chart,
+            class="fantdev-chart-card"
+        ) }}
+        
+        {{ card(
+            title="Trade Distribution",
+            subtitle="Win/loss ratio and trade types",
+            content=trade_distribution_chart,
+            class="fantdev-chart-card"
+        ) }}
+    </div>
+</div>
+
+<!-- Recent Activity Feed -->
+<div class="fantdev-section">
+    <h2 class="fantdev-section-title">Recent Activity</h2>
+    {{ card(
+        title="System Activity",
+        content=activity_feed,
+        footer=activity_feed_footer
+    ) }}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fantdev-dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    
+    .fantdev-charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: var(--space-6);
+    }
+    
+    .fantdev-chart-card {
+        min-height: 300px;
+    }
+    
+    .fantdev-quick-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+        margin-bottom: var(--space-6);
+    }
+    
+    .fantdev-quick-actions .fantdev-btn {
+        justify-content: flex-start;
+        text-align: left;
+    }
+    
+    .fantdev-quick-actions .fantdev-btn i {
+        margin-right: var(--space-2);
+        width: 16px;
+    }
+    
+    @media (max-width: 768px) {
+        .fantdev-dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .fantdev-charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dashboard-specific functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts if they exist
+        if (typeof initializeCharts === 'function') {
+            initializeCharts();
+        }
+        
+        // Auto-refresh dashboard data
+        setInterval(function() {
+            refreshDashboardData();
+        }, 30000); // Refresh every 30 seconds
+    });
+    
+    function refreshDashboardData() {
+        // Fetch updated dashboard data
+        fetch('/api/dashboard/data')
+            .then(response => response.json())
+            .then(data => {
+                updateDashboardStats(data);
+            })
+            .catch(error => {
+                console.error('Failed to refresh dashboard data:', error);
+            });
+    }
+    
+    function updateDashboardStats(data) {
+        // Update stats display
+        if (data.stats) {
+            Object.keys(data.stats).forEach(key => {
+                const element = document.querySelector(`[data-stat="${key}"]`);
+                if (element) {
+                    element.textContent = data.stats[key];
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}
