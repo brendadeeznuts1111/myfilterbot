@@ -1,0 +1,31 @@
+<!-- Navigation Component -->
+<nav class="fantdev-nav">
+    {% block navigation %}
+    <a href="/" class="fantdev-nav-item {% if request.path == '/' %}active{% endif %}">
+        <span class="fantdev-nav-icon">📊</span>
+        <span>Dashboard</span>
+    </a>
+    {% if user_role == 'admin' %}
+    <a href="/customers" class="fantdev-nav-item {% if request.path == '/customers' %}active{% endif %}">
+        <span class="fantdev-nav-icon">👥</span>
+        <span>Customers</span>
+    </a>
+    <a href="/analytics" class="fantdev-nav-item {% if request.path == '/analytics' %}active{% endif %}">
+        <span class="fantdev-nav-icon">📈</span>
+        <span>Analytics</span>
+    </a>
+    <a href="/groups" class="fantdev-nav-item {% if request.path == '/groups' %}active{% endif %}">
+        <span class="fantdev-nav-icon">🏷️</span>
+        <span>Groups</span>
+    </a>
+    {% endif %}
+    <a href="/transactions" class="fantdev-nav-item {% if request.path == '/transactions' %}active{% endif %}">
+        <span class="fantdev-nav-icon">💳</span>
+        <span>Transactions</span>
+    </a>
+    <a href="/profile" class="fantdev-nav-item {% if request.path == '/profile' %}active{% endif %}">
+        <span class="fantdev-nav-icon">👤</span>
+        <span>Profile</span>
+    </a>
+    {% endblock %}
+</nav>

@@ -8,6 +8,14 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
     
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="FantDev Admin">
+    <link rel="apple-touch-icon" href="/images/icon-152x152.png">
+    
     <!-- Meta tags -->
     <meta name="description" content="{% block meta_description %}Professional trading bot management and analytics platform for serious traders{% endblock %}">
     <meta name="author" content="FantDev Trading">
@@ -91,54 +99,10 @@
                 </a>
                 
                 <!-- Navigation -->
-                <nav class="fantdev-nav">
-                    {% block navigation %}
-                    <a href="/" class="fantdev-nav-item {% if request.path == '/' %}active{% endif %}">
-                        <span class="fantdev-nav-icon">📊</span>
-                        <span>Dashboard</span>
-                    </a>
-                    {% if user_role == 'admin' %}
-                    <a href="/customers" class="fantdev-nav-item {% if request.path == '/customers' %}active{% endif %}">
-                        <span class="fantdev-nav-icon">👥</span>
-                        <span>Customers</span>
-                    </a>
-                    <a href="/analytics" class="fantdev-nav-item {% if request.path == '/analytics' %}active{% endif %}">
-                        <span class="fantdev-nav-icon">📈</span>
-                        <span>Analytics</span>
-                    </a>
-                    <a href="/groups" class="fantdev-nav-item {% if request.path == '/groups' %}active{% endif %}">
-                        <span class="fantdev-nav-icon">🏷️</span>
-                        <span>Groups</span>
-                    </a>
-                    {% endif %}
-                    <a href="/transactions" class="fantdev-nav-item {% if request.path == '/transactions' %}active{% endif %}">
-                        <span class="fantdev-nav-icon">💳</span>
-                        <span>Transactions</span>
-                    </a>
-                    <a href="/profile" class="fantdev-nav-item {% if request.path == '/profile' %}active{% endif %}">
-                        <span class="fantdev-nav-icon">👤</span>
-                        <span>Profile</span>
-                    </a>
-                    {% endblock %}
-                </nav>
+                {% include 'components/_navigation.html' %}
                 
                 <!-- User Menu -->
-                <div class="fantdev-user-menu">
-                    <div class="fantdev-user-info">
-                        <span class="fantdev-user-name">{{ user_name or 'Guest' }}</span>
-                        {% if user_role %}
-                        <span class="fantdev-user-role">{{ user_role }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="fantdev-user-actions">
-                        <button class="fantdev-btn fantdev-btn-icon" onclick="toggleTheme()">
-                            <i class="fas fa-moon"></i>
-                        </button>
-                        <a href="/logout" class="fantdev-btn fantdev-btn-icon">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </a>
-                    </div>
-                </div>
+                {% include 'components/_user_menu.html' %}
             </div>
         </div>
     </header>
