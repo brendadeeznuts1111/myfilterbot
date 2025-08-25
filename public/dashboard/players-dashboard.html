@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Players & Agents Management - FantDev Trading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Colorblind-friendly palette */
+        :root {
+            --cb-blue: #0173B2;
+            --cb-orange: #DE8F05;
+            --cb-green: #029E73;
+            --cb-yellow: #ECC30B;
+            --cb-red: #CC3311;
+            --cb-purple: #56B4E9;
+            --cb-pink: #F37A8C;
+            --cb-gray: #6B7280;
+        }
+        
+        .cb-blue { color: var(--cb-blue); }
+        .cb-orange { color: var(--cb-orange); }
+        .cb-green { color: var(--cb-green); }
+        .cb-yellow { color: var(--cb-yellow); }
+        .cb-red { color: var(--cb-red); }
+        .cb-purple { color: var(--cb-purple); }
+        
+        .bg-cb-blue { background-color: var(--cb-blue); }
+        .bg-cb-orange { background-color: var(--cb-orange); }
+        .bg-cb-green { background-color: var(--cb-green); }
+        .bg-cb-yellow { background-color: var(--cb-yellow); }
+        .bg-cb-red { background-color: var(--cb-red); }
+        
+        /* Risk level indicators with patterns for colorblind accessibility */
+        .risk-low { 
+            background: linear-gradient(45deg, #029E73 25%, transparent 25%), 
+                        linear-gradient(-45deg, #029E73 25%, transparent 25%);
+            background-size: 10px 10px;
+            background-color: #E6F7F1;
+        }
+        .risk-medium { 
+            background: repeating-linear-gradient(45deg, #ECC30B, #ECC30B 2px, #FFF9E6 2px, #FFF9E6 8px);
+        }
+        .risk-high { 
+            background: repeating-linear-gradient(90deg, #CC3311, #CC3311 2px, #FFEBE8 2px, #FFEBE8 8px);
+        }
+        
+        /* VIP tier badges */
+        .vip-bronze { background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); }
+        .vip-silver { background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%); }
+        .vip-gold { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+        .vip-platinum { background: linear-gradient(135deg, #E5E4E2 0%, #BEC2CB 100%); }
+        
+        /* Notification styles */
+        .notification-enter {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Loading spinner */
+        .loader {
+            border-top-color: var(--cb-blue);
+            animation: spinner 0.6s linear infinite;
+        }
+        
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Status indicators with icons for better accessibility */
+        .status-online::before { content: "●"; color: var(--cb-green); margin-right: 4px; }
+        .status-offline::before { content: "○"; color: var(--cb-gray); margin-right: 4px; }
+        .status-busy::before { content: "◐"; color: var(--cb-orange); margin-right: 4px; }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="playersDashboard()">
+    <!-- Notifications Container -->
+    <div class="fixed top-4 right-4 z-50 space-y-2" x-show="notifications.length > 0">
+        <template x-for="(notification, index) in notifications" :key="notification.id">
+            <div class="notification-enter bg-white rounded-lg shadow-lg p-4 max-w-sm border-l-4"
+                 :class="{
+                     'border-green-500': notification.type === 'success',
+                     'border-red-500': notification.type === 'error',
+                     'border-blue-500': notification.type === 'info',
+                     'border-yellow-500': notification.type === 'warning'
+                 }">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 text-xl mr-3">
+                            <i :class="{
+                                'fas fa-check-circle text-green-500': notification.type === 'success',
+                                'fas fa-times-circle text-red-500': notification.type === 'error',
+                                'fas fa-info-circle text-blue-500': notification.type === 'info',
+                                'fas fa-exclamation-triangle text-yellow-500': notification.type === 'warning'
+                            }"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800" x-text="notification.title"></p>
+                            <p class="text-sm text-gray-600" x-text="notification.message"></p>
+                        </div>
+                    </div>
+                    <button @click="removeNotification(index)" class="ml-4 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Header -->
+    <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-users text-white text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-white">Players & Agents Management</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Real-time status -->
+                    <div class="flex items-center text-white text-sm">
+                        <span class="status-online">Live</span>
+                        <span class="ml-2" x-text="currentTime"></span>
+                    </div>
+                    <!-- Refresh button -->
+                    <button @click="refreshData()" class="text-white hover:text-yellow-300">
+                        <i class="fas fa-sync-alt" :class="{'animate-spin': loading}"></i>
+                    </button>
+                    <!-- Accessibility toggle -->
+                    <button @click="toggleColorblindMode()" class="text-white hover:text-yellow-300" title="Toggle colorblind mode">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Dashboard -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Players</p>
+                        <p class="text-3xl font-bold cb-blue" x-text="stats.totalPlayers">-</p>
+                    </div>
+                    <i class="fas fa-users text-3xl cb-blue opacity-30"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Online Now</p>
+                        <p class="text-3xl font-bold cb-green" x-text="stats.onlinePlayers">-</p>
+                    </div>
+                    <i class="fas fa-circle text-3xl cb-green opacity-30"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Balance</p>
+                        <p class="text-2xl font-bold cb-purple">$<span x-text="formatNumber(stats.totalBalance)">-</span></p>
+                    </div>
+                    <i class="fas fa-wallet text-3xl cb-purple opacity-30"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Today's Volume</p>
+                        <p class="text-2xl font-bold cb-orange">$<span x-text="formatNumber(stats.todayVolume)">-</span></p>
+                    </div>
+                    <i class="fas fa-chart-line text-3xl cb-orange opacity-30"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">New Today</p>
+                        <p class="text-3xl font-bold cb-yellow" x-text="stats.todayNewPlayers">-</p>
+                    </div>
+                    <i class="fas fa-user-plus text-3xl cb-yellow opacity-30"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <!-- Search -->
+                <div class="flex-1 min-w-[200px] max-w-md">
+                    <div class="relative">
+                        <input type="text" 
+                               x-model="searchQuery"
+                               @input="filterPlayers()"
+                               placeholder="Search players by name, username, or ID..."
+                               class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="flex items-center space-x-2">
+                    <select x-model="filters.status" @change="filterPlayers()" 
+                            class="px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="">All Status</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="busy">Busy</option>
+                    </select>
+                    
+                    <select x-model="filters.risk" @change="filterPlayers()" 
+                            class="px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="">All Risk Levels</option>
+                        <option value="low">Low Risk</option>
+                        <option value="medium">Medium Risk</option>
+                        <option value="high">High Risk</option>
+                    </select>
+                    
+                    <select x-model="filters.vip" @change="filterPlayers()" 
+                            class="px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="">All VIP Tiers</option>
+                        <option value="bronze">Bronze</option>
+                        <option value="silver">Silver</option>
+                        <option value="gold">Gold</option>
+                        <option value="platinum">Platinum</option>
+                    </select>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button @click="exportPlayers()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                    <button @click="showBulkActions = !showBulkActions" 
+                            :class="selectedPlayers.length > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400'"
+                            :disabled="selectedPlayers.length === 0"
+                            class="text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-tasks mr-2"></i>Bulk Actions (<span x-text="selectedPlayers.length"></span>)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Bulk Actions Panel -->
+            <div x-show="showBulkActions && selectedPlayers.length > 0" 
+                 x-transition
+                 class="mt-4 pt-4 border-t flex items-center space-x-2">
+                <button @click="bulkSuspend()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                    <i class="fas fa-ban mr-2"></i>Suspend Selected
+                </button>
+                <button @click="bulkMessage()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                    <i class="fas fa-envelope mr-2"></i>Message Selected
+                </button>
+                <button @click="bulkPromote()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                    <i class="fas fa-star mr-2"></i>Promote to Agent
+                </button>
+                <button @click="selectedPlayers = []" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                    <i class="fas fa-times mr-2"></i>Clear Selection
+                </button>
+            </div>
+        </div>
+
+        <!-- Players Table -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3">
+                                <input type="checkbox" @change="toggleSelectAll($event)" class="rounded">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk/VIP</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Today P&L</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="player in filteredPlayers" :key="player.id">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-4">
+                                    <input type="checkbox" 
+                                           :value="player.id"
+                                           x-model="selectedPlayers"
+                                           class="rounded">
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                                <span class="text-indigo-600 font-semibold" x-text="player.name?.charAt(0)?.toUpperCase() || 'P'"></span>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900" x-text="player.name || 'Unknown'"></div>
+                                            <div class="text-sm text-gray-500">
+                                                <span x-text="player.username || 'No username'"></span>
+                                                <span class="text-xs text-gray-400 ml-1">(ID: <span x-text="player.id"></span>)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="'status-' + player.status" 
+                                          class="text-sm font-medium capitalize"
+                                          x-text="player.status"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-semibold" 
+                                         :class="player.balance >= 0 ? 'cb-green' : 'cb-red'">
+                                        $<span x-text="formatNumber(player.balance)"></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        Limit: $<span x-text="formatNumber(player.creditLimit || 5000)"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center space-x-2">
+                                        <span :class="'risk-' + player.riskLevel" 
+                                              class="px-2 py-1 rounded text-xs font-medium capitalize">
+                                            <span x-text="player.riskLevel"></span> Risk
+                                        </span>
+                                        <template x-if="player.vipTier">
+                                            <span :class="'vip-' + player.vipTier" 
+                                                  class="px-2 py-1 rounded text-xs font-medium text-white capitalize">
+                                                <span x-text="player.vipTier"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-semibold" 
+                                         :class="player.todayPnl >= 0 ? 'cb-green' : 'cb-red'">
+                                        <span x-text="player.todayPnl >= 0 ? '+' : ''"></span>$<span x-text="formatNumber(Math.abs(player.todayPnl))"></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        Win Rate: <span x-text="player.winRate"></span>%
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <template x-if="player.agentTier">
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium capitalize">
+                                            <span x-text="player.agentTier"></span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!player.agentTier">
+                                        <span class="text-gray-400 text-sm">-</span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button @click="viewPlayerDetails(player.id)" 
+                                            class="text-blue-600 hover:text-blue-900 mr-3" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button @click="editPlayer(player)" 
+                                            class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button @click="messagePlayer(player)" 
+                                            class="text-green-600 hover:text-green-900 mr-3" title="Message">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                    <button @click="suspendPlayer(player)" 
+                                            class="text-red-600 hover:text-red-900" title="Suspend">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Loading State -->
+            <div x-show="loading" class="p-8 text-center">
+                <div class="inline-block loader border-4 border-gray-200 rounded-full w-12 h-12"></div>
+                <p class="mt-4 text-gray-600">Loading players data...</p>
+            </div>
+            
+            <!-- Empty State -->
+            <div x-show="!loading && filteredPlayers.length === 0" class="p-8 text-center">
+                <i class="fas fa-users text-gray-400 text-5xl mb-4"></i>
+                <p class="text-gray-600">No players found matching your filters.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Details Modal -->
+    <div x-show="showPlayerModal" 
+         @click.away="showPlayerModal = false"
+         x-transition
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-6">
+                    <h2 class="text-2xl font-bold">Player Details</h2>
+                    <button @click="showPlayerModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <template x-if="selectedPlayerDetails">
+                    <div class="space-y-6">
+                        <!-- Player Info -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-semibold mb-3">Basic Information</h3>
+                                <dl class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Name:</dt>
+                                        <dd class="font-medium" x-text="selectedPlayerDetails.name"></dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Username:</dt>
+                                        <dd class="font-medium" x-text="selectedPlayerDetails.username"></dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Telegram ID:</dt>
+                                        <dd class="font-medium" x-text="selectedPlayerDetails.telegram_id"></dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Status:</dt>
+                                        <dd>
+                                            <span :class="'status-' + selectedPlayerDetails.status" 
+                                                  x-text="selectedPlayerDetails.status"></span>
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-semibold mb-3">Financial Summary</h3>
+                                <dl class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Balance:</dt>
+                                        <dd class="font-medium" 
+                                            :class="selectedPlayerDetails.balance >= 0 ? 'cb-green' : 'cb-red'">
+                                            $<span x-text="formatNumber(selectedPlayerDetails.balance)"></span>
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Credit Limit:</dt>
+                                        <dd class="font-medium">$<span x-text="formatNumber(selectedPlayerDetails.creditLimit)"></span></dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Risk Level:</dt>
+                                        <dd>
+                                            <span :class="'risk-' + selectedPlayerDetails.riskLevel" 
+                                                  class="px-2 py-1 rounded text-xs font-medium"
+                                                  x-text="selectedPlayerDetails.riskLevel"></span>
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">VIP Tier:</dt>
+                                        <dd>
+                                            <template x-if="selectedPlayerDetails.vipTier">
+                                                <span :class="'vip-' + selectedPlayerDetails.vipTier" 
+                                                      class="px-2 py-1 rounded text-xs font-medium text-white"
+                                                      x-text="selectedPlayerDetails.vipTier"></span>
+                                            </template>
+                                            <template x-if="!selectedPlayerDetails.vipTier">
+                                                <span class="text-gray-400">None</span>
+                                            </template>
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
+                        </div>
+                        
+                        <!-- P&L Chart -->
+                        <div x-show="selectedPlayerDetails.profitLoss">
+                            <h3 class="font-semibold mb-3">Profit & Loss</h3>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <p class="text-xs text-gray-500">Daily</p>
+                                    <p class="text-lg font-bold"
+                                       :class="selectedPlayerDetails.profitLoss?.daily >= 0 ? 'cb-green' : 'cb-red'">
+                                        $<span x-text="formatNumber(Math.abs(selectedPlayerDetails.profitLoss?.daily || 0))"></span>
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <p class="text-xs text-gray-500">Weekly</p>
+                                    <p class="text-lg font-bold"
+                                       :class="selectedPlayerDetails.profitLoss?.weekly >= 0 ? 'cb-green' : 'cb-red'">
+                                        $<span x-text="formatNumber(Math.abs(selectedPlayerDetails.profitLoss?.weekly || 0))"></span>
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <p class="text-xs text-gray-500">Monthly</p>
+                                    <p class="text-lg font-bold"
+                                       :class="selectedPlayerDetails.profitLoss?.monthly >= 0 ? 'cb-green' : 'cb-red'">
+                                        $<span x-text="formatNumber(Math.abs(selectedPlayerDetails.profitLoss?.monthly || 0))"></span>
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <p class="text-xs text-gray-500">All Time</p>
+                                    <p class="text-lg font-bold"
+                                       :class="selectedPlayerDetails.profitLoss?.allTime >= 0 ? 'cb-green' : 'cb-red'">
+                                        $<span x-text="formatNumber(Math.abs(selectedPlayerDetails.profitLoss?.allTime || 0))"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Transactions -->
+                        <div x-show="selectedPlayerDetails.transactions">
+                            <h3 class="font-semibold mb-3">Recent Transactions</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left">Date</th>
+                                            <th class="px-4 py-2 text-left">Type</th>
+                                            <th class="px-4 py-2 text-right">Amount</th>
+                                            <th class="px-4 py-2 text-left">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y">
+                                        <template x-for="tx in selectedPlayerDetails.transactions?.slice(0, 10)" :key="tx.id">
+                                            <tr>
+                                                <td class="px-4 py-2" x-text="formatDate(tx.timestamp)"></td>
+                                                <td class="px-4 py-2 capitalize" x-text="tx.type"></td>
+                                                <td class="px-4 py-2 text-right font-medium"
+                                                    :class="tx.amount >= 0 ? 'cb-green' : 'cb-red'">
+                                                    $<span x-text="formatNumber(Math.abs(tx.amount))"></span>
+                                                </td>
+                                                <td class="px-4 py-2">
+                                                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                                        <span x-text="tx.status || 'completed'"></span>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function playersDashboard() {
+            return {
+                // State
+                players: [],
+                filteredPlayers: [],
+                selectedPlayers: [],
+                selectedPlayerDetails: null,
+                stats: {
+                    totalPlayers: 0,
+                    onlinePlayers: 0,
+                    totalBalance: 0,
+                    todayVolume: 0,
+                    todayNewPlayers: 0
+                },
+                loading: false,
+                showPlayerModal: false,
+                showBulkActions: false,
+                searchQuery: '',
+                filters: {
+                    status: '',
+                    risk: '',
+                    vip: ''
+                },
+                notifications: [],
+                currentTime: '',
+                colorblindMode: localStorage.getItem('colorblindMode') === 'true',
+                
+                // Initialize
+                async init() {
+                    this.updateClock();
+                    setInterval(() => this.updateClock(), 1000);
+                    await this.loadPlayers();
+                    await this.loadStats();
+                    
+                    // Set up real-time updates
+                    this.connectToEventStream();
+                },
+                
+                // Load players data
+                async loadPlayers() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/dashboard/players');
+                        const data = await response.json();
+                        this.players = data;
+                        this.filterPlayers();
+                        this.showNotification('success', 'Data Loaded', `Loaded ${data.length} players`);
+                    } catch (error) {
+                        console.error('Failed to load players:', error);
+                        this.showNotification('error', 'Load Failed', 'Could not load player data');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Load statistics
+                async loadStats() {
+                    try {
+                        const response = await fetch('/api/dashboard/players/stats');
+                        this.stats = await response.json();
+                    } catch (error) {
+                        console.error('Failed to load stats:', error);
+                    }
+                },
+                
+                // Filter players
+                filterPlayers() {
+                    let filtered = [...this.players];
+                    
+                    // Search filter
+                    if (this.searchQuery) {
+                        const query = this.searchQuery.toLowerCase();
+                        filtered = filtered.filter(p => 
+                            p.name?.toLowerCase().includes(query) ||
+                            p.username?.toLowerCase().includes(query) ||
+                            p.id?.toString().includes(query)
+                        );
+                    }
+                    
+                    // Status filter
+                    if (this.filters.status) {
+                        filtered = filtered.filter(p => p.status === this.filters.status);
+                    }
+                    
+                    // Risk filter
+                    if (this.filters.risk) {
+                        filtered = filtered.filter(p => p.riskLevel === this.filters.risk);
+                    }
+                    
+                    // VIP filter
+                    if (this.filters.vip) {
+                        filtered = filtered.filter(p => p.vipTier === this.filters.vip);
+                    }
+                    
+                    this.filteredPlayers = filtered;
+                },
+                
+                // View player details
+                async viewPlayerDetails(playerId) {
+                    try {
+                        const response = await fetch(`/api/dashboard/player/${playerId}`);
+                        this.selectedPlayerDetails = await response.json();
+                        this.showPlayerModal = true;
+                    } catch (error) {
+                        console.error('Failed to load player details:', error);
+                        this.showNotification('error', 'Load Failed', 'Could not load player details');
+                    }
+                },
+                
+                // Edit player
+                editPlayer(player) {
+                    // Would open edit modal
+                    this.showNotification('info', 'Edit Player', `Editing ${player.name}`);
+                },
+                
+                // Message player
+                async messagePlayer(player) {
+                    const message = prompt(`Send message to ${player.name}:`, 'Hello from FantDev Trading!');
+                    if (message) {
+                        try {
+                            const response = await fetch(`/api/dashboard/player/${player.id}/message`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ message })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                this.showNotification('success', 'Message Sent', `Message sent to ${player.name}`);
+                            } else {
+                                throw new Error(result.error);
+                            }
+                        } catch (error) {
+                            this.showNotification('error', 'Send Failed', error.message);
+                        }
+                    }
+                },
+                
+                // Suspend player
+                async suspendPlayer(player) {
+                    if (confirm(`Are you sure you want to suspend ${player.name}?`)) {
+                        try {
+                            const response = await fetch(`/api/dashboard/player/${player.id}/suspend`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    suspend: true, 
+                                    reason: 'Admin action' 
+                                })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                this.showNotification('success', 'Player Suspended', `${player.name} has been suspended`);
+                                await this.loadPlayers();
+                            } else {
+                                throw new Error(result.error);
+                            }
+                        } catch (error) {
+                            this.showNotification('error', 'Suspend Failed', error.message);
+                        }
+                    }
+                },
+                
+                // Bulk suspend
+                async bulkSuspend() {
+                    if (confirm(`Suspend ${this.selectedPlayers.length} players?`)) {
+                        try {
+                            const response = await fetch('/api/dashboard/players/bulk/suspend', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    playerIds: this.selectedPlayers,
+                                    suspend: true,
+                                    reason: 'Bulk admin action'
+                                })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                this.showNotification('success', 'Bulk Suspend', `Suspended ${result.suspendedCount} players`);
+                                this.selectedPlayers = [];
+                                await this.loadPlayers();
+                            }
+                        } catch (error) {
+                            this.showNotification('error', 'Bulk Suspend Failed', error.message);
+                        }
+                    }
+                },
+                
+                // Bulk message
+                async bulkMessage() {
+                    const message = prompt(`Send message to ${this.selectedPlayers.length} players:`, 'Important update from FantDev Trading');
+                    if (message) {
+                        try {
+                            const response = await fetch('/api/dashboard/players/bulk/message', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    playerIds: this.selectedPlayers,
+                                    message
+                                })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                this.showNotification('success', 'Bulk Message', `Sent to ${result.sentCount} players`);
+                                this.selectedPlayers = [];
+                            }
+                        } catch (error) {
+                            this.showNotification('error', 'Bulk Message Failed', error.message);
+                        }
+                    }
+                },
+                
+                // Bulk promote
+                async bulkPromote() {
+                    const tier = prompt('Enter agent tier (master/agent/sub-agent):', 'agent');
+                    if (tier) {
+                        // Would handle bulk promotion
+                        this.showNotification('info', 'Bulk Promote', `Promoting ${this.selectedPlayers.length} players to ${tier}`);
+                    }
+                },
+                
+                // Export players
+                async exportPlayers() {
+                    try {
+                        const ids = this.selectedPlayers.length > 0 ? 
+                            `?ids=${this.selectedPlayers.join(',')}` : '';
+                        const response = await fetch(`/api/dashboard/players/bulk/export${ids}&format=csv`);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `players-${Date.now()}.csv`;
+                        a.click();
+                        this.showNotification('success', 'Export Complete', 'Players data exported successfully');
+                    } catch (error) {
+                        this.showNotification('error', 'Export Failed', error.message);
+                    }
+                },
+                
+                // Toggle select all
+                toggleSelectAll(event) {
+                    if (event.target.checked) {
+                        this.selectedPlayers = this.filteredPlayers.map(p => p.id);
+                    } else {
+                        this.selectedPlayers = [];
+                    }
+                },
+                
+                // Refresh data
+                async refreshData() {
+                    await this.loadPlayers();
+                    await this.loadStats();
+                },
+                
+                // Show notification
+                showNotification(type, title, message) {
+                    const notification = {
+                        id: Date.now(),
+                        type,
+                        title,
+                        message
+                    };
+                    this.notifications.push(notification);
+                    setTimeout(() => this.removeNotification(this.notifications.indexOf(notification)), 5000);
+                },
+                
+                // Remove notification
+                removeNotification(index) {
+                    if (index >= 0) {
+                        this.notifications.splice(index, 1);
+                    }
+                },
+                
+                // Toggle colorblind mode
+                toggleColorblindMode() {
+                    this.colorblindMode = !this.colorblindMode;
+                    localStorage.setItem('colorblindMode', this.colorblindMode);
+                    if (this.colorblindMode) {
+                        document.body.classList.add('colorblind-mode');
+                    } else {
+                        document.body.classList.remove('colorblind-mode');
+                    }
+                },
+                
+                // Connect to event stream for real-time updates
+                connectToEventStream() {
+                    const eventSource = new EventSource('/api/dashboard/messages/stream');
+                    
+                    eventSource.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'message') {
+                            // Handle real-time message
+                            console.log('New message:', data);
+                        }
+                    };
+                    
+                    eventSource.onerror = (error) => {
+                        console.error('EventSource error:', error);
+                        eventSource.close();
+                        // Reconnect after 5 seconds
+                        setTimeout(() => this.connectToEventStream(), 5000);
+                    };
+                },
+                
+                // Update clock
+                updateClock() {
+                    this.currentTime = new Date().toLocaleTimeString();
+                },
+                
+                // Format number
+                formatNumber(num) {
+                    return new Intl.NumberFormat().format(num || 0);
+                },
+                
+                // Format date
+                formatDate(dateString) {
+                    return new Date(dateString).toLocaleDateString();
+                }
+            };
+        }
+    </script>
+</body>
+</html>

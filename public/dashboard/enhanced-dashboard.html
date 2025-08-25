@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantDev Trading Platform - Enhanced Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .status-online { @apply bg-green-100 text-green-800; }
+        .status-offline { @apply bg-gray-100 text-gray-800; }
+        .status-busy { @apply bg-yellow-100 text-yellow-800; }
+        .message-bubble { @apply rounded-lg p-3 mb-2 max-w-xs; }
+        .message-in { @apply bg-gray-100 mr-auto; }
+        .message-out { @apply bg-blue-100 ml-auto; }
+        .mini-app-frame { min-height: 600px; border-radius: 12px; }
+        @keyframes pulse-dot { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .live-indicator { animation: pulse-dot 2s infinite; }
+        
+        /* Enhanced mobile responsiveness */
+        @media (max-width: 768px) {
+            .mobile-stack { flex-direction: column; }
+            .mobile-full { width: 100%; }
+            .mobile-text-sm { font-size: 0.875rem; }
+        }
+        
+        /* Dark mode support */
+        .dark .bg-white { background-color: #1f2937; }
+        .dark .text-gray-900 { color: #f9fafb; }
+        .dark .text-gray-600 { color: #d1d5db; }
+        .dark .border-gray-200 { border-color: #374151; }
+        
+        /* Enhanced loading states */
+        .skeleton { 
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Enhanced notifications */
+        .notification-toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            max-width: 400px;
+        }
+        
+        /* Enhanced charts */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+        
+        /* Enhanced search */
+        .search-highlight {
+            background-color: #fef3c7;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        /* Enhanced filters */
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+            background-color: #f3f4f6;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-chip:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .filter-chip.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900" x-data="enhancedDashboard()" x-init="init()">
+    <!-- Enhanced Header with Dark Mode Toggle -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-chart-line text-white text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-white">FantDev Trading Platform</h1>
+                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full live-indicator">LIVE</span>
+                </div>
+                <div class="flex items-center space-x-4 text-white">
+                    <!-- Dark Mode Toggle -->
+                    <button @click="toggleDarkMode()" class="hover:text-yellow-300 transition-colors">
+                        <i :class="isDarkMode ? 'fas fa-sun' : 'fas fa-moon'" class="text-xl"></i>
+                    </button>
+                    
+                    <button @click="toggleMiniApp()" class="hover:text-yellow-300 transition-colors">
+                        <i class="fab fa-telegram text-xl"></i> 
+                        <span class="hidden md:inline">Mini App</span>
+                    </button>
+                    
+                    <span class="text-sm hidden md:block">
+                        <i class="fas fa-users"></i> 
+                        <span x-text="stats.totalPlayers">0</span> Players Online
+                    </span>
+                    
+                    <!-- Enhanced Notifications -->
+                    <div class="relative">
+                        <button @click="toggleNotifications()" class="hover:text-yellow-300 transition-colors relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span x-show="unreadNotifications > 0" 
+                                  class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                                  x-text="unreadNotifications"></span>
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div x-show="showNotifications" 
+                             @click.away="showNotifications = false"
+                             class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                            </div>
+                            <div class="max-h-96 overflow-y-auto">
+                                <template x-for="notification in notifications" :key="notification.id">
+                                    <div class="p-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="flex-shrink-0">
+                                                <i :class="getNotificationIcon(notification.type)" 
+                                                   :class="getNotificationColor(notification.type)"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="notification.title"></p>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="notification.message"></p>
+                                                <p class="text-xs text-gray-400 dark:text-gray-500" x-text="formatTime(notification.timestamp)"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <i class="fas fa-user-circle text-2xl cursor-pointer hover:text-yellow-300 transition-colors"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Enhanced Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Enhanced Stats Overview with Real-time Updates -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+            <!-- Total Players -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Total Players</p>
+                        <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400" x-text="stats.totalPlayers">0</p>
+                        <p class="text-xs text-green-600 dark:text-green-400">+<span x-text="stats.newPlayersToday">0</span> today</p>
+                    </div>
+                    <i class="fas fa-users text-indigo-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Active Agents -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Active Agents</p>
+                        <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" x-text="stats.activeAgents">0</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Tier 1-3</p>
+                    </div>
+                    <i class="fas fa-user-tie text-purple-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Total Affiliates -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Affiliates</p>
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400" x-text="stats.totalAffiliates">0</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400"><span x-text="stats.affiliateConversion">0</span>% conv</p>
+                    </div>
+                    <i class="fas fa-handshake text-green-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Active Groups -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Active Groups</p>
+                        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400" x-text="stats.activeGroups">0</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400"><span x-text="stats.totalMessages">0</span> msgs</p>
+                    </div>
+                    <i class="fab fa-telegram text-blue-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Today's Volume -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Today's Volume</p>
+                        <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">$<span x-text="formatNumber(stats.todayVolume)">0</span></p>
+                        <p class="text-xs" :class="stats.volumeChange > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                            <span x-text="stats.volumeChange > 0 ? '+' : ''"></span><span x-text="stats.volumeChange">0</span>%
+                        </p>
+                    </div>
+                    <i class="fas fa-chart-bar text-yellow-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Bot Status -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Bot Status</p>
+                        <div class="flex items-center">
+                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-2 live-indicator"></span>
+                            <p class="text-sm font-bold text-gray-900 dark:text-white">Online</p>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">5 commands/sec</p>
+                    </div>
+                    <i class="fab fa-telegram text-cyan-500 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Tab Navigation with Mobile Support -->
+        <div class="bg-white dark:bg-gray-800 rounded-t-xl shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <nav class="flex flex-wrap space-x-1 p-1 overflow-x-auto">
+                <button @click="activeTab = 'players'" 
+                        :class="activeTab === 'players' ? 'bg-indigo-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                        class="flex-shrink-0 py-2 px-4 rounded-lg font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-users mr-2"></i>Players/Agents
+                </button>
+                <button @click="activeTab = 'affiliates'" 
+                        :class="activeTab === 'affiliates' ? 'bg-indigo-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                        class="flex-shrink-0 py-2 px-4 rounded-lg font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-handshake mr-2"></i>Affiliates
+                </button>
+                <button @click="activeTab = 'groups'" 
+                        :class="activeTab === 'groups' ? 'bg-indigo-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                        class="flex-shrink-0 py-2 px-4 rounded-lg font-medium transition-colors whitespace-nowrap">
+                    <i class="fab fa-telegram mr-2"></i>Groups
+                </button>
+                <button @click="activeTab = 'messages'" 
+                        :class="activeTab === 'messages' ? 'bg-indigo-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                        class="flex-shrink-0 py-2 px-4 rounded-lg font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-comments mr-2"></i>Messages
+                </button>
+                <button @click="activeTab = 'miniapp'" 
+                        :class="activeTab === 'miniapp' ? 'bg-indigo-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                        class="flex-shrink-0 py-2 px-4 rounded-lg font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-mobile-alt mr-2"></i>Mini App
+                </button>
+                <button @click="activeTab = 'analytics'" 
+                        :class="activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                        class="flex-shrink-0 py-2 px-4 rounded-lg font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-chart-pie mr-2"></i>Analytics
+                </button>
+            </nav>
+        </div>
+
+        <!-- Enhanced Tab Content -->
+        <div class="bg-white dark:bg-gray-800 rounded-b-xl shadow-lg p-6">
+            
+            <!-- Enhanced Players/Agents Tab -->
+            <div x-show="activeTab === 'players'" class="space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-2 md:space-y-0">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white">Players & Agents Management</h2>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full md:w-auto">
+                        <input type="search" placeholder="Search players..." 
+                               class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-full sm:w-64" 
+                               x-model="searchPlayer"
+                               @input="debounceSearch()">
+                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors w-full sm:w-auto">
+                            <i class="fas fa-plus mr-2"></i>Add Player
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Enhanced Filters -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button @click="setPlayerFilter('all')" 
+                            :class="playerFilter === 'all' ? 'filter-chip active' : 'filter-chip'">
+                        All Players
+                    </button>
+                    <button @click="setPlayerFilter('online')" 
+                            :class="playerFilter === 'online' ? 'filter-chip active' : 'filter-chip'">
+                        Online
+                    </button>
+                    <button @click="setPlayerFilter('agents')" 
+                            :class="playerFilter === 'agents' ? 'filter-chip active' : 'filter-chip'">
+                        Agents Only
+                    </button>
+                    <button @click="setPlayerFilter('vip')" 
+                            :class="playerFilter === 'vip' ? 'filter-chip active' : 'filter-chip'">
+                        VIP Players
+                    </button>
+                </div>
+
+                <!-- Enhanced Players Grid with Loading States -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="player in filteredAndSearchedPlayers" :key="player.id">
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-all duration-200 bg-white dark:bg-gray-700">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-lg text-gray-900 dark:text-white" x-text="player.name"></h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">@<span x-text="player.username"></span></p>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded-full"
+                                      :class="player.status === 'online' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
+                                              player.status === 'busy' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 
+                                              'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
+                                      x-text="player.status"></span>
+                            </div>
+                            
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400">Balance:</span>
+                                    <span class="font-bold text-gray-900 dark:text-white">$<span x-text="formatNumber(player.balance)"></span></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400">Today's P&L:</span>
+                                    <span :class="player.todayPnl > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'" 
+                                          class="font-bold">
+                                        <span x-text="player.todayPnl > 0 ? '+' : ''"></span>$<span x-text="formatNumber(Math.abs(player.todayPnl))"></span>
+                                    </span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400">Win Rate:</span>
+                                    <span class="font-bold text-gray-900 dark:text-white"><span x-text="player.winRate"></span>%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400">Agent Tier:</span>
+                                    <span class="font-bold text-purple-600 dark:text-purple-400" x-text="player.agentTier || 'Player'"></span>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex justify-between">
+                                <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm transition-colors">
+                                    <i class="fas fa-eye mr-1"></i>View
+                                </button>
+                                <button class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm transition-colors">
+                                    <i class="fas fa-chart-line mr-1"></i>Stats
+                                </button>
+                                <button class="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 text-sm transition-colors">
+                                    <i class="fas fa-comment mr-1"></i>Message
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Enhanced Analytics Tab -->
+            <div x-show="activeTab === 'analytics'" class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Advanced Analytics</h2>
+                
+                <!-- Real-time Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">User Growth Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="userGrowthChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Trading Volume</h3>
+                        <div class="chart-container">
+                            <canvas id="volumeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
+                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">System Performance</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">CPU Usage:</span>
+                                <span class="font-medium" x-text="systemStats.cpu + '%'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Memory:</span>
+                                <span class="font-medium" x-text="systemStats.memory + '%'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Response Time:</span>
+                                <span class="font-medium" x-text="systemStats.responseTime + 'ms'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
+                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Bot Performance</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Commands/sec:</span>
+                                <span class="font-medium" x-text="botStats.commandsPerSecond"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Success Rate:</span>
+                                <span class="font-medium" x-text="botStats.successRate + '%'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Active Chats:</span>
+                                <span class="font-medium" x-text="botStats.activeChats"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
+                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">User Engagement</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Daily Active:</span>
+                                <span class="font-medium" x-text="engagementStats.dailyActive"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Avg Session:</span>
+                                <span class="font-medium" x-text="engagementStats.avgSession + 'min'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Retention:</span>
+                                <span class="font-medium" x-text="engagementStats.retention + '%'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other tabs remain the same but with dark mode support -->
+            <!-- Affiliates Tab -->
+            <div x-show="activeTab === 'affiliates'" class="space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Affiliates & Commission Tracking</h2>
+                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        <i class="fas fa-plus mr-2"></i>Add Affiliate
+                    </button>
+                </div>
+
+                <!-- Affiliates Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Affiliate</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tier</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referrals</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">This Month</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Earned</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <template x-for="affiliate in affiliates" :key="affiliate.id">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                                <i class="fas fa-user text-indigo-600 text-xs"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium" x-text="affiliate.name"></div>
+                                                <div class="text-xs text-gray-500">@<span x-text="affiliate.username"></span></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800" 
+                                              x-text="affiliate.tier"></span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm" x-text="affiliate.referrals"></td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <span x-text="affiliate.commissionRate"></span>%
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-medium">
+                                        $<span x-text="formatNumber(affiliate.monthlyEarnings)"></span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-bold text-green-600">
+                                        $<span x-text="formatNumber(affiliate.totalEarnings)"></span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs rounded-full"
+                                              :class="affiliate.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                                              x-text="affiliate.status"></span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <button class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
+                                        <button class="text-green-600 hover:text-green-800">Payout</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Groups Tab -->
+            <div x-show="activeTab === 'groups'" class="space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Telegram Groups Monitoring</h2>
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-plus mr-2"></i>Add Group
+                    </button>
+                </div>
+
+                <!-- Groups Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <template x-for="group in groups" :key="group.id">
+                        <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="font-bold text-lg" x-text="group.name"></h3>
+                                    <p class="text-sm text-gray-500">Chat ID: <span x-text="group.chat_id"></span></p>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded-full"
+                                      :class="group.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                                      x-text="group.active ? 'Active' : 'Inactive'"></span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+                                <div>
+                                    <span class="text-gray-600">Members:</span>
+                                    <span class="font-bold ml-1"><span x-text="group.memberCount"></span>/<span x-text="group.maxMembers"></span></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Type:</span>
+                                    <span class="font-bold ml-1 capitalize" x-text="group.type"></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Messages Today:</span>
+                                    <span class="font-bold ml-1" x-text="group.messagesToday || 0"></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Active Users:</span>
+                                    <span class="font-bold ml-1" x-text="group.activeUsers || 0"></span>
+                                </div>
+                            </div>
+
+                            <!-- Recent Messages Preview -->
+                            <div class="bg-gray-50 rounded p-2 mb-3 max-h-32 overflow-y-auto">
+                                <p class="text-xs text-gray-600 mb-1">Recent Activity:</p>
+                                <template x-for="msg in (group.recentMessages || [])" :key="msg.id">
+                                    <div class="text-xs mb-1">
+                                        <span class="font-medium" x-text="msg.user"></span>: 
+                                        <span x-text="msg.text"></span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="flex justify-between">
+                                <button class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-eye mr-1"></i>Monitor
+                                </button>
+                                <button class="text-green-600 hover:text-green-800 text-sm">
+                                    <i class="fas fa-chart-bar mr-1"></i>Analytics
+                                </button>
+                                <button class="text-purple-600 hover:text-purple-800 text-sm">
+                                    <i class="fas fa-cog mr-1"></i>Settings
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Messages Tab -->
+            <div x-show="activeTab === 'messages'" class="space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Live Message Stream</h2>
+                    <div class="flex space-x-2">
+                        <select class="px-3 py-2 border rounded-lg" x-model="selectedGroup">
+                            <option value="">All Groups</option>
+                            <template x-for="group in groups" :key="group.id">
+                                <option :value="group.id" x-text="group.name"></option>
+                            </template>
+                        </select>
+                        <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                            <i class="fas fa-stop mr-2"></i>Stop Stream
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Message Stream -->
+                <div class="border rounded-lg p-4 h-96 overflow-y-auto bg-gray-50">
+                    <template x-for="message in messages" :key="message.id">
+                        <div class="mb-3 p-3 bg-white rounded-lg shadow-sm">
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="flex items-center">
+                                    <span class="font-bold text-sm" x-text="message.user"></span>
+                                    <span class="text-xs text-gray-500 ml-2" x-text="message.group"></span>
+                                </div>
+                                <span class="text-xs text-gray-400" x-text="formatTime(message.timestamp)"></span>
+                            </div>
+                            <p class="text-sm" x-text="message.text"></p>
+                            <div class="mt-2 flex space-x-2">
+                                <button class="text-xs text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-reply mr-1"></i>Reply
+                                </button>
+                                <button class="text-xs text-red-600 hover:text-red-800">
+                                    <i class="fas fa-flag mr-1"></i>Flag
+                                </button>
+                                <button class="text-xs text-gray-600 hover:text-gray-800">
+                                    <i class="fas fa-info-circle mr-1"></i>Details
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Mini App Tab -->
+            <div x-show="activeTab === 'miniapp'" class="space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Telegram Mini App</h2>
+                    <div class="flex space-x-2">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-sync mr-2"></i>Refresh
+                        </button>
+                        <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                            <i class="fas fa-external-link-alt mr-2"></i>Open in Telegram
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mini App Container -->
+                <div class="border rounded-lg p-4 bg-gray-100">
+                    <div class="bg-white rounded-lg shadow-lg mini-app-frame">
+                        <iframe 
+                            src="https://t.me/fantdev_bot/trading" 
+                            class="w-full h-full rounded-lg"
+                            style="min-height: 600px;"
+                            frameborder="0">
+                        </iframe>
+                    </div>
+                    <div class="mt-4 grid grid-cols-3 gap-4">
+                        <div class="bg-white rounded-lg p-3 text-center">
+                            <p class="text-sm text-gray-600">Active Users</p>
+                            <p class="text-2xl font-bold text-blue-600">1,245</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 text-center">
+                            <p class="text-sm text-gray-600">Today's Transactions</p>
+                            <p class="text-2xl font-bold text-green-600">342</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 text-center">
+                            <p class="text-sm text-gray-600">App Version</p>
+                            <p class="text-2xl font-bold text-purple-600">2.1.0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div x-show="activeTab === 'analytics'" class="space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Platform Analytics</h2>
+                    <div class="flex space-x-2">
+                        <select class="px-3 py-2 border rounded-lg">
+                            <option>Last 7 Days</option>
+                            <option>Last 30 Days</option>
+                            <option>Last 90 Days</option>
+                        </select>
+                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-download mr-2"></i>Export Report
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analytics Charts -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 border">
+                        <h3 class="font-bold mb-3">User Growth</h3>
+                        <canvas id="userGrowthChart"></canvas>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border">
+                        <h3 class="font-bold mb-3">Transaction Volume</h3>
+                        <canvas id="volumeChart"></canvas>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border">
+                        <h3 class="font-bold mb-3">Message Activity</h3>
+                        <canvas id="messageChart"></canvas>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border">
+                        <h3 class="font-bold mb-3">Commission Distribution</h3>
+                        <canvas id="commissionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Notifications Toast -->
+    <div class="notification-toast" x-show="showToast" x-transition>
+        <div class="bg-white dark:bg-gray-800 border-l-4 border-green-500 p-4 rounded-lg shadow-lg max-w-sm">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                <div>
+                    <p class="font-medium text-gray-900 dark:text-white" x-text="toastMessage"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function enhancedDashboard() {
+            return {
+                activeTab: 'players',
+                searchPlayer: '',
+                selectedGroup: '',
+                showMiniApp: false,
+                showNotifications: false,
+                isDarkMode: false,
+                playerFilter: 'all',
+                unreadNotifications: 0,
+                toastMessage: '',
+                showToast: false,
+                websocket: null,
+                searchTimeout: null,
+                
+                stats: {
+                    totalPlayers: 2523,
+                    newPlayersToday: 45,
+                    activeAgents: 156,
+                    totalAffiliates: 342,
+                    affiliateConversion: 12.5,
+                    activeGroups: 8,
+                    totalMessages: 15234,
+                    todayVolume: 456789,
+                    volumeChange: 15.3
+                },
+                
+                systemStats: {
+                    cpu: 45,
+                    memory: 62,
+                    responseTime: 120
+                },
+                
+                botStats: {
+                    commandsPerSecond: 5,
+                    successRate: 98.5,
+                    activeChats: 234
+                },
+                
+                engagementStats: {
+                    dailyActive: 1890,
+                    avgSession: 25,
+                    retention: 87.3
+                },
+                
+                players: [],
+                affiliates: [],
+                groups: [],
+                messages: [],
+                notifications: [],
+
+                async init() {
+                    this.setupDarkMode();
+                    await this.loadAllData();
+                    this.initCharts();
+                    this.startRealTimeUpdates();
+                    this.setupWebSocket();
+                    this.loadNotifications();
+                },
+
+                setupDarkMode() {
+                    this.isDarkMode = localStorage.getItem('fantdev-dark-mode') === 'true';
+                    this.applyDarkMode();
+                },
+
+                toggleDarkMode() {
+                    this.isDarkMode = !this.isDarkMode;
+                    localStorage.setItem('fantdev-dark-mode', this.isDarkMode.toString());
+                    this.applyDarkMode();
+                    this.updateChartsTheme();
+                },
+
+                applyDarkMode() {
+                    if (this.isDarkMode) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                },
+
+                setupWebSocket() {
+                    try {
+                        this.websocket = new WebSocket('ws://localhost:3004/api/ws');
+                        
+                        this.websocket.onopen = () => {
+                            console.log('WebSocket connected');
+                            this.showToast('Real-time connection established', 'success');
+                        };
+                        
+                        this.websocket.onmessage = (event) => {
+                            const data = JSON.parse(event.data);
+                            this.handleWebSocketMessage(data);
+                        };
+                        
+                        this.websocket.onclose = () => {
+                            console.log('WebSocket disconnected');
+                            setTimeout(() => this.setupWebSocket(), 5000);
+                        };
+                    } catch (error) {
+                        console.log('WebSocket not available, using fallback');
+                    }
+                },
+
+                handleWebSocketMessage(data) {
+                    switch (data.type) {
+                        case 'stats_update':
+                            Object.assign(this.stats, data.data);
+                            break;
+                        case 'new_player':
+                            this.players.unshift(data.data);
+                            this.stats.totalPlayers++;
+                            this.showToast(`New player: ${data.data.name}`, 'info');
+                            break;
+                        case 'player_status_change':
+                            const player = this.players.find(p => p.id === data.data.playerId);
+                            if (player) {
+                                player.status = data.data.status;
+                            }
+                            break;
+                        case 'new_message':
+                            this.messages.unshift(data.data);
+                            this.stats.totalMessages++;
+                            break;
+                    }
+                },
+
+                async loadAllData() {
+                    try {
+                        await Promise.all([
+                            this.fetchPlayers(),
+                            this.fetchAffiliates(),
+                            this.fetchGroups(),
+                            this.fetchMessages()
+                        ]);
+                    } catch (error) {
+                        console.error('Error loading data:', error);
+                        this.showToast('Error loading data', 'error');
+                    }
+                },
+
+                async fetchPlayers() {
+                    try {
+                        const response = await fetch('/api/dashboard/players');
+                        this.players = await response.json();
+                    } catch {
+                        // Return sample data
+                        this.players = Array.from({length: 20}, (_, i) => ({
+                            id: `player_${i}`,
+                            name: `Player ${i + 1}`,
+                            username: `player${i + 1}`,
+                            status: ['online', 'offline', 'busy'][Math.floor(Math.random() * 3)],
+                            balance: Math.floor(Math.random() * 10000) + 1000,
+                            todayPnl: (Math.random() - 0.5) * 2000,
+                            winRate: Math.floor(Math.random() * 30) + 40,
+                            agentTier: i < 5 ? `Tier ${Math.floor(Math.random() * 3) + 1}` : null,
+                            isVip: i < 3
+                        }));
+                    }
+                },
+
+                async fetchAffiliates() {
+                    try {
+                        const response = await fetch('/api/dashboard/affiliates');
+                        this.affiliates = await response.json();
+                    } catch {
+                        this.affiliates = Array.from({length: 10}, (_, i) => ({
+                            id: `aff_${i}`,
+                            name: `Affiliate ${i + 1}`,
+                            username: `affiliate${i + 1}`,
+                            tier: `Tier ${Math.floor(Math.random() * 3) + 1}`,
+                            referrals: Math.floor(Math.random() * 50) + 10,
+                            commissionRate: (Math.random() * 5 + 5).toFixed(1),
+                            monthlyEarnings: Math.floor(Math.random() * 5000) + 500,
+                            totalEarnings: Math.floor(Math.random() * 50000) + 5000,
+                            status: Math.random() > 0.2 ? 'active' : 'inactive'
+                        }));
+                    }
+                },
+
+                async fetchGroups() {
+                    try {
+                        const response = await fetch('/api/dashboard/groups');
+                        const groups = await response.json();
+                        this.groups = groups.map(g => ({
+                            ...g,
+                            messagesToday: Math.floor(Math.random() * 500),
+                            activeUsers: Math.floor(Math.random() * 100),
+                            recentMessages: [
+                                { id: 1, user: 'User1', text: 'Latest trading signal received' },
+                                { id: 2, user: 'User2', text: 'Confirmed position opened' },
+                                { id: 3, user: 'User3', text: 'Market analysis update' }
+                            ]
+                        }));
+                    } catch {
+                        this.groups = [];
+                    }
+                },
+
+                async fetchMessages() {
+                    this.messages = Array.from({length: 20}, (_, i) => ({
+                        id: `msg_${i}`,
+                        user: `User${Math.floor(Math.random() * 100)}`,
+                        group: ['Main Trading', 'VIP', 'Signals'][Math.floor(Math.random() * 3)],
+                        text: ['Opening position', 'Market update', 'Signal alert', 'Trade closed'][Math.floor(Math.random() * 4)],
+                        timestamp: Date.now() - i * 60000
+                    }));
+                },
+
+                loadNotifications() {
+                    this.notifications = [
+                        { id: 1, type: 'success', title: 'System Update', message: 'Dashboard updated successfully', timestamp: Date.now() - 300000 },
+                        { id: 2, type: 'info', title: 'New Player', message: 'Player John Doe joined the platform', timestamp: Date.now() - 600000 },
+                        { id: 3, type: 'warning', title: 'High Volume', message: 'Trading volume exceeded normal levels', timestamp: Date.now() - 900000 }
+                    ];
+                    this.unreadNotifications = this.notifications.length;
+                },
+
+                get filteredAndSearchedPlayers() {
+                    let filtered = this.players;
+                    
+                    // Apply filter
+                    if (this.playerFilter === 'online') {
+                        filtered = filtered.filter(p => p.status === 'online');
+                    } else if (this.playerFilter === 'agents') {
+                        filtered = filtered.filter(p => p.agentTier);
+                    } else if (this.playerFilter === 'vip') {
+                        filtered = filtered.filter(p => p.isVip);
+                    }
+                    
+                    // Apply search
+                    if (this.searchPlayer) {
+                        filtered = filtered.filter(p => 
+                            p.name.toLowerCase().includes(this.searchPlayer.toLowerCase()) ||
+                            p.username.toLowerCase().includes(this.searchPlayer.toLowerCase())
+                        );
+                    }
+                    
+                    return filtered;
+                },
+
+                setPlayerFilter(filter) {
+                    this.playerFilter = filter;
+                },
+
+                debounceSearch() {
+                    if (this.searchTimeout) {
+                        clearTimeout(this.searchTimeout);
+                    }
+                    this.searchTimeout = setTimeout(() => {
+                        // Search logic is handled in the computed property
+                    }, 300);
+                },
+
+                formatNumber(num) {
+                    return new Intl.NumberFormat().format(num);
+                },
+
+                formatTime(timestamp) {
+                    return new Date(timestamp).toLocaleTimeString();
+                },
+
+                toggleMiniApp() {
+                    this.showMiniApp = !this.showMiniApp;
+                    if (this.showMiniApp) {
+                        this.activeTab = 'miniapp';
+                    }
+                },
+
+                toggleNotifications() {
+                    this.showNotifications = !this.showNotifications;
+                    if (this.showNotifications) {
+                        this.unreadNotifications = 0;
+                    }
+                },
+
+                getNotificationIcon(type) {
+                    const icons = {
+                        success: 'fas fa-check-circle',
+                        error: 'fas fa-exclamation-circle',
+                        warning: 'fas fa-exclamation-triangle',
+                        info: 'fas fa-info-circle'
+                    };
+                    return icons[type] || icons.info;
+                },
+
+                getNotificationColor(type) {
+                    const colors = {
+                        success: 'text-green-500',
+                        error: 'text-red-500',
+                        warning: 'text-yellow-500',
+                        info: 'text-blue-500'
+                    };
+                    return colors[type] || colors.info;
+                },
+
+                showToast(message, type = 'success') {
+                    this.toastMessage = message;
+                    this.showToast = true;
+                    setTimeout(() => {
+                        this.showToast = false;
+                    }, 3000);
+                },
+
+                initCharts() {
+                    if (typeof Chart !== 'undefined') {
+                        Chart.register(ChartDataLabels);
+                        
+                        // User Growth Chart
+                        this.userGrowthChart = new Chart(document.getElementById('userGrowthChart'), {
+                            type: 'line',
+                            data: {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [{
+                                    label: 'New Users',
+                                    data: [45, 52, 38, 65, 48, 72, 45],
+                                    borderColor: 'rgb(99, 102, 241)',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color: this.isDarkMode ? '#f9fafb' : '#111827'
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        ticks: {
+                                            color: this.isDarkMode ? '#f9fafb' : '#111827'
+                                        },
+                                        grid: {
+                                            color: this.isDarkMode ? '#374151' : '#e5e7eb'
+                                        }
+                                    },
+                                    x: {
+                                        ticks: {
+                                            color: this.isDarkMode ? '#f9fafb' : '#111827'
+                                        },
+                                        grid: {
+                                            color: this.isDarkMode ? '#374151' : '#e5e7eb'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Volume Chart
+                        this.volumeChart = new Chart(document.getElementById('volumeChart'), {
+                            type: 'bar',
+                            data: {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [{
+                                    label: 'Volume ($)',
+                                    data: [320000, 450000, 380000, 520000, 480000, 620000, 456789],
+                                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                                    borderColor: 'rgb(34, 197, 94)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color: this.isDarkMode ? '#f9fafb' : '#111827'
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        ticks: {
+                                            color: this.isDarkMode ? '#f9fafb' : '#111827'
+                                        },
+                                        grid: {
+                                            color: this.isDarkMode ? '#374151' : '#e5e7eb'
+                                        }
+                                    },
+                                    x: {
+                                        ticks: {
+                                            color: this.isDarkMode ? '#f9fafb' : '#111827'
+                                        },
+                                        grid: {
+                                            color: this.isDarkMode ? '#374151' : '#e5e7eb'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+
+                updateChartsTheme() {
+                    if (this.userGrowthChart && this.volumeChart) {
+                        const textColor = this.isDarkMode ? '#f9fafb' : '#111827';
+                        const gridColor = this.isDarkMode ? '#374151' : '#e5e7eb';
+                        
+                        [this.userGrowthChart, this.volumeChart].forEach(chart => {
+                            chart.options.plugins.legend.labels.color = textColor;
+                            chart.options.scales.y.ticks.color = textColor;
+                            chart.options.scales.y.grid.color = gridColor;
+                            chart.options.scales.x.ticks.color = textColor;
+                            chart.options.scales.x.grid.color = gridColor;
+                            chart.update();
+                        });
+                    }
+                },
+
+                startRealTimeUpdates() {
+                    setInterval(() => {
+                        // Update stats
+                        this.stats.totalMessages += Math.floor(Math.random() * 5);
+                        
+                        // Update system stats
+                        this.systemStats.cpu = Math.max(20, Math.min(80, this.systemStats.cpu + (Math.random() - 0.5) * 10));
+                        this.systemStats.memory = Math.max(30, Math.min(90, this.systemStats.memory + (Math.random() - 0.5) * 5));
+                        this.systemStats.responseTime = Math.max(50, Math.min(200, this.systemStats.responseTime + (Math.random() - 0.5) * 20));
+                        
+                        // Add new message
+                        if (Math.random() > 0.7) {
+                            this.messages.unshift({
+                                id: `msg_${Date.now()}`,
+                                user: `User${Math.floor(Math.random() * 100)}`,
+                                group: ['Main Trading', 'VIP', 'Signals'][Math.floor(Math.random() * 3)],
+                                text: ['New signal', 'Trade update', 'Market alert'][Math.floor(Math.random() * 3)],
+                                timestamp: Date.now()
+                            });
+                            if (this.messages.length > 50) this.messages.pop();
+                        }
+                    }, 5000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

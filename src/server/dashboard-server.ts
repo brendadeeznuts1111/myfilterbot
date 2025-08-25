@@ -6,6 +6,8 @@
 
 import { serve, YAML } from 'bun';
 import { createDashboardRouter } from './api/dashboard-router';
+import { enhancedDashboardRouter } from './api/enhanced-dashboard-router';
+import { createExtendedDataRouter } from './api/extended-data-router';
 import { ResponseCacheMiddleware } from '../middleware/response-cache';
 import { MultiLevelCache } from '../services/multi-level-cache';
 import { telegramBridge } from '../lib/telegram-bridge';
@@ -42,12 +44,16 @@ class DashboardServer {
   private affiliates: Affiliate[] = [];
   private config: Record<string, unknown> = {};
   public dashboardRouter: ReturnType<typeof createDashboardRouter>;
+  public extendedDataRouter: ReturnType<typeof createExtendedDataRouter>;
+  public wsServer: any;
 
   constructor() {
     // Initialize the dashboard router with response cache
     const cache = new MultiLevelCache();
     const responseCache = new ResponseCacheMiddleware(cache);
     this.dashboardRouter = createDashboardRouter(responseCache);
+    this.extendedDataRouter = createExtendedDataRouter(responseCache);
+    this.wsServer = this.extendedDataRouter.createWebSocketServer();
     this.loadData();
   }
 
@@ -148,20 +154,26 @@ class DashboardServer {
       'Advanced Strategies',
     ];
 
-    return groupNames.map((name, index) => ({
-      id: `group_${index + 1}`,
-      name,
-      type: index < 2 ? 'private' : index < 6 ? 'public' : 'admin',
-      memberCount: Math.floor(Math.random() * 500) + 50,
-      maxMembers: index < 2 ? 100 : 1000,
-      active: Math.random() > 0.1,
-      createdAt: new Date(
-        Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
-      ).toISOString(),
-      description: `${name} - Professional trading discussion and signals`,
-      inviteLink: `https://t.me/+${Math.random().toString(36).substring(2, 15)}`,
-      adminId: `admin_${Math.floor(Math.random() * 5) + 1}`,
-    }));
+    return groupNames.map((name, index) => {
+      const maxMembers = index < 2 ? 100 : 1000;
+      // Ensure member count never exceeds max
+      const memberCount = Math.floor(Math.random() * (maxMembers * 0.9)) + Math.floor(maxMembers * 0.1);
+      
+      return {
+        id: `group_${index + 1}`,
+        name,
+        type: index < 2 ? 'private' : index < 6 ? 'public' : 'admin',
+        memberCount,
+        maxMembers,
+        active: index < 6, // First 6 groups are active
+        createdAt: new Date(
+          Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        description: `${name} - Professional trading discussion and signals`,
+        inviteLink: `https://t.me/+${Math.random().toString(36).substring(2, 15)}`,
+        adminId: `admin_${Math.floor(Math.random() * 5) + 1}`,
+      };
+    });
   }
 
   generateSampleAffiliates(): Affiliate[] {
@@ -238,6 +250,12 @@ class DashboardServer {
     }
 
     try {
+      // Extended data router handles new API endpoints
+      const extendedResponse = await this.extendedDataRouter.handleRequest(req);
+      if (extendedResponse) {
+        return extendedResponse;
+      }
+
       // Dashboard router handles most API calls
       const routerResponse = await this.dashboardRouter.handleRequest(req);
       if (routerResponse) {
@@ -696,13 +714,13 @@ class DashboardServer {
                         Bot Settings
                     </h3>
                     <div class="space-y-3">
-                        <button class="w-full bg-blue-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-blue-700">
+                        <button @click="setWebhook()" class="w-full bg-blue-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-blue-700">
                             <i class="fas fa-link mr-2"></i>Set Webhook
                         </button>
-                        <button class="w-full bg-green-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-green-700">
+                        <button @click="reloadConfig()" class="w-full bg-green-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-green-700">
                             <i class="fas fa-sync mr-2"></i>Reload Config
                         </button>
-                        <button class="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-purple-700">
+                        <button @click="showBotAnalytics()" class="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-purple-700">
                             <i class="fas fa-chart-line mr-2"></i>Bot Analytics
                         </button>
                     </div>
@@ -717,10 +735,10 @@ class DashboardServer {
                         <button @click="sendTestMessage()" class="w-full bg-cyan-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-cyan-700">
                             <i class="fas fa-paper-plane mr-2"></i>Send Test Message
                         </button>
-                        <button class="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-orange-700">
+                        <button @click="broadcastMessage()" class="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-orange-700">
                             <i class="fas fa-bullhorn mr-2"></i>Broadcast
                         </button>
-                        <button class="w-full bg-red-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-red-700">
+                        <button @click="emergencyStop()" class="w-full bg-red-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-red-700">
                             <i class="fas fa-ban mr-2"></i>Emergency Stop
                         </button>
                     </div>
@@ -829,14 +847,16 @@ class DashboardServer {
 
                 async testBot() {
                     try {
-                        // Test bot API connection
-                        const response = await fetch('https://api.telegram.org/bot8039557687:AAEaDQUYya1H0y7qv4tmhYsCSqGrzpS-heU/getMe');
+                        // Test bot via secure server API
+                        const response = await fetch('/api/dashboard/test-bot', {
+                            method: 'POST'
+                        });
                         const result = await response.json();
                         
                         if (result.ok) {
-                            alert(\`✅ Bot test successful!\\n\\nBot: \${result.result.first_name}\\nUsername: @\${result.result.username}\\nID: \${result.result.id}\`);
+                            alert(\`✅ Bot test successful!\\n\\nBot: \${result.bot.name}\\nUsername: @\${result.bot.username}\\nStatus: \${result.bot.status}\`);
                         } else {
-                            alert(\`❌ Bot test failed: \${result.description}\`);
+                            alert(\`❌ Bot test failed: \${result.error}\`);
                         }
                     } catch (error) {
                         alert(\`❌ Bot test error: \${error.message}\`);
@@ -847,12 +867,12 @@ class DashboardServer {
                     const message = prompt('Enter test message to send to admin chat:', '🔧 Test message from dashboard');
                     if (message) {
                         try {
-                            const response = await fetch('https://api.telegram.org/bot8039557687:AAEaDQUYya1H0y7qv4tmhYsCSqGrzpS-heU/sendMessage', {
+                            const response = await fetch('/api/dashboard/send-message', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                    chat_id: '-2714719687',
-                                    text: message
+                                    message: message,
+                                    chat_type: 'admin'
                                 })
                             });
                             const result = await response.json();
@@ -860,10 +880,120 @@ class DashboardServer {
                             if (result.ok) {
                                 alert('✅ Test message sent successfully!');
                             } else {
-                                alert(\`❌ Failed to send message: \${result.description}\`);
+                                alert(\`❌ Failed to send message: \${result.error}\`);
                             }
                         } catch (error) {
                             alert(\`❌ Send error: \${error.message}\`);
+                        }
+                    }
+                },
+
+                async setWebhook() {
+                    const webhookUrl = prompt('Enter webhook URL:', 'https://your-domain.com/webhook');
+                    if (webhookUrl) {
+                        try {
+                            const response = await fetch('/api/dashboard/set-webhook', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ url: webhookUrl })
+                            });
+                            const result = await response.json();
+                            
+                            if (result.ok) {
+                                alert('✅ Webhook set successfully!');
+                            } else {
+                                alert(\`❌ Failed to set webhook: \${result.error}\`);
+                            }
+                        } catch (error) {
+                            alert(\`❌ Webhook error: \${error.message}\`);
+                        }
+                    }
+                },
+
+                async reloadConfig() {
+                    if (confirm('Reload bot configuration from disk?')) {
+                        try {
+                            const response = await fetch('/api/dashboard/reload-config', {
+                                method: 'POST'
+                            });
+                            const result = await response.json();
+                            
+                            if (result.ok) {
+                                alert('✅ Configuration reloaded successfully!');
+                                await this.loadData(); // Refresh dashboard data
+                            } else {
+                                alert(\`❌ Failed to reload config: \${result.error}\`);
+                            }
+                        } catch (error) {
+                            alert(\`❌ Reload error: \${error.message}\`);
+                        }
+                    }
+                },
+
+                async showBotAnalytics() {
+                    try {
+                        const response = await fetch('/api/dashboard/analytics');
+                        const analytics = await response.json();
+                        
+                        const analyticsText = \`📊 Bot Analytics
+                        
+Messages Today: \${analytics.messagestoday || 0}
+Active Users: \${analytics.activeUsers || 0}
+Commands Used: \${analytics.commandsUsed || 0}
+Response Time: \${analytics.avgResponseTime || 'N/A'}ms
+Uptime: \${analytics.uptime || 'N/A'}
+                        
+Last Updated: \${new Date().toLocaleString()}\`;
+                        
+                        alert(analyticsText);
+                    } catch (error) {
+                        alert(\`❌ Failed to load analytics: \${error.message}\`);
+                    }
+                },
+
+                async broadcastMessage() {
+                    const message = prompt('Enter broadcast message for all users:', '📢 ');
+                    if (message) {
+                        if (confirm(\`Send this message to ALL users?\\n\\n"\${message}"\`)) {
+                            try {
+                                const response = await fetch('/api/dashboard/broadcast', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ message })
+                                });
+                                const result = await response.json();
+                                
+                                if (result.ok) {
+                                    alert(\`✅ Broadcast sent to \${result.recipients || 0} users!\`);
+                                } else {
+                                    alert(\`❌ Broadcast failed: \${result.error}\`);
+                                }
+                            } catch (error) {
+                                alert(\`❌ Broadcast error: \${error.message}\`);
+                            }
+                        }
+                    }
+                },
+
+                async emergencyStop() {
+                    if (confirm('⚠️ EMERGENCY STOP\\n\\nThis will immediately stop the bot. Are you sure?')) {
+                        if (confirm('This action cannot be undone. Confirm emergency stop?')) {
+                            try {
+                                const response = await fetch('/api/dashboard/emergency-stop', {
+                                    method: 'POST'
+                                });
+                                const result = await response.json();
+                                
+                                if (result.ok) {
+                                    alert('🛑 Bot has been stopped!');
+                                    // Update UI to reflect stopped state
+                                    this.stats.bot.status = 'Stopped';
+                                } else {
+                                    alert(\`❌ Failed to stop bot: \${result.error}\`);
+                                }
+                            } catch (error) {
+                                alert(\`❌ Emergency stop error: \${error.message}\`);
+                            }
                         }
                     }
                 }
@@ -888,20 +1018,66 @@ const dashboardServer = new DashboardServer();
 // Start the server (commented to avoid unused variable warning)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _server = serve({
-  port: 3001,
+  port: process.env.DASHBOARD_PORT ? parseInt(process.env.DASHBOARD_PORT) : 3005,
+  websocket: dashboardServer.wsServer.websocket,
   async fetch(req) {
     const url = new URL(req.url);
+
+    // Handle static dashboard pages first
+    if (url.pathname === '/unified' || url.pathname === '/unified/') {
+      const unifiedFile = Bun.file('./public/dashboard/unified-dashboard.html');
+      const content = await unifiedFile.text();
+      return new Response(content, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      });
+    }
+    
+    if (url.pathname === '/enhanced' || url.pathname === '/enhanced/') {
+      const enhancedFile = Bun.file('./public/dashboard/unified-dashboard-enhanced.html');
+      if (await enhancedFile.exists()) {
+        return new Response(await enhancedFile.text(), {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
+      }
+    }
+    
+    if (url.pathname === '/players' || url.pathname === '/players/') {
+      const playersFile = Bun.file('./public/dashboard/players-dashboard.html');
+      if (await playersFile.exists()) {
+        return new Response(await playersFile.text(), {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+    }
 
     // Handle dashboard routes
     if (
       url.pathname === '/dashboard' ||
       url.pathname.startsWith('/api/dashboard')
     ) {
+      // Try enhanced router first for new endpoints
+      const enhancedResponse = await enhancedDashboardRouter.handleRequest(req);
+      if (enhancedResponse) {
+        return enhancedResponse;
+      }
+      // Fall back to original dashboard handler
       return await dashboardServer.handleDashboard(req);
+    }
+
+    // Handle WebSocket upgrade for extended data
+    if (url.pathname === '/ws/extended') {
+      return dashboardServer.wsServer.upgrade(req) || new Response('WebSocket upgrade failed', { status: 400 });
     }
 
     // Handle other API routes
     if (url.pathname.startsWith('/api/')) {
+      // Try extended data router first
+      const extendedResponse = await dashboardServer.extendedDataRouter.handleRequest(req);
+      if (extendedResponse) {
+        return extendedResponse;
+      }
+      
+      // Fall back to main dashboard router
       const response = await dashboardServer.dashboardRouter.handleRequest(req);
       return (
         response || new Response('API endpoint not found', { status: 404 })
@@ -948,8 +1124,9 @@ const _server = serve({
   },
 });
 
-console.log(`🎛️ Dashboard Server running on http://localhost:3001`);
-console.log(`📊 Dashboard available at: http://localhost:3001/dashboard`);
+const port = process.env.DASHBOARD_PORT ? parseInt(process.env.DASHBOARD_PORT) : 3005;
+console.log(`🎛️ Dashboard Server running on http://localhost:${port}`);
+console.log(`📊 Dashboard available at: http://localhost:${port}/dashboard`);
 console.log(`🔗 API endpoints: /api/dashboard/*`);
 console.log(`⚡ Powered by Bun v1.2.21 with native YAML support`);
 

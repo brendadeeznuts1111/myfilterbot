@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary Meta Tags -->
+    <title>Modern Optimized Dashboard - FantDev Trading</title>
+    <meta name="title" content="Modern Optimized Dashboard - FantDev Trading">
+    <meta name="description" content="Next-generation trading dashboard with real-time analytics, modern UI components, and enhanced performance optimization.">
+    <meta name="keywords" content="modern dashboard, trading analytics, real-time data, performance optimization, responsive design">
+    <meta name="author" content="FantDev Trading Systems">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="application">
+    <meta property="og:url" content="https://fantdev.trading/dashboard/modern">
+    <meta property="og:title" content="Modern Optimized Dashboard - FantDev Trading">
+    <meta property="og:description" content="Experience the future of trading dashboards with modern UI components, real-time analytics, and optimized performance.">
+    <meta property="og:image" content="/images/dashboard-og.jpg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="FantDev Modern Dashboard">
+    <meta property="twitter:description" content="Next-generation trading dashboard with enhanced performance and modern design.">
+    <meta property="twitter:image" content="/images/dashboard-twitter.jpg">
+    
+    <!-- PWA & Mobile -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FantDev Dashboard">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Enhanced Static Assets -->
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/advanced-components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/advanced-components.js"></script>
+    <script src="/static/js/icon-helper.js"></script>
+    <script src="/static/js/websocket-client.js"></script>
+    
+    <style>
+        /* Modern Dashboard Specific Styles */
+        .dashboard-container {
+            min-height: 100vh;
+            background: var(--gradient-primary);
+            padding: var(--spacing-4);
+        }
+        
+        .dashboard-header {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-6);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .dashboard-title {
+            font-size: var(--text-3xl);
+            font-weight: var(--font-bold);
+            color: var(--text-white);
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .dashboard-subtitle {
+            color: var(--text-gray-200);
+            font-size: var(--text-lg);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-6);
+            margin-bottom: var(--spacing-8);
+        }
+        
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            transition: var(--transition-all);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--spacing-4);
+            font-size: var(--text-xl);
+        }
+        
+        .stat-value {
+            font-size: var(--text-3xl);
+            font-weight: var(--font-bold);
+            color: var(--text-white);
+            margin-bottom: var(--spacing-1);
+        }
+        
+        .stat-label {
+            color: var(--text-gray-200);
+            font-size: var(--text-sm);
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .stat-change {
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-1);
+        }
+        
+        .stat-change.positive {
+            color: var(--success);
+        }
+        
+        .stat-change.negative {
+            color: var(--error);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--spacing-6);
+            margin-bottom: var(--spacing-8);
+        }
+        
+        .chart-container {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .chart-title {
+            font-size: var(--text-xl);
+            font-weight: var(--font-semibold);
+            color: var(--text-white);
+            margin-bottom: var(--spacing-4);
+        }
+        
+        .activity-feed {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            padding: var(--spacing-3);
+            border-radius: var(--radius-md);
+            transition: var(--transition-all);
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-sm);
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            color: var(--text-white);
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            margin-bottom: var(--spacing-1);
+        }
+        
+        .activity-time {
+            color: var(--text-gray-300);
+            font-size: var(--text-xs);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-8);
+        }
+        
+        .action-button {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-4);
+            text-align: center;
+            transition: var(--transition-all);
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-white);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .action-icon {
+            font-size: var(--text-2xl);
+            margin-bottom: var(--spacing-2);
+            color: var(--primary);
+        }
+        
+        .action-title {
+            font-weight: var(--font-medium);
+            margin-bottom: var(--spacing-1);
+        }
+        
+        .action-description {
+            font-size: var(--text-sm);
+            color: var(--text-gray-200);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-container {
+                padding: var(--spacing-2);
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-4);
+            }
+        }
+        
+        /* Loading States */
+        .loading-skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Dark mode enhancements */
+        @media (prefers-color-scheme: dark) {
+            .dashboard-container {
+                background: var(--gradient-dark);
+            }
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Dashboard Header -->
+        <header class="dashboard-header">
+            <h1 class="dashboard-title">
+                <i class="fas fa-chart-line mr-3"></i>
+                Modern Trading Dashboard
+            </h1>
+            <p class="dashboard-subtitle">Real-time analytics and performance monitoring</p>
+        </header>
+
+        <!-- Statistics Grid -->
+        <section class="stats-grid" id="statsGrid">
+            <!-- Stats will be dynamically loaded -->
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+            <a href="#" class="action-button" onclick="openModal('tradingModal')">
+                <div class="action-icon"><i class="fas fa-exchange-alt"></i></div>
+                <div class="action-title">Start Trading</div>
+                <div class="action-description">Execute new trades</div>
+            </a>
+            <a href="#" class="action-button" onclick="openModal('analyticsModal')">
+                <div class="action-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="action-title">View Analytics</div>
+                <div class="action-description">Detailed reports</div>
+            </a>
+            <a href="#" class="action-button" onclick="openModal('settingsModal')">
+                <div class="action-icon"><i class="fas fa-cog"></i></div>
+                <div class="action-title">Settings</div>
+                <div class="action-description">Configure preferences</div>
+            </a>
+            <a href="#" class="action-button" onclick="openModal('supportModal')">
+                <div class="action-icon"><i class="fas fa-headset"></i></div>
+                <div class="action-title">Support</div>
+                <div class="action-description">Get help</div>
+            </a>
+        </section>
+
+        <!-- Charts and Activity -->
+        <section class="charts-grid">
+            <div class="chart-container">
+                <h3 class="chart-title">Trading Performance</h3>
+                <canvas id="performanceChart" width="400" height="200"></canvas>
+            </div>
+            
+            <div class="activity-feed">
+                <h3 class="chart-title">Recent Activity</h3>
+                <div id="activityFeed">
+                    <!-- Activity items will be dynamically loaded -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Enhanced Modals will be added via JavaScript -->
+    
+    <script>
+        // Initialize the modern dashboard
+        class ModernDashboard {
+            constructor() {
+                this.init();
+            }
+            
+            async init() {
+                await this.loadStats();
+                await this.loadActivity();
+                this.initCharts();
+                this.initWebSocket();
+                this.initComponents();
+            }
+            
+            async loadStats() {
+                const statsContainer = document.getElementById('statsGrid');
+                const stats = [
+                    { icon: 'fas fa-dollar-sign', value: '$12,345', label: 'Total Revenue', change: '+12.5%', positive: true, color: 'var(--success)' },
+                    { icon: 'fas fa-users', value: '1,234', label: 'Active Users', change: '+8.2%', positive: true, color: 'var(--primary)' },
+                    { icon: 'fas fa-chart-line', value: '89.5%', label: 'Success Rate', change: '+2.1%', positive: true, color: 'var(--warning)' },
+                    { icon: 'fas fa-robot', value: '24', label: 'Active Bots', change: '+3', positive: true, color: 'var(--secondary)' }
+                ];
+                
+                statsContainer.innerHTML = stats.map(stat => `
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: ${stat.color}20; color: ${stat.color};">
+                            <i class="${stat.icon}"></i>
+                        </div>
+                        <div class="stat-value">${stat.value}</div>
+                        <div class="stat-label">${stat.label}</div>
+                        <div class="stat-change ${stat.positive ? 'positive' : 'negative'}">
+                            <i class="fas fa-arrow-${stat.positive ? 'up' : 'down'}"></i>
+                            ${stat.change}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            async loadActivity() {
+                const activityFeed = document.getElementById('activityFeed');
+                const activities = [
+                    { icon: 'fas fa-plus', title: 'New user registered', time: '2 minutes ago', color: 'var(--success)' },
+                    { icon: 'fas fa-exchange-alt', title: 'Trade executed successfully', time: '5 minutes ago', color: 'var(--primary)' },
+                    { icon: 'fas fa-bell', title: 'Alert triggered', time: '10 minutes ago', color: 'var(--warning)' },
+                    { icon: 'fas fa-cog', title: 'System updated', time: '15 minutes ago', color: 'var(--secondary)' }
+                ];
+                
+                activityFeed.innerHTML = activities.map(activity => `
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: ${activity.color}20; color: ${activity.color};">
+                            <i class="${activity.icon}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">${activity.title}</div>
+                            <div class="activity-time">${activity.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            initCharts() {
+                const ctx = document.getElementById('performanceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Performance',
+                            data: [12, 19, 3, 5, 2, 3],
+                            borderColor: 'var(--primary)',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'white'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: {
+                                    color: 'white'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: 'white'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            initWebSocket() {
+                // Initialize WebSocket connection for real-time updates
+                if (typeof WebSocketClient !== 'undefined') {
+                    this.ws = new WebSocketClient();
+                    this.ws.connect();
+                }
+            }
+            
+            initComponents() {
+                // Initialize enhanced components
+                if (typeof ComponentManager !== 'undefined') {
+                    ComponentManager.init();
+                }
+            }
+        }
+        
+        // Initialize dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new ModernDashboard();
+
+            // Register service worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            }
+        });
+        
+        // Modal functions
+        function openModal(modalId) {
+            if (typeof ModalManager !== 'undefined') {
+                ModalManager.open(modalId);
+            } else {
+                console.log(`Opening ${modalId}`);
+            }
+        }
+    </script>
+</body>
+</html>

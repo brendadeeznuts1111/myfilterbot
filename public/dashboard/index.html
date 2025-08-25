@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FantDev Trading Platform - Professional Trading Suite with Real-time Analytics">
+    <title>FantDev Dashboard Hub - Select Your Dashboard</title>
+    <link rel="manifest" href="/manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border-color: #3b82f6;
+        }
+        
+        .feature-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .live-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .category-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        
+        .loading-bar {
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #3b82f6 100%);
+            animation: loading 2s linear infinite;
+            background-size: 200% 100%;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-8">
+        <!-- Header -->
+        <header class="text-center mb-12 text-white">
+            <div class="flex justify-center mb-6">
+                <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
+                    <i class="fas fa-chart-line text-5xl"></i>
+                </div>
+            </div>
+            <h1 class="text-5xl font-bold mb-4">FantDev Dashboard Hub</h1>
+            <p class="text-xl opacity-90 mb-6">Select your preferred dashboard interface</p>
+            <div class="flex justify-center items-center space-x-6 text-sm">
+                <span><span class="live-indicator"></span>System Online</span>
+                <span><i class="fas fa-server mr-2"></i>All Services Operational</span>
+                <span><i class="fas fa-shield-alt mr-2"></i>Secure Connection</span>
+            </div>
+        </header>
+
+        <!-- Dashboard Grid -->
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Ultimate Dashboard -->
+            <div class="dashboard-card rounded-2xl p-6 relative">
+                <div class="feature-badge">NEW</div>
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-crown text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Ultimate Dashboard</h3>
+                    <div class="mb-3">
+                        <span class="category-tag bg-purple-100 text-purple-700">Premium</span>
+                        <span class="category-tag bg-green-100 text-green-700">Real-time</span>
+                        <span class="category-tag bg-blue-100 text-blue-700">AI-Powered</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">Most advanced dashboard with 15+ themes, real-time analytics, AI insights, and comprehensive trading tools</p>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>15+ Professional Themes</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Advanced Charts & Heatmaps</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Live WebSocket Updates</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Multi-format Export</span>
+                    </div>
+                </div>
+                <a href="/dashboard/ultimate-dashboard.html" 
+                   class="block w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all">
+                    Launch Ultimate Dashboard
+                </a>
+            </div>
+
+            <!-- Enhanced Unified Dashboard -->
+            <div class="dashboard-card rounded-2xl p-6 relative">
+                <div class="feature-badge bg-blue-500">ENHANCED</div>
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-rocket text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Enhanced Unified</h3>
+                    <div class="mb-3">
+                        <span class="category-tag bg-blue-100 text-blue-700">Extended</span>
+                        <span class="category-tag bg-yellow-100 text-yellow-700">Crypto</span>
+                        <span class="category-tag bg-red-100 text-red-700">Sports</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">Extended dashboard with crypto trading, sports betting, market analysis, and risk management</p>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>12 Theme Options</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Crypto & Sports Data</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Risk Analysis Tools</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Social Sentiment</span>
+                    </div>
+                </div>
+                <a href="/enhanced" 
+                   class="block w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-center rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all">
+                    Open Enhanced Dashboard
+                </a>
+            </div>
+
+            <!-- Unified Dashboard -->
+            <div class="dashboard-card rounded-2xl p-6">
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-th-large text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Unified Dashboard</h3>
+                    <div class="mb-3">
+                        <span class="category-tag bg-green-100 text-green-700">Complete</span>
+                        <span class="category-tag bg-orange-100 text-orange-700">9 Tabs</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">Comprehensive dashboard covering all entities with colorblind-friendly design and notifications</p>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>All Entity Management</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Accessibility Features</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Real-time Updates</span>
+                    </div>
+                </div>
+                <a href="/unified" 
+                   class="block w-full py-3 px-4 bg-gradient-to-r from-green-600 to-teal-600 text-white text-center rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 transition-all">
+                    Open Unified Dashboard
+                </a>
+            </div>
+
+            <!-- Players Dashboard -->
+            <div class="dashboard-card rounded-2xl p-6">
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Players Dashboard</h3>
+                    <div class="mb-3">
+                        <span class="category-tag bg-indigo-100 text-indigo-700">Focused</span>
+                        <span class="category-tag bg-pink-100 text-pink-700">2.5K Players</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">Specialized player management with risk assessment, VIP tiers, and bulk operations</p>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Player Risk Analysis</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>VIP Management</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Bulk Operations</span>
+                    </div>
+                </div>
+                <a href="/players" 
+                   class="block w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-center rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all">
+                    Open Players Dashboard
+                </a>
+            </div>
+
+            <!-- Analytics Dashboard -->
+            <div class="dashboard-card rounded-2xl p-6">
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-chart-bar text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Analytics Dashboard</h3>
+                    <div class="mb-3">
+                        <span class="category-tag bg-yellow-100 text-yellow-700">Analytics</span>
+                        <span class="category-tag bg-red-100 text-red-700">Reports</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">Deep analytics with advanced charting, performance metrics, and data visualization</p>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Advanced Charts</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Performance Metrics</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Custom Reports</span>
+                    </div>
+                </div>
+                <a href="/dashboard/analytics-dashboard.html" 
+                   class="block w-full py-3 px-4 bg-gradient-to-r from-yellow-600 to-orange-600 text-white text-center rounded-lg font-semibold hover:from-yellow-700 hover:to-orange-700 transition-all">
+                    Open Analytics Dashboard
+                </a>
+            </div>
+
+            <!-- Modern Optimized -->
+            <div class="dashboard-card rounded-2xl p-6">
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-tachometer-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Modern Optimized</h3>
+                    <div class="mb-3">
+                        <span class="category-tag bg-gray-100 text-gray-700">Fast</span>
+                        <span class="category-tag bg-blue-100 text-blue-700">PWA</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">Optimized performance dashboard with PWA support and offline capabilities</p>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>PWA Enabled</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Offline Support</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>Fast Loading</span>
+                    </div>
+                </div>
+                <a href="/dashboard/modern-optimized.html" 
+                   class="block w-full py-3 px-4 bg-gradient-to-r from-gray-600 to-gray-800 text-white text-center rounded-lg font-semibold hover:from-gray-700 hover:to-gray-900 transition-all">
+                    Open Modern Dashboard
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="max-w-7xl mx-auto mt-12 bg-white/90 backdrop-blur-sm rounded-2xl p-8">
+            <h2 class="text-2xl font-bold mb-6 gradient-text">Platform Statistics</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600">2,525</div>
+                    <div class="text-gray-600">Active Players</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600">$456K</div>
+                    <div class="text-gray-600">Monthly Revenue</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600">67.8%</div>
+                    <div class="text-gray-600">Win Rate</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-orange-600">342</div>
+                    <div class="text-gray-600">Online Now</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Comparison -->
+        <div class="max-w-7xl mx-auto mt-8 bg-white/90 backdrop-blur-sm rounded-2xl p-8">
+            <h2 class="text-2xl font-bold mb-6 gradient-text">Dashboard Features Comparison</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4">Feature</th>
+                            <th class="text-center py-3 px-4">Ultimate</th>
+                            <th class="text-center py-3 px-4">Enhanced</th>
+                            <th class="text-center py-3 px-4">Unified</th>
+                            <th class="text-center py-3 px-4">Players</th>
+                            <th class="text-center py-3 px-4">Analytics</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">Theme Options</td>
+                            <td class="text-center py-3 px-4">15+</td>
+                            <td class="text-center py-3 px-4">12</td>
+                            <td class="text-center py-3 px-4">3</td>
+                            <td class="text-center py-3 px-4">2</td>
+                            <td class="text-center py-3 px-4">2</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">Real-time Updates</td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">WebSocket Support</td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">Crypto Trading</td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">Sports Betting</td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">Advanced Analytics</td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-times text-gray-400"></i></td>
+                            <td class="text-center py-3 px-4"><i class="fas fa-check text-green-500"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4">Export Options</td>
+                            <td class="text-center py-3 px-4">JSON, CSV, XML</td>
+                            <td class="text-center py-3 px-4">JSON, CSV</td>
+                            <td class="text-center py-3 px-4">JSON</td>
+                            <td class="text-center py-3 px-4">JSON, CSV</td>
+                            <td class="text-center py-3 px-4">JSON, CSV, PDF</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-white mt-12 pb-8">
+            <div class="mb-4">
+                <a href="/dashboard" class="text-white/80 hover:text-white mx-3">Legacy Dashboard</a>
+                <span class="text-white/50">|</span>
+                <a href="/api/dashboard/docs" class="text-white/80 hover:text-white mx-3">API Docs</a>
+                <span class="text-white/50">|</span>
+                <a href="/portals/portal-hub.html" class="text-white/80 hover:text-white mx-3">Portal Hub</a>
+            </div>
+            <p class="text-white/70">© 2024 FantDev Trading Platform. Powered by Bun v1.2.21</p>
+        </footer>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading" class="fixed top-0 left-0 w-full hidden">
+        <div class="loading-bar"></div>
+    </div>
+
+    <script>
+        // Show loading indicator when navigating
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('loading').classList.remove('hidden');
+            });
+        });
+
+        // PWA installation
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+
+        // Add install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+    </script>
+</body>
+</html>

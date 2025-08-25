@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantDev Analytics Dashboard - Advanced Trading Insights</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-box-and-violin-plot@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+        }
+        
+        .gradient-bg { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        }
+        
+        .card-hover { 
+            transition: all 0.3s ease; 
+        }
+        
+        .card-hover:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .trend-up {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .trend-down {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .trend-neutral {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 1rem 0;
+        }
+        
+        .mini-chart {
+            height: 60px;
+            margin: 0.5rem 0;
+        }
+        
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-chip:hover {
+            background-color: #e5e7eb;
+            border-color: #d1d5db;
+        }
+        
+        .filter-chip.active {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .data-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-active { background-color: #dcfce7; color: #166534; }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-suspended { background-color: #fef2f2; color: #dc2626; }
+        
+        @media (max-width: 768px) {
+            .metric-grid {
+                grid-template-columns: repeat(1, 1fr);
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .metric-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="analyticsDashboard()" x-init="init()">
+    <!-- Header -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-chart-line text-white text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-white">Analytics Dashboard</h1>
+                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full pulse-dot">LIVE</span>
+                </div>
+                <div class="flex items-center space-x-4 text-white">
+                    <button @click="refreshData()" class="hover:text-yellow-300 transition-colors">
+                        <i class="fas fa-sync-alt text-xl"></i>
+                        <span class="hidden md:inline ml-2">Refresh</span>
+                    </button>
+                    <button @click="exportData()" class="hover:text-yellow-300 transition-colors">
+                        <i class="fas fa-download text-xl"></i>
+                        <span class="hidden md:inline ml-2">Export</span>
+                    </button>
+                    <button @click="toggleFullscreen()" class="hover:text-yellow-300 transition-colors">
+                        <i class="fas fa-expand text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Key Metrics Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 metric-grid">
+            <!-- Total Revenue -->
+            <div class="metric-card card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">Total Revenue</h3>
+                    <i class="fas fa-dollar-sign text-2xl text-green-500"></i>
+                </div>
+                <div class="metric-value" x-text="formatCurrency(metrics.totalRevenue)">$0</div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="trend-indicator" :class="getTrendClass(metrics.revenueChange)">
+                        <i :class="getTrendIcon(metrics.revenueChange)" class="mr-1"></i>
+                        <span x-text="Math.abs(metrics.revenueChange) + '%'"></span>
+                    </span>
+                    <span class="text-sm text-gray-500">vs last month</span>
+                </div>
+            </div>
+
+            <!-- Active Users -->
+            <div class="metric-card card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">Active Users</h3>
+                    <i class="fas fa-users text-2xl text-blue-500"></i>
+                </div>
+                <div class="metric-value" x-text="formatNumber(metrics.activeUsers)">0</div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="trend-indicator" :class="getTrendClass(metrics.usersChange)">
+                        <i :class="getTrendIcon(metrics.usersChange)" class="mr-1"></i>
+                        <span x-text="Math.abs(metrics.usersChange) + '%'"></span>
+                    </span>
+                    <span class="text-sm text-gray-500">vs last month</span>
+                </div>
+            </div>
+
+            <!-- Trading Volume -->
+            <div class="metric-card card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">Trading Volume</h3>
+                    <i class="fas fa-chart-bar text-2xl text-purple-500"></i>
+                </div>
+                <div class="metric-value" x-text="formatCurrency(metrics.tradingVolume)">$0</div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="trend-indicator" :class="getTrendClass(metrics.volumeChange)">
+                        <i :class="getTrendIcon(metrics.volumeChange)" class="mr-1"></i>
+                        <span x-text="Math.abs(metrics.volumeChange) + '%'"></span>
+                    </span>
+                    <span class="text-sm text-gray-500">vs last month</span>
+                </div>
+            </div>
+
+            <!-- Success Rate -->
+            <div class="metric-card card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">Success Rate</h3>
+                    <i class="fas fa-percentage text-2xl text-indigo-500"></i>
+                </div>
+                <div class="metric-value" x-text="metrics.successRate + '%'">0%</div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="trend-indicator" :class="getTrendClass(metrics.successChange)">
+                        <i :class="getTrendIcon(metrics.successChange)" class="mr-1"></i>
+                        <span x-text="Math.abs(metrics.successChange) + '%'"></span>
+                    </span>
+                    <span class="text-sm text-gray-500">vs last month</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Controls -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Data Filters</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button @click="setTimeFilter('1d')" 
+                                :class="timeFilter === '1d' ? 'filter-chip active' : 'filter-chip'">
+                            24 Hours
+                        </button>
+                        <button @click="setTimeFilter('7d')" 
+                                :class="timeFilter === '7d' ? 'filter-chip active' : 'filter-chip'">
+                            7 Days
+                        </button>
+                        <button @click="setTimeFilter('30d')" 
+                                :class="timeFilter === '30d' ? 'filter-chip active' : 'filter-chip'">
+                            30 Days
+                        </button>
+                        <button @click="setTimeFilter('90d')" 
+                                :class="timeFilter === '90d' ? 'filter-chip active' : 'filter-chip'">
+                            90 Days
+                        </button>
+                        <button @click="setTimeFilter('1y')" 
+                                :class="timeFilter === '1y' ? 'filter-chip active' : 'filter-chip'">
+                            1 Year
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-medium text-gray-700">Auto-refresh:</label>
+                        <select x-model="autoRefreshInterval" class="border border-gray-300 rounded-md px-3 py-1 text-sm">
+                            <option value="0">Off</option>
+                            <option value="30">30s</option>
+                            <option value="60">1m</option>
+                            <option value="300">5m</option>
+                        </select>
+                    </div>
+                    
+                    <button @click="toggleRealTime()" 
+                            :class="isRealTime ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'"
+                            class="text-white px-4 py-2 rounded-lg transition-colors">
+                        <i :class="isRealTime ? 'fas fa-pause' : 'fas fa-play'" class="mr-2"></i>
+                        <span x-text="isRealTime ? 'Pause' : 'Live'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Revenue Trend Chart -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Revenue Trend</h3>
+                    <div class="flex items-center space-x-2">
+                        <button @click="toggleChartType('revenue')" class="text-sm text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-chart-line mr-1"></i>Line
+                        </button>
+                        <button @click="toggleChartType('revenue')" class="text-sm text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-chart-bar mr-1"></i>Bar
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- User Activity Chart -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">User Activity</h3>
+                    <div class="flex items-center space-x-2">
+                        <button @click="toggleChartType('users')" class="text-sm text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-chart-line mr-1"></i>Line
+                        </button>
+                        <button @click="toggleChartType('users')" class="text-sm text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-chart-area mr-1"></i>Area
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="usersChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- System Performance -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">System Performance</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">CPU Usage</span>
+                            <span class="text-sm font-semibold" x-text="systemMetrics.cpu + '%'"></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                 :style="'width: ' + systemMetrics.cpu + '%'"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">Memory Usage</span>
+                            <span class="text-sm font-semibold" x-text="systemMetrics.memory + '%'"></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                                 :style="'width: ' + systemMetrics.memory + '%'"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">Network I/O</span>
+                            <span class="text-sm font-semibold" x-text="systemMetrics.network + ' MB/s'"></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+                                 :style="'width: ' + Math.min(systemMetrics.network / 100, 100) + '%'"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Performance -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Trading Performance</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Win Rate</span>
+                        <span class="text-lg font-bold text-green-600" x-text="tradingMetrics.winRate + '%'"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Avg Profit</span>
+                        <span class="text-lg font-bold text-blue-600" x-text="formatCurrency(tradingMetrics.avgProfit)"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Total Trades</span>
+                        <span class="text-lg font-bold text-gray-900" x-text="formatNumber(tradingMetrics.totalTrades)"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Success Streak</span>
+                        <span class="text-lg font-bold text-purple-600" x-text="tradingMetrics.successStreak"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Engagement -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">User Engagement</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Daily Active</span>
+                        <span class="text-lg font-bold text-indigo-600" x-text="formatNumber(engagementMetrics.dailyActive)"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Avg Session</span>
+                        <span class="text-lg font-bold text-green-600" x-text="engagementMetrics.avgSession + ' min'"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Retention Rate</span>
+                        <span class="text-lg font-bold text-purple-600" x-text="engagementMetrics.retention + '%'"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-700">Bounce Rate</span>
+                        <span class="text-lg font-bold text-red-600" x-text="engagementMetrics.bounceRate + '%'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Top Performers -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Performers</h3>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Win Rate</th>
+                                <th>Profit</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="player in topPerformers" :key="player.id">
+                                <tr>
+                                    <td class="font-medium" x-text="player.name"></td>
+                                    <td x-text="player.winRate + '%'"></td>
+                                    <td :class="player.profit > 0 ? 'text-green-600' : 'text-red-600'" 
+                                        x-text="formatCurrency(player.profit)"></td>
+                                    <td>
+                                        <span class="status-badge" :class="getStatusClass(player.status)" 
+                                              x-text="player.status"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    <template x-for="activity in recentActivity" :key="activity.id">
+                        <div class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                            <div class="flex-shrink-0">
+                                <i :class="getActivityIcon(activity.type)" :class="getActivityColor(activity.type)"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900" x-text="activity.description"></p>
+                                <p class="text-xs text-gray-500" x-text="formatTime(activity.timestamp)"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function analyticsDashboard() {
+            return {
+                timeFilter: '7d',
+                autoRefreshInterval: 60,
+                isRealTime: true,
+                refreshTimer: null,
+                
+                metrics: {
+                    totalRevenue: 0,
+                    revenueChange: 0,
+                    activeUsers: 0,
+                    usersChange: 0,
+                    tradingVolume: 0,
+                    volumeChange: 0,
+                    successRate: 0,
+                    successChange: 0
+                },
+                
+                systemMetrics: {
+                    cpu: 0,
+                    memory: 0,
+                    network: 0
+                },
+                
+                tradingMetrics: {
+                    winRate: 0,
+                    avgProfit: 0,
+                    totalTrades: 0,
+                    successStreak: 0
+                },
+                
+                engagementMetrics: {
+                    dailyActive: 0,
+                    avgSession: 0,
+                    retention: 0,
+                    bounceRate: 0
+                },
+                
+                topPerformers: [],
+                recentActivity: [],
+                
+                charts: {},
+
+                async init() {
+                    await this.loadData();
+                    this.initCharts();
+                    this.startAutoRefresh();
+                    this.startRealTimeUpdates();
+                },
+
+                async loadData() {
+                    try {
+                        // Load metrics data
+                        await Promise.all([
+                            this.loadMetrics(),
+                            this.loadSystemMetrics(),
+                            this.loadTradingMetrics(),
+                            this.loadEngagementMetrics(),
+                            this.loadTopPerformers(),
+                            this.loadRecentActivity()
+                        ]);
+                    } catch (error) {
+                        console.error('Error loading data:', error);
+                    }
+                },
+
+                async loadMetrics() {
+                    // Simulate API call
+                    this.metrics = {
+                        totalRevenue: 1250000,
+                        revenueChange: 12.5,
+                        activeUsers: 2847,
+                        usersChange: 8.3,
+                        tradingVolume: 890000,
+                        volumeChange: -2.1,
+                        successRate: 87.3,
+                        successChange: 3.2
+                    };
+                },
+
+                async loadSystemMetrics() {
+                    this.systemMetrics = {
+                        cpu: Math.floor(Math.random() * 40) + 30,
+                        memory: Math.floor(Math.random() * 30) + 50,
+                        network: Math.floor(Math.random() * 50) + 25
+                    };
+                },
+
+                async loadTradingMetrics() {
+                    this.tradingMetrics = {
+                        winRate: 87.3,
+                        avgProfit: 1250,
+                        totalTrades: 15420,
+                        successStreak: 23
+                    };
+                },
+
+                async loadEngagementMetrics() {
+                    this.engagementMetrics = {
+                        dailyActive: 2847,
+                        avgSession: 32,
+                        retention: 89.2,
+                        bounceRate: 12.8
+                    };
+                },
+
+                async loadTopPerformers() {
+                    this.topPerformers = [
+                        { id: 1, name: 'John Doe', winRate: 94.2, profit: 12500, status: 'active' },
+                        { id: 2, name: 'Jane Smith', winRate: 91.8, profit: 8900, status: 'active' },
+                        { id: 3, name: 'Mike Johnson', winRate: 89.5, profit: 7200, status: 'active' },
+                        { id: 4, name: 'Sarah Wilson', winRate: 87.1, profit: 6100, status: 'pending' },
+                        { id: 5, name: 'Tom Brown', winRate: 85.9, profit: 5400, status: 'active' }
+                    ];
+                },
+
+                async loadRecentActivity() {
+                    this.recentActivity = [
+                        { id: 1, type: 'trade', description: 'New trade opened: BTC/USD', timestamp: Date.now() - 300000 },
+                        { id: 2, type: 'user', description: 'New user registered: alice123', timestamp: Date.now() - 600000 },
+                        { id: 3, type: 'withdrawal', description: 'Withdrawal processed: $500', timestamp: Date.now() - 900000 },
+                        { id: 4, type: 'deposit', description: 'Deposit received: $1000', timestamp: Date.now() - 1200000 },
+                        { id: 5, type: 'signal', description: 'Trading signal sent to VIP group', timestamp: Date.now() - 1500000 }
+                    ];
+                },
+
+                initCharts() {
+                    if (typeof Chart !== 'undefined') {
+                        Chart.register(ChartDataLabels);
+                        
+                        // Revenue Chart
+                        this.charts.revenue = new Chart(document.getElementById('revenueChart'), {
+                            type: 'line',
+                            data: {
+                                labels: this.generateTimeLabels(),
+                                datasets: [{
+                                    label: 'Revenue',
+                                    data: this.generateRevenueData(),
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    datalabels: { display: false }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: function(value) {
+                                                return '$' + (value / 1000) + 'k';
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Users Chart
+                        this.charts.users = new Chart(document.getElementById('usersChart'), {
+                            type: 'line',
+                            data: {
+                                labels: this.generateTimeLabels(),
+                                datasets: [{
+                                    label: 'Active Users',
+                                    data: this.generateUsersData(),
+                                    borderColor: '#8b5cf6',
+                                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    datalabels: { display: false }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+
+                generateTimeLabels() {
+                    const labels = [];
+                    const now = new Date();
+                    const days = this.timeFilter === '1d' ? 1 : 
+                                this.timeFilter === '7d' ? 7 : 
+                                this.timeFilter === '30d' ? 30 : 
+                                this.timeFilter === '90d' ? 90 : 365;
+                    
+                    for (let i = days - 1; i >= 0; i--) {
+                        const date = new Date(now);
+                        date.setDate(date.getDate() - i);
+                        labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    }
+                    
+                    return labels;
+                },
+
+                generateRevenueData() {
+                    const data = [];
+                    const days = this.timeFilter === '1d' ? 24 : 
+                                this.timeFilter === '7d' ? 7 : 
+                                this.timeFilter === '30d' ? 30 : 
+                                this.timeFilter === '90d' ? 90 : 365;
+                    
+                    for (let i = 0; i < days; i++) {
+                        data.push(Math.floor(Math.random() * 50000) + 20000);
+                    }
+                    
+                    return data;
+                },
+
+                generateUsersData() {
+                    const data = [];
+                    const days = this.timeFilter === '1d' ? 24 : 
+                                this.timeFilter === '7d' ? 7 : 
+                                this.timeFilter === '30d' ? 30 : 
+                                this.timeFilter === '90d' ? 90 : 365;
+                    
+                    for (let i = 0; i < days; i++) {
+                        data.push(Math.floor(Math.random() * 1000) + 2000);
+                    }
+                    
+                    return data;
+                },
+
+                setTimeFilter(filter) {
+                    this.timeFilter = filter;
+                    this.updateCharts();
+                },
+
+                toggleChartType(chartName) {
+                    if (this.charts[chartName]) {
+                        const chart = this.charts[chartName];
+                        const newType = chart.config.type === 'line' ? 'bar' : 'line';
+                        chart.config.type = newType;
+                        chart.update();
+                    }
+                },
+
+                updateCharts() {
+                    if (this.charts.revenue) {
+                        this.charts.revenue.data.labels = this.generateTimeLabels();
+                        this.charts.revenue.data.datasets[0].data = this.generateRevenueData();
+                        this.charts.revenue.update();
+                    }
+                    
+                    if (this.charts.users) {
+                        this.charts.users.data.labels = this.generateTimeLabels();
+                        this.charts.users.data.datasets[0].data = this.generateUsersData();
+                        this.charts.users.update();
+                    }
+                },
+
+                startAutoRefresh() {
+                    if (this.autoRefreshInterval > 0) {
+                        this.refreshTimer = setInterval(() => {
+                            this.loadData();
+                        }, this.autoRefreshInterval * 1000);
+                    }
+                },
+
+                startRealTimeUpdates() {
+                    if (this.isRealTime) {
+                        setInterval(() => {
+                            this.updateSystemMetrics();
+                        }, 5000);
+                    }
+                },
+
+                updateSystemMetrics() {
+                    this.systemMetrics.cpu = Math.max(20, Math.min(80, this.systemMetrics.cpu + (Math.random() - 0.5) * 10));
+                    this.systemMetrics.memory = Math.max(30, Math.min(90, this.systemMetrics.memory + (Math.random() - 0.5) * 5));
+                    this.systemMetrics.network = Math.max(10, Math.min(100, this.systemMetrics.network + (Math.random() - 0.5) * 20));
+                },
+
+                toggleRealTime() {
+                    this.isRealTime = !this.isRealTime;
+                    if (this.isRealTime) {
+                        this.startRealTimeUpdates();
+                    }
+                },
+
+                refreshData() {
+                    this.loadData();
+                },
+
+                exportData() {
+                    const data = {
+                        metrics: this.metrics,
+                        systemMetrics: this.systemMetrics,
+                        tradingMetrics: this.tradingMetrics,
+                        engagementMetrics: this.engagementMetrics,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `analytics-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                },
+
+                toggleFullscreen() {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen();
+                    } else {
+                        document.exitFullscreen();
+                    }
+                },
+
+                getTrendClass(change) {
+                    if (change > 0) return 'trend-up';
+                    if (change < 0) return 'trend-down';
+                    return 'trend-neutral';
+                },
+
+                getTrendIcon(change) {
+                    if (change > 0) return 'fas fa-arrow-up';
+                    if (change < 0) return 'fas fa-arrow-down';
+                    return 'fas fa-minus';
+                },
+
+                getStatusClass(status) {
+                    const classes = {
+                        active: 'status-active',
+                        pending: 'status-pending',
+                        suspended: 'status-suspended'
+                    };
+                    return classes[status] || 'status-pending';
+                },
+
+                getActivityIcon(type) {
+                    const icons = {
+                        trade: 'fas fa-chart-line',
+                        user: 'fas fa-user',
+                        withdrawal: 'fas fa-arrow-down',
+                        deposit: 'fas fa-arrow-up',
+                        signal: 'fas fa-bell'
+                    };
+                    return icons[type] || 'fas fa-info-circle';
+                },
+
+                getActivityColor(type) {
+                    const colors = {
+                        trade: 'text-blue-500',
+                        user: 'text-green-500',
+                        withdrawal: 'text-red-500',
+                        deposit: 'text-green-500',
+                        signal: 'text-purple-500'
+                    };
+                    return colors[type] || 'text-gray-500';
+                },
+
+                formatCurrency(value) {
+                    return new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(value);
+                },
+
+                formatNumber(value) {
+                    return new Intl.NumberFormat().format(value);
+                },
+
+                formatTime(timestamp) {
+                    return new Date(timestamp).toLocaleTimeString();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

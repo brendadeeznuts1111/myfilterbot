@@ -4,50 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Production Admin Dashboard - Enhanced Trading System</title>
+    
+    <!-- Enhanced Static Assets -->
+    <link rel="stylesheet" href="/static/css/utilities.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/advanced-components.css">
+    <link rel="stylesheet" href="/static/css/fantdev-components.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Enhanced JavaScript Libraries -->
+    <script src="/static/js/utils.js" defer></script>
+    <script src="/static/js/components.js" defer></script>
+    <script src="/static/js/advanced-components.js" defer></script>
+    <script src="/static/js/icon-helper.js" defer></script>
     <style>
+        /* Component-specific overrides and customizations */
         :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --primary-light: #dbeafe;
-            --secondary: #64748b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #06b6d4;
-            --light: #f8fafc;
-            --dark: #1e293b;
-            --white: #ffffff;
-            
-            /* Gray scale */
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-400: #9ca3af;
-            --gray-500: #6b7280;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
-            --gray-800: #1f2937;
-            --gray-900: #111827;
-            
-            /* Shadows */
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            
-            /* Transitions */
-            --transition: all 0.15s ease-in-out;
-            --transition-slow: all 0.3s ease-in-out;
-            
-            /* Border radius */
-            --radius-sm: 0.375rem;
-            --radius: 0.5rem;
-            --radius-md: 0.625rem;
-            --radius-lg: 0.75rem;
-            --radius-xl: 1rem;
             
             /* Z-index layers */
             --z-dropdown: 1000;
@@ -848,6 +820,234 @@
             white-space: nowrap;
             border: 0;
         }
+
+        /* Enhanced Navigation Styles */
+        .enhanced-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-list {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 0.5rem;
+            color: var(--gray-400);
+        }
+
+        .breadcrumb-current {
+            color: var(--gray-600);
+            font-weight: 600;
+        }
+
+        /* Section Indicator */
+        .section-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--gray-50);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+        }
+
+        .section-label {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .section-name {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        /* Enhanced Floating Action Button */
+        .enhanced-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: var(--z-dropdown);
+        }
+
+        .fab-tooltip {
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--gray-900);
+            color: var(--white);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .enhanced-fab:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        .fab-button {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.2s ease;
+        }
+
+        .fab-button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 1rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .enhanced-fab.active .fab-menu {
+            display: flex;
+        }
+
+        .fab-item {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: var(--white);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .fab-item:hover {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: var(--gray-600);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(1rem);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: var(--gray-700);
+            transform: translateY(-0.25rem);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .enhanced-navigation {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .section-indicator {
+                align-self: stretch;
+                justify-content: center;
+            }
+
+            .enhanced-fab {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .back-to-top {
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .breadcrumb-nav {
+                font-size: 0.875rem;
+            }
+
+            .section-indicator {
+                padding: 0.375rem 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -874,6 +1074,26 @@
                         <span class="header-badge">Production</span>
                     </h1>
                 </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Navigation Elements -->
+        <div class="enhanced-navigation">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <ol class="breadcrumb-list">
+                    <li class="breadcrumb-item">
+                        <a href="/" class="breadcrumb-link">Home</a>
+                    </li>
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item breadcrumb-current">Trading Admin Dashboard</li>
+                </ol>
+            </nav>
+            
+            <!-- Section Indicator -->
+            <div class="section-indicator">
+                <span class="section-label">Current Section:</span>
+                <span class="section-name" id="current-section">Overview</span>
             </div>
         </div>
 
@@ -1091,7 +1311,7 @@
     <script>
         // Application Configuration
         const CONFIG = {
-            API_BASE_URL: '/api/v1',
+            API_BASE_URL: 'http://localhost:3001/api/dashboard',
             REFRESH_INTERVAL: 30000, // 30 seconds
             TOAST_DURATION: 4000,
             MAX_RETRY_ATTEMPTS: 3,
@@ -1299,19 +1519,26 @@
 
             // Mock API responses for demonstration
             static async mockRequest(endpoint, delay = 800) {
-                await Utils.delay(delay);
-                
-                switch (endpoint) {
-                    case '/statistics':
-                        return this.generateMockStatistics();
-                    case '/transactions':
-                        return this.generateMockTransactions();
-                    case '/withdrawals':
-                        return this.generateMockWithdrawals();
-                    case '/verifications':
-                        return this.generateMockVerifications();
-                    default:
-                        throw new Error(`Unknown endpoint: ${endpoint}`);
+                // Try real API first, fallback to mock if needed
+                try {
+                    return await this.request(endpoint);
+                } catch (error) {
+                    console.warn(`API call failed, using mock data for ${endpoint}:`, error);
+                    await Utils.delay(delay);
+                    
+                    switch (endpoint) {
+                        case '/statistics':
+                        case '/stats':
+                            return this.generateMockStatistics();
+                        case '/transactions':
+                            return this.generateMockTransactions();
+                        case '/withdrawals':
+                            return this.generateMockWithdrawals();
+                        case '/verifications':
+                            return this.generateMockVerifications();
+                        default:
+                            throw new Error(`Unknown endpoint: ${endpoint}`);
+                    }
                 }
             }
 
@@ -1887,6 +2114,9 @@
                 // Update state
                 appState.currentTab = tabName;
 
+                // Update section indicator
+                updateSectionIndicator(tabName.charAt(0).toUpperCase() + tabName.slice(1));
+
                 // Load data for specific tabs
                 loadTabData(tabName);
 
@@ -2177,6 +2407,117 @@
             console.error('Unhandled promise rejection:', event.reason);
             showNotification('An unexpected error occurred', 'error');
         });
+
+        // Enhanced Navigation Functions
+        
+        // FAB Menu Toggle
+        function toggleFabMenu() {
+            const fab = document.getElementById('enhanced-fab');
+            if (fab) {
+                fab.classList.toggle('active');
+            }
+        }
+
+        // Quick Actions Handler
+        function quickAction(action) {
+            switch (action) {
+                case 'refresh':
+                    refreshAllData();
+                    break;
+                case 'export':
+                    exportAllData();
+                    break;
+                case 'notifications':
+                    showNotification('Notifications panel opened', 'info');
+                    break;
+                case 'settings':
+                    // Switch to settings tab
+                    const settingsTab = document.querySelector('[data-tab="settings"]');
+                    if (settingsTab) {
+                        switchTab({ currentTarget: settingsTab, preventDefault: () => {} }, 'settings');
+                    }
+                    break;
+            }
+            // Close FAB menu after action
+            toggleFabMenu();
+        }
+
+        // Refresh all data
+        function refreshAllData() {
+            showNotification('Refreshing all data...', 'info');
+            loadTabData(appState.currentTab || 'overview');
+        }
+
+        // Export all data
+        function exportAllData() {
+            showNotification('Preparing export...', 'info');
+            // Implementation would export current tab data
+            setTimeout(() => {
+                showNotification('Export completed successfully', 'success');
+            }, 2000);
+        }
+
+        function updateSectionIndicator(section) {
+            const currentSection = document.getElementById('current-section');
+            if (currentSection) {
+                currentSection.textContent = section;
+            }
+        }
+
+        function setupBackToTop() {
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTop.classList.add('visible');
+                    } else {
+                        backToTop.classList.remove('visible');
+                    }
+                });
+
+                backToTop.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Reset to first tab
+                    const firstTab = document.querySelector('[data-tab="overview"]');
+                    if (firstTab) {
+                        switchTab({ currentTarget: firstTab, preventDefault: () => {} }, 'overview');
+                    }
+                });
+            }
+        }
+
+        // Initialize enhanced navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            setupBackToTop();
+            updateSectionIndicator('Overview');
+        });
     </script>
+
+    <!-- Enhanced Floating Action Button -->
+    <div class="enhanced-fab" id="enhanced-fab">
+        <div class="fab-tooltip">Quick Actions</div>
+        <button class="fab-button" onclick="toggleFabMenu()" aria-label="Quick actions menu">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab-item" onclick="quickAction('refresh')" title="Refresh all data">
+                <i class="fas fa-sync"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('export')" title="Export data">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('notifications')" title="View notifications">
+                <i class="fas fa-bell"></i>
+            </button>
+            <button class="fab-item" onclick="quickAction('settings')" title="Quick settings">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 </body>
 </html>

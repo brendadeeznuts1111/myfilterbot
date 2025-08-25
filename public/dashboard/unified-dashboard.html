@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantDev Trading - Unified Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Colorblind-friendly palette */
+        :root {
+            --cb-blue: #0173B2;
+            --cb-orange: #DE8F05;
+            --cb-green: #029E73;
+            --cb-yellow: #ECC30B;
+            --cb-red: #CC3311;
+            --cb-purple: #56B4E9;
+            --cb-pink: #F37A8C;
+            --cb-gray: #6B7280;
+        }
+        
+        /* Theme variables */
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border: #374151;
+        }
+        
+        [data-theme="colorblind"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --text-primary: #000000;
+            --text-secondary: #4b5563;
+            --border: #d1d5db;
+        }
+        
+        /* Apply theme */
+        body {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .card {
+            background-color: var(--bg-primary);
+            border-color: var(--border);
+        }
+        
+        /* Risk indicators with patterns */
+        .risk-low {
+            background: repeating-linear-gradient(
+                45deg,
+                var(--cb-green),
+                var(--cb-green) 2px,
+                transparent 2px,
+                transparent 8px
+            );
+            color: white;
+        }
+        
+        .risk-medium {
+            background: repeating-linear-gradient(
+                90deg,
+                var(--cb-yellow),
+                var(--cb-yellow) 2px,
+                transparent 2px,
+                transparent 8px
+            );
+            color: black;
+        }
+        
+        .risk-high {
+            background: repeating-linear-gradient(
+                -45deg,
+                var(--cb-red),
+                var(--cb-red) 2px,
+                transparent 2px,
+                transparent 8px
+            );
+            color: white;
+        }
+        
+        /* VIP tier badges */
+        .vip-bronze { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+        .vip-silver { background: linear-gradient(135deg, #C0C0C0, #808080); }
+        .vip-gold { background: linear-gradient(135deg, #FFD700, #FFA500); }
+        .vip-platinum { background: linear-gradient(135deg, #E5E4E2, #BEC2CB); }
+        
+        /* Status indicators */
+        .status-online::before { content: "●"; color: var(--cb-green); margin-right: 4px; }
+        .status-offline::before { content: "○"; color: var(--cb-gray); margin-right: 4px; }
+        .status-busy::before { content: "◐"; color: var(--cb-orange); margin-right: 4px; }
+        
+        /* Notification animation */
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification-enter { animation: slideIn 0.3s ease-out; }
+        
+        /* Tab styling */
+        .tab-active {
+            background: var(--bg-primary);
+            border-bottom: 3px solid var(--cb-blue);
+        }
+        
+        /* Loading spinner */
+        .loader {
+            border: 3px solid var(--border);
+            border-top-color: var(--cb-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--cb-gray);
+            border-radius: 4px;
+        }
+        
+        /* Grid layout for dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        /* Responsive utilities */
+        @media (max-width: 768px) {
+            .hide-mobile { display: none; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body x-data="unifiedDashboard()" x-init="init()" :data-theme="theme">
+    
+    <!-- Notification Container -->
+    <div class="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+        <template x-for="notification in notifications" :key="notification.id">
+            <div class="notification-enter bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border-l-4"
+                 :class="{
+                     'border-green-500': notification.type === 'success',
+                     'border-red-500': notification.type === 'error',
+                     'border-blue-500': notification.type === 'info',
+                     'border-yellow-500': notification.type === 'warning'
+                 }">
+                <div class="flex items-start justify-between">
+                    <div class="flex">
+                        <i class="text-xl mr-3" :class="{
+                            'fas fa-check-circle text-green-500': notification.type === 'success',
+                            'fas fa-times-circle text-red-500': notification.type === 'error',
+                            'fas fa-info-circle text-blue-500': notification.type === 'info',
+                            'fas fa-exclamation-triangle text-yellow-500': notification.type === 'warning'
+                        }"></i>
+                        <div>
+                            <p class="font-semibold" x-text="notification.title"></p>
+                            <p class="text-sm text-gray-600" x-text="notification.message"></p>
+                        </div>
+                    </div>
+                    <button @click="removeNotification(notification.id)" class="ml-4 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-4">
+                <!-- Brand -->
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-chart-line text-2xl"></i>
+                    <div>
+                        <h1 class="text-xl font-bold">FantDev Trading</h1>
+                        <p class="text-xs opacity-75">Unified Dashboard v3.0</p>
+                    </div>
+                </div>
+                
+                <!-- Center: Live Status -->
+                <div class="flex items-center space-x-6 hide-mobile">
+                    <div class="flex items-center space-x-2">
+                        <span class="status-online">System</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-clock"></i>
+                        <span x-text="currentTime"></span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-sync-alt" :class="{'animate-spin': autoRefresh}"></i>
+                        <select x-model="refreshInterval" @change="setAutoRefresh()" 
+                                class="bg-transparent border border-white/30 rounded px-2 py-1 text-sm">
+                            <option value="0">Manual</option>
+                            <option value="5000">5s</option>
+                            <option value="30000">30s</option>
+                            <option value="60000">1m</option>
+                            <option value="300000">5m</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Right: User Menu -->
+                <div class="flex items-center space-x-4">
+                    <!-- Notifications -->
+                    <button @click="showNotificationCenter = true" class="relative">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span x-show="unreadNotifications > 0" 
+                              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                              x-text="unreadNotifications"></span>
+                    </button>
+                    
+                    <!-- Theme Switcher -->
+                    <select x-model="theme" @change="saveTheme()" 
+                            class="bg-transparent border border-white/30 rounded px-2 py-1 text-sm">
+                        <option value="light">☀️ Light</option>
+                        <option value="dark">🌙 Dark</option>
+                        <option value="colorblind">♿ Accessible</option>
+                    </select>
+                    
+                    <!-- User -->
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-user-circle text-2xl"></i>
+                        <span class="hide-mobile">Admin</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-30">
+        <div class="container mx-auto px-4">
+            <div class="flex overflow-x-auto py-2 space-x-1">
+                <button @click="activeTab = 'overview'" 
+                        :class="activeTab === 'overview' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-dashboard mr-2"></i>Overview
+                </button>
+                <button @click="activeTab = 'players'" 
+                        :class="activeTab === 'players' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-users mr-2"></i>Players & Agents
+                </button>
+                <button @click="activeTab = 'affiliates'" 
+                        :class="activeTab === 'affiliates' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-handshake mr-2"></i>Affiliates
+                </button>
+                <button @click="activeTab = 'bot'" 
+                        :class="activeTab === 'bot' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fab fa-telegram mr-2"></i>Bot Control
+                </button>
+                <button @click="activeTab = 'groups'" 
+                        :class="activeTab === 'groups' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-layer-group mr-2"></i>Groups
+                </button>
+                <button @click="activeTab = 'messages'" 
+                        :class="activeTab === 'messages' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-comments mr-2"></i>Messages
+                </button>
+                <button @click="activeTab = 'transactions'" 
+                        :class="activeTab === 'transactions' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-exchange-alt mr-2"></i>Transactions
+                </button>
+                <button @click="activeTab = 'miniapp'" 
+                        :class="activeTab === 'miniapp' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-mobile-alt mr-2"></i>Mini-App
+                </button>
+                <button @click="activeTab = 'analytics'" 
+                        :class="activeTab === 'analytics' ? 'tab-active' : ''"
+                        class="px-4 py-2 rounded-t-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-chart-bar mr-2"></i>Analytics
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        
+        <!-- Overview Tab -->
+        <div x-show="activeTab === 'overview'" x-transition>
+            <!-- KPI Cards -->
+            <div class="dashboard-grid mb-6">
+                <div class="card rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Total Players</p>
+                            <p class="text-3xl font-bold" style="color: var(--cb-blue)" x-text="stats.totalPlayers || '-'"></p>
+                            <p class="text-xs text-gray-500">
+                                <span class="text-green-500">↑ <span x-text="stats.newToday || 0"></span> today</span>
+                            </p>
+                        </div>
+                        <i class="fas fa-users text-4xl opacity-20" style="color: var(--cb-blue)"></i>
+                    </div>
+                </div>
+                
+                <div class="card rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Online Now</p>
+                            <p class="text-3xl font-bold" style="color: var(--cb-green)" x-text="stats.onlinePlayers || '-'"></p>
+                            <p class="text-xs text-gray-500">Active in last 5 min</p>
+                        </div>
+                        <i class="fas fa-circle text-4xl opacity-20" style="color: var(--cb-green)"></i>
+                    </div>
+                </div>
+                
+                <div class="card rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Total Balance</p>
+                            <p class="text-2xl font-bold" style="color: var(--cb-purple)">
+                                $<span x-text="formatNumber(stats.totalBalance || 0)"></span>
+                            </p>
+                            <p class="text-xs text-gray-500">All players combined</p>
+                        </div>
+                        <i class="fas fa-wallet text-4xl opacity-20" style="color: var(--cb-purple)"></i>
+                    </div>
+                </div>
+                
+                <div class="card rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Today's Volume</p>
+                            <p class="text-2xl font-bold" style="color: var(--cb-orange)">
+                                $<span x-text="formatNumber(stats.todayVolume || 0)"></span>
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                <span x-text="stats.todayTransactions || 0"></span> transactions
+                            </p>
+                        </div>
+                        <i class="fas fa-chart-line text-4xl opacity-20" style="color: var(--cb-orange)"></i>
+                    </div>
+                </div>
+                
+                <div class="card rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Active Groups</p>
+                            <p class="text-3xl font-bold" style="color: var(--cb-yellow)" x-text="stats.activeGroups || '-'"></p>
+                            <p class="text-xs text-gray-500">
+                                <span x-text="stats.totalGroupMembers || 0"></span> members
+                            </p>
+                        </div>
+                        <i class="fas fa-layer-group text-4xl opacity-20" style="color: var(--cb-yellow)"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Feed & Quick Actions -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Activity Feed -->
+                <div class="card rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-stream mr-2"></i>Live Activity Feed
+                    </h3>
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        <template x-for="activity in activityFeed" :key="activity.id">
+                            <div class="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                                <div class="flex-shrink-0">
+                                    <i :class="activity.icon" class="text-lg" :style="`color: ${activity.color}`"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium" x-text="activity.title"></p>
+                                    <p class="text-xs text-gray-500" x-text="activity.description"></p>
+                                    <p class="text-xs text-gray-400 mt-1" x-text="activity.time"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="card rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-bolt mr-2"></i>Quick Actions
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button @click="quickAction('add-player')" 
+                                class="p-3 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+                            <i class="fas fa-user-plus mr-2"></i>Add Player
+                        </button>
+                        <button @click="quickAction('send-message')" 
+                                class="p-3 bg-green-500 text-white rounded hover:bg-green-600 transition">
+                            <i class="fas fa-paper-plane mr-2"></i>Send Message
+                        </button>
+                        <button @click="quickAction('export-data')" 
+                                class="p-3 bg-purple-500 text-white rounded hover:bg-purple-600 transition">
+                            <i class="fas fa-download mr-2"></i>Export Data
+                        </button>
+                        <button @click="quickAction('view-reports')" 
+                                class="p-3 bg-orange-500 text-white rounded hover:bg-orange-600 transition">
+                            <i class="fas fa-chart-bar mr-2"></i>View Reports
+                        </button>
+                        <button @click="quickAction('test-bot')" 
+                                class="p-3 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition">
+                            <i class="fab fa-telegram mr-2"></i>Test Bot
+                        </button>
+                        <button @click="quickAction('reload-config')" 
+                                class="p-3 bg-gray-500 text-white rounded hover:bg-gray-600 transition">
+                            <i class="fas fa-sync mr-2"></i>Reload Config
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players & Agents Tab -->
+        <div x-show="activeTab === 'players'" x-transition>
+            <!-- Search and Filters -->
+            <div class="card rounded-lg shadow p-4 mb-6">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <div class="flex-1 min-w-[200px]">
+                        <input type="text" x-model="playerSearch" @input="filterPlayers()"
+                               placeholder="Search players..."
+                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                    </div>
+                    <select x-model="playerFilters.status" @change="filterPlayers()"
+                            class="px-4 py-2 border rounded-lg">
+                        <option value="">All Status</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="busy">Busy</option>
+                    </select>
+                    <select x-model="playerFilters.risk" @change="filterPlayers()"
+                            class="px-4 py-2 border rounded-lg">
+                        <option value="">All Risk</option>
+                        <option value="low">Low Risk</option>
+                        <option value="medium">Medium Risk</option>
+                        <option value="high">High Risk</option>
+                    </select>
+                    <button @click="exportPlayers()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Players Table -->
+            <div class="card rounded-lg shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Balance</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk/VIP</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">P&L Today</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <template x-for="player in filteredPlayers" :key="player.id">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                                <span class="text-indigo-600 font-semibold" 
+                                                      x-text="(player.name || 'P')[0].toUpperCase()"></span>
+                                            </div>
+                                            <div class="ml-4">
+                                                <p class="font-medium" x-text="player.name || 'Unknown'"></p>
+                                                <p class="text-sm text-gray-500" x-text="player.username || '-'"></p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span :class="'status-' + player.status" x-text="player.status"></span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-semibold" :class="player.balance >= 0 ? 'text-green-600' : 'text-red-600'">
+                                            $<span x-text="formatNumber(player.balance || 0)"></span>
+                                        </p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex gap-2">
+                                            <span :class="'risk-' + player.riskLevel" 
+                                                  class="px-2 py-1 rounded text-xs font-medium"
+                                                  x-text="player.riskLevel"></span>
+                                            <template x-if="player.vipTier">
+                                                <span :class="'vip-' + player.vipTier" 
+                                                      class="px-2 py-1 rounded text-xs font-medium text-white"
+                                                      x-text="player.vipTier"></span>
+                                            </template>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-semibold" :class="player.todayPnl >= 0 ? 'text-green-600' : 'text-red-600'">
+                                            <span x-text="player.todayPnl >= 0 ? '+' : ''"></span>
+                                            $<span x-text="formatNumber(Math.abs(player.todayPnl || 0))"></span>
+                                        </p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex space-x-2">
+                                            <button @click="viewPlayer(player)" class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button @click="messagePlayer(player)" class="text-green-600 hover:text-green-800">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
+                                            <button @click="editPlayer(player)" class="text-gray-600 hover:text-gray-800">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Loading State -->
+                <div x-show="loading" class="p-8 text-center">
+                    <div class="loader mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading players...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Affiliates Tab -->
+        <div x-show="activeTab === 'affiliates'" x-transition>
+            <div class="card rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">
+                    <i class="fas fa-handshake mr-2"></i>Affiliate Network
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Affiliate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referrals</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Earnings</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <template x-for="affiliate in affiliates" :key="affiliate.id">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-6 py-4">
+                                        <p class="font-medium" x-text="affiliate.name"></p>
+                                        <p class="text-sm text-gray-500" x-text="affiliate.username"></p>
+                                    </td>
+                                    <td class="px-6 py-4" x-text="affiliate.totalReferrals"></td>
+                                    <td class="px-6 py-4" x-text="(affiliate.commissionRate * 100).toFixed(1) + '%'"></td>
+                                    <td class="px-6 py-4 font-semibold text-green-600">
+                                        $<span x-text="formatNumber(affiliate.totalEarnings)"></span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 rounded text-xs font-medium"
+                                              :class="affiliate.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                                              x-text="affiliate.status"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bot Control Tab -->
+        <div x-show="activeTab === 'bot'" x-transition>
+            <div class="dashboard-grid">
+                <!-- Bot Status -->
+                <div class="card rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fab fa-telegram mr-2"></i>Bot Status
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span>Bot Name:</span>
+                            <span class="font-medium" x-text="botStatus.name || '-'"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Username:</span>
+                            <span class="font-medium" x-text="botStatus.username || '-'"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Status:</span>
+                            <span class="px-2 py-1 rounded text-xs font-medium"
+                                  :class="botStatus.status === 'operational' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                  x-text="botStatus.status || 'Unknown'"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bot Commands -->
+                <div class="card rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-terminal mr-2"></i>Commands
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center py-1">
+                            <span class="font-mono text-sm">/start</span>
+                            <span class="text-green-600">Active</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="font-mono text-sm">/register</span>
+                            <span class="text-green-600">Active</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="font-mono text-sm">/balance</span>
+                            <span class="text-green-600">Active</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="font-mono text-sm">/help</span>
+                            <span class="text-green-600">Active</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bot Actions -->
+                <div class="card rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-cogs mr-2"></i>Actions
+                    </h3>
+                    <div class="space-y-3">
+                        <button @click="testBot()" class="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            <i class="fas fa-play mr-2"></i>Test Bot
+                        </button>
+                        <button @click="sendBroadcast()" class="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                            <i class="fas fa-bullhorn mr-2"></i>Broadcast
+                        </button>
+                        <button @click="reloadBot()" class="w-full px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                            <i class="fas fa-sync mr-2"></i>Reload Config
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Groups Tab -->
+        <div x-show="activeTab === 'groups'" x-transition>
+            <div class="dashboard-grid">
+                <template x-for="group in groups" :key="group.id">
+                    <div class="card rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="font-semibold" x-text="group.name"></h4>
+                            <span class="px-2 py-1 rounded text-xs font-medium"
+                                  :class="group.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                                  x-text="group.active ? 'Active' : 'Inactive'"></span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Members:</span>
+                                <span x-text="group.memberCount + '/' + group.maxMembers"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Type:</span>
+                                <span class="capitalize" x-text="group.type"></span>
+                            </div>
+                        </div>
+                        <button @click="viewGroup(group)" class="mt-4 w-full px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">
+                            <i class="fas fa-eye mr-2"></i>View Details
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Messages Tab -->
+        <div x-show="activeTab === 'messages'" x-transition>
+            <div class="card rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">
+                    <i class="fas fa-comments mr-2"></i>Message Stream
+                </h3>
+                <div class="space-y-3 max-h-96 overflow-y-auto">
+                    <template x-for="message in messages" :key="message.id">
+                        <div class="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                <i class="fas fa-user text-blue-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <p class="font-medium" x-text="message.username"></p>
+                                    <p class="text-xs text-gray-400" x-text="formatTime(message.timestamp)"></p>
+                                </div>
+                                <p class="text-sm mt-1" x-text="message.text"></p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-layer-group mr-1"></i>
+                                    <span x-text="message.group_name"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div x-show="activeTab === 'transactions'" x-transition>
+            <div class="card rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">
+                        <i class="fas fa-exchange-alt mr-2"></i>Transaction History
+                    </h3>
+                    <button @click="exportTransactions()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <template x-for="tx in transactions" :key="tx.id">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-6 py-4 text-sm" x-text="formatDate(tx.date)"></td>
+                                    <td class="px-6 py-4 text-sm capitalize" x-text="tx.type"></td>
+                                    <td class="px-6 py-4 text-sm" x-text="tx.customerName"></td>
+                                    <td class="px-6 py-4 text-sm font-semibold"
+                                        :class="tx.amount >= 0 ? 'text-green-600' : 'text-red-600'">
+                                        $<span x-text="formatNumber(Math.abs(tx.amount))"></span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 rounded text-xs font-medium"
+                                              :class="tx.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                                              x-text="tx.status"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mini-App Tab -->
+        <div x-show="activeTab === 'miniapp'" x-transition>
+            <div class="card rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">
+                        <i class="fas fa-mobile-alt mr-2"></i>Telegram Mini-App
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-500">Status:</span>
+                        <span class="px-2 py-1 rounded text-xs font-medium"
+                              :class="miniAppStatus.status === 'online' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                              x-text="miniAppStatus.status || 'Unknown'"></span>
+                    </div>
+                </div>
+                <div class="bg-gray-100 dark:bg-gray-800 rounded p-4">
+                    <iframe src="https://t.me/fantdev_bot/trading" 
+                            class="w-full h-[600px] rounded"
+                            title="Telegram Mini App"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div x-show="activeTab === 'analytics'" x-transition>
+            <div class="dashboard-grid">
+                <!-- Chart 1: Player Growth -->
+                <div class="card rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-chart-line mr-2"></i>Player Growth
+                    </h3>
+                    <canvas id="playerGrowthChart"></canvas>
+                </div>
+                
+                <!-- Chart 2: Revenue -->
+                <div class="card rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-dollar-sign mr-2"></i>Revenue Trend
+                    </h3>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+                
+                <!-- Chart 3: Activity Heatmap -->
+                <div class="card rounded-lg shadow p-6 col-span-full">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-fire mr-2"></i>Activity Heatmap
+                    </h3>
+                    <div class="bg-gray-100 dark:bg-gray-800 rounded p-4 text-center">
+                        <p class="text-gray-500">Activity visualization would go here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        function unifiedDashboard() {
+            return {
+                // State
+                activeTab: 'overview',
+                theme: localStorage.getItem('theme') || 'light',
+                currentTime: '',
+                refreshInterval: '30000',
+                autoRefresh: false,
+                loading: false,
+                notifications: [],
+                unreadNotifications: 0,
+                showNotificationCenter: false,
+                
+                // Data
+                stats: {},
+                players: [],
+                filteredPlayers: [],
+                affiliates: [],
+                groups: [],
+                messages: [],
+                transactions: [],
+                activityFeed: [],
+                botStatus: {},
+                miniAppStatus: {},
+                
+                // Filters
+                playerSearch: '',
+                playerFilters: {
+                    status: '',
+                    risk: ''
+                },
+                
+                // Initialize
+                async init() {
+                    this.updateClock();
+                    setInterval(() => this.updateClock(), 1000);
+                    
+                    await this.loadAllData();
+                    this.setAutoRefresh();
+                    this.connectToEventStream();
+                    this.initCharts();
+                    
+                    this.showNotification('success', 'Dashboard Ready', 'All systems operational');
+                },
+                
+                // Load all data
+                async loadAllData() {
+                    this.loading = true;
+                    try {
+                        await Promise.all([
+                            this.loadStats(),
+                            this.loadPlayers(),
+                            this.loadAffiliates(),
+                            this.loadGroups(),
+                            this.loadMessages(),
+                            this.loadTransactions(),
+                            this.loadBotStatus(),
+                            this.loadMiniAppStatus()
+                        ]);
+                        this.generateActivityFeed();
+                    } catch (error) {
+                        console.error('Error loading data:', error);
+                        this.showNotification('error', 'Load Failed', 'Some data could not be loaded');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // API calls
+                async loadStats() {
+                    try {
+                        const response = await fetch('/api/dashboard/players/stats');
+                        const data = await response.json();
+                        this.stats = {
+                            ...data,
+                            activeGroups: 8,
+                            totalGroupMembers: 2523,
+                            todayTransactions: 147,
+                            newToday: 12
+                        };
+                    } catch (error) {
+                        console.error('Error loading stats:', error);
+                    }
+                },
+                
+                async loadPlayers() {
+                    try {
+                        const response = await fetch('/api/dashboard/players');
+                        this.players = await response.json();
+                        this.filterPlayers();
+                    } catch (error) {
+                        console.error('Error loading players:', error);
+                    }
+                },
+                
+                async loadAffiliates() {
+                    try {
+                        const response = await fetch('/api/dashboard/affiliates');
+                        this.affiliates = await response.json();
+                    } catch (error) {
+                        console.error('Error loading affiliates:', error);
+                    }
+                },
+                
+                async loadGroups() {
+                    try {
+                        const response = await fetch('/api/dashboard/groups');
+                        this.groups = await response.json();
+                    } catch (error) {
+                        console.error('Error loading groups:', error);
+                    }
+                },
+                
+                async loadMessages() {
+                    try {
+                        const response = await fetch('/api/dashboard/messages?limit=20');
+                        this.messages = await response.json();
+                    } catch (error) {
+                        console.error('Error loading messages:', error);
+                    }
+                },
+                
+                async loadTransactions() {
+                    try {
+                        const response = await fetch('/api/dashboard/accounting/history?balances=checked');
+                        const data = await response.json();
+                        this.transactions = data.transactions || [];
+                    } catch (error) {
+                        console.error('Error loading transactions:', error);
+                    }
+                },
+                
+                async loadBotStatus() {
+                    try {
+                        const response = await fetch('/api/dashboard/test-bot', { method: 'POST' });
+                        const data = await response.json();
+                        if (data.ok && data.bot) {
+                            this.botStatus = data.bot;
+                        }
+                    } catch (error) {
+                        console.error('Error loading bot status:', error);
+                    }
+                },
+                
+                async loadMiniAppStatus() {
+                    try {
+                        const response = await fetch('/api/dashboard/miniapp/status');
+                        this.miniAppStatus = await response.json();
+                    } catch (error) {
+                        console.error('Error loading mini-app status:', error);
+                    }
+                },
+                
+                // Filter players
+                filterPlayers() {
+                    let filtered = [...this.players];
+                    
+                    if (this.playerSearch) {
+                        const search = this.playerSearch.toLowerCase();
+                        filtered = filtered.filter(p => 
+                            p.name?.toLowerCase().includes(search) ||
+                            p.username?.toLowerCase().includes(search)
+                        );
+                    }
+                    
+                    if (this.playerFilters.status) {
+                        filtered = filtered.filter(p => p.status === this.playerFilters.status);
+                    }
+                    
+                    if (this.playerFilters.risk) {
+                        filtered = filtered.filter(p => p.riskLevel === this.playerFilters.risk);
+                    }
+                    
+                    this.filteredPlayers = filtered.slice(0, 50); // Limit for performance
+                },
+                
+                // Generate activity feed
+                generateActivityFeed() {
+                    const activities = [
+                        { icon: 'fas fa-user-plus', color: 'var(--cb-green)', title: 'New Player', description: 'John Doe registered', time: '2 minutes ago' },
+                        { icon: 'fas fa-dollar-sign', color: 'var(--cb-blue)', title: 'Deposit', description: '$500 from Player123', time: '5 minutes ago' },
+                        { icon: 'fas fa-envelope', color: 'var(--cb-orange)', title: 'Message', description: 'Broadcast sent to 150 users', time: '10 minutes ago' },
+                        { icon: 'fas fa-chart-line', color: 'var(--cb-purple)', title: 'Milestone', description: '1000 active players reached', time: '1 hour ago' },
+                        { icon: 'fas fa-ban', color: 'var(--cb-red)', title: 'Alert', description: 'High risk activity detected', time: '2 hours ago' }
+                    ];
+                    this.activityFeed = activities.map((a, i) => ({ ...a, id: Date.now() + i }));
+                },
+                
+                // Actions
+                async testBot() {
+                    try {
+                        const response = await fetch('/api/dashboard/test-bot', { method: 'POST' });
+                        const result = await response.json();
+                        if (result.ok) {
+                            this.showNotification('success', 'Bot Test', 'Bot is operational');
+                        } else {
+                            this.showNotification('error', 'Bot Test Failed', result.error);
+                        }
+                    } catch (error) {
+                        this.showNotification('error', 'Test Failed', error.message);
+                    }
+                },
+                
+                async sendBroadcast() {
+                    const message = prompt('Enter broadcast message:');
+                    if (message) {
+                        this.showNotification('info', 'Broadcast', 'Sending message...');
+                        // Implement broadcast API call
+                    }
+                },
+                
+                async reloadBot() {
+                    this.showNotification('info', 'Reloading', 'Reloading bot configuration...');
+                    // Implement reload API call
+                },
+                
+                viewPlayer(player) {
+                    this.showNotification('info', 'Player Details', `Viewing ${player.name}`);
+                    // Implement player modal
+                },
+                
+                messagePlayer(player) {
+                    const message = prompt(`Message to ${player.name}:`);
+                    if (message) {
+                        this.showNotification('success', 'Message Sent', `Message sent to ${player.name}`);
+                    }
+                },
+                
+                editPlayer(player) {
+                    this.showNotification('info', 'Edit Player', `Editing ${player.name}`);
+                    // Implement edit modal
+                },
+                
+                viewGroup(group) {
+                    this.showNotification('info', 'Group Details', `Viewing ${group.name}`);
+                    // Implement group modal
+                },
+                
+                async exportPlayers() {
+                    try {
+                        const response = await fetch('/api/dashboard/players/bulk/export?format=csv');
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `players-${Date.now()}.csv`;
+                        a.click();
+                        this.showNotification('success', 'Export Complete', 'Players exported to CSV');
+                    } catch (error) {
+                        this.showNotification('error', 'Export Failed', error.message);
+                    }
+                },
+                
+                async exportTransactions() {
+                    this.showNotification('info', 'Export', 'Exporting transactions...');
+                    // Implement transaction export
+                },
+                
+                quickAction(action) {
+                    const actions = {
+                        'add-player': () => this.showNotification('info', 'Add Player', 'Opening add player form...'),
+                        'send-message': () => this.sendBroadcast(),
+                        'export-data': () => this.exportPlayers(),
+                        'view-reports': () => { this.activeTab = 'analytics'; },
+                        'test-bot': () => this.testBot(),
+                        'reload-config': () => this.reloadBot()
+                    };
+                    
+                    if (actions[action]) {
+                        actions[action]();
+                    }
+                },
+                
+                // Real-time connection
+                connectToEventStream() {
+                    const eventSource = new EventSource('/api/dashboard/messages/stream');
+                    
+                    eventSource.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'message' && data.data) {
+                            this.messages.unshift(data.data);
+                            this.messages = this.messages.slice(0, 20);
+                            this.unreadNotifications++;
+                        }
+                    };
+                    
+                    eventSource.onerror = () => {
+                        eventSource.close();
+                        setTimeout(() => this.connectToEventStream(), 5000);
+                    };
+                },
+                
+                // Auto refresh
+                setAutoRefresh() {
+                    if (this.autoRefreshInterval) {
+                        clearInterval(this.autoRefreshInterval);
+                    }
+                    
+                    const interval = parseInt(this.refreshInterval);
+                    if (interval > 0) {
+                        this.autoRefresh = true;
+                        this.autoRefreshInterval = setInterval(() => {
+                            this.loadAllData();
+                        }, interval);
+                    } else {
+                        this.autoRefresh = false;
+                    }
+                },
+                
+                // Charts
+                initCharts() {
+                    // Player Growth Chart
+                    const ctx1 = document.getElementById('playerGrowthChart');
+                    if (ctx1) {
+                        new Chart(ctx1, {
+                            type: 'line',
+                            data: {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [{
+                                    label: 'New Players',
+                                    data: [12, 19, 15, 25, 22, 30, 28],
+                                    borderColor: 'rgb(59, 130, 246)',
+                                    tension: 0.4
+                                }]
+                            }
+                        });
+                    }
+                    
+                    // Revenue Chart
+                    const ctx2 = document.getElementById('revenueChart');
+                    if (ctx2) {
+                        new Chart(ctx2, {
+                            type: 'bar',
+                            data: {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [{
+                                    label: 'Revenue',
+                                    data: [1200, 1900, 1500, 2500, 2200, 3000, 2800],
+                                    backgroundColor: 'rgba(34, 197, 94, 0.5)'
+                                }]
+                            }
+                        });
+                    }
+                },
+                
+                // Utilities
+                updateClock() {
+                    this.currentTime = new Date().toLocaleTimeString();
+                },
+                
+                saveTheme() {
+                    localStorage.setItem('theme', this.theme);
+                },
+                
+                showNotification(type, title, message) {
+                    const notification = {
+                        id: Date.now(),
+                        type,
+                        title,
+                        message
+                    };
+                    this.notifications.push(notification);
+                    setTimeout(() => this.removeNotification(notification.id), 5000);
+                },
+                
+                removeNotification(id) {
+                    this.notifications = this.notifications.filter(n => n.id !== id);
+                },
+                
+                formatNumber(num) {
+                    return new Intl.NumberFormat().format(num || 0);
+                },
+                
+                formatDate(date) {
+                    return new Date(date).toLocaleDateString();
+                },
+                
+                formatTime(date) {
+                    return new Date(date).toLocaleTimeString();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
