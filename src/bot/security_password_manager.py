@@ -7,7 +7,7 @@ and implements secure customer-telegram account linking.
 
 import json
 import hashlib
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Any
 from datetime import datetime
 import logging
 

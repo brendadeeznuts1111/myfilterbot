@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 from payment_gateway import PaymentGateway, PaymentMethod, PaymentStatus, create_payment_gateway
 from cashier_manager import CashierManager, create_cashier_manager, WithdrawalStatus
-from database import db
+from src.portal.db.repositories import db
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'payment-secret-key-change-in-production'

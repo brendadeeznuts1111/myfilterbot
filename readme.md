@@ -43,7 +43,7 @@ A comprehensive, enterprise-grade Telegram trading bot platform with real-time m
 
 ### Prerequisites
 - Python 3.7+
-- Bun runtime 1.2.21+
+- Bun runtime 1.2.20+ (optimized for 1.2.21+)
 - Telegram Bot Token
 - Admin Chat ID
 
@@ -55,11 +55,12 @@ git clone https://github.com/fantdev/trading-bot.git
 cd trading-bot
 
 # 2. Copy environment configuration
-cp config/.env.example .env
-# Edit .env with your configuration
+cp .env.example .env.local  # For local development (Bun 1.2.20+)
+# Or: cp .env.example .env    # For production
+# Edit .env.local with your configuration
 
 # 3. Install Python dependencies
-pip install -r config/requirements_portal_integration.txt
+pip install -r config/requirements_enhanced.txt
 
 # 4. Install Bun dependencies
 bun install
@@ -84,7 +85,7 @@ cd myfilterbot
 2. **Set up environment variables**
 ```bash
 # Copy the example environment file
-cp config/.env.example .env
+cp config/env.example .env
 
 # Edit with your actual values
 nano .env
@@ -96,7 +97,7 @@ nano .env
 pip install python-dotenv
 
 # Install all required packages
-pip install -r config/requirements_portal_integration.txt
+pip install -r config/requirements_enhanced.txt
 ```
 
 4. **Install Bun dependencies**
@@ -148,22 +149,26 @@ bun run src/dev-server.ts                  # React dev server
 myfilterbot/
 ├── src/
 │   ├── bot/                    # Python bot core
-│   │   ├── main.py            # Main bot entry point
-│   │   ├── handlers/          # Bot command handlers
-│   │   ├── services/          # Bot services
-│   │   └── utils/             # Bot utilities
-│   ├── server/                # TypeScript server code
-│   │   ├── admin/             # Admin server
-│   │   ├── api/               # API endpoints
-│   │   └── workers/           # Worker threads
-│   ├── web/                   # React frontend
-│   │   ├── components/        # 23 React components
-│   │   ├── hooks/             # React hooks
-│   │   └── contexts/          # React contexts
-│   └── shared/                # Shared types and utilities
-├── tests/                     # Comprehensive test suite
-│   ├── python/                # Python tests
-│   └── typescript/            # TypeScript tests
+│   ├── client/                 # Client-side applications (e.g., admin-mobile)
+│   ├── config/                 # Configuration files
+│   ├── contexts/               # React contexts
+│   ├── hooks/                  # React hooks
+│   ├── lib/                    # Library files
+│   ├── providers/              # React providers
+│   ├── security/               # Security related files
+│   ├── server/                 # TypeScript server code
+│   ├── services/               # Service layer
+│   ├── shared/                 # Shared types and utilities
+│   ├── styles/                 # Global styles
+│   ├── telegram_dashboard/     # Telegram dashboard related files
+│   ├── templates/              # Template files
+│   ├── test/                   # Test utilities
+│   ├── utils/                  # Utility functions
+│   ├── web/                    # React frontend
+│   └── workers/                # Worker threads
+├── tests/                     # Automated tests (Python, TypeScript)
+│   ├── python/                # Python unit, integration, and system tests
+│   └── typescript/            # TypeScript/JavaScript unit and integration tests
 ├── config/                    # Configuration files
 ├── public/                    # Static assets and portals
 ├── docs/                      # Documentation
@@ -224,6 +229,17 @@ myfilterbot/
 - **Non-blocking** background processing
 - **Automatic batching** for optimal throughput
 - **Native TypeScript** execution without transpilation
+- **Dead code elimination** with `--define` flags (Bun 1.2.20+)
+- **Environment-specific builds** with `--env-file` (Bun 1.2.20+)
+
+### Static Optimization (New in 1.2.20+)
+```bash
+# Development with defines
+bun --env-file=.env.local --define process.env.NODE_ENV="'development'" src/index.ts
+
+# Production build with dead code elimination
+bun build --define ENABLE_CONSOLE_LOGS=false --define process.env.NODE_ENV="'production'" src/index.ts
+```
 
 ### Benchmark Results
 | Operation | Traditional | Bun v1.2.21 | Improvement |
@@ -289,7 +305,6 @@ The platform includes comprehensive monitoring:
 ## 📝 Documentation
 
 - [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Complete migration guide
-- [CLAUDE.md](CLAUDE.md) - AI assistant development guide
 - [docs/](docs/) - Technical documentation
 - [API Documentation](docs/api/) - Complete API reference
 

@@ -111,10 +111,10 @@ run_verification() {
     log "\n${BLUE}🔍 Running Phase 3 Endpoint Verification${NC}"
     log "======================================="
     
-    if [ -f "scripts/verify_endpoints.sh" ]; then
-        bash scripts/verify_endpoints.sh local
+    if [ -f "scripts/final_verify.sh" ]; then
+        bash scripts/final_verify.sh verify
     else
-        log "${RED}❌ scripts/verify_endpoints.sh not found${NC}"
+        log "${RED}❌ scripts/final_verify.sh not found${NC}"
         exit 1
     fi
 }

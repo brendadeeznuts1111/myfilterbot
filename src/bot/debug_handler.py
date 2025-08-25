@@ -19,7 +19,7 @@ from telegram.constants import ParseMode
 import logging
 
 from services.error_handler import error_tracker, error_handler, ErrorSeverity
-from database import db
+from src.portal.db.repositories import db
 from config import config
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,7 @@ from datetime import datetime
 import logging
 
 from services.session_manager import session_manager, fraud_detector, player_history
-from database import db
+from src.portal.db.repositories import db
 
 logger = logging.getLogger(__name__)
 

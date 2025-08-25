@@ -5,8 +5,8 @@ This directory contains various utility scripts for managing, testing, and maint
 ## **Available Scripts**
 
 ### **🔍 Verification & Testing**
-- **`verify_endpoints.sh`** - Phase 3 comprehensive API endpoint verification
 - **`enhanced_verify.sh`** - Enhanced verification with service startup capabilities
+- **`final_verify.sh`** - Comprehensive API endpoint verification
 - **`test_api.sh`** - Basic API integration testing
 - **`run_and_benchmark.sh`** - Performance testing and benchmarking
 
@@ -19,40 +19,55 @@ This directory contains various utility scripts for managing, testing, and maint
 - **`fix_python_test_imports.py`** - Fix Python test import issues
 - **`validate_links.py`** - Validate system links and references
 
-## **Quick Reference**
+## 🧪 Testing
 
-### **Phase 3 Verification**
+Refer to the [Tests Directory README](../tests/README.md) for detailed instructions on how to run tests.
+
 ```bash
-# Make executable
-chmod +x verify_endpoints.sh
+# Run all tests
+bun test
 
-# Run verification
-./verify_endpoints.sh local
-
-# Check results
-tail -f verification_*.log
+# Run tests with coverage
+bun test --coverage
 ```
 
-### **Enhanced Verification (Recommended)**
+## **Quick Reference**
+
+### **Comprehensive Verification**
 ```bash
 # Make executable
 chmod +x enhanced_verify.sh
 
-# Start services and verify
+# Start services and run comprehensive verification
 ./enhanced_verify.sh start
 
-# Just verify endpoints
+# Just run comprehensive verification (services must be running)
 ./enhanced_verify.sh verify
 
 # Check service status
 ./enhanced_verify.sh status
 ```
 
+### **Final Endpoint Verification**
+```bash
+# Make executable
+chmod +x final_verify.sh
+
+# Run final verification
+./final_verify.sh verify
+
+# Check service status
+./final_verify.sh status
+```
+
 ### **API Testing**
 ```bash
 # Basic API test
 ./test_api.sh
+```
 
+### **Performance Benchmarking**
+```bash
 # Performance benchmark
 ./run_and_benchmark.sh
 ```
@@ -92,8 +107,8 @@ chmod +x enhanced_verify.sh
 # 2. Start services
 ./start_server.sh
 
-# 3. Verify endpoints
-./verify_endpoints.sh local
+# 3. Run comprehensive verification
+./enhanced_verify.sh verify
 
 # 4. Run benchmarks
 ./run_and_benchmark.sh
@@ -141,24 +156,24 @@ kill -9 $(lsof -t -i:5000)
 ```yaml
 - name: Run Verification
   run: |
-    chmod +x scripts/verify_endpoints.sh
-    ./scripts/verify_endpoints.sh local
+    chmod +x scripts/enhanced_verify.sh
+    ./scripts/enhanced_verify.sh verify
 ```
 
 ### **Monitoring**
 ```bash
 # Continuous verification
-watch -n 300 './scripts/verify_endpoints.sh local'
+watch -n 300 './scripts/enhanced_verify.sh verify'
 
 # Alert on failures
-./scripts/verify_endpoints.sh local | grep "❌" && \
+./scripts/enhanced_verify.sh verify | grep "❌" && \
   echo "ALERT: Verification failed!"
 ```
 
 ## **Support**
 
 ### **Documentation**
-- [Phase 3 Verification Guide](../docs/PHASE_3_VERIFICATION_GUIDE.md)
+- [Load Testing Plan](../docs/load_test_plan.md)
 - [API Endpoint Inventory](../docs/API_ENDPOINT_INVENTORY.md)
 - [System Overview](../docs/architecture/SYSTEM_OVERVIEW.md)
 

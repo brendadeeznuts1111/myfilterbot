@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 from services.chat_tracker import chat_tracker
 from services.session_manager import session_manager
-from database import db
+from src.portal.db.repositories import db
 
 logger = logging.getLogger(__name__)
 

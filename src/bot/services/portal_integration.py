@@ -14,7 +14,7 @@ from threading import Thread
 import time
 
 from config import config
-from database import db
+from src.portal.db.repositories import db
 
 logger = logging.getLogger(__name__)
 

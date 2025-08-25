@@ -5,6 +5,10 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
+// Declare static defines for dead code elimination
+declare const ENABLE_CONSOLE_LOGS: boolean;
+declare const ENABLE_DEBUG_MODE: boolean;
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -28,8 +32,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error details
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Log error details (eliminated in production when ENABLE_CONSOLE_LOGS=false)
+    if (typeof ENABLE_CONSOLE_LOGS !== 'undefined' ? ENABLE_CONSOLE_LOGS : true) {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    }
     
     this.setState({
       error,
@@ -72,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   An unexpected error occurred. Please refresh the page or try again later.
                 </p>
                 
-                {process.env.NODE_ENV === 'development' && this.state.error && (
+                {(typeof ENABLE_DEBUG_MODE !== 'undefined' ? ENABLE_DEBUG_MODE : process.env.NODE_ENV === 'development') && this.state.error && (
                   <details className="mt-4 text-left">
                     <summary className="cursor-pointer text-sm font-medium text-gray-700">
                       Error Details (Development)
