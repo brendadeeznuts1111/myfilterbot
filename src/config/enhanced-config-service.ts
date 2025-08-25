@@ -3,7 +3,6 @@
  * Production-ready config management with caching, validation, and encryption
  */
 
-import { YAML } from 'bun';
 import crypto from 'crypto';
 import {
   AppConfig,
@@ -14,8 +13,6 @@ import {
   validateFeaturesConfig,
   validateProductionConfig,
   validateDevelopmentConfig,
-  safeParseAppConfig,
-  type FeatureConfig,
 } from './schemas';
 
 // ============================================================================
@@ -139,7 +136,10 @@ class EnvParser {
           // Simple variable
           const envValue = process.env[expr];
           if (envValue === undefined) {
-            console.warn(`Warning: Environment variable ${expr} is not set`);
+            console.warn(`Warning: Environment variable ${expr} is not set`, {
+              expression: expr,
+              availableEnvVars: Object.keys(process.env).length
+            });
           }
           return envValue ?? '';
         }
@@ -155,9 +155,13 @@ class EnvParser {
 
           case '?': // Error if not set
             if (!envValue) {
-              throw new Error(
-                operand || `Environment variable ${varName} is required`
-              );
+              const errorMsg = operand || `Environment variable ${varName} is required`;
+              console.error('Required environment variable missing:', {
+                variable: varName,
+                expression: expr,
+                error: errorMsg
+              });
+              throw new Error(errorMsg);
             }
             return envValue;
 
@@ -252,7 +256,13 @@ export class EnhancedConfigService {
 
       return validated;
     } catch (error) {
-      console.error('Failed to load app configuration:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to load app configuration:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        environment: this.environment,
+        configDir: this.configDir
+      });
       throw error;
     }
   }
@@ -284,7 +294,13 @@ export class EnhancedConfigService {
 
       return validated;
     } catch (error) {
-      console.error('Failed to load database configuration:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to load database configuration:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        environment: this.environment,
+        configDir: this.configDir
+      });
       throw error;
     }
   }
@@ -310,7 +326,13 @@ export class EnhancedConfigService {
 
       return validated;
     } catch (error) {
-      console.error('Failed to load features configuration:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to load features configuration:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        environment: this.environment,
+        configDir: this.configDir
+      });
       throw error;
     }
   }

@@ -4,6 +4,7 @@
  */
 
 import { dashboardConfigService } from '../../services/dashboard-config-service';
+import { ResponseCacheMiddleware, type CacheConfig } from '../../middleware/response-cache';
 
 interface DashboardRoute {
   method: string;
@@ -19,8 +20,15 @@ class DashboardRouter {
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Content-Type": "application/json"
   };
+  private responseCache: ResponseCacheMiddleware;
 
-  constructor() {
+  /**
+   * Create a new dashboard router with caching middleware
+   * 
+   * @param responseCache - Response caching middleware instance
+   */
+  constructor(responseCache: ResponseCacheMiddleware) {
+    this.responseCache = responseCache;
     this.initializeRoutes();
   }
 
@@ -84,48 +92,69 @@ class DashboardRouter {
   }
 
   private async getOverview(req: Request): Promise<Response> {
-    const stats = await this.getSystemStatsData();
-    const features = dashboardConfigService.getFeatureFlags();
-    const version = dashboardConfigService.getVersionInfo();
-    
-    const overview = {
-      systemStatus: 'Healthy',
-      connections: stats.connections || 0,
-      lastHealthCheck: new Date().toISOString(),
-      configVersion: version.app,
-      featureFlags: features,
-      timezone: Bun.env.TZ || 'UTC',
-      environment: Bun.env.NODE_ENV || 'development'
-    };
+    // Cache overview data for 30 seconds
+    return this.responseCache.withCache(async (req: Request) => {
+      const stats = await this.getSystemStatsData();
+      const features = dashboardConfigService.getFeatureFlags();
+      const version = dashboardConfigService.getVersionInfo();
+      
+      const overview = {
+        systemStatus: 'Healthy',
+        connections: stats.connections || 0,
+        lastHealthCheck: new Date().toISOString(),
+        configVersion: version.app,
+        featureFlags: features,
+        timezone: Bun.env.TZ || 'UTC',
+        environment: Bun.env.NODE_ENV || 'development'
+      };
 
-    return Response.json(overview, { headers: this.corsHeaders });
+      return Response.json(overview, { headers: this.corsHeaders });
+    }, {
+      ttl: 30000, // 30 seconds
+      maxAge: 30,
+      staleWhileRevalidate: 60
+    })(req);
   }
 
   private async listYamlFiles(req: Request): Promise<Response> {
-    const configs = dashboardConfigService.getAllConfigs();
-    const files = Object.keys(configs).map(name => ({
-      name: `${name}.yaml`,
-      path: `./config/${name}.yaml`,
-      size: JSON.stringify(configs[name]).length,
-      lastModified: new Date().toISOString()
-    }));
+    // Cache YAML file list for 5 minutes
+    return this.responseCache.withCache(async (req: Request) => {
+      const configs = dashboardConfigService.getAllConfigs();
+      const files = Object.keys(configs).map(name => ({
+        name: `${name}.yaml`,
+        path: `./config/${name}.yaml`,
+        size: JSON.stringify(configs[name]).length,
+        lastModified: new Date().toISOString()
+      }));
 
-    return Response.json(files, { headers: this.corsHeaders });
+      return Response.json(files, { headers: this.corsHeaders });
+    }, {
+      ttl: 300000, // 5 minutes
+      maxAge: 300,
+      staleWhileRevalidate: 300
+    })(req);
   }
 
   private async getYamlFile(req: Request, matches: RegExpMatchArray): Promise<Response> {
     const fileName = matches[1];
     
-    try {
-      const content = await dashboardConfigService.getConfigYaml(fileName);
-      return Response.json({ 
-        success: true,
-        file: fileName,
-        content 
-      }, { headers: this.corsHeaders });
-    } catch (error: any) {
-      return this.errorResponse(`Failed to load ${fileName}.yaml: ${error.message}`, 404);
-    }
+    // Cache YAML files for 2 minutes (they change less frequently)
+    return this.responseCache.withCache(async (req: Request) => {
+      try {
+        const content = await dashboardConfigService.getConfigYaml(fileName);
+        return Response.json({ 
+          success: true,
+          file: fileName,
+          content 
+        }, { headers: this.corsHeaders });
+      } catch (error: any) {
+        return this.errorResponse(`Failed to load ${fileName}.yaml: ${error.message}`, 404);
+      }
+    }, {
+      ttl: 120000, // 2 minutes
+      maxAge: 120,
+      staleWhileRevalidate: 60
+    })(req);
   }
 
   private async updateYamlFile(req: Request, matches: RegExpMatchArray): Promise<Response> {
@@ -198,8 +227,15 @@ class DashboardRouter {
   }
 
   private async getSystemStats(req: Request): Promise<Response> {
-    const stats = await this.getSystemStatsData();
-    return Response.json(stats, { headers: this.corsHeaders });
+    // Cache system stats for 15 seconds (they change frequently)
+    return this.responseCache.withCache(async (req: Request) => {
+      const stats = await this.getSystemStatsData();
+      return Response.json(stats, { headers: this.corsHeaders });
+    }, {
+      ttl: 15000, // 15 seconds
+      maxAge: 15,
+      staleWhileRevalidate: 30
+    })(req);
   }
 
   private async getSystemStatsData() {
@@ -352,5 +388,10 @@ class DashboardRouter {
   }
 }
 
-// Export singleton instance
-export const dashboardRouter = new DashboardRouter();
+// Export factory function to create router with dependencies
+export function createDashboardRouter(responseCache: ResponseCacheMiddleware): DashboardRouter {
+  return new DashboardRouter(responseCache);
+}
+
+// Export class for direct usage
+export { DashboardRouter };

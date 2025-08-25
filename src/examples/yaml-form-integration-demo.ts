@@ -13,7 +13,7 @@ import {
   enableYAMLFormSync,
 } from '../services/yaml-form-integration';
 import { bunYAMLService } from '../services/bun-yaml-service';
-import { parseFormSmart, buildForm, validateForm } from '../utils/form-utils';
+import { parseFormSmart, buildForm } from '../utils/form-utils';
 
 console.log(`
 ╔═══════════════════════════════════════════════════════════════════╗
@@ -527,7 +527,7 @@ setTimeout(() => {
   for (let i = 0; i < 100; i++) {
     const yamlData = { test: `iteration_${i}`, value: i, active: i % 2 === 0 };
     const formData = yamlFormIntegration.yamlToForm(yamlData);
-    const backToYAML = yamlFormIntegration.formToYAML(formData);
+    const _backToYAML = yamlFormIntegration.formToYAML(formData);
   }
 
   const end = performance.now();

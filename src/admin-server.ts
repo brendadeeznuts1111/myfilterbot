@@ -1,29 +1,68 @@
+/**
+ * Fantdev Trading Bot Admin Server
+ * 
+ * High-performance admin dashboard server built with Bun runtime.
+ * Features JWT authentication, multi-level caching, YAML-based configuration,
+ * and real-time performance monitoring.
+ * 
+ * @module AdminServer
+ * @version 2.1.0
+ * @author Fantdev Trading Systems
+ */
+
 import { serve } from 'bun';
 import { SignJWT, jwtVerify } from "jose";
 
 // Import YAML configurations using Bun's native support
 import appConfig from '../config/app.yaml';
 import featuresConfig from '../config/features.yaml';
-import telegramConfig from '../config/telegram.yaml';
+
+// Load telegram configuration dynamically
+let telegramConfig: any = { telegram: {} };
+try {
+  const { YAML } = await import('bun');
+  const telegramFile = Bun.file('./config/telegram.yaml');
+  if (await telegramFile.exists()) {
+    telegramConfig = YAML.parse(await telegramFile.text());
+  }
+} catch (error) {
+  console.warn('⚠️ telegram.yaml config missing or invalid - using empty config');
+}
 
 import enhancedAdminPortal from '../public/portals/admin-portal.html';
 import { apiRouter } from './server/api/router';
-import { dashboardRouter } from './server/api/dashboard-router';
+import { createDashboardRouter } from './server/api/dashboard-router';
 import { dashboardConfigService } from './services/dashboard-config-service';
 import { LazyCustomerLoader, type Customer } from './services/lazy-customer-loader';
 import { PerformanceMonitor } from './services/performance-monitor';
-import { MultiLevelCache } from './services/multi-level-cache';
+import { MultiLevelCache, type RedisConfig } from './services/multi-level-cache';
 import { ResponseCacheMiddleware } from './middleware/response-cache';
+import { CacheWarmingService } from './services/cache-warming-service';
 import { commissionCalculator } from './lib/commission';
 import { db } from './lib/data';
 import { buildTable, exportToCSV } from './lib/table';
 import { telegramBridge } from './lib/telegram-bridge';
+import { errorLogger, logConfigError, logApiError } from './utils/error-logger';
+import { formatYAML, validateYAML, normalizeYAML } from './utils/yaml-formatter';
 
 // Initialize services
 const customerLoader = new LazyCustomerLoader();
 const performanceMonitor = new PerformanceMonitor();
-const cache = new MultiLevelCache(2000); // 2000 items max in L1 cache
+
+// Configure Redis cache if available
+const redisConfig: RedisConfig = {
+  enabled: Boolean(Bun.env.REDIS_URL || process.env.NODE_ENV === 'production'),
+  url: Bun.env.REDIS_URL || 'redis://localhost:6379'
+};
+
+const cache = new MultiLevelCache(
+  2000, // 2000 items max in L1 cache
+  redisConfig, // Redis L2 cache
+  './cache' // L3 file cache directory
+);
 const responseCache = new ResponseCacheMiddleware(cache);
+const cacheWarmingService = new CacheWarmingService(cache);
+const dashboardRouter = createDashboardRouter(responseCache);
 
 // Load agents and masters configuration dynamically
 let agentsConfig: any = { agents: { list: [] }, masters: { list: [] }, commission: {} };
@@ -34,7 +73,10 @@ try {
     agentsConfig = YAML.parse(await agentsFile.text());
   }
 } catch (error) {
-  console.warn('⚠️ agents.yml config missing or invalid - using empty agent list');
+  console.warn('⚠️ agents.yml config missing or invalid - using empty agent list', {
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
+  });
 }
 
 // Track startup performance
@@ -54,15 +96,32 @@ Promise.all([
     await customerLoader.startBackgroundLoad();
     performanceMonitor.endMetric('customer_loading');
     performanceMonitor.warnIfSlow('customer_loading', 5000);
+  })(),
+  (async () => {
+    performanceMonitor.startMetric('cache_warming');
+    await cacheWarmingService.warmCache(['critical', 'important']);
+    performanceMonitor.endMetric('cache_warming');
+    performanceMonitor.warnIfSlow('cache_warming', 3000);
   })()
 ]).then(() => {
   performanceMonitor.endPhase('data_initialization');
   performanceMonitor.startPhase('server_startup');
   performanceMonitor.endMetric('total_startup');
   performanceMonitor.completeStartup();
+  
+  // Start periodic cache warming every 5 minutes
+  cacheWarmingService.startPeriodicWarming(300000);
 }).catch(error => {
-  console.error('❌ Startup error:', error);
-  performanceMonitor.endPhase('data_initialization', error.message);
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error('❌ Startup error:', {
+    error: errorMessage,
+    stack: error instanceof Error ? error.stack : undefined,
+    timestamp: new Date().toISOString()
+  });
+  performanceMonitor.endPhase('data_initialization', errorMessage);
+  
+  // Attempt graceful degradation
+  console.log('⚠️ Continuing with limited functionality due to startup errors');
 });
 
 // JWT Authentication Setup
@@ -72,6 +131,16 @@ const JWT_SECRET = new TextEncoder().encode(
 const COOKIE_NAME = "dashboard_session";
 
 // ---------- Auth Helpers ----------
+
+/**
+ * Creates a signed JWT token for authentication
+ * 
+ * @param payload - Object containing user data to encode in the token
+ * @returns Promise resolving to the signed JWT token string
+ * 
+ * @example
+ * const token = await signToken({ userId: 123, role: 'admin' });
+ */
 async function signToken(payload: object) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -79,12 +148,26 @@ async function signToken(payload: object) {
     .sign(JWT_SECRET);
 }
 
+/**
+ * Verifies and decodes a JWT token
+ * 
+ * @param token - The JWT token string to verify
+ * @returns Promise resolving to the decoded payload or null if invalid
+ * 
+ * @example
+ * const payload = await verifyToken(request.headers.authorization);
+ * if (payload) { // Valid token }
+ */
 async function verifyToken(token?: string) {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload as { sub: string; role: string };
-  } catch {
+  } catch (error) {
+    console.warn('JWT verification failed:', {
+      error: error instanceof Error ? error.message : String(error),
+      tokenLength: token?.length || 0
+    });
     return null;
   }
 }
@@ -264,6 +347,63 @@ process.env.TZ = timezone;
 console.log(`🌍 Timezone set to: ${timezone}`);
 console.log(`🔥 Hot-reload: ${dashboardConfigService.getHotReloadStatus().active ? 'Active' : 'Inactive'}`);
 console.log(`📊 Feature flags loaded: ${Object.keys(featuresConfig?.features || {}).length} features`);
+
+// Real-time WebSocket update service
+function startRealTimeUpdates(ws: any) {
+  // Send periodic customer activity updates
+  const updateInterval = setInterval(async () => {
+    if (ws.readyState === 1) { // WebSocket.READY_STATE.OPEN
+      try {
+        const customers = await getCustomers();
+        
+        // Generate real-time activity
+        const activity = {
+          id: `activity_${Date.now()}`,
+          type: ['deposit', 'withdrawal', 'bet', 'payout', 'login'][Math.floor(Math.random() * 5)],
+          customer_id: customers[Math.floor(Math.random() * customers.length)]?.customer_id,
+          amount: Math.floor(Math.random() * 1000) + 50,
+          timestamp: new Date().toISOString()
+        };
+        
+        activity.title = `Customer ${activity.customer_id} ${activity.type === 'login' ? 'logged in' : `made a ${activity.type}`}`;
+        activity.details = activity.type === 'bet' ? `Bet placed on Sports` : 
+                         activity.type === 'login' ? `Login from mobile app` :
+                         `${activity.type.charAt(0).toUpperCase() + activity.type.slice(1)} processed`;
+        
+        if (ws.data?.subscriptions?.includes('customer_activity')) {
+          ws.send(JSON.stringify({
+            type: 'customer_activity',
+            data: activity,
+            timestamp: new Date().toISOString()
+          }));
+        }
+        
+        // Send customer stats updates every 30 seconds
+        if (Date.now() % 30000 < 5000 && ws.data?.subscriptions?.includes('stats')) {
+          const stats = await getCustomerStats();
+          ws.send(JSON.stringify({
+            type: 'stats_update',
+            data: {
+              total_customers: stats.totalCustomers,
+              active_customers: stats.activeCustomers,
+              total_balance: stats.totalBalance,
+              total_transactions: Math.floor(Math.random() * 1000) + 500,
+            },
+            timestamp: new Date().toISOString()
+          }));
+        }
+        
+      } catch (error) {
+        console.error('WebSocket update error:', error);
+      }
+    } else {
+      clearInterval(updateInterval);
+    }
+  }, 3000); // Send updates every 3 seconds
+  
+  // Store interval in ws.data for cleanup
+  ws.data.updateInterval = updateInterval;
+}
 
 // Get port from environment or use default
 const PORT = Number(process.env.PORT || process.env.ADMIN_PORT || 3000);
@@ -553,6 +693,29 @@ const server = serve({
         runtime: performanceMonitor.getRuntimeStats(),
         metrics: performanceMonitor.getMetrics(),
         cache: cache.getStats(),
+        errors: errorLogger.getErrorStats(),
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Error logs endpoint
+    if (url.pathname === "/api/errors" && req.method === "GET") {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const level = url.searchParams.get('level') as 'error' | 'warn' | 'info' | undefined;
+      
+      return Response.json({
+        errors: errorLogger.getRecentErrors(limit, level),
+        stats: errorLogger.getErrorStats(),
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Clear error logs endpoint
+    if (url.pathname === "/api/errors" && req.method === "DELETE") {
+      errorLogger.clearLogs();
+      return Response.json({
+        success: true,
+        message: "Error logs cleared successfully",
         timestamp: new Date().toISOString()
       }, { headers: corsHeaders });
     }
@@ -575,6 +738,42 @@ const server = serve({
       }, { headers: corsHeaders });
     }
 
+    // Cache warming endpoints
+    if (url.pathname === "/api/cache/warming" && req.method === "GET") {
+      const report = await cacheWarmingService.getWarmingReport();
+      return Response.json({
+        ...report,
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    if (url.pathname === "/api/cache/warming" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const priorities = body.priorities || ['critical', 'important'];
+      
+      // Trigger cache warming
+      await cacheWarmingService.warmCache(priorities);
+      
+      return Response.json({
+        success: true,
+        message: `Cache warming completed for priorities: ${priorities.join(', ')}`,
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
+    // Warm specific cache key
+    if (url.pathname.startsWith("/api/cache/warm/") && req.method === "POST") {
+      const key = url.pathname.replace("/api/cache/warm/", "");
+      const success = await cacheWarmingService.warmSpecific(key);
+      
+      return Response.json({
+        success,
+        key,
+        message: success ? `Cache key '${key}' warmed successfully` : `Failed to warm cache key '${key}'`,
+        timestamp: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
     // Real Health Checks with actual pings (cached)
     if (url.pathname === "/api/bot/status" && req.method === "GET") {
       return await responseCache.withCache(async (req: Request) => {
@@ -589,10 +788,15 @@ const server = serve({
             timestamp: new Date().toISOString()
           }, { headers: corsHeaders });
         } catch (e: any) {
+          const errorMessage = e instanceof Error ? e.message : String(e);
+          console.error('Bot status check failed:', {
+            error: errorMessage,
+            stack: e instanceof Error ? e.stack : undefined
+          });
           return Response.json({ 
             status: "error", 
             bot: "disconnected", 
-            error: e.message,
+            error: errorMessage,
             timestamp: new Date().toISOString()
           }, { status: 503, headers: corsHeaders });
         }
@@ -668,22 +872,55 @@ const server = serve({
       }, { headers: corsHeaders });
     }
 
-    // WebSocket upgrade endpoint - commented out to avoid errors
-    // if (url.pathname === "/api/ws" && req.headers.get("upgrade") === "websocket") {
-    //   const { response, socket } = Bun.upgradeWebSocket(req, {
-    //     message: (ws, message) => {
-    //       console.log('WebSocket message:', message);
-    //     },
-    //     open: (ws) => {
-    //       console.log('WebSocket connection opened');
-    //       ws.send(JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() }));
-    //     },
-    //     close: (ws) => {
-    //       console.log('WebSocket connection closed');
-    //     }
-    //   });
-    //   return response;
-    // }
+    // WebSocket upgrade endpoint for real-time dashboard updates
+    if (url.pathname === "/api/ws" && req.headers.get("upgrade") === "websocket") {
+      return Bun.upgradeWebSocket(req, {
+        message: (ws, message) => {
+          try {
+            const data = JSON.parse(message.toString());
+            console.log('📡 WebSocket message:', data.type);
+            
+            // Handle subscription requests
+            if (data.type === 'subscribe') {
+              ws.data = { ...ws.data, subscriptions: data.channels || ['customer_activity', 'transactions', 'bets'] };
+              ws.send(JSON.stringify({
+                type: 'subscription_confirmed',
+                channels: ws.data.subscriptions,
+                timestamp: new Date().toISOString()
+              }));
+            }
+          } catch (error) {
+            console.error('WebSocket message parse error:', error);
+          }
+        },
+        open: (ws) => {
+          console.log('🔗 WebSocket connection opened');
+          ws.data = { 
+            id: `ws_${Date.now()}`, 
+            subscriptions: ['customer_activity'],
+            connectedAt: new Date().toISOString() 
+          };
+          
+          ws.send(JSON.stringify({ 
+            type: 'connected', 
+            id: ws.data.id,
+            timestamp: new Date().toISOString() 
+          }));
+          
+          // Start sending real-time updates
+          startRealTimeUpdates(ws);
+        },
+        close: (ws, code, reason) => {
+          console.log(`🔌 WebSocket connection closed: ${code} - ${reason}`);
+          if (ws.data?.updateInterval) {
+            clearInterval(ws.data.updateInterval);
+          }
+        },
+        error: (ws, error) => {
+          console.error('❌ WebSocket error:', error);
+        }
+      });
+    }
 
     // Service control endpoints (Public for monitoring tools)
     if (url.pathname === "/api/services/start" && req.method === "POST") {
@@ -783,13 +1020,27 @@ const server = serve({
           const customers = await getCustomers();
           const stats = await getCustomerStats();
           
-          return Response.json({
+          // Handle query parameters for enhanced data
+          const includeParams = url.searchParams.get('include');
+          const page = parseInt(url.searchParams.get('page') || '1');
+          const limit = parseInt(url.searchParams.get('limit') || '50');
+          
+          // Calculate pagination
+          const offset = (page - 1) * limit;
+          const paginatedCustomers = customers.slice(offset, offset + limit);
+          
+          let response = {
             success: true,
-            customers: customers,
+            customers: paginatedCustomers,
             total: customers.length,
+            page,
+            limit,
             total_balance: stats.totalBalance,
-            total_weekly_pnl: stats.totalWeeklyPnl
-          }, { headers: corsHeaders });
+            total_weekly_pnl: stats.totalWeeklyPnl,
+            timestamp: new Date().toISOString()
+          };
+          
+          return Response.json(response, { headers: corsHeaders });
         }
         
         // Create customer
@@ -975,6 +1226,124 @@ const server = serve({
           }
         }
 
+        // === YAML CONFIGURATION ENDPOINTS ===
+        if (url.pathname.startsWith('/api/yaml/') && req.method === "GET") {
+          const configName = url.pathname.split('/api/yaml/')[1];
+          console.log(`🔍 YAML Config Request: ${configName}`);
+          
+          let configPath = `./config/${configName}.yaml`;
+          let configFile = Bun.file(configPath);
+          let yamlExists = await configFile.exists();
+          
+          console.log(`📁 Checking ${configPath}: ${yamlExists}`);
+          
+          // Handle .yml files as well
+          if (!yamlExists) {
+            configPath = `./config/${configName}.yml`;
+            configFile = Bun.file(configPath);
+            const ymlExists = await configFile.exists();
+            console.log(`📁 Fallback to ${configPath}: ${ymlExists}`);
+          }
+          
+          try {
+            if (await configFile.exists()) {
+              const configContent = await configFile.text();
+              console.log(`✅ Successfully loaded config: ${configName} (${configContent.length} bytes)`);
+              
+              // Add cache-busting headers
+              const noCacheHeaders = {
+                ...corsHeaders,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              };
+              
+              return Response.json({ 
+                success: true,
+                config: configName,
+                content: configContent,
+                path: configPath,
+                timestamp: new Date().toISOString()
+              }, { headers: noCacheHeaders });
+            } else {
+              console.log(`❌ Config file not found: ${configName}`);
+              return Response.json({ 
+                success: false,
+                error: `Configuration file ${configName}.yaml/.yml not found`,
+                path: configPath,
+                attempted: [`./config/${configName}.yaml`, `./config/${configName}.yml`],
+                timestamp: new Date().toISOString()
+              }, { 
+                status: 404, 
+                headers: { ...corsHeaders, 'Cache-Control': 'no-cache' }
+              });
+            }
+          } catch (error: any) {
+            console.error(`💥 YAML config error for ${configName}:`, error.message);
+            return Response.json({ 
+              success: false,
+              error: `Failed to read configuration: ${error.message}`,
+              path: configPath,
+              timestamp: new Date().toISOString()
+            }, { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Cache-Control': 'no-cache' }
+            });
+          }
+        }
+
+        // Save YAML configuration
+        if (url.pathname.startsWith('/api/yaml/') && req.method === "POST") {
+          const configName = url.pathname.split('/api/yaml/')[1];
+          const { content } = await req.json();
+          console.log(`💾 Saving YAML Config: ${configName}`);
+          
+          let configPath = `./config/${configName}.yaml`;
+          
+          // Handle .yml files as well
+          if (!await Bun.file(configPath).exists()) {
+            configPath = `./config/${configName}.yml`;
+          }
+          
+          try {
+            // Validate YAML syntax
+            const { YAML } = await import('bun');
+            const parsedContent = YAML.parse(content);
+            console.log(`✅ YAML validation passed for ${configName}`);
+            
+            // Write the file
+            await Bun.write(configPath, content);
+            console.log(`💾 File saved: ${configPath}`);
+            
+            // Reload agents config if it's the agents file
+            if (configName === 'agents') {
+              agentsConfig = parsedContent;
+              console.log(`🔄 Reloaded agents config in memory`);
+            }
+            
+            // Add cache-busting headers
+            const noCacheHeaders = {
+              ...corsHeaders,
+              'Cache-Control': 'no-cache, no-store, must-revalidate'
+            };
+            
+            return Response.json({ 
+              success: true,
+              message: `Configuration ${configName} saved successfully`,
+              path: configPath,
+              timestamp: new Date().toISOString()
+            }, { headers: noCacheHeaders });
+            
+          } catch (error: any) {
+            console.error(`💥 YAML save error for ${configName}:`, error.message);
+            return Response.json({ 
+              success: false,
+              error: `Failed to save configuration: ${error.message}`,
+              timestamp: new Date().toISOString()
+            }, { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-cache' } });
+          }
+        }
+
         // System Info endpoint
         if (url.pathname === "/api/admin/system") {
           return Response.json({
@@ -1155,6 +1524,9 @@ const server = serve({
           const from = url.searchParams.get('from');
           const to = url.searchParams.get('to');
           
+          // Get customers for transaction generation
+          const customers = await getCustomers();
+          
           // Generate sample transactions
           const transactions = Array.from({ length: 100 }, (_, i) => ({
             id: `tx_${Date.now()}_${i}`,
@@ -1191,6 +1563,22 @@ const server = serve({
             transaction_count: Math.floor(Math.random() * 10000) + 5000,
             period: "last_30_days"
           }, { headers: corsHeaders });
+        }
+
+        // Enhanced customer transaction summaries endpoint
+        if (url.pathname === "/api/admin/transactions/customer-summaries") {
+          const customers = await getCustomers();
+          const summaries = customers.map(customer => ({
+            customer_id: customer.customer_id,
+            total_deposits: Math.floor(Math.random() * 10000) + 1000,
+            total_withdrawals: Math.floor(Math.random() * 5000) + 500,
+            total_transactions: Math.floor(Math.random() * 50) + 10,
+            net_position: Math.floor(Math.random() * 4000) - 2000, // Can be negative
+            last_transaction: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+            avg_transaction_size: Math.floor(Math.random() * 500) + 100
+          }));
+          
+          return Response.json(summaries, { headers: corsHeaders });
         }
         
         // BETTING ENDPOINTS
@@ -1236,6 +1624,28 @@ const server = serve({
             roi: (Math.random() * 0.4 - 0.2).toFixed(2), // -20% to +20%
             period: "last_30_days"
           }, { headers: corsHeaders });
+        }
+
+        // Enhanced customer betting summaries endpoint
+        if (url.pathname === "/api/admin/bets/customer-summaries") {
+          const customers = await getCustomers();
+          const summaries = customers.map(customer => {
+            const totalBets = Math.floor(Math.random() * 30) + 5;
+            const winCount = Math.floor(totalBets * (Math.random() * 0.4 + 0.3)); // 30-70% win rate
+            
+            return {
+              customer_id: customer.customer_id,
+              total_bets: totalBets,
+              total_stake: Math.floor(Math.random() * 5000) + 500,
+              total_winnings: Math.floor(Math.random() * 7000) + 1000,
+              win_rate: totalBets > 0 ? winCount / totalBets : 0,
+              avg_stake: Math.floor(Math.random() * 200) + 50,
+              last_bet: new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000).toISOString(),
+              profit_loss: Math.floor(Math.random() * 2000) - 1000 // Can be negative
+            };
+          });
+          
+          return Response.json(summaries, { headers: corsHeaders });
         }
         
         // AGENT ENDPOINTS
@@ -1701,6 +2111,37 @@ const server = serve({
       ).slice(0, 50);
       
       return Response.json(filteredCustomers, { headers: corsHeaders });
+    }
+
+    // Customer activity feed endpoint
+    if (url.pathname === "/api/admin/customer-activity/recent") {
+      const limit = parseInt(url.searchParams.get('limit') || '20');
+      const customers = await getCustomers();
+      
+      const activities = Array.from({ length: Math.min(limit, 50) }, (_, i) => {
+        const customer = customers[Math.floor(Math.random() * customers.length)];
+        const activityTypes = ['deposit', 'withdrawal', 'bet', 'payout', 'login', 'registration'];
+        const type = activityTypes[Math.floor(Math.random() * activityTypes.length)];
+        const amount = ['deposit', 'bet'].includes(type) ? Math.floor(Math.random() * 1000) + 50 : 
+                      ['withdrawal', 'payout'].includes(type) ? -(Math.floor(Math.random() * 800) + 30) : 0;
+        
+        return {
+          id: `activity_${Date.now()}_${i}`,
+          type,
+          title: `Customer ${customer.customer_id} ${type === 'login' ? 'logged in' : `made a ${type}`}`,
+          details: type === 'bet' ? `Bet placed on Sports` : 
+                   type === 'login' ? `Login from mobile app` :
+                   `${type.charAt(0).toUpperCase() + type.slice(1)} processed`,
+          customer_id: customer.customer_id,
+          amount,
+          timestamp: new Date(Date.now() - i * Math.floor(Math.random() * 3600000)).toISOString()
+        };
+      });
+      
+      // Sort by timestamp (newest first)
+      activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      return Response.json(activities, { headers: corsHeaders });
     }
 
     // Individual customer endpoint

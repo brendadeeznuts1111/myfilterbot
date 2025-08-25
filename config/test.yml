@@ -1,18 +1,45 @@
+# Test Environment Configuration
+# This file contains simplified configuration settings for testing purposes
+# Based on the Fantasy402 Trading Platform configuration standard
+
+# Telegram Bot Configuration
 telegram:
-  botToken: 123456:ABC
-  cashierBotToken: 654321:XYZ
-  vipThreshold: 1000
+  # Bot Authentication Tokens
+  botToken: ${TELEGRAM_BOT_TOKEN:-123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11}
+  cashierBotToken: ${TELEGRAM_CASHIER_TOKEN:-654321:XYZ-ABC5678mnoPq-rst90U3v4w567ab22}
+  
+  # VIP Settings
+  vipThreshold: 1000                    # Minimum balance for VIP status
+  
+  # Payment Methods
   depositMethods:
-    - stripe
-    - crypto
-    - paypal
+    - stripe                            # Credit card payments
+    - crypto                            # Cryptocurrency
+    - paypal                            # PayPal integration
+  
   withdrawMethods:
-    - crypto
-    - paypal
+    - crypto                            # Cryptocurrency withdrawals
+    - paypal                            # PayPal withdrawals
+
+# Commission Structure
 commission:
-  agent: 0.05
-  master: 0.02
+  agent: 0.05                           # 5% agent commission
+  master: 0.02                          # 2% master agent commission
+
+# Customer Tier System
 tiers:
-  basic: 0
-  vip: 0.01
-  super: 0.02
+  basic: 0.00                           # Basic tier - no rebate
+  vip: 0.01                             # VIP tier - 1% rebate
+  super: 0.02                           # Super VIP - 2% rebate
+
+# Test Environment Settings
+environment:
+  debug: true                           # Enable debug logging
+  mock_payments: true                   # Use mock payment processing
+  rate_limit_disabled: true            # Disable rate limiting for tests
+  
+# Validation Settings (for YAML validation tests)
+validation:
+  enabled: true
+  schema_version: "2.1.0"
+  last_validated: "2025-08-25T14:30:00Z"
