@@ -9,6 +9,22 @@ import { $ } from 'bun';
 
 const defines = require('../config/bun-defines.js');
 
+/**
+ * Start the development environment by spawning and managing all local services.
+ *
+ * Starts multiple subprocesses (Bot, Admin Server, Dev Server, Admin Mobile) with development
+ * defines applied to Bun-based services, prefixes each process's stdout/stderr with a colored
+ * service tag, and centrally manages lifecycle and shutdown.
+ *
+ * Behavior notes:
+ * - Spawns child processes and keeps the main process alive until interrupted.
+ * - On any service exiting with a non-zero code or if a spawn fails, all services are stopped and
+ *   the process exits with code 1.
+ * - Registers handlers for SIGINT and SIGTERM to perform graceful cleanup and exit.
+ *
+ * @returns {Promise<void>} Resolves only when the process is terminated (the function blocks
+ * indefinitely while services run).
+ */
 async function startDev() {
   console.log('🚀 Starting development environment with Bun defines...\n');
 

@@ -34,7 +34,11 @@ class BotConfig:
     
     @classmethod
     def from_env(cls) -> Any:
-        """Load configuration from environment variables"""
+        """
+        Create a BotConfig populated from environment variables.
+        
+        Reads the environment variables BOT_TOKEN, ADMIN_CHAT_ID, and DATABASE_PATH and uses their values when present; otherwise falls back to the class defaults. Returns an instance of the class with the corresponding fields set. No validation is performed on the values.
+        """
         return cls(
             token=os.getenv("BOT_TOKEN", cls.token),
             admin_chat_id=os.getenv("ADMIN_CHAT_ID", cls.admin_chat_id),

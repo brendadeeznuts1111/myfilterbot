@@ -42,6 +42,14 @@ class ErrorTracker:
     error_stats: Any
     
     def __init__(self, log_dir: str = "logs") -> None:
+        """
+        Initialize the ErrorTracker.
+        
+        Creates the log directory (default "logs"), configures logging, and loads persisted error history. Initializes in-memory error history, retention limit, and aggregated error statistics.
+        
+        Parameters:
+            log_dir (str): Path to the directory where log files and persistent error history are stored. Defaults to "logs".
+        """
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(exist_ok=True)
         
@@ -65,7 +73,16 @@ class ErrorTracker:
         self._load_error_history()
     
     def _setup_logging(self) -> None:
-        """Setup comprehensive logging"""
+        """
+        Configure file-based logging handlers and attach them to the root logger.
+        
+        Creates and attaches three FileHandler instances:
+        - an ERROR-level daily error log file named "errors_YYYYMMDD.log" in self.log_dir,
+        - a DEBUG-level daily debug log file named "debug_YYYYMMDD.log" in self.log_dir (includes source file and line info),
+        - a CRITICAL-level rolling file "critical_errors.log" in self.log_dir.
+        
+        This method mutates the root logger by adding the handlers; it does not return a value.
+        """
         # Main error log
         error_handler = logging.FileHandler(
             self.log_dir / f"errors_{datetime.now().strftime('%Y%m%d')}.log"
@@ -100,7 +117,14 @@ class ErrorTracker:
         logger.addHandler(critical_handler)
     
     def _load_error_history(self) -> None:
-        """Load error history from file"""
+        """
+        Load persisted error history and statistics from disk into the tracker.
+        
+        If a file named `error_history.json` exists under the tracker's `log_dir`, this method
+        reads it and updates `self.error_history` (from the "errors" key) and `self.error_stats`
+        (from the "stats" key). If the file is missing this method does nothing. Any JSON or I/O
+        errors are caught and converted into a warning log; the method does not raise.
+        """
         history_file = self.log_dir / "error_history.json"
         if history_file.exists():
             try:
@@ -112,7 +136,15 @@ class ErrorTracker:
                 logging.warning(f"Could not load error history: {e}")
     
     def _save_error_history(self) -> None:
-        """Save error history to file"""
+        """
+        Persist the in-memory error history and statistics to a JSON file.
+        
+        Writes a JSON file named `error_history.json` in `self.log_dir` containing:
+        - "errors": the most recent `self.max_history` entries from `self.error_history`
+        - "stats": the current `self.error_stats`
+        
+        I/O errors are caught; failures are logged and do not raise.
+        """
         history_file = self.log_dir / "error_history.json"
         try:
             with open(history_file, 'w') as f:
@@ -130,7 +162,27 @@ class ErrorTracker:
                   context: Optional[Dict[str, Any]] = None,
                   user_id: Optional[int] = None,
                   recoverable: bool = True) -> str:
-        """Log an error with full context"""
+        """
+                  Record an exception with metadata, update in-memory and on-disk error history, and log it.
+                  
+                  Creates a unique error ID, stores a full error record (timestamp, category, severity, error type/message, traceback, context, user_id, recoverable flag, resolved flag), updates aggregated statistics, writes the history to disk, and emits a log entry whose level reflects the provided severity.
+                  
+                  Parameters:
+                      error (Exception): The caught exception to record.
+                      category (str): High-level category for classification (uses ErrorCategory constants).
+                      severity (str): Severity level (uses ErrorSeverity constants); influences logging level.
+                      context (Optional[Dict[str, Any]]): Optional additional context (e.g., function, args, runtime state) to include with the record.
+                      user_id (Optional[int]): Optional user identifier associated with the error (if applicable).
+                      recoverable (bool): Whether the error is considered recoverable; stored on the record.
+                  
+                  Returns:
+                      str: Generated error ID in the form "ERR-YYYYmmddHHMMSS-XXXX".
+                  
+                  Side effects:
+                      - Appends to self.error_history and updates self.error_stats.
+                      - Persists the trimmed history and stats to disk via self._save_error_history().
+                      - Emits a log entry (level depends on `severity`) and includes the captured traceback and serialized context when available.
+                  """
         
         error_id = f"ERR-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.error_stats['total'] + 1:04d}"
         
@@ -177,7 +229,21 @@ class ErrorTracker:
         return error_id
     
     def resolve_error(self, error_id: str, resolution: str = None) -> Any:
-        """Mark an error as resolved"""
+        """
+        Mark a tracked error as resolved.
+        
+        If an error with the given error_id exists, set its `resolved` flag, store the optional
+        resolution text and a `resolved_at` timestamp, increment the tracker's resolved counter,
+        persist the updated history to disk, and return True. If no matching error is found,
+        return False.
+        
+        Parameters:
+            error_id (str): The unique identifier of the error to resolve.
+            resolution (str, optional): Short description of the resolution or notes.
+        
+        Returns:
+            bool: True if the error was found and marked resolved, False otherwise.
+        """
         for error in self.error_history:
             if error["id"] == error_id:
                 error["resolved"] = True
@@ -203,7 +269,14 @@ class ErrorTracker:
         return errors[:limit]
     
     def get_error_stats(self) -> Dict[str, Any]:
-        """Get error statistics"""
+        """
+        Return the current error statistics, updating the count of errors from the last 24 hours.
+        
+        This method refreshes the `last_24h` field in the tracker's `error_stats` to reflect how many recorded errors have timestamps within the previous 24 hours, then returns the statistics dictionary.
+        
+        Returns:
+            Dict[str, Any]: The tracker statistics object (including updated `last_24h`).
+        """
         # Calculate last 24h errors
         now = datetime.now()
         last_24h = [
@@ -216,7 +289,17 @@ class ErrorTracker:
         return self.error_stats
     
     def clear_old_errors(self, days: int = 30) -> None:
-        """Clear errors older than specified days"""
+        """
+        Remove errors from the in-memory history that are older than the given number of days and persist the updated history to disk.
+        
+        Parameters:
+            days (int): Maximum age in days for errors to keep (errors with age >= days are removed). Defaults to 30.
+        
+        Side effects:
+            - Mutates self.error_history to only include recent errors.
+            - Persists the trimmed history by calling self._save_error_history().
+            - Emits an informational log entry about the cleanup.
+        """
         now = datetime.now()
         self.error_history = [
             e for e in self.error_history
@@ -229,17 +312,35 @@ class ErrorHandler:
     """Main error handler for the bot"""
     
     def __init__(self, tracker: ErrorTracker = None) -> None:
+        """
+        Initialize the ErrorHandler.
+        
+        If no ErrorTracker is provided, a new singleton ErrorTracker is created. Initializes admin notification state (no admin chat configured), notifications enabled by default, and debug mode disabled.
+        """
         self.tracker = tracker or ErrorTracker()
         self.admin_chat_id = None
         self.notification_enabled = True
         self.debug_mode = False
     
     def set_admin_chat_id(self, chat_id: str) -> int:
-        """Set admin chat ID for notifications"""
+        """
+        Set the Telegram chat ID to receive admin notifications.
+        
+        Parameters:
+            chat_id (str): Telegram chat identifier to use for admin alerts (chat ID as a string or username).
+        """
         self.admin_chat_id = chat_id
     
     def enable_debug_mode(self, enabled: bool = True) -> None:
-        """Enable/disable debug mode"""
+        """
+        Enable or disable debug mode for the handler.
+        
+        When enabled, sets the instance's debug_mode flag to True and raises the root logger level to DEBUG;
+        when disabled, sets debug_mode to False and lowers the root logger level to INFO.
+        
+        Parameters:
+            enabled (bool): True to enable debug mode (DEBUG logging), False to disable (INFO logging).
+        """
         self.debug_mode = enabled
         if enabled:
             logging.getLogger().setLevel(logging.DEBUG)
@@ -282,7 +383,17 @@ class ErrorHandler:
             await self._send_admin_notification(context, error_id, error, error_context, severity)
     
     def _classify_error(self, error: Exception) -> tuple:
-        """Classify error into category and severity"""
+        """
+        Map an exception to an (ErrorCategory, ErrorSeverity) pair.
+        
+        Performs a lightweight, heuristic classification using the exception type name and message
+        content (case-insensitive substring checks). Returns a tuple (category, severity). The
+        mapping is best-effort and intended for logging/notification prioritization, not for
+        programmatic control flow.
+        
+        Returns:
+            tuple: (ErrorCategory, ErrorSeverity)
+        """
         error_type = type(error).__name__
         error_msg = str(error).lower()
         
@@ -318,7 +429,16 @@ class ErrorHandler:
         return ErrorCategory.UNKNOWN, ErrorSeverity.MEDIUM
     
     async def _send_user_error(self, update: Update, error_id: str, severity: str) -> None:
-        """Send error message to user"""
+        """
+        Send a short, user-facing error message to the chat associated with `update`.
+        
+        The message text is chosen based on `severity` (critical, high, or other). If the handler is in debug mode, the message will include the `error_id`. Sending failures are suppressed (the method fails silently).
+        
+        Parameters:
+            update (Update): The Telegram update whose chat will receive the message.
+            error_id (str): Identifier for the logged error; appended in debug mode.
+            severity (str): Error severity; used to select the message shown to the user.
+        """
         if severity == ErrorSeverity.CRITICAL:
             message = "⚠️ A critical error occurred. The admin has been notified."
         elif severity == ErrorSeverity.HIGH:

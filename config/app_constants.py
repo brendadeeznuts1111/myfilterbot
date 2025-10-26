@@ -146,6 +146,21 @@ class AppConstants:
     """Centralized application constants"""
     
     def __init__(self):
+        """
+        Initialize an AppConstants instance by creating and attaching all grouped configuration dataclass instances.
+        
+        Creates the following attributes:
+        - timeout: TimeoutConfig — session, API, database, rate-limit and circuit-breaker timeouts.
+        - threshold: ThresholdConfig — financial, activity, rate-limiting, and circuit-breaker thresholds.
+        - network: NetworkConfig — network ports, hosts, and external API base URLs.
+        - message: MessageConfig — message length limits, delays, and retry settings.
+        - performance: PerformanceConfig — worker/pool sizes, concurrency limits, cache TTLs, and batch sizes.
+        - security: SecurityConfig — token lengths, password constraints, and rate limits.
+        - backup: BackupConfig — backup intervals, retention and cleanup timings.
+        - monitoring: MonitoringConfig — logging, health-check, and metrics collection parameters.
+        
+        No parameters or return value. The created attributes provide centralized, hardcoded defaults; environment-based overrides (if used) are handled where individual dataclasses read os.getenv.
+        """
         self.timeout = TimeoutConfig()
         self.threshold = ThresholdConfig()
         self.network = NetworkConfig()
@@ -156,7 +171,18 @@ class AppConstants:
         self.monitoring = MonitoringConfig()
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert all constants to dictionary"""
+        """
+        Return a dictionary representation of all grouped configuration objects.
+        
+        Each top-level key is a category name ('timeout', 'threshold', 'network',
+        'message', 'performance', 'security', 'backup', 'monitoring') and maps to a
+        shallow dict of that category's dataclass attributes (obtained via each
+        dataclass's __dict__).
+        
+        Returns:
+            Dict[str, Any]: Mapping of configuration category names to their attribute
+            dictionaries.
+        """
         return {
             'timeout': self.timeout.__dict__,
             'threshold': self.threshold.__dict__,
@@ -169,7 +195,14 @@ class AppConstants:
         }
     
     def get_env_overrides(self) -> Dict[str, str]:
-        """Get environment variable overrides"""
+        """
+        Return a flat mapping of environment-variable names to stringified current configuration values that can be used as external overrides.
+        
+        The mapping includes a curated subset of configurable items from the nested config objects: selected timeouts, financial thresholds, performance settings, and default network ports. Values are returned as strings (suitable for setting environment variables) and reflect the current state of this AppConstants instance.
+        
+        Returns:
+            Dict[str, str]: Keys are environment variable-style names (e.g. 'SESSION_TIMEOUT', 'LOW_BALANCE_THRESHOLD', 'WORKER_POOL_SIZE', 'FLASK_PORT') and values are the corresponding configuration values converted to strings.
+        """
         return {
             # Timeout overrides
             'SESSION_TIMEOUT': str(self.timeout.SESSION_TIMEOUT),

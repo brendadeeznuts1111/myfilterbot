@@ -67,6 +67,13 @@ class GroupMember:
     customer_id: Optional[str] = None
     
     def __post_init__(self) -> None:
+        """
+        Initialize default permissions for a GroupMember instance if none were provided.
+        
+        If the instance's `permissions` attribute is None, this populates it with a dictionary containing
+        the default permission flags and limits: `can_view`, `can_trade`, `can_withdraw`, `daily_limit`,
+        and `notes`. This method mutates the instance in place and returns None.
+        """
         if self.permissions is None:
             self.permissions = {
                 "can_view": False,
@@ -91,6 +98,12 @@ class Database:
     data: Any
     
     def __init__(self, db_path: str = "data/customer_database.json") -> None:
+        """
+        Initialize the Database manager.
+        
+        Parameters:
+            db_path (str): Filesystem path to the JSON-backed database file (defaults to "data/customer_database.json"). The constructor loads the file into memory and ensures the in-memory data contains the required top-level structure.
+        """
         self.db_path = db_path
         self.data = self._load()
         self._ensure_structure()
@@ -109,7 +122,21 @@ class Database:
             return self._default_structure()
     
     def _default_structure(self) -> Dict:
-        """Return default database structure"""
+        """
+        Return the default in-memory database structure used when initializing or recovering the JSON store.
+        
+        The returned dict contains the top-level keys and their default values:
+        - customers: mapping of customer_id -> Customer dict (empty).
+        - transactions: list of Transaction dicts (empty).
+        - alerts: numeric thresholds used by analytics (large_win, large_loss, low_balance, inactive_days).
+        - groups: mapping of group_id -> group metadata (empty).
+        - members: mapping of member_key -> GroupMember dict (empty).
+        - permissions: lists tracking member keys in "pending", "approved", and "denied" states.
+        - settings: runtime metadata (last_backup timestamp or None, and database version).
+        
+        Returns:
+            Dict: A fresh default database dictionary ready to be persisted.
+        """
         return {
             "customers": {},
             "transactions": [],
@@ -133,14 +160,26 @@ class Database:
         }
     
     def _ensure_structure(self) -> None:
-        """Ensure database has all required fields"""
+        """
+        Ensure the in-memory database contains all expected top-level keys.
+        
+        If any top-level keys from the default database structure are missing in self.data,
+        they are added with their default values. Existing keys and values are left unchanged.
+        """
         default = self._default_structure()
         for key, value in default.items():
             if key not in self.data:
                 self.data[key] = value
     
     def save(self) -> bool:
-        """Save database to file"""
+        """
+        Save the in-memory database to disk, creating a backup of the current file first.
+        
+        This writes the Database.data JSON to the file at Database.db_path. Before writing, a backup is created (via _create_backup), which also updates the stored last backup timestamp in settings when successful.
+        
+        Returns:
+            bool: True if the save completed successfully; False if an error occurred.
+        """
         try:
             # Create backup before saving
             self._create_backup()
@@ -153,7 +192,13 @@ class Database:
             return False
     
     def _create_backup(self) -> None:
-        """Create backup of database"""
+        """
+        Create a file-system backup of the JSON database and record the backup timestamp.
+        
+        If the database file at self.db_path exists, copies its contents to a file named "<db_path>.backup"
+        and updates self.data['settings']['last_backup'] with the current ISO-formatted timestamp.
+        Errors are logged and not propagated.
+        """
         try:
             backup_path = f"{self.db_path}.backup"
             if os.path.exists(self.db_path):

@@ -26,6 +26,14 @@ class PortalIntegration:
     timeout: Any
     
     def __init__(self, portal_base_url: str = None) -> None:
+        """
+        Initialize PortalIntegration.
+        
+        If portal_base_url is not provided, reads PORTAL_SERVER_URL from the environment and defaults to "http://localhost:5000". Sets up instance state used by other methods: `portal_base_url` (str), `enabled` (bool, defaults to True), `retry_count` (int, defaults to 3) and `timeout` (int, seconds, defaults to 5).
+        
+        Parameters:
+            portal_base_url (str, optional): Base URL of the portal server. When omitted, the value of the `PORTAL_SERVER_URL` environment variable is used, falling back to "http://localhost:5000".
+        """
         if portal_base_url is None:
             portal_base_url = os.getenv('PORTAL_SERVER_URL', 'http://localhost:5000')
         self.portal_base_url = portal_base_url
@@ -189,7 +197,22 @@ class PortalIntegration:
         return None
     
     def find_customers_for_message(self, message_text: str, from_user: str) -> List[str]:
-        """Find customers relevant to a message using keywords"""
+        """
+        Return a list of customer IDs whose configured keywords or telegram_username match the given message or sender.
+        
+        Detailed behavior:
+        - Loads customer_config.json from the package root (two levels up from this file) and iterates its "customers" mapping.
+        - A customer is matched if any configured keyword appears (case-insensitive) in message_text or from_user, or if the configured telegram_username (normalized, without "@") is contained in from_user.
+        - Duplicate IDs are removed before returning.
+        - On error (file missing, parse error, etc.) the function logs the exception and returns an empty list.
+        
+        Parameters:
+            message_text (str): The incoming message text to check for keywords.
+            from_user (str): The sender identifier (e.g., username) to check for keywords or telegram_username matches.
+        
+        Returns:
+            List[str]: Unique customer IDs that match the message or sender.
+        """
         relevant_customers = []
         
         try:
@@ -230,7 +253,12 @@ class PortalIntegration:
         logger.info("Portal integration enabled")
     
     def disable(self) -> None:
-        """Disable portal integration"""
+        """
+        Disable portal integration.
+        
+        Sets the instance's `enabled` flag to False so subsequent operations that check
+        integration state will no longer attempt portal communication.
+        """
         self.enabled = False
         logger.info("Portal integration disabled")
 
@@ -242,7 +270,17 @@ def get_portal_integration() -> PortalIntegration:
     return portal_integration
 
 def setup_portal_integration(portal_url: str = None) -> Any:
-    """Setup portal integration with custom URL"""
+    """
+    Configure and initialize the global PortalIntegration instance.
+    
+    If a portal_url is provided, it overrides the instance's base URL. The function checks the portal's health endpoint and enables the integration if reachable; otherwise it disables the integration.
+    
+    Parameters:
+        portal_url (str, optional): If provided, sets the PortalIntegration.base_url to this value before performing the availability check.
+    
+    Returns:
+        PortalIntegration: The global portal_integration instance (possibly enabled or disabled based on availability).
+    """
     global portal_integration
     
     if portal_url:
@@ -276,5 +314,12 @@ def process_group_message(message_text: str, from_user: str, chat_id: str) -> Op
     return portal_integration.process_telegram_message(message_text, from_user, chat_id)
 
 def is_portal_enabled() -> bool:
-    """Check if portal integration is enabled"""
+    """
+    Return True if portal integration is enabled and the portal health endpoint is reachable.
+    
+    Checks both the local enabled flag and the portal's /health endpoint; returns False otherwise.
+    
+    Returns:
+        bool: True when integration is enabled and the portal responds with a healthy status, False otherwise.
+    """
     return portal_integration.enabled and portal_integration.is_portal_available()

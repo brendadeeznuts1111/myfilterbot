@@ -29,13 +29,24 @@ class BotHandlers:
     secure_registration: Any
     
     def __init__(self) -> None:
+        """
+        Initialize BotHandlers.
+        
+        Sets up:
+        - pending_registrations: dict used to track in-progress registration attempts keyed by user/session id.
+        - secure_registration: SecureRegistrationSystem instance used to perform protected customer registration and verification workflows.
+        """
         self.pending_registrations = {}
         self.secure_registration = SecureRegistrationSystem()
     
     # Command Handlers
     @error_handler_decorator(ErrorCategory.TELEGRAM, ErrorSeverity.LOW)
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /start command"""
+        """
+        Send the bot's welcome message and a 2x2 inline keyboard in response to the /start command.
+        
+        The message is Markdown-formatted and presents four quick actions: Register, Balance, Dashboard, and Help. This handler performs the send asynchronously and does not return a value.
+        """
         try:
             keyboard = [
                 [
@@ -60,7 +71,11 @@ class BotHandlers:
     
     @error_handler_decorator(ErrorCategory.DATABASE, ErrorSeverity.MEDIUM)
     async def account_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /account command - unified account management"""
+        """
+        Respond to the /account command by sending the user's account dashboard or prompting registration.
+        
+        If the Telegram user is not associated with a customer record, prompts the user to register. If a customer is found, sends a summary message containing customer ID, active status, current balance, and weekly P&L, along with an inline keyboard offering: Balance, History, Analytics, and Settings. This function performs I/O by replying to the incoming Telegram message.
+        """
         try:
             user_id = update.effective_user.id
             customer = db.find_customer_by_telegram(user_id)
@@ -104,7 +119,14 @@ Select an option below:
     
     @error_handler_decorator(ErrorCategory.DATABASE, ErrorSeverity.MEDIUM)
     async def balance_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /balance command - quick balance check"""
+        """
+        Send a brief account balance report in reply to a /balance command.
+        
+        Looks up the Telegram user in the customer database; if no customer is found replies with a not-registered notice. Otherwise gathers the customer's transactions for today, computes today's net change (deposits positive, other transaction types negative when an amount exists), computes the P&L percentage from the customer's weekly P&L and balance, formats a summary (balance, weekly P&L, P&L percentage, status, today's count and change) and sends it as a Markdown reply.
+        
+        Returns:
+            None
+        """
         try:
             user_id = update.effective_user.id
             customer = db.find_customer_by_telegram(user_id)
@@ -149,7 +171,11 @@ Select an option below:
     
     @error_handler_decorator(ErrorCategory.VALIDATION, ErrorSeverity.HIGH)
     async def register_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /register command with enhanced security"""
+        """
+        Register a Telegram user to a customer account using the secure registration workflow.
+        
+        Processes the `/register <customer_id> <password>` command, validates arguments, and delegates registration to the secure registration system. On success it confirms registration to the user and notifies admin; if a duplicate-password verification is required it triggers the admin verification flow; otherwise it replies with a context-aware failure message (customer not found, invalid password, already registered, telegram id in use, or a generic registration failure). All user-facing replies are sent as Markdown messages. Exceptions are logged and result in a generic system error message to the user.
+        """
         try:
             if len(context.args) != 2:
                 keyboard = [[
@@ -249,7 +275,13 @@ Select an option below:
     
     @error_handler_decorator(ErrorCategory.DATABASE, ErrorSeverity.MEDIUM)
     async def admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /admin command - admin dashboard"""
+        """
+        Send the administrative dashboard in response to the /admin command.
+        
+        Builds a Markdown-formatted dashboard with overview statistics (customers, total balance, weekly P&L, transactions, registered users), a top-performers list, and low-balance alerts. Attaches an inline keyboard with actions (Full Report, All Customers, Analytics, Settings, Refresh) and replies to the invoking chat.
+        
+        Note: This handler reads data from the database (statistics, top performers, low-balance customers) and formats monetary values with the project's currency helper before sending.
+        """
         try:
             # Check if user is admin (remove for testing)
             # if str(update.message.chat_id) != config.admin_chat_id:
@@ -307,7 +339,18 @@ Select an option below:
     
     @error_handler_decorator(ErrorCategory.VALIDATION, ErrorSeverity.HIGH)
     async def verify_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /verify command for admin verification of duplicate password registrations"""
+        """
+        Handle the `/verify` admin command to approve or deny duplicate-password registration requests.
+        
+        This command is restricted to the configured admin chat. It expects exactly two arguments:
+        a verification token and an action: `approve` or `deny`. The handler delegates verification
+        to the SecureRegistrationSystem (`secure_registration.admin_verify_duplicate_password_registration`)
+        and reports the outcome back to the admin (approved, denied, invalid/expired token, or failure).
+        Notifies the user of the resulting decision via the secure registration subsystem.
+        
+        Returns:
+            None
+        """
         try:
             # Check if user is admin
             if str(update.message.chat_id) != config.admin_chat_id:
@@ -374,7 +417,15 @@ Select an option below:
     # Chat Member Handler
     @error_handler_decorator(ErrorCategory.TELEGRAM, ErrorSeverity.MEDIUM)
     async def handle_my_chat_member(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle bot being added/removed from chats"""
+        """
+        Handle updates about the bot's chat membership status.
+        
+        When the bot is added to or removed from a chat this method:
+        - Delegates the update to the chat manager.
+        - Sends a formatted administrative notification to the configured admin chat reporting the chat type, title, id, username (if any), new status, time, and current total/remaining chats.
+        
+        Exceptions are caught and logged; the method does not raise.
+        """
         try:
             await chat_manager.handle_my_chat_member(update)
             
@@ -429,7 +480,11 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
     # Message Handler
     @error_handler_decorator(ErrorCategory.TRANSACTION, ErrorSeverity.HIGH)
     async def process_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
-        """Process incoming messages for customer activity"""
+        """
+        Process an incoming Telegram message and handle any customer-related activity.
+        
+        Detects transactions and customer mentions, updates chat activity metrics (messages, commands, transactions, mentions), checks for important keywords or users, and delegates relevant content to _process_relevant_message for further handling (storing transactions, updating balances, and notifying admin). If the incoming update has no message or text, processing stops early. Exceptions are caught and logged; no exceptions are propagated.
+        """
         try:
             message = update.message
             if not message or not message.text:
@@ -484,7 +539,18 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
     # Callback Query Handler
     @error_handler_decorator(ErrorCategory.TELEGRAM, ErrorSeverity.MEDIUM)
     async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle inline button callbacks"""
+        """
+        Route and handle Telegram inline callback queries.
+        
+        Answers the callback and dispatches handling based on the callback data prefix:
+        - "menu_" → _handle_menu_callback
+        - "account_" → _handle_account_callback
+        - "admin_" → _handle_admin_callback
+        - "help_" → _handle_help_callback
+        - "verify_" → _handle_verification_callback
+        
+        If an exception occurs, the handler logs the error and updates the original message with a generic failure notice.
+        """
         try:
             query = update.callback_query
             await query.answer()
@@ -530,7 +596,22 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
     
     async def _process_relevant_message(self, message, customers, tx_info, 
                                        has_keywords, is_important, context):
-        """Process message that matches criteria"""
+        """
+                                       Log and persist activity for each referenced customer and notify admin.
+                                       
+                                       Creates a Transaction record for every customer in `customers` (timestamped with now, message excerpt truncated to 200 characters, sender set to `@username` or numeric id, and chat id), stores it via the repository, and—if `tx_info` contains both a `type` and `amount`—applies the amount to the customer's balance. After recording and updating balances, forwards a summarized report to admin by awaiting `_forward_to_admin`.
+                                       
+                                       Parameters:
+                                           message: The incoming Telegram message object containing text, sender and chat metadata.
+                                           customers (Iterable[str|int]): Customer IDs referenced in the message.
+                                           tx_info (dict): Transaction metadata; expected keys include `'type'` (e.g., 'credit'/'debit' or None for mentions) and `'amount'` (numeric or None).
+                                           has_keywords (bool): Whether the message contained monitored keywords (not used directly by this function).
+                                           is_important (bool): Whether the sender or message is flagged important (not used directly by this function).
+                                           context: Handler context (bot runtime context/service container).
+                                       
+                                       Returns:
+                                           None
+                                       """
         # Log transaction if applicable
         for customer_id in customers:
             transaction = Transaction(
@@ -553,7 +634,22 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
         await self._forward_to_admin(message, customers, tx_info, context)
     
     async def _forward_to_admin(self, message, customers, tx_info, context) -> None:
-        """Forward relevant message to admin"""
+        """
+        Send a formatted activity summary to the configured admin chat.
+        
+        Builds a Markdown message that includes mentioned customers (with balances), detected transaction details (type, amount, confidence), the original message text, sender, and local time. If one or more customers are mentioned, an inline "View <customer>" button for the first customer is attached.
+        
+        Parameters:
+            message: The incoming Telegram Message object being reported.
+            customers (Iterable[str]): Customer IDs detected in the message; may be empty.
+            tx_info (Mapping): Transaction detection info with keys:
+                - 'type' (str|None): transaction type (e.g., "payment") or None.
+                - 'amount' (Decimal|float|None): detected monetary amount, if any.
+                - 'confidence' (float): detection confidence in [0,1].
+        
+        Side effects:
+            Sends a message to config.admin_chat_id using context.bot.
+        """
         forward_text = "🔔 **Activity Detected**\n━━━━━━━━━━━━━━━\n\n"
         
         if customers:
@@ -593,7 +689,14 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
         )
     
     async def _send_error(self, update: Update) -> None:
-        """Send generic error message"""
+        """
+        Send a generic error reply to the user who triggered the update.
+        
+        The reply is sent to the message's chat as a short, Markdown-formatted error notice.
+        
+        Parameters:
+            update (Update): Telegram Update containing the message to reply to.
+        """
         await update.message.reply_text(
             "❌ An error occurred. Please try again later.\n"
             "If the problem persists, contact support.",
@@ -601,7 +704,11 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
         )
     
     async def _prompt_registration(self, update: Update) -> None:
-        """Prompt user to register"""
+        """
+        Send a registration prompt to the user with a "How to Register" inline button.
+        
+        Sends a Markdown-formatted message notifying the user they are not registered and attaches an inline keyboard with a single "📝 How to Register" button that triggers the help_register callback.
+        """
         keyboard = [[
             InlineKeyboardButton("📝 How to Register", callback_data="help_register")
         ]]
@@ -614,7 +721,16 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
         )
     
     async def _handle_menu_callback(self, query, data) -> None:
-        """Handle main menu callbacks"""
+        """
+        Handle main menu callback actions by editing the originating message with the appropriate response.
+        
+        When `data` is "menu_register", replaces the message with registration instructions and an example command.
+        When `data` is "menu_balance", looks up the caller's customer record by Telegram user id and replaces the message with a quick balance summary (balance and weekly P&L). If no customer is found, shows a not-registered error message.
+        
+        Parameters:
+            query: The Telegram CallbackQuery that triggered this handler; used to edit the original message and to obtain the invoking user's id.
+            data (str): Callback payload key expected to be "menu_register" or "menu_balance".
+        """
         if data == "menu_register":
             await query.edit_message_text(
                 "📝 **Registration**\n\n"
@@ -638,12 +754,28 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
                 await query.edit_message_text(messages.ERROR_NOT_REGISTERED, parse_mode=ParseMode.MARKDOWN)
     
     async def _handle_account_callback(self, query, data) -> None:
-        """Handle account menu callbacks"""
+        """
+        Handle account-related inline callback actions.
+        
+        This is a placeholder handler for callbacks originating from the account inline menu (e.g. actions such as viewing balance, transaction history, analytics, or opening account settings). When implemented it should:
+        - Route recognized `data` tokens (like "account_balance", "account_history", "account_settings") to the appropriate account view or flow.
+        - Edit or reply to the original `query` message with the requested account content, or prompt the user to register if no linked account is found.
+        - Answer/acknowledge the callback to remove the loading state.
+        
+        Parameters are presumed to be the raw callback `query` object and the callback `data` string; this function returns None.
+        """
         # Implementation for account callbacks
         pass
     
     async def _handle_admin_callback(self, query, data) -> None:
-        """Handle admin menu callbacks"""
+        """
+        Handle admin inline callbacks.
+        
+        Currently supports the "admin_refresh" action: fetches current statistics and edits the callback message to display an updated dashboard (total balance and active customers). The function performs no return value.
+        
+        Parameters:
+            data (str): Callback data string; expected value "admin_refresh" triggers the refresh action.
+        """
         if data == "admin_refresh":
             # Refresh dashboard
             stats = db.get_statistics()
@@ -655,7 +787,15 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             )
     
     async def _handle_help_callback(self, query, data) -> None:
-        """Handle help callbacks"""
+        """
+        Handle inline help callbacks.
+        
+        When the callback data equals "help_register", edits the originating message to show a short, Markdown-formatted registration guide instructing the user how to register with their customer ID and password.
+        
+        Parameters:
+            query: The CallbackQuery object to answer/edit.
+            data (str): The callback data string; currently recognizes "help_register".
+        """
         if data == "help_register":
             await query.edit_message_text(
                 "📖 **Registration Guide**\n\n"
@@ -668,7 +808,18 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             )
     
     async def _handle_verification_callback(self, query, data) -> None:
-        """Handle verification button callbacks"""
+        """
+        Handle admin verification callbacks for duplicate-password registrations.
+        
+        Expects callback data in the form "verify_<action>_<token>" where <action> is
+        "approve" or "deny" and <token> is a verification token produced by the
+        secure registration workflow. Calls the secure registration system to apply
+        the admin decision, then edits the original callback message with the
+        result (approved, denied, invalid/expired token, or a failure message).
+        
+        Parameters:
+            data (str): Callback payload containing the action and verification token.
+        """
         try:
             # Parse callback data: verify_approve_TOKEN or verify_deny_TOKEN
             parts = data.split('_', 2)
@@ -722,7 +873,16 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             )
     
     async def _handle_duplicate_password_registration(self, result, update, context) -> None:
-        """Handle duplicate password registration requiring admin verification"""
+        """
+        Handle a registration that was blocked because the chosen password matches multiple customers and initiate admin verification.
+        
+        Sends a security verification message to the requesting user listing the duplicate customer IDs and a verification token, then notifies administrators with a detailed duplicate-password risk alert and actionable verification controls.
+        
+        Parameters:
+            result (dict): Registration check result containing at least:
+                - 'duplicate_customers' (list[str]): customer IDs that share the password.
+                - 'verification_token' (str): token to reference this verification request.
+        """
         try:
             duplicate_customers = result.get('duplicate_customers', [])
             verification_token = result.get('verification_token')
@@ -748,7 +908,21 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             logger.error(f"Error handling duplicate password registration: {e}")
     
     async def _notify_admin_registration(self, result, user, context) -> None:
-        """Notify admin of successful registration"""
+        """
+        Send a formatted notification to the configured admin chat about a successful customer registration.
+        
+        The message includes customer id, Telegram username and id, reported balance, security status, and the local timestamp. This coroutine performs the send via the bot in `context` and returns None.
+        
+        Parameters:
+            result (dict): Registration result containing at least the keys:
+                - 'customer_id' (str|int): Registered customer identifier.
+                - 'balance' (numeric): Customer balance to display.
+                - 'security_status' (str): Outcome of any security checks.
+            user: Telegram user object for the registrant (provides `.username` and `.id`).
+        
+        Returns:
+            None
+        """
         try:
             admin_text = f"✅ **New Registration**\n\n"
             admin_text += f"**Customer:** {result['customer_id']}\n"
@@ -766,7 +940,20 @@ Remaining Chats: {len(await chat_manager.get_all_chats())}
             logger.error(f"Error notifying admin of registration: {e}")
     
     async def _notify_admin_duplicate_password_risk(self, result, update, context) -> None:
-        """Notify admin of duplicate password security risk"""
+        """
+        Notify administrators about a duplicate-password security risk and send an actionable verification message.
+        
+        Sends a Markdown-formatted security alert to the configured admin chat containing:
+        - the Telegram user who attempted registration,
+        - the customer identifier they attempted to register (parsed from the incoming message when available),
+        - the list of duplicate customers sharing the same password,
+        - a verification token and instructions to approve or deny.
+        
+        Parameters:
+            result (dict): Result payload from the secure registration flow. Expected keys:
+                - 'duplicate_customers' (list[str]): Customer identifiers that share the same password.
+                - 'verification_token' (str): Token used to approve/deny the registration via admin commands.
+        """
         try:
             user = update.effective_user
             duplicate_customers = result.get('duplicate_customers', [])

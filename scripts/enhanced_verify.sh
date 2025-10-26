@@ -106,7 +106,7 @@ start_services() {
     return 1
 }
 
-# Run the original verification script
+# run_verification runs the project's final verification script (scripts/final_verify.sh) with the argument "verify"; logs progress and exits with status 1 if the script is missing.
 run_verification() {
     log "\n${BLUE}🔍 Running Phase 3 Endpoint Verification${NC}"
     log "======================================="

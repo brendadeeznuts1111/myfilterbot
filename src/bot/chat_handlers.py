@@ -24,8 +24,14 @@ class EnhancedChatHandlers:
     
     async def on_chat_join(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
-        Called when bot is added to a new chat/group
-        Automatically registers the chat and creates shortlink
+        Handle the bot being added to a chat: register the chat, create a shortlink, send a welcome message, and notify admin chats.
+        
+        If an effective chat is available this method:
+        - Determines whether the bot is an admin in the chat and (for groups) the member count.
+        - Registers or updates the chat via chat_tracker.register_chat (id, type, title, username, member_count, is_admin).
+        - When registration returns a ChatInfo, builds a shortlink URL, sends a Markdown-formatted welcome message with Dashboard/Settings buttons to the chat, and calls _notify_admins_new_chat to inform admin chats.
+        
+        Errors are caught and logged; the method does not raise exceptions to callers.
         """
         try:
             chat = update.effective_chat
@@ -101,8 +107,15 @@ I'll automatically track:
     
     async def on_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
         """
-        Process all messages to track chat activity
-        This runs for EVERY message in EVERY chat
+        Handle every incoming message to discover/register chats, record messages, and update chat activity.
+        
+        This is called for each message the bot receives. If the chat is not already known it will be auto-registered via chat_tracker.register_chat. Each message is recorded with chat_tracker.log_message (including sender id/username when available and a simple 'text' vs 'other' type) and the chat's last-activity timestamp is updated via chat_tracker.update_chat_activity.
+        
+        Side effects:
+        - May create a new chat record in chat_tracker.
+        - Logs message records and updates chat activity.
+        
+        Errors are caught and logged; the function does not raise exceptions.
         """
         try:
             message = update.message
@@ -248,7 +261,11 @@ I'll automatically track:
             )
     
     async def link_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Get shortlink for current chat"""
+        """
+        Return or create a shortlink for the current chat and send it as a reply.
+        
+        If the chat is not yet registered, this will attempt to register it first. On success sends a Markdown-formatted message containing the full shortlink URL and the short code; on failure sends an error reply. Side effects: may register the chat and always replies to the invoking message.
+        """
         try:
             chat = update.effective_chat
             
@@ -283,7 +300,13 @@ I'll automatically track:
     
     async def chats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
-        List all chats the bot is in (admin only)
+        List active chats the bot is a member of (administrator-only).
+        
+        Displays a formatted list of active chats including title, type, chat ID, shortlink, member count (if available), admin flag, and last activity. The response is limited to the first 20 chats; if more exist a summary line indicates how many remain. An inline keyboard is included with actions for a full report, export, and refresh.
+        
+        Notes:
+        - Access restricted to administrators (the routine currently uses a hard-coded ID check — replace with your real admin validation).
+        - Sends a user-facing error message on failure; does not raise exceptions.
         """
         try:
             user = update.effective_user
@@ -349,8 +372,20 @@ I'll automatically track:
     
     async def broadcast_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
-        Broadcast message to all active chats (admin only)
-        Usage: /broadcast <message>
+        Prompt an administrator to confirm broadcasting a text message to all active chats.
+        
+        This command is admin-restricted. It requires a message argument (usage: `/broadcast <message>`). If invoked by an authorized admin and a message is provided, the handler:
+        - Collects all active chats via the chat_tracker service to determine the target count.
+        - Stores the pending broadcast in `context.user_data['pending_broadcast']` as a dict with keys:
+          - 'message': the broadcast text
+          - 'chat_count': number of target chats
+        - Sends a confirmation prompt to the admin with inline "Confirm" and "Cancel" buttons. The actual broadcast is performed later when the "Confirm" callback is handled.
+        
+        Side effects:
+        - Sends Telegram replies and an inline keyboard.
+        - Mutates `context.user_data` by setting `'pending_broadcast'`.
+        
+        No value is returned.
         """
         try:
             user = update.effective_user
@@ -404,7 +439,24 @@ I'll automatically track:
             logger.error(f"Error in broadcast command: {e}")
     
     async def handle_chat_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle callbacks related to chat management"""
+        """
+        Handle callback queries for chat management actions.
+        
+        Processes callback data from inline buttons and performs one of:
+        - "full_chat_report": generates a full chat report and sends it (splits into multiple messages if too long).
+        - "export_chats": exports chat data to a JSON file and sends it as a document.
+        - "refresh_chats": re-runs the chats list command to refresh the displayed list.
+        - "confirm_broadcast": sends a pending broadcast message to all active chats, tracking successes/failures, marking chats inactive on unrecoverable errors, then reports results and clears the pending broadcast.
+        - "cancel_broadcast": cancels and clears any pending broadcast.
+        - "copy_link_<code>": builds a shortlink URL and acknowledges the copy action via an alert.
+        
+        Side effects:
+        - Sends and edits messages, replies with documents, and may mark chats inactive via chat_tracker.
+        - Consumes and clears context.user_data['pending_broadcast'] when a broadcast is completed or cancelled.
+        
+        Errors:
+        - On unexpected exceptions, logs the error and replaces the originating message with a generic error notice.
+        """
         try:
             query = update.callback_query
             await query.answer()
@@ -502,7 +554,13 @@ I'll automatically track:
             )
     
     async def _notify_admins_new_chat(self, chat_info: "ChatInfo", context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Notify all admin chats about a new chat being added"""
+        """
+        Notify all configured admin chats that a new chat has been registered.
+        
+        Sends a Markdown-formatted notification (name, type, ID, shortlink, member count and admin status)
+        to each admin chat returned by chat_tracker.get_admin_chats(). Failures to deliver a message are
+        logged; the function handles errors internally and does not raise.
+        """
         try:
             admin_chats = chat_tracker.get_admin_chats()
             

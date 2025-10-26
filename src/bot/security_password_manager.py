@@ -19,6 +19,16 @@ class SecureRegistrationSystem:
     pending_registrations: Any
     
     def __init__(self, db_path: str = "data/customer_database.json") -> None:
+        """
+        Initialize SecureRegistrationSystem.
+        
+        Parameters:
+            db_path (str): Filesystem path to the JSON customer database. Defaults to "data/customer_database.json".
+        
+        Details:
+            Sets the database path and initializes an in-memory store (`pending_registrations`) used to track
+            multi-step registrations that require admin verification (e.g., duplicate-password workflows).
+        """
         self.db_path = db_path
         self.pending_registrations = {}  # Temporary storage for multi-step registration
         

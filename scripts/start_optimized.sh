@@ -16,7 +16,7 @@ BUN_MAX_OLD_SPACE_SIZE="${BUN_MAX_OLD_SPACE_SIZE:-4096}"  # 4GB default
 BUN_CPUS="${BUN_CPUS:-0}"  # Use all available CPUs
 BUN_FLAGS="${BUN_FLAGS:---hot}"
 
-# Get system info
+# get_system_info prints system information (OS, architecture, CPU cores, memory) with a blue "System Information:" header.
 get_system_info() {
     echo -e "${BLUE}System Information:${NC}"
     echo "  OS: $(uname -s)"
@@ -26,7 +26,7 @@ get_system_info() {
     echo ""
 }
 
-# Check if Bun is installed
+# check_bun verifies Bun is installed; if missing it prints an error and exits with status 1, otherwise it prints the installed Bun version.
 check_bun() {
     if ! command -v bun &> /dev/null; then
         echo -e "${RED}Error: Bun is not installed${NC}"
@@ -37,7 +37,7 @@ check_bun() {
     echo -e "${GREEN}✓ Bun version: $(bun --version)${NC}"
 }
 
-# Set environment variables
+# setup_environment exports Bun and Node.js memory/CPU environment variables (BUN_MAX_OLD_SPACE_SIZE, BUN_CPUS, and NODE_OPTIONS) and prints the configured values.
 setup_environment() {
     echo -e "${YELLOW}Setting up environment...${NC}"
     
@@ -53,7 +53,12 @@ setup_environment() {
     echo ""
 }
 
-# Start services with optimized settings
+# start_services starts the portal, development, and admin services with optimized Bun memory/CPU settings.
+# 
+# It activates a local Python virtualenv if present, exports FLASK_ENV=production and FLASK_DEBUG=false,
+# launches the Flask portal server and the Bun-based front-end (build + development server) and admin server
+# in the background, and records their PIDs in PORTAL_PID, DEV_PID, and ADMIN_PID. After startup it prints
+# service URLs and a prompt to stop all services.
 start_services() {
     echo -e "${GREEN}Starting services with optimized settings...${NC}"
     
@@ -119,7 +124,7 @@ start_services() {
     echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
 }
 
-# Cleanup function
+# cleanup stops background services started by the script by killing PORTAL_PID, DEV_PID, and ADMIN_PID if set and prints status messages.
 cleanup() {
     echo -e "\n${YELLOW}Stopping all services...${NC}"
     
@@ -146,7 +151,7 @@ cleanup() {
 # Trap cleanup on exit
 trap cleanup EXIT INT TERM
 
-# Main execution
+# main displays a banner, prints system information, verifies Bun, configures the environment, starts the portal/dev/admin services, and waits for Enter to stop all services.
 main() {
     echo -e "${GREEN}╔══════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║  Fantdev Trading Bot - Optimized   ║${NC}"
